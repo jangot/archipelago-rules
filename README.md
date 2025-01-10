@@ -5,7 +5,7 @@
 
 ## Dependencies
 - Node (starting version 22.13.0)
-- NestJs (starting version )
+- NestJs (starting version 10.0.0)
 
 ## Structure
 ### Shared Library
