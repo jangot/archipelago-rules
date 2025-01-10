@@ -1,0 +1,4 @@
+documentation/**/*
+dist/**/*
+node_modules/**/*
+.notes/**/*

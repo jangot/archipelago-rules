@@ -17,9 +17,27 @@ module.exports = {
   },
   ignorePatterns: ['.eslintrc.js'],
   rules: {
+    'lines-between-class-members': ['warn', 'always', { exceptAfterSingleLine: true }],
+    'max-params': ['warn', 8],
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    "prettier/prettier": [
+      "warn",
+      {
+        "printWidth": 120
+      }
+    ],
+    "max-len": [
+      "warn",
+      {
+        "code": 120, // Match Prettier's printWidth
+        "tabWidth": 2,
+        "ignoreComments": true, // Ignore comments for line length
+        "ignoreStrings": true,  // Ignore long strings
+        "ignoreTemplateLiterals": true // Ignore template literals
+      }
+    ]
   },
 };

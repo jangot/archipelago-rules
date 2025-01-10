@@ -1,11 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/core-api/src",
+  "sourceRoot": "apps/core/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/core-api/tsconfig.app.json"
+    "tsConfigPath": "apps/core/tsconfig.app.json"
   },
   "projects": {
     "shared": {
@@ -17,34 +17,34 @@
         "tsConfigPath": "libs/shared/tsconfig.lib.json"
       }
     },
-    "payment-api": {
+    "payment": {
       "type": "application",
-      "root": "apps/payment-api",
+      "root": "apps/payment",
       "entryFile": "main",
-      "sourceRoot": "apps/payment-api/src",
+      "sourceRoot": "apps/payment/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/payment-api/tsconfig.app.json"
+        "tsConfigPath": "apps/payment/tsconfig.app.json"
       }
     },
-    "notification-api": {
+    "notification": {
       "type": "application",
-      "root": "apps/notification-api",
+      "root": "apps/notification",
       "entryFile": "main",
-      "sourceRoot": "apps/notification-api/src",
+      "sourceRoot": "apps/notification/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/notification-api/tsconfig.app.json"
+        "tsConfigPath": "apps/notification/tsconfig.app.json"
       }
     },
-    "core-api": {
+    "core": {
       "type": "application",
-      "root": "apps/core-api",
+      "root": "apps/core",
       "entryFile": "main",
-      "sourceRoot": "apps/core-api/src",
+      "sourceRoot": "apps/core/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/core-api/tsconfig.app.json"
+        "tsConfigPath": "apps/core/tsconfig.app.json"
       }
     }
   },
   "monorepo": true,
-  "root": "apps/core-api"
+  "root": "apps/core"
 }
