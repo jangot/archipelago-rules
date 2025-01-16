@@ -2,6 +2,7 @@
 
 ## High Level Architecture
 [Architecture](docs/high-level-architecture.md)
+[Development Prerequisites](docs/developer-prerequisites.md)
 
 ## Dependencies
 - Node (starting version 22.13.0)
