@@ -26,7 +26,11 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## Project setup
+
+## Installation
+Take a look at the [Developer Prerequisites](../docs/developer-prerequisites.md) for more information
+
+## Installation
 
 ```bash
 $ npm install
