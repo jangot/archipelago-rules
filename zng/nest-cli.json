@@ -8,22 +8,22 @@
     "tsConfigPath": "apps/core/tsconfig.app.json"
   },
   "projects": {
-    "shared": {
-      "type": "library",
-      "root": "libs/shared",
-      "entryFile": "index",
-      "sourceRoot": "libs/shared/src",
+    "core": {
+      "type": "application",
+      "root": "apps/core",
+      "entryFile": "main",
+      "sourceRoot": "apps/core/src",
       "compilerOptions": {
-        "tsConfigPath": "libs/shared/tsconfig.lib.json"
+        "tsConfigPath": "apps/core/tsconfig.app.json"
       }
     },
-    "payment": {
-      "type": "application",
-      "root": "apps/payment",
-      "entryFile": "main",
-      "sourceRoot": "apps/payment/src",
+    "entity": {
+      "type": "library",
+      "root": "libs/entity",
+      "entryFile": "index",
+      "sourceRoot": "libs/entity/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/payment/tsconfig.app.json"
+        "tsConfigPath": "libs/entity/tsconfig.lib.json"
       }
     },
     "notification": {
@@ -35,13 +35,22 @@
         "tsConfigPath": "apps/notification/tsconfig.app.json"
       }
     },
-    "core": {
+    "payment": {
       "type": "application",
-      "root": "apps/core",
+      "root": "apps/payment",
       "entryFile": "main",
-      "sourceRoot": "apps/core/src",
+      "sourceRoot": "apps/payment/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/core/tsconfig.app.json"
+        "tsConfigPath": "apps/payment/tsconfig.app.json"
+      }
+    },
+    "shared": {
+      "type": "library",
+      "root": "libs/shared",
+      "entryFile": "index",
+      "sourceRoot": "libs/shared/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/shared/tsconfig.lib.json"
       }
     }
   },

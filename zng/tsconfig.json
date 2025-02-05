@@ -27,6 +27,12 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "@library/entity": [
+        "libs/entity/src"
+      ],
+      "@library/entity/*": [
+        "libs/entity/src/*"
+      ],
       "@library/shared": [
         "libs/shared/src"
       ],
