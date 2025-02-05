@@ -1,9 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { ApplicationUserEntity } from './application.user.entity';
+import { ApplicationUser } from './application.user.entity';
 import { ILoan } from '@library/entity/interface';
 
 @Entity()
-export class LoanEntity implements ILoan {
+export class Loan implements ILoan {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -13,14 +13,14 @@ export class LoanEntity implements ILoan {
   @Column('uuid')
   lenderId: string;
 
-  @ManyToOne(() => ApplicationUserEntity)
+  @ManyToOne(() => ApplicationUser)
   @JoinColumn({ name: 'lenderId' })
-  lender: ApplicationUserEntity;
+  lender: ApplicationUser;
 
   @Column('uuid')
   borrowerId: string;
 
-  @ManyToOne(() => ApplicationUserEntity)
+  @ManyToOne(() => ApplicationUser)
   @JoinColumn({ name: 'borrowerId' })
-  borrower: ApplicationUserEntity;
+  borrower: ApplicationUser;
 }

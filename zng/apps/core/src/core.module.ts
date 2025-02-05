@@ -13,9 +13,8 @@ import { LoggerMiddleware } from '@library/shared/common/middleware/logger-middl
 import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
 import { LoggerModule } from 'nestjs-pino';
 import { v4 as uuidv4 } from 'uuid';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthModule } from '@library/shared/common/health/health.module';
-import { DataModule } from './data/data.module';
+import { DataModule } from './data';
 
 @Module({
   imports: [
@@ -38,19 +37,6 @@ import { DataModule } from './data/data.module';
             }
         }
       }
-    }),
-    TypeOrmModule.forRootAsync({
-      useFactory: () => ({
-        type: 'postgres',
-        host: process.env.DB_HOST,
-        port: parseInt(process.env.DB_PORT),
-        username: process.env.DB_USERNAME,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        synchronize: process.env.NODE_ENV === 'development', // Don't synchronize in Prod!!!
-        autoLoadEntities: true,
-        logging: process.env.TYPE_ORM_LOGGING == 'true' ? ["query", "error"] : false
-      })
     }),
     HealthModule,
     DataModule
