@@ -15,6 +15,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { v4 as uuidv4 } from 'uuid';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthModule } from '@library/shared/common/health/health.module';
+import { DataModule } from './data/data.module';
 
 @Module({
   imports: [
@@ -51,7 +52,8 @@ import { HealthModule } from '@library/shared/common/health/health.module';
         logging: process.env.TYPE_ORM_LOGGING == 'true' ? ["query", "error"] : false
       })
     }),
-    HealthModule
+    HealthModule,
+    DataModule
   ],
   controllers: [CoreController],
   providers: [Logger, CoreService],
