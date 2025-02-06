@@ -25,7 +25,7 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
-  app.setGlobalPrefix('/api');
+  app.setGlobalPrefix('/api/core');
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true
@@ -60,7 +60,7 @@ function configureSwagger(app: INestApplication<any>) {
 
     const document = SwaggerModule.createDocument(app, config, options);
       
-    SwaggerModule.setup('api/docs', app, document);
+    SwaggerModule.setup('api/core/docs', app, document);
 }
 
 bootstrap();
