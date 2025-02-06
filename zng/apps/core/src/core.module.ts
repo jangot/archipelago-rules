@@ -38,7 +38,7 @@ import { ConfigModule } from '@nestjs/config';
                 errorLikeObjectKeys: ['err', 'error'],
             }
         }
-      }
+      }, forRoutes: ['*path']
     }),
     HealthModule,
     DataModule
@@ -51,6 +51,6 @@ export class CoreModule implements NestModule{
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(LoggerMiddleware)
-      .forRoutes('*');
+      .forRoutes('*path');
   }
 }

@@ -25,7 +25,7 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('/api');
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true
