@@ -1,9 +1,9 @@
 import { IApplicationUser } from '@library/entity/interface';
 import { Entity, PrimaryGeneratedColumn, Column, AfterLoad } from 'typeorm';
 
-@Entity('users')
+@Entity('users', { schema:'core' })
 export class ApplicationUser implements IApplicationUser {
-  @PrimaryGeneratedColumn('uuid', {primaryKeyConstraintName: 'users_id_pkey' })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column('text')

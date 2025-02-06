@@ -2,10 +2,12 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check } 
 import { ApplicationUser } from './application.user.entity';
 import { ILoan } from '@library/entity/interface';
 
-@Entity('loans')
-@Check(`"borrower_id" <> "lender_id"`) // Ensures borrowerId and lenderId are different
+@Entity({ schema:'core' })
+// When using @Check('<constraint_name>', '<expression') -- always specify a Constraint name 
+// (not worth trying to parse the expression to generate a reasonable Check constraint name)
+@Check('loans_borrower_id_ne_lender_id_check', `"borrower_id" <> "lender_id"`) // Ensures borrowerId and lenderId are different
 export class Loan implements ILoan {
-  @PrimaryGeneratedColumn('uuid', {primaryKeyConstraintName: 'loans_id_pkey' })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column('decimal')
@@ -22,6 +24,6 @@ export class Loan implements ILoan {
   borrowerId: string;
 
   @ManyToOne(() => ApplicationUser)
-  @JoinColumn({ name: 'borrower_id' })
+  @JoinColumn({ name: 'borrower_id'})
   borrower: ApplicationUser;
 }
