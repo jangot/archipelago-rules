@@ -15,11 +15,13 @@ import { LoggerModule } from 'nestjs-pino';
 import { v4 as uuidv4 } from 'uuid';
 import { HealthModule } from '@library/shared/common/health/health.module';
 import { DataModule } from './data';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     // Might want to create a Global module (using @Global) to bring in common stuff
     // GlobalModule, ???
+    ConfigModule.forRoot({isGlobal: true}),
     GracefulShutdownModule.forRoot(),
     LoggerModule.forRoot({
       pinoHttp: {
