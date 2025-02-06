@@ -8,24 +8,24 @@
 
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { CoreModule } from './core.module';
-import * as dotenvFlow from 'dotenv-flow';
 import { AllExceptionsFilter } from '@library/shared/common/filters/all-exceptions.filter';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/swagger';
 import { setupGracefulShutdown } from 'nestjs-graceful-shutdown';
+import { ConfigService } from '@nestjs/config';
 
-dotenvFlow.config();
-
-async function bootstrap() {
-  const port = process.env.PORT || 8080;
+async function bootstrap() {  
   const app = await NestFactory.create(CoreModule);
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT', 3000);
+
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
 
   app.useLogger(app.get(Logger));
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('/api/core');
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true
@@ -60,7 +60,7 @@ function configureSwagger(app: INestApplication<any>) {
 
     const document = SwaggerModule.createDocument(app, config, options);
       
-    SwaggerModule.setup('api/docs', app, document);
+    SwaggerModule.setup('api/core/docs', app, document);
 }
 
 bootstrap();

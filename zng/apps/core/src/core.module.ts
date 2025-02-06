@@ -15,28 +15,34 @@ import { LoggerModule } from 'nestjs-pino';
 import { v4 as uuidv4 } from 'uuid';
 import { HealthModule } from '@library/shared/common/health/health.module';
 import { DataModule } from './data';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     // Might want to create a Global module (using @Global) to bring in common stuff
     // GlobalModule, ???
+    ConfigModule.forRoot({isGlobal: true}),
     GracefulShutdownModule.forRoot(),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        level: process.env.LOG_LEVEL || 'debug',
-        genReqId: (request) => request.headers['x-correlation-id'] || uuidv4(),
-        transport: {
-            target: 'pino-pretty',
-            options: {
-                colorize: process.env.COLORIZE_LOGS == 'true' || false,
-                singleLine: true,
-                levelFirst: false,
-                translateTime: "yyyy-mm-dd'T'HH:MM:ss'Z'",
-                //ignore: 'pid,hostname,res,responseTime,req.query,req.params,req.headers,req.body,req.route,req.host,req.remoteAddress,req.remotePort',
-                errorLikeObjectKeys: ['err', 'error'],
-            }
-        }
-      }
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        pinoHttp: {
+          level: configService.get('LOG_LEVEL') || 'debug',
+          genReqId: (request) => request.headers['x-correlation-id'] || uuidv4(),
+          transport: {
+              target: 'pino-pretty',
+              options: {
+                  colorize: configService.get('COLORIZE_LOGS') === 'true' || false,
+                  singleLine: true,
+                  levelFirst: false,
+                  translateTime: "yyyy-mm-dd'T'HH:MM:ss'Z'",
+                  ignore: 'pid,hostname,res,responseTime,req.query,req.params,req.headers,req.body,req.route,req.host,req.remoteAddress,req.remotePort',
+                  errorLikeObjectKeys: ['err', 'error'],
+              }
+          }
+        }, forRoutes: ['*path', CoreController]
+      })
     }),
     HealthModule,
     DataModule
@@ -49,6 +55,6 @@ export class CoreModule implements NestModule{
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(LoggerMiddleware)
-      .forRoutes('*');
+      .forRoutes('*path', CoreController);
   }
 }

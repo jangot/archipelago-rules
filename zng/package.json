@@ -36,8 +36,9 @@
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/typeorm": "^11.0.0",
     "axios": "^1.7.9",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
     "dotenv": "^16.4.7",
-    "dotenv-flow": "^4.1.0",
     "nestjs-graceful-shutdown": "^1.0.3",
     "nestjs-pino": "^4.3.0",
     "pg": "^8.13.1",
@@ -45,6 +46,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.20",
+    "typeorm-naming-strategies": "^4.1.0",
     "uuid": "^11.0.5"
   },
   "devDependencies": {

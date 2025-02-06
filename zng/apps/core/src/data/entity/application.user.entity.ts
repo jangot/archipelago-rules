@@ -1,20 +1,20 @@
 import { IApplicationUser } from '@library/entity/interface';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, AfterLoad } from 'typeorm';
 
-@Entity()
+@Entity('users')
 export class ApplicationUser implements IApplicationUser {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn('uuid', {primaryKeyConstraintName: 'users_id_pkey' })
   id: string;
 
-  @Column()
+  @Column('text')
   firstName: string;
 
-  @Column()
+  @Column('text')
   lastName: string;
 
-  @Column({ unique: true })
+  @Column('text', { unique: true })
   email: string;
 
-  @Column()
+  @Column('text')
   phoneNumber: string;
 }
