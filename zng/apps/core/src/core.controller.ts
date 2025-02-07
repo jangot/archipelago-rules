@@ -17,4 +17,9 @@ export class CoreController {
   getHello(): string {
     return this.coreService.getHello();
   }
+
+  @Get('transactional')
+  async transactional(): Promise<void> {
+    return await this.coreService.transactionalTest();
+  }
 }
