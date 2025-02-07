@@ -1,15 +1,14 @@
 import { IUserRepository } from '../interfaces';
-import { Inject, Injectable } from '@nestjs/common';
-import { RepositoryBase } from '../common/base.repository';
+import { Injectable } from '@nestjs/common';
 import { ApplicationUser } from '../../entity';
 import { IApplicationUser } from '@library/entity/interface';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RepositoryKey } from '../common';
+import { RepositoryBase } from '@library/shared/common/data/base.repository';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
-export class UserRepository extends RepositoryBase<ApplicationUser> implements IUserRepository<IApplicationUser> {
-  constructor(@Inject(RepositoryKey.USER) protected readonly repository: Repository<ApplicationUser>) {
+export class UserRepository extends RepositoryBase<ApplicationUser> implements IUserRepository {
+  constructor(@InjectRepository(ApplicationUser) protected readonly repository: Repository<ApplicationUser>) {
     super(repository);
   }
 

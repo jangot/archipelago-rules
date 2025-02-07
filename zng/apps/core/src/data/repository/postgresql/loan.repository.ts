@@ -1,14 +1,14 @@
 import { ILoanRepository } from '../interfaces';
-import { Inject, Injectable } from '@nestjs/common';
-import { RepositoryBase } from '../common/base.repository';
+import { Injectable } from '@nestjs/common';
 import { ILoan } from '@library/entity/interface';
 import { Loan } from '../../entity';
-import { RepositoryKey } from '../common';
 import { Repository } from 'typeorm';
+import { RepositoryBase } from '@library/shared/common/data/base.repository';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
-export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository<ILoan> {
-  constructor(@Inject(RepositoryKey.LOAN) protected readonly repository: Repository<Loan>) {
+export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {
+  constructor(@InjectRepository(Loan) protected readonly repository: Repository<Loan>) {
     super(repository);
   }
 

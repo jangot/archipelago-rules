@@ -1,17 +1,17 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { IDataService } from './idata.service';
 import { IUserRepository, ILoanRepository } from './repository/interfaces';
-import { LoanRepository, UserRepository } from './repository/postgresql';
-import { IApplicationUser, ILoan } from '@library/entity/interface';
 
-@Injectable({ scope: Scope.DEFAULT})
+@Injectable()
 export class DataService implements IDataService {
-  readonly users: IUserRepository<IApplicationUser>;
-  readonly loans: ILoanRepository<ILoan>;
+  readonly users: IUserRepository;
+  readonly loans: ILoanRepository;
 
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly loanRepository: LoanRepository,
+    @Inject(IUserRepository)
+    private readonly userRepository: IUserRepository,
+    @Inject(ILoanRepository)
+    private readonly loanRepository: ILoanRepository,
   ) {
     this.users = userRepository;
     this.loans = loanRepository;
