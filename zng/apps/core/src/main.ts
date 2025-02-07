@@ -14,8 +14,13 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/swagger';
 import { setupGracefulShutdown } from 'nestjs-graceful-shutdown';
 import { ConfigService } from '@nestjs/config';
+import { initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 
-async function bootstrap() {  
+async function bootstrap() {
+  // It requires to initiate TypeORM Transactional Context before application created and initialized
+  // StorageDriver mode: https://github.com/Aliheym/typeorm-transactional?tab=readme-ov-file#storage-driver
+  initializeTransactionalContext({ storageDriver: StorageDriver.AUTO});  
+
   const app = await NestFactory.create(CoreModule);
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
