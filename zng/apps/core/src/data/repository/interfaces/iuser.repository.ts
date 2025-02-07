@@ -1,6 +1,8 @@
-import { IRepositoryBase } from './ibase.repository';
+import { IRepositoryBase } from '@library/shared/common/data/ibase.repository';
 import { ApplicationUser } from '../../entity';
 
-export interface IUserRepository<T extends ApplicationUser> extends IRepositoryBase<T> {
-  getByEmail(email: string): Promise<T | null>; // for example purposes
+export interface IUserRepository extends IRepositoryBase<ApplicationUser> {
+  getByEmail(email: string): Promise<ApplicationUser | null>; // for example purposes
 }
+
+export const IUserRepository = Symbol('IUserRepository');

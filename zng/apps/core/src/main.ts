@@ -17,11 +17,11 @@ import { ConfigService } from '@nestjs/config';
 import { initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 
 async function bootstrap() {
-  // It requires to initiate TypeORM Transactional Context before application created and initialized
+  // It is required to initialize the  TypeORM Transactional Context before application creation and initialization
   // StorageDriver mode: https://github.com/Aliheym/typeorm-transactional?tab=readme-ov-file#storage-driver
   initializeTransactionalContext({ storageDriver: StorageDriver.AUTO});  
 
-  const app = await NestFactory.create(CoreModule);
+  const app = await NestFactory.create(CoreModule, {abortOnError: true});
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
 

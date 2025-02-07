@@ -10,7 +10,11 @@ import { IRepositoryBase } from './ibase.repository';
 import { FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm';
 
 export class RepositoryBase<Entity extends ObjectLiteral> implements IRepositoryBase<Entity> {
-  constructor(protected readonly repository: Repository<Entity>) {}
+  protected readonly repository: Repository<Entity>;
+  
+  constructor(protected readonly repo: Repository<Entity>) {
+    this.repository = repo;
+  }
 
   public async getAll(): Promise<Entity[]> {
     return await this.repository.find();
