@@ -12,7 +12,7 @@ export class CoreService {
 
   // Obviously this should be in a UserService class, not this class.
   public async getUserById(id: string) {
-    return await this.dataService.users.get(id);
+    return await this.dataService.users.getById(id);
   }
 
   public async getUserByEmail(email: string) {

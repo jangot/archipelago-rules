@@ -1,3 +1,11 @@
+/*
+ * File Name   : emailparam.ts
+ * Author      : Michael LeDuc
+ * Created Date: Mon Feb 10 2025
+ *
+ * Copyright (c) 2025 Zirtue, Inc.
+ */
+
 import {Param, PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
 
 import { isEmail } from 'class-validator';

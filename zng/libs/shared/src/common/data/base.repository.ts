@@ -20,7 +20,7 @@ export class RepositoryBase<Entity extends ObjectLiteral> implements IRepository
     return await this.repository.find();
   }
 
-  public async get<T extends keyof Entity>(id: Entity[T]): Promise<Entity | null> {
+  public async getById<T extends keyof Entity>(id: Entity[T]): Promise<Entity | null> {
     return await this.repository.findOneBy({ id } as FindOptionsWhere<Entity>);
   }
 

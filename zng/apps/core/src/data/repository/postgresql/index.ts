@@ -5,8 +5,6 @@ import { LoanRepository } from './loan.repository';
 export * from './user.repository';
 export * from './loan.repository';
 
-export * from './config';
-
 export const CustomCoreRepositories = [
   { provide: IUserRepository, useClass: UserRepository },
   { provide: ILoanRepository, useClass: LoanRepository}

@@ -1,5 +1,13 @@
+/*
+ * File Name   : withtransaction.handler.ts
+ * Author      : Michael LeDuc
+ * Created Date: Mon Feb 10 2025
+ *
+ * Copyright (c) 2025 Zirtue, Inc.
+ */
+
 import { Logger } from '@nestjs/common';
-import { runOnTransactionCommit, runOnTransactionRollback, runOnTransactionComplete } from 'typeorm-transactional';
+import { runOnTransactionCommit, runOnTransactionRollback } from 'typeorm-transactional';
 
 /**
  * A generic wrapper for handling commit, rollback, and completion in @Transactional methods.
