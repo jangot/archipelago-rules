@@ -1,7 +1,7 @@
 import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { ConfigService } from "@nestjs/config";
 import { CoreEntities } from "../../entity";
-import { ZngNamingStrategy } from "libs/extensions/typeorm/zng-naming.strategy";
+import { ZngNamingStrategy } from "@library/extensions/typeorm";
 
 export function configuration(configService: ConfigService): TypeOrmModuleOptions {
 return {
