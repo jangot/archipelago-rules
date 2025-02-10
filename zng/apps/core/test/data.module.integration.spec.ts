@@ -52,7 +52,14 @@ describe('DataModule Integration Tests', () => {
         expect(user).toBeDefined();
     });
 
-    describe('Transactional Tests', () => {
+    describe('Transactional Rollback for duplicate key instert within transaction', () => {
+        let expectedLoanId: string;
+        let lenderUserId: string;
+        let borrowerUserId: string;
+        //ID for entities that should not be created
+        let fakeLenderId: string;
+        let fakeBorrowerId: string;
+
         it('should create a lender, borrower and a loan', async () => {
             const userCreateSpy = jest.spyOn(dataService.users, 'create');
             const loanCreateSpy = jest.spyOn(dataService.loans, 'create');
@@ -64,7 +71,7 @@ describe('DataModule Integration Tests', () => {
             let loanResult: Loan;
             let loanGetResult: Loan;
 
-            const lenderUserId = v4();
+            lenderUserId = v4();
             const lenderUser: ApplicationUser = {
                 firstName: 'John',
                 lastName: 'Doe',
@@ -73,7 +80,7 @@ describe('DataModule Integration Tests', () => {
                 phoneNumber: '123'
             };
 
-            const borrowerUserId = v4();
+            borrowerUserId = v4();
             const borrowerUser: ApplicationUser = {
                 firstName: 'John',
                 lastName: 'Doe',
@@ -82,7 +89,7 @@ describe('DataModule Integration Tests', () => {
                 phoneNumber: '123'
             };
 
-            const expectedLoanId = v4();
+            expectedLoanId = v4();
             const expectedLoan: Loan = {
                 id: expectedLoanId,
                 amount: 1000,
@@ -119,6 +126,51 @@ describe('DataModule Integration Tests', () => {
             expect(borrowerGetResult).toEqual(borrowerUser);
             expect(loanGetResult).toEqual(expectedLoan);
             
+        });
+
+        it('should rollback create a lender, borrower and a loan', async () => {
+            // now we will try to create fake users and duplicate loan insert
+            fakeLenderId = v4();
+            const fakeLender: ApplicationUser = {
+                firstName: 'John',
+                lastName: 'Doe',
+                email: 'test-fake-lender@mail.com',
+                id: fakeLenderId,
+                phoneNumber: '123'
+            };
+
+            fakeBorrowerId = v4();
+            const fakeBorrower: ApplicationUser = {
+                firstName: 'John',
+                lastName: 'Doe',
+                email: 'test-fake-borrower@mail.com',
+                id: fakeBorrowerId,
+                phoneNumber: '123'
+            };
+
+            // We set existing loan id to be the same as the one we created in previous test
+            // This should cause a conflict and rollback the transaction
+            const fakeLoan: Loan = {
+                id: expectedLoanId,
+                amount: 1000,
+                borrowerId: fakeBorrowerId,
+                lenderId: fakeLenderId,
+                lender: fakeLender,
+                borrower: fakeBorrower
+            }
+
+            const fakeTransaction = withTransactionHandler(async ()=> {
+                await dataService.users.create(fakeLender);
+                await dataService.users.create(fakeBorrower);
+                await dataService.loans.create(fakeLoan);
+            });
+
+            expect(fakeTransaction).rejects.toThrow();
+
+            const fakeLenderResult = await dataService.users.get(fakeLenderId);
+            const fakeBorrowerResult = await dataService.users.get(fakeBorrowerId);
+            expect(fakeLenderResult).toBe(null);
+            expect(fakeBorrowerResult).toBe(null);
         });
     });
 });
