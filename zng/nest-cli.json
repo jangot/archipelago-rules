@@ -26,6 +26,15 @@
         "tsConfigPath": "libs/entity/tsconfig.lib.json"
       }
     },
+    "extensions": {
+      "type": "library",
+      "root": "libs/extensions",
+      "entryFile": "index",
+      "sourceRoot": "libs/extensions/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/extensions/tsconfig.lib.json"
+      }
+    },
     "notification": {
       "type": "application",
       "root": "apps/notification",
