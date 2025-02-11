@@ -3,6 +3,7 @@ import { ApplicationUser } from '../../entity';
 
 export interface IUserRepository extends IRepositoryBase<ApplicationUser> {
   getByEmail(email: string): Promise<ApplicationUser | null>; // for example purposes
+  getByPhone(phone: string): Promise<ApplicationUser | null>; // for example purposes
 }
 
 export const IUserRepository = Symbol('IUserRepository');

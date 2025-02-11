@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { HealthModule } from '@library/shared/common/health/health.module';
 import { DataModule } from './data';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -45,7 +46,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       })
     }),
     HealthModule,
-    DataModule
+    DataModule,
+    UserModule
   ],
   controllers: [CoreController],
   providers: [Logger, CoreService],

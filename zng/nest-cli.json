@@ -17,6 +17,15 @@
         "tsConfigPath": "apps/core/tsconfig.app.json"
       }
     },
+    "dto": {
+      "type": "library",
+      "root": "libs/dto",
+      "entryFile": "index",
+      "sourceRoot": "libs/dto/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/dto/tsconfig.lib.json"
+      }
+    },
     "entity": {
       "type": "library",
       "root": "libs/entity",
