@@ -11,10 +11,10 @@ import { CoreService } from './core.service';
 import { UUIDParam } from '@library/shared/common/pipes/uuidparam';
 import { ApiParam, ApiOkResponse, ApiNoContentResponse, ApiBadRequestResponse } from '@nestjs/swagger';
 import { HttpStatusCode } from 'axios';
-import { UserResponseDto } from './dtos/response/user-response.dto';
 import { plainToClass } from 'class-transformer';
 import { isEmail } from 'class-validator';
 import { EmailParam } from '@library/shared/common/pipes/emailparam';
+import { UserResponseDto } from '@library/dto/response';
 
 
 @Controller()

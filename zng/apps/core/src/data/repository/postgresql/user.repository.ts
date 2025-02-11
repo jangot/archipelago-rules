@@ -15,4 +15,8 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
   public async getByEmail(email: string): Promise<IApplicationUser | null> {
     return await this.repository.findOneBy({ email });
   }
+
+  public async getByPhone(phone: string): Promise<ApplicationUser | null> {
+    return await this.repository.findOneBy({ phoneNumber: phone });
+  }
 }

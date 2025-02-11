@@ -28,6 +28,12 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "@library/dto": [
+        "libs/dto/src"
+      ],
+      "@library/dto/*": [
+        "libs/dto/src/*"
+      ],
       "@library/entity": [
         "libs/entity/src"
       ],
