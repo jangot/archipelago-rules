@@ -1,10 +1,9 @@
 import { Controller, HttpException, HttpStatus, Logger, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
-import { UserCreateRequestDto, UserUpdateRequestDto } from '@library/dto/request';
-import { UserResponseDto } from '@library/dto/response';
 import { ApiBadRequestResponse, ApiBody, ApiInternalServerErrorResponse, ApiNoContentResponse, ApiOkResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ValidateOptionalQueryParamsPipe } from '@library/shared/common/pipes/optional.params.pipe';
+import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
 
 
 @Controller('users')

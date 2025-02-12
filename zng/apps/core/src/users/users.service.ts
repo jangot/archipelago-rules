@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IDataService } from '../data/idata.service';
-import { UserCreateRequestDto, UserUpdateRequestDto } from '@library/dto/request';
-import { UserResponseDto } from '@library/dto/response';
 import { plainToClass } from 'class-transformer';
 import { ApplicationUser } from '../data/entity';
 import { v4 } from 'uuid';
+import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
 
 @Injectable()
 export class UsersService {
@@ -25,7 +24,7 @@ export class UsersService {
   public async getUserById(id: string): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserById: Getting User by Id: ${id}`);
 
-    const result = await this.dataService.users.getById(id);
+    const result = await this.dataService.users.findOneBy({id});
 
     return result ? plainToClass(UserResponseDto, result, { excludeExtraneousValues: true }) : null;
   }
@@ -36,7 +35,7 @@ export class UsersService {
   public async getUserByEmail(email: string): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserByEmail: Getting User by Email: ${email}`);
 
-    const result = await this.dataService.users.getByEmail(email);
+    const result = await this.dataService.users.findOneBy({email});
 
     return result ? plainToClass(UserResponseDto, result, { excludeExtraneousValues: true }) : null;
   }
@@ -44,7 +43,7 @@ export class UsersService {
   public async getUserByPhoneNumber(phoneNumber: string): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserByPhoneNumber: Getting User by Phone Number: ${phoneNumber}`);
 
-    const result = await this.dataService.users.getByPhone(phoneNumber);
+    const result = await this.dataService.users.findOneBy({phoneNumber});
 
     return result ? plainToClass(UserResponseDto, result, { excludeExtraneousValues: true }) : null;
   }

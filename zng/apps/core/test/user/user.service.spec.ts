@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../../src/users/users.service';
 import { IDataService } from '../../src/data/idata.service';
-import { UserCreateRequestDto, UserUpdateRequestDto } from '@library/dto/request';
-import { UserResponseDto } from '@library/dto/response';
 import { HttpException } from '@nestjs/common';
 import { ApplicationUser } from '../../src/data/entity';
 import { v4 } from 'uuid';
+import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from 'apps/core/src/dto';
 
 describe('UserService', () => {
   let service: UsersService;
