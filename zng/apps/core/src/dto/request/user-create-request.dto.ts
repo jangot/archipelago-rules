@@ -1,10 +1,9 @@
-import { UserResponseDto } from "../response";
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 import { Expose } from "class-transformer";
 import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, MaxLength } from "class-validator";
 
 @ApiSchema({name: 'user'})
-export class UserCreateRequestDto implements Partial<UserResponseDto> {
+export class UserCreateRequestDto {
     @ApiProperty({description: 'User First Name', type: String, required: true, maxLength: 100})
     @Expose()
     @IsString()

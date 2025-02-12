@@ -100,7 +100,6 @@
       "<rootDir>/apps/"
     ],
     "moduleNameMapper": {
-      "^@library/dto(|/.*)$": "<rootDir>/libs/dto/src/$1",
       "^@library/entity(|/.*)$": "<rootDir>/libs/entity/src/$1",
       "^@library/extensions(|/.*)$": "<rootDir>/libs/extensions/src/$1",
       "^@library/shared(|/.*)$": "<rootDir>/libs/shared/src/$1"

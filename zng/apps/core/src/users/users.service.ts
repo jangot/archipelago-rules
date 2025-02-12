@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IDataService } from '../data/idata.service';
-import { UserCreateRequestDto, UserUpdateRequestDto } from '@library/dto/request';
-import { UserResponseDto } from '@library/dto/response';
 import { plainToClass } from 'class-transformer';
 import { ApplicationUser } from '../data/entity';
 import { v4 } from 'uuid';
+import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
 
 @Injectable()
 export class UsersService {
