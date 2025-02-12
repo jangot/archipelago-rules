@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from '../../src/user/user.service';
+import { UsersService } from '../../src/users/users.service';
 import { IDataService } from '../../src/data/idata.service';
 import { UserCreateRequestDto, UserUpdateRequestDto } from '@library/dto/request';
 import { UserResponseDto } from '@library/dto/response';
@@ -8,7 +8,7 @@ import { ApplicationUser } from '../../src/data/entity';
 import { v4 } from 'uuid';
 
 describe('UserService', () => {
-  let service: UserService;
+  let service: UsersService;
   let dataService: IDataService;
 
   const mockDataService = {
@@ -24,12 +24,12 @@ describe('UserService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UserService,
+        UsersService,
         { provide: IDataService, useValue: mockDataService },
       ],
     }).compile();
 
-    service = module.get<UserService>(UserService);
+    service = module.get<UsersService>(UsersService);
     dataService = module.get<IDataService>(IDataService);
   });
 

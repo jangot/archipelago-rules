@@ -11,8 +11,10 @@ import { FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm';
 
 export class RepositoryBase<Entity extends ObjectLiteral> implements IRepositoryBase<Entity> {
   protected readonly repository: Repository<Entity>;
-  
-  constructor(protected readonly repo: Repository<Entity>) {
+
+  constructor(
+    protected readonly repo: Repository<Entity>
+  ) {
     this.repository = repo;
   }
 

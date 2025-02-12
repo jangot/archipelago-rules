@@ -12,11 +12,5 @@ describe('CoreController', () => {
     }).compile();
 
     coreController = app.get<CoreController>(CoreController);
-  });
-
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(coreController.getHello()).toBe('Hello World!');
-    });
-  });
+  });  
 });
