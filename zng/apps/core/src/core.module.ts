@@ -11,46 +11,22 @@ import { CoreController } from './core.controller';
 import { CoreService } from './core.service';
 import { LoggerMiddleware } from '@library/shared/common/middleware/logger-middleware';
 import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
-import { LoggerModule } from 'nestjs-pino';
-import { v4 as uuidv4 } from 'uuid';
 import { HealthModule } from '@library/shared/common/health/health.module';
-import { DataModule } from './data';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UserModule } from './user/user.module';
+import { ConfigModule } from '@nestjs/config';
+import { SharedModule } from '@library/shared';
+import { CoreModules } from './index.modules';
 
 @Module({
-  imports: [
-    // Might want to create a Global module (using @Global) to bring in common stuff
-    // GlobalModule, ???
+  imports: [    
     ConfigModule.forRoot({isGlobal: true}),
     GracefulShutdownModule.forRoot(),
-    LoggerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        pinoHttp: {
-          level: configService.get('LOG_LEVEL') || 'debug',
-          genReqId: (request) => request.headers['x-correlation-id'] || uuidv4(),
-          transport: {
-              target: 'pino-pretty',
-              options: {
-                  colorize: configService.get('COLORIZE_LOGS') === 'true' || false,
-                  singleLine: true,
-                  levelFirst: false,
-                  translateTime: "yyyy-mm-dd'T'HH:MM:ss'Z'",
-                  ignore: 'pid,hostname,res,responseTime,req.query,req.params,req.headers,req.body,req.route,req.host,req.remoteAddress,req.remotePort',
-                  errorLikeObjectKeys: ['err', 'error'],
-              }
-          }
-        }, forRoutes: ['*path', CoreController]
-      })
-    }),
+    // Bring in Shared stuff like EventBus, pino Logger properly configured, more to follow
+    SharedModule.forRoot([CoreController]), 
     HealthModule,
-    DataModule,
-    UserModule
+    ...CoreModules // Add Core specific Modules here, and they will automatically get imported
   ],
   controllers: [CoreController],
-  providers: [Logger, CoreService],
+  providers: [CoreService, Logger],
 })
 
 export class CoreModule implements NestModule{

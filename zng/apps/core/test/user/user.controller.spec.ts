@@ -1,19 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserController } from '../../src/user/user.controller';
-import { UserService } from '../../src/user/user.service';
+import { UsersController } from '../../src/users/users.controller';
+import { UsersService } from '../../src/users/users.service';
 import { UserCreateRequestDto, UserUpdateRequestDto } from '@library/dto/request';
 import { UserResponseDto } from '@library/dto/response';
 
 describe('UserController', () => {
-  let controller: UserController;
-  let service: UserService;
+  let controller: UsersController;
+  let service: UsersService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [UserController],
+      controllers: [UsersController],
       providers: [
         {
-          provide: UserService,
+          provide: UsersService,
           useValue: {
             getUserById: jest.fn(),
             getUserByEmail: jest.fn(),
@@ -25,8 +25,8 @@ describe('UserController', () => {
       ],
     }).compile();
 
-    controller = module.get<UserController>(UserController);
-    service = module.get<UserService>(UserService);
+    controller = module.get<UsersController>(UsersController);
+    service = module.get<UsersService>(UsersService);
   });
 
   it('should be defined', () => {
@@ -51,7 +51,7 @@ describe('UserController', () => {
       const userResponse: UserResponseDto = { id: '1', email, phoneNumber: '1234567890', firstName: 'Test', lastName: 'User' };
       jest.spyOn(service, 'getUserByEmail').mockResolvedValue(userResponse);
 
-      const result = await controller.getUserByEmail(email);
+      const result = await controller.getUserByParameter({email});
       expect(result).toEqual(userResponse);
       expect(service.getUserByEmail).toHaveBeenCalledWith(email);
     });
@@ -63,7 +63,7 @@ describe('UserController', () => {
       const userResponse: UserResponseDto = { id: '1', email: 'test@test.com', phoneNumber, firstName: 'Test', lastName: 'User' };
       jest.spyOn(service, 'getUserByPhoneNumber').mockResolvedValue(userResponse);
 
-      const result = await controller.getUserByPhoneNumber(phoneNumber);
+      const result = await controller.getUserByParameter({phoneNumber});
       expect(result).toEqual(userResponse);
       expect(service.getUserByPhoneNumber).toHaveBeenCalledWith(phoneNumber);
     });
