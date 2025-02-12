@@ -42,7 +42,9 @@ export class RepositoryBase<Entity extends ObjectLiteral> implements IRepository
   }
 
   public async find(options: FindManyOptions<Entity>): Promise<Entity[]> {
-    if (!options?.take) options = { ...options, take: DEFAULT_PAGING_LIMIT };
+    // Apply default Paging Limit only if it is not already set
+    // As 0 is falsy for number, we need to check if it is undefined
+    if (options?.take === undefined) options = { ...options, take: DEFAULT_PAGING_LIMIT };
     return await this.repository.find(options);
   }
 
