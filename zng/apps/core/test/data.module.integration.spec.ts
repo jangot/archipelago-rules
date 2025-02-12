@@ -48,7 +48,7 @@ describe('DataModule Integration Tests', () => {
 
     it('should get user by id', async () => {
         const userId = v4();
-        const user = await userRepository.getById(userId);
+        const user = await userRepository.findOneBy({ id: userId});
         expect(user).toBeDefined();
     });
 
@@ -114,9 +114,9 @@ describe('DataModule Integration Tests', () => {
 
             // Try to get written entities from database and compare with expected
 
-            lenderGetResult = await dataService.users.getById(lenderUserId);
-            borrowerGetResult = await dataService.users.getById(borrowerUserId);
-            loanGetResult = await dataService.loans.getById(expectedLoanId);
+            lenderGetResult = await dataService.users.findOneBy({ id: lenderUserId });
+            borrowerGetResult = await dataService.users.findOneBy({ id: borrowerUserId });
+            loanGetResult = await dataService.loans.findOneBy({ id: expectedLoanId });
             
             // Band-aid to solve BaseRepo Lazy Load for this test. Definetely should work in supposed way instead.
             expectedLoan.lender = undefined;
@@ -167,8 +167,8 @@ describe('DataModule Integration Tests', () => {
 
             expect(fakeTransaction).rejects.toThrow();
 
-            const fakeLenderResult = await dataService.users.getById(fakeLenderId);
-            const fakeBorrowerResult = await dataService.users.getById(fakeBorrowerId);
+            const fakeLenderResult = await dataService.users.findOneBy({ id: fakeLenderId});
+            const fakeBorrowerResult = await dataService.users.findOneBy({ id: fakeBorrowerId});
             expect(fakeLenderResult).toBe(null);
             expect(fakeBorrowerResult).toBe(null);
         });
