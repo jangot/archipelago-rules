@@ -10,3 +10,5 @@ export enum PagingOrder {
   ASC = 'ASC',
   DESC = 'DESC'
 }
+
+export const DEFAULT_PAGING_LIMIT = 20;

@@ -6,8 +6,9 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
+import { DEFAULT_PAGING_LIMIT } from '../paging/paging.order.constants';
 import { IRepositoryBase } from './ibase.repository';
-import { FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm';
+import { FindManyOptions, FindOneOptions, FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm';
 
 export class RepositoryBase<Entity extends ObjectLiteral> implements IRepositoryBase<Entity> {
   protected readonly repository: Repository<Entity>;
@@ -22,10 +23,6 @@ export class RepositoryBase<Entity extends ObjectLiteral> implements IRepository
     return await this.repository.find();
   }
 
-  public async getById<T extends keyof Entity>(id: Entity[T]): Promise<Entity | null> {
-    return await this.repository.findOneBy({ id } as FindOptionsWhere<Entity>);
-  }
-
   public async create(item: Entity): Promise<Entity> {
     return await this.repository.save(item);
   }
@@ -34,5 +31,22 @@ export class RepositoryBase<Entity extends ObjectLiteral> implements IRepository
     const updateResult = await this.repository.update(id, item);
 
     return (updateResult.affected || 0) > 0;
+  }
+
+  public async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
+    return await this.repository.findOne(options);
+  }
+
+  public async findOneBy(where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[]): Promise<Entity | null> {
+    return await this.repository.findOneBy(where);
+  }
+
+  public async find(options: FindManyOptions<Entity>): Promise<Entity[]> {
+    if (!options?.take) options = { ...options, take: DEFAULT_PAGING_LIMIT };
+    return await this.repository.find(options);
+  }
+
+  public async findBy(where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[]): Promise<Entity[]> {
+    return await this.repository.findBy(where);
   }
 }
