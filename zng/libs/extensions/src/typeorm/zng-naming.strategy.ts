@@ -32,7 +32,13 @@ export class ZngNamingStrategy extends SnakeNamingStrategy implements NamingStra
     return parseName(tableOrName, columnNames, 'pkey');
   }
 
-  foreignKeyName(tableOrName: Table | string, columnNames: string[], referencedTablePath?: string, referencedColumnNames?: string[]): string {
+  foreignKeyName(
+    tableOrName: Table | string,
+    columnNames: string[],
+    referencedTablePath?: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _referencedColumnNames?: string[]
+  ): string {
     // combine referenced table name and fkey to create the suffix
     const suffix = referencedTablePath ? `${referencedTablePath}_fkey` : 'fkey';
 
@@ -46,7 +52,7 @@ export class ZngNamingStrategy extends SnakeNamingStrategy implements NamingStra
   indexName(tableOrName: Table | string, columns: string[]): string {
     return parseName(tableOrName, columns, 'idx');
   }
-  
+
   defaultConstraintName(tableOrName: Table | string, columnName: string): string {
     return parseName(tableOrName, [columnName], 'df');
   }
@@ -57,8 +63,8 @@ export class ZngNamingStrategy extends SnakeNamingStrategy implements NamingStra
   //   return parseName(tableOrName, [expression], 'check');
   // }
 
-  exclusionConstraintName(tableOrName: Table | string, expression: string): string{
-    return parseName(tableOrName, [expression], 'excl');  
+  exclusionConstraintName(tableOrName: Table | string, expression: string): string {
+    return parseName(tableOrName, [expression], 'excl');
   }
 }
 

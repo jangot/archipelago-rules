@@ -14,7 +14,4 @@ export * from './loan.entity';
 
 // Add all Core Entities here (will get add the TypeORM entities[])
 // The glob pattern method does not seem to work properly, especially with WebPack
-export const CoreEntities = [
-  Loan,
-  ApplicationUser
-]
+export const CoreEntities = [Loan, ApplicationUser];

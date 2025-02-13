@@ -15,34 +15,29 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isHttpException = exception instanceof HttpException;
+
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const httpStatus =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const httpStatus = isHttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    let res: any;
-    if (this.isExceptionObject(exception)) {
-      res = { name: exception.name, message: exception.message, stack: exception.stack };
-    } else {
-      res = JSON.stringify(exception);
-    }
+    const stack = !isProduction && !isHttpException && this.isExceptionObject(exception) ? exception.stack : undefined;
 
     const responseBody = {
       statusCode: httpStatus,
+      message: isHttpException ? exception.message : 'Internal Server Error',
       timestamp: new Date().toISOString(),
-      isSuccess: false,
       path: request.url,
-      message: exception instanceof HttpException ? exception.message : 'Internal Server Error',
+      stack: stack,
     };
 
-    if (exception instanceof HttpException) {
-      this.logger.debug(`HttpStatusCode: ${httpStatus} ${request.url} - ${responseBody.message}`);
+    if (isHttpException) {
+      this.logger.log(`statusCode: ${httpStatus}, url: ${request.url}, message: ${responseBody.message}`);
     } else {
-      this.logger.error(`HttpStatusCode: ${httpStatus} ${request.url} - ${responseBody.message}`);
+      this.logger.error(`statusCode: ${httpStatus}, url: ${request.url}, message: ${responseBody.message}`, stack);
     }
 
     response.status(httpStatus).json(responseBody);

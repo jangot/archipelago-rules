@@ -11,14 +11,15 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
   private readonly logger: Logger = new Logger(LoanRepository.name);
 
   constructor(
-    @InjectRepository(Loan) 
-    protected readonly repository: Repository<Loan>) {
+    @InjectRepository(Loan)
+    protected readonly repository: Repository<Loan>
+  ) {
     super(repository);
   }
 
   public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {
     this.logger.debug(`getByLenderId: ${lenderId}`);
-    
+
     return this.repository.findBy({ lenderId });
   }
 }

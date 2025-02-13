@@ -13,18 +13,18 @@ import { EntityClassOrSchema } from '@nestjs/typeorm/dist/interfaces/entity-clas
 
 // Function to generate custom repository providers dynamically
 function createRepositoryProvider(entity: EntityClassOrSchema) {
-  return ({
+  return {
     provide: getRepositoryToken(entity),
     inject: [getDataSourceToken()],
     useFactory: (dataSource: DataSource) => dataSource.getRepository(entity),
-  });
+  };
 }
 
 export function registerCustomRepositoryProviders(entities: EntityClassOrSchema[]): Provider[] {
   if (!entities || entities.length === 0) {
     return [];
   }
-  
+
   const result = entities.map(createRepositoryProvider);
 
   return result;
