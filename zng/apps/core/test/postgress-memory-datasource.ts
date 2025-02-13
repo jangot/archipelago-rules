@@ -25,7 +25,7 @@ export const memoryDataSource = async (): Promise<DataSource> => {
 };
 
 // Initiate newDb - in-memory PG database and create connection for TypeORM
-export const memoryDataSourceForTests = async (): Promise<{dataSource: DataSource, database: IMemoryDb}> => {
+export const memoryDataSourceForTests = async (): Promise<{ dataSource: DataSource; database: IMemoryDb }> => {
   const database = newDb();
   const dataSource: DataSource = await database.adapters.createTypeormDataSource({
     type: 'postgres',
@@ -41,7 +41,7 @@ export const memoryDataSourceForTests = async (): Promise<{dataSource: DataSourc
   await dataSource.initialize();
   await dataSource.synchronize();
 
-  return {dataSource, database};
+  return { dataSource, database };
 };
 
 // Workaround for missing functions in pg-mem implementation
