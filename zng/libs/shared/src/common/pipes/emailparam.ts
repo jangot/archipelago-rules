@@ -6,7 +6,7 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import {Param, PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
+import { Param, PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
 
 import { isEmail } from 'class-validator';
 

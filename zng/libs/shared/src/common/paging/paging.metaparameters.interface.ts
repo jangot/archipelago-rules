@@ -9,7 +9,7 @@
 import { IPagingOptions } from './paging.options.interface';
 
 export interface IPageMetaParameters {
-    pageOptions: IPagingOptions;
-    totalCount: number;
-    currentCount: number;
+  pageOptions: IPagingOptions;
+  totalCount: number;
+  currentCount: number;
 }

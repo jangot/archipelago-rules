@@ -12,7 +12,7 @@ import { CoreService } from './core.service';
 @Controller()
 export class CoreController {
   constructor(private readonly coreService: CoreService) {}
-  
+
   // Need to turn this into an Integration test!!!
   @Get('transactional')
   public async transactional(): Promise<void> {

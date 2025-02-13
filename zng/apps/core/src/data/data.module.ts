@@ -12,25 +12,26 @@ import { DbConfiguration } from '@library/shared/common/data/dbcommon.config';
 
 @Module({
   imports: [
-    TypeOrmModule.forRootAsync({ 
-      imports: [ConfigModule], 
-      inject:[ConfigService], 
-      useFactory: (configService: ConfigService) => DbConfiguration({ configService, entities: CoreEntities, schema: 'core' }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
+        DbConfiguration({ configService, entities: CoreEntities, schema: 'core' }),
       // TypeORM Transactional DataSource initialization
       async dataSourceFactory(options) {
         if (!options) {
           throw new Error('No Datasource options for TypeOrmModule provided');
         }
 
-        return addTransactionalDataSource(new DataSource(options))
-      }})
+        return addTransactionalDataSource(new DataSource(options));
+      },
+    }),
   ],
   providers: [
     { provide: IDataService, useClass: DataService },
     ...registerCustomRepositoryProviders(CoreEntities),
-    ...CustomCoreRepositories
+    ...CustomCoreRepositories,
   ],
   exports: [IDataService],
 })
-
 export class DataModule {}

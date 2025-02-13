@@ -9,6 +9,6 @@
 import { IPagingMeta } from './paging.meta.interface';
 
 export class IPaging<T> {
-    data: T[];
-    meta: IPagingMeta;
+  data: T[];
+  meta: IPagingMeta;
 }

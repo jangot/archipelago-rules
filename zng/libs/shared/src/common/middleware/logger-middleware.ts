@@ -3,7 +3,7 @@
  * Author: Michael LeDuc
  * Created Date: Tue Feb 04 2025
  * Copyright (c) 2025 Zirtue, Inc
-*/
+ */
 
 import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
@@ -13,7 +13,7 @@ import { Request, Response, NextFunction } from 'express';
 export class LoggerMiddleware implements NestMiddleware {
   constructor(private readonly logger: Logger) {}
   use(req: Request, res: Response, next: NextFunction) {
-    this.logger.log(`${req.method} ${req.originalUrl}`)
+    this.logger.log(`${req.method} ${req.originalUrl}`, LoggerMiddleware.name);
     next();
   }
 }

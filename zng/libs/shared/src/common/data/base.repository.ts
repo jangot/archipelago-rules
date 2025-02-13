@@ -8,14 +8,15 @@
 
 import { DEFAULT_PAGING_LIMIT } from '../paging/paging.order.constants';
 import { IRepositoryBase } from './ibase.repository';
-import { FindManyOptions, FindOneOptions, FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm';
+import { FindManyOptions, FindOneOptions, FindOptionsWhere, Repository } from 'typeorm';
+import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
 
-export class RepositoryBase<Entity extends ObjectLiteral> implements IRepositoryBase<Entity> {
+export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | CompositeIdEntityType>>
+  implements IRepositoryBase<Entity>
+{
   protected readonly repository: Repository<Entity>;
 
-  constructor(
-    protected readonly repo: Repository<Entity>
-  ) {
+  constructor(protected readonly repo: Repository<Entity>) {
     this.repository = repo;
   }
 
@@ -27,8 +28,11 @@ export class RepositoryBase<Entity extends ObjectLiteral> implements IRepository
     return await this.repository.save(item);
   }
 
-  public async update(id: string, item: Entity): Promise<boolean> {
-    const updateResult = await this.repository.update(id, item);
+  public async update(id: Entity['id'], item: Entity): Promise<boolean> {
+    // Handles Compound Primary keys as well as simple Primary keys
+    const whereCondition = typeof id === 'object' ? id : { id };
+
+    const updateResult = await this.repository.update(whereCondition as FindOptionsWhere<Entity>, item);
 
     return (updateResult.affected || 0) > 0;
   }

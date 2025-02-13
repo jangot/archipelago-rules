@@ -1,10 +1,11 @@
-import { DynamicModule, Global, HttpException, Logger } from '@nestjs/common';
+import { DynamicModule, Global, Logger } from '@nestjs/common';
 import { SharedService } from './shared.service';
 import { CqrsModule, EventBus } from '@nestjs/cqrs';
 import { v4 as uuidv4 } from 'uuid';
 import { LoggerModule, Params } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MiddlewareConfigProxy } from '@nestjs/common/interfaces';
+import { getPinoTransports } from './pino.transport.config';
 
 @Global()
 export class SharedModule {
@@ -23,18 +24,11 @@ export class SharedModule {
           useFactory: async (configService: ConfigService): Promise<Params> => {
             return {
               pinoHttp: {
+                autoLogging: false,
                 level: configService.get('LOG_LEVEL') || 'debug',
                 genReqId: (request) => request.headers['x-correlation-id'] || uuidv4(),
                 transport: {
-                  target: 'pino-pretty',
-                  options: {
-                    colorize: configService.get('COLORIZE_LOGS') === 'true',
-                    singleLine: true,
-                    levelFirst: false,
-                    translateTime: "yyyy-mm-dd'T'HH:MM:ss'Z'",
-                    ignore: 'pid,hostname,res,responseTime,req.query,req.params,req.headers,req.body,req.route,req.host,req.remoteAddress,req.remotePort',
-                    errorLikeObjectKeys: ['err', 'error'],
-                  },
+                  targets: getPinoTransports(configService),
                 },
               },
               forRoutes: ['*path', ...additionalRoutes], // Allow additional routes
@@ -42,11 +36,13 @@ export class SharedModule {
           },
         }),
       ],
+      // eslint-disable-next-line prettier/prettier
       providers: [
         EventBus,
         Logger,        
         SharedService
       ],
+      // eslint-disable-next-line prettier/prettier
       exports: [
         EventBus,
         LoggerModule,

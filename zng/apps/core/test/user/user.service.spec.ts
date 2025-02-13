@@ -8,6 +8,7 @@ import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from 'app
 
 describe('UserService', () => {
   let service: UsersService;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let dataService: IDataService;
 
   const mockDataService = {
@@ -22,10 +23,7 @@ describe('UserService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UsersService,
-        { provide: IDataService, useValue: mockDataService },
-      ],
+      providers: [UsersService, { provide: IDataService, useValue: mockDataService }],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
@@ -89,7 +87,12 @@ describe('UserService', () => {
 
   describe('createUser', () => {
     it('should create a new user', async () => {
-      const createUserDto: UserCreateRequestDto = { email: 'test@test.com', phoneNumber: '1234567890', firstName: 'Test', lastName: 'User' };
+      const createUserDto: UserCreateRequestDto = {
+        email: 'test@test.com',
+        phoneNumber: '1234567890',
+        firstName: 'Test',
+        lastName: 'User',
+      };
       const user = { id: v4(), ...createUserDto } as ApplicationUser;
       mockDataService.users.create.mockResolvedValue(user);
 

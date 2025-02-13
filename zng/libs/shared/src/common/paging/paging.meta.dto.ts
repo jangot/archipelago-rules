@@ -25,11 +25,11 @@ export class PagingMetaDto implements IPagingMeta {
   totalCount: number;
 
   // Will copy over PageOptionsDto and derived class values added to it
-  @ApiProperty({type: PagingOptionsDto})
+  @ApiProperty({ type: PagingOptionsDto })
   public previousPage?: IPagingOptions = null;
 
   // Will copy over PageOptionsDto and derived class values added to it
-  @ApiProperty({type: PagingOptionsDto})
+  @ApiProperty({ type: PagingOptionsDto })
   public nextPage?: IPagingOptions = null;
 
   constructor({ pageOptions, currentCount, totalCount }: IPageMetaParameters) {
