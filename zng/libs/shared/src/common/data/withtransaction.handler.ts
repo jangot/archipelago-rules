@@ -15,12 +15,9 @@ import { runOnTransactionCommit, runOnTransactionRollback } from 'typeorm-transa
  * @param logger - Optional Logger if you want more logs to parse through
  * @returns A promise that resolves on commit and rejects on rollback or error.
  */
-export async function withTransactionHandler<T>(
-  transactionalFunction: () => Promise<T>,
-  logger?: Logger
-): Promise<T> {
+export async function withTransactionHandler<T>(transactionalFunction: () => Promise<T>, logger?: Logger): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    (async () => {
+    void (async () => {
       try {
         const result = await transactionalFunction();
 
@@ -36,7 +33,7 @@ export async function withTransactionHandler<T>(
           logger?.error('Transaction rolled back', error);
           reject(error);
         });
-        
+
         // I don't think this is necessary, but it's here for completeness
         // runOnTransactionComplete((error) => {
         //   logger?.debug('Transaction completed');

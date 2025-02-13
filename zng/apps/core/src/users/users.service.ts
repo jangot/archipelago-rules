@@ -10,9 +10,7 @@ export class UsersService {
   // Creating a Logger like this sets the Context, which will log the class name with the Log entries
   private readonly logger: Logger = new Logger(UsersService.name);
 
-  constructor(
-    private readonly dataService: IDataService,
-  ) { }
+  constructor(private readonly dataService: IDataService) {}
 
   // I don't want the Service classes to throw Exceptions if a User isn't found.
   // I would prefer to have the Controller or any other consumer determine if not finding
@@ -24,7 +22,7 @@ export class UsersService {
   public async getUserById(id: string): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserById: Getting User by Id: ${id}`);
 
-    const result = await this.dataService.users.findOneBy({id});
+    const result = await this.dataService.users.findOneBy({ id });
 
     return result ? plainToClass(UserResponseDto, result, { excludeExtraneousValues: true }) : null;
   }
@@ -35,7 +33,7 @@ export class UsersService {
   public async getUserByEmail(email: string): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserByEmail: Getting User by Email: ${email}`);
 
-    const result = await this.dataService.users.findOneBy({email});
+    const result = await this.dataService.users.findOneBy({ email });
 
     return result ? plainToClass(UserResponseDto, result, { excludeExtraneousValues: true }) : null;
   }
@@ -43,13 +41,16 @@ export class UsersService {
   public async getUserByPhoneNumber(phoneNumber: string): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserByPhoneNumber: Getting User by Phone Number: ${phoneNumber}`);
 
-    const result = await this.dataService.users.findOneBy({phoneNumber});
+    const result = await this.dataService.users.findOneBy({ phoneNumber });
 
     return result ? plainToClass(UserResponseDto, result, { excludeExtraneousValues: true }) : null;
   }
 
   public async createUser(input: UserCreateRequestDto): Promise<UserResponseDto | null> {
     this.logger.debug(`createUser: Creating User: ${input.email}`);
+
+    // Hack for now
+    this.fixUpUserPhoneNumber(input);
 
     // TODO: Do we really want to assign id here instead of Database?
     // If service will generate uuid then we keep full control support for tests cases with pre-defined ids
@@ -59,7 +60,10 @@ export class UsersService {
 
   public async updateUser(input: UserUpdateRequestDto): Promise<boolean> {
     this.logger.debug(`updateUser: Updating User: ${input.id}`);
-    
+
+    // Hack for now
+    this.fixUpUserPhoneNumber(input);
+
     // TODO: Update method requires separate 'id' and 'ApplicationUser' object which already contain this
     // Also 'update' method gets 'ApplicationUser' where all fields are required, while update should support partial (up to one field) updates, isnt it?
     // So here is a point where we should decide what way we will choose:
@@ -69,5 +73,12 @@ export class UsersService {
     const { id } = input;
     const result = await this.dataService.users.update(id, { ...input } as ApplicationUser); // for sure we should avoid 'as' casts everywhere
     return result;
+  }
+
+  private fixUpUserPhoneNumber(user: { phoneNumber?: string; normalizedPhoneNumber?: string }) {
+    if (user.phoneNumber) {
+      user.phoneNumber = user.normalizedPhoneNumber;
+      delete user.normalizedPhoneNumber;
+    }
   }
 }

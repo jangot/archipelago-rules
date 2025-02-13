@@ -1,4 +1,4 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IDataService } from './idata.service';
 import { IUserRepository, ILoanRepository } from './repository/interfaces';
 
@@ -11,7 +11,7 @@ export class DataService implements IDataService {
     @Inject(IUserRepository)
     private readonly userRepository: IUserRepository,
     @Inject(ILoanRepository)
-    private readonly loanRepository: ILoanRepository,
+    private readonly loanRepository: ILoanRepository
   ) {
     this.users = userRepository;
     this.loans = loanRepository;

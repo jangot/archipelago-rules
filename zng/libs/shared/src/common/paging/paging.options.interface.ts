@@ -8,8 +8,8 @@
 import { PagingOrder } from './paging.order.constants';
 
 export interface IPagingOptions {
-    order?: PagingOrder;
-    orderBy?: string;
-    offset?: number;
-    limit?: number;
+  order?: PagingOrder;
+  orderBy?: string;
+  offset?: number;
+  limit?: number;
 }

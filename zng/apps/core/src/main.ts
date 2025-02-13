@@ -19,22 +19,22 @@ import { initializeTransactionalContext, StorageDriver } from 'typeorm-transacti
 async function bootstrap() {
   // It is required to initialize the  TypeORM Transactional Context before application creation and initialization
   // StorageDriver mode: https://github.com/Aliheym/typeorm-transactional?tab=readme-ov-file#storage-driver
-  initializeTransactionalContext({ storageDriver: StorageDriver.AUTO});  
+  initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
 
-  const app = await NestFactory.create(CoreModule, {abortOnError: true});
+  const app = await NestFactory.create(CoreModule, { abortOnError: true });
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
 
   const { httpAdapter } = app.get(HttpAdapterHost);
-  //app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
 
   app.useLogger(app.get(Logger));
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
   app.setGlobalPrefix('/api/core');
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true
-    }),
+      transform: true,
+    })
   );
 
   configureSwagger(app);
@@ -55,17 +55,14 @@ function configureSwagger(app: INestApplication<any>) {
     .setVersion('1.0')
     .addTag('ZNG Core API')
     .build();
-  
-    const options: SwaggerDocumentOptions =  {
-        operationIdFactory: (
-          controllerKey: string,
-          methodKey: string
-        ) => methodKey
-    };
 
-    const document = SwaggerModule.createDocument(app, config, options);
-      
-    SwaggerModule.setup('api/core/docs', app, document);
+  const options: SwaggerDocumentOptions = {
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+  };
+
+  const document = SwaggerModule.createDocument(app, config, options);
+
+  SwaggerModule.setup('api/core/docs', app, document);
 }
 
-bootstrap();
+void bootstrap();

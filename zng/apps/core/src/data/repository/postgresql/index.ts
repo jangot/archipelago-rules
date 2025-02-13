@@ -7,5 +7,5 @@ export * from './loan.repository';
 
 export const CustomCoreRepositories = [
   { provide: IUserRepository, useClass: UserRepository },
-  { provide: ILoanRepository, useClass: LoanRepository}
+  { provide: ILoanRepository, useClass: LoanRepository },
 ];

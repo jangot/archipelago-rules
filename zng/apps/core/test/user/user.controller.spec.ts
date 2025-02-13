@@ -35,7 +35,13 @@ describe('UserController', () => {
   describe('getUserById', () => {
     it('should return a user by id', async () => {
       const userId = '1';
-      const userResponse: UserResponseDto = { id: userId, email: 'test@test.com', phoneNumber: '1234567890', firstName: 'Test', lastName: 'User' };
+      const userResponse: UserResponseDto = {
+        id: userId,
+        email: 'test@test.com',
+        phoneNumber: '1234567890',
+        firstName: 'Test',
+        lastName: 'User',
+      };
       jest.spyOn(service, 'getUserById').mockResolvedValue(userResponse);
 
       const result = await controller.getUserById(userId);
@@ -47,10 +53,16 @@ describe('UserController', () => {
   describe('getUserByEmail', () => {
     it('should return a user by email', async () => {
       const email = 'test@test.com';
-      const userResponse: UserResponseDto = { id: '1', email, phoneNumber: '1234567890', firstName: 'Test', lastName: 'User' };
+      const userResponse: UserResponseDto = {
+        id: '1',
+        email,
+        phoneNumber: '1234567890',
+        firstName: 'Test',
+        lastName: 'User',
+      };
       jest.spyOn(service, 'getUserByEmail').mockResolvedValue(userResponse);
 
-      const result = await controller.getUserByParameter({email});
+      const result = await controller.getUserByParameter({ email });
       expect(result).toEqual(userResponse);
       expect(service.getUserByEmail).toHaveBeenCalledWith(email);
     });
@@ -59,10 +71,16 @@ describe('UserController', () => {
   describe('getUserByPhoneNumber', () => {
     it('should return a user by phone number', async () => {
       const phoneNumber = '1234567890';
-      const userResponse: UserResponseDto = { id: '1', email: 'test@test.com', phoneNumber, firstName: 'Test', lastName: 'User' };
+      const userResponse: UserResponseDto = {
+        id: '1',
+        email: 'test@test.com',
+        phoneNumber,
+        firstName: 'Test',
+        lastName: 'User',
+      };
       jest.spyOn(service, 'getUserByPhoneNumber').mockResolvedValue(userResponse);
 
-      const result = await controller.getUserByParameter({phoneNumber});
+      const result = await controller.getUserByParameter({ phoneNumber });
       expect(result).toEqual(userResponse);
       expect(service.getUserByPhoneNumber).toHaveBeenCalledWith(phoneNumber);
     });
@@ -70,8 +88,19 @@ describe('UserController', () => {
 
   describe('createUser', () => {
     it('should create a new user', async () => {
-      const userCreateDto: UserCreateRequestDto = { email: 'test@test.com', phoneNumber: '1234567890', firstName: 'Test', lastName: 'User' };
-      const userResponse: UserResponseDto = { id: '1', email: 'test@test.com', phoneNumber: '1234567890', firstName: 'Test', lastName: 'User' };
+      const userCreateDto: UserCreateRequestDto = {
+        email: 'test@test.com',
+        phoneNumber: '1234567890',
+        firstName: 'Test',
+        lastName: 'User',
+      };
+      const userResponse: UserResponseDto = {
+        id: '1',
+        email: 'test@test.com',
+        phoneNumber: '1234567890',
+        firstName: 'Test',
+        lastName: 'User',
+      };
       jest.spyOn(service, 'createUser').mockResolvedValue(userResponse);
 
       const result = await controller.createUser(userCreateDto);

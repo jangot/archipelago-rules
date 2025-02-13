@@ -17,22 +17,19 @@ import { SharedModule } from '@library/shared';
 import { CoreModules } from './index.modules';
 
 @Module({
-  imports: [    
-    ConfigModule.forRoot({isGlobal: true}),
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     GracefulShutdownModule.forRoot(),
     // Bring in Shared stuff like EventBus, pino Logger properly configured, more to follow
-    SharedModule.forRoot([CoreController]), 
+    SharedModule.forRoot([CoreController]),
     HealthModule,
-    ...CoreModules // Add Core specific Modules here, and they will automatically get imported
+    ...CoreModules, // Add Core specific Modules here, and they will automatically get imported
   ],
   controllers: [CoreController],
   providers: [CoreService, Logger],
 })
-
-export class CoreModule implements NestModule{
+export class CoreModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(LoggerMiddleware)
-      .forRoutes('*path', CoreController);
+    consumer.apply(LoggerMiddleware).forRoutes('*path', CoreController);
   }
 }

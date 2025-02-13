@@ -23,7 +23,7 @@ export class HealthController {
   check() {
     return this.health.check([
       () => this.http.pingCheck('dns', 'https://1.1.1.1'),
-      () => this.db.pingCheck('database')
-    ])
+      () => this.db.pingCheck('database'),
+    ]);
   }
 }
