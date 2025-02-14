@@ -231,4 +231,85 @@ describe('UsersService Integration Tests', () => {
       expect(result).toBe(false);
     });
   });
+
+  describe('partialUpdateUser', () => {
+    it('should partially update a user ignoring undefined fields', async () => {
+      // Simulate controller-level behaviour for phone number normalization
+      const phoneNumber = '+12124567891';
+      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
+
+      const mockUser: UserCreateRequestDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        phoneNumber,
+        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
+      };
+
+      const creationResult = await service.createUser(mockUser);
+
+      const updateUserDto: UserUpdateRequestDto = {
+        id: creationResult.id,
+        firstName: 'Jane',
+        lastName: undefined,
+        email: undefined,
+        phoneNumber: undefined,
+        normalizedPhoneNumber: undefined,
+      };
+
+      const result = await service.updateUser(updateUserDto);
+      expect(result).toBe(true);
+
+      const updatedUser = await service.getUserById(creationResult.id);
+      expect(updatedUser).toEqual({
+        id: creationResult.id,
+        firstName: updateUserDto.firstName,
+        lastName: creationResult.lastName,
+        email: creationResult.email,
+        phoneNumber: creationResult.phoneNumber,
+      });
+    });
+
+    // This case shows current behavior of update method for TypeORM
+    // Highlights:
+    // - If a field is provided as undefined, it wont be updated (keeps prev value)
+    // - !! If a field is provided as falsy value (e.g. empty string for string type), it will be updated to falsy value
+    // - !!! TypeORM ignores the fact that indexed fields might be wiped to falsy values - we need protect data here
+    it('wipes values if falsy ones provided for fields', async () => {
+      // Simulate controller-level behaviour for phone number normalization
+      const phoneNumber = '+12124567891';
+      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
+
+      const mockUser: UserCreateRequestDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        phoneNumber,
+        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
+      };
+
+      const creationResult = await service.createUser(mockUser);
+
+      const updateUserDto: UserUpdateRequestDto = {
+        id: creationResult.id,
+        firstName: 'Jane',
+        lastName: '',
+        email: '',
+        phoneNumber: undefined,
+        normalizedPhoneNumber: undefined,
+      };
+
+      const result = await service.updateUser(updateUserDto);
+      expect(result).toBe(true);
+
+      const updatedUser = await service.getUserById(creationResult.id);
+      expect(updatedUser).toEqual({
+        id: creationResult.id,
+        firstName: updateUserDto.firstName,
+        lastName: '',
+        email: '',
+        phoneNumber: creationResult.phoneNumber,
+      });
+    });
+  });
 });
