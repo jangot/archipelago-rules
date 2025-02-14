@@ -46,7 +46,7 @@ export default [
 
       parserOptions: {
         project: 'tsconfig.json',
-        tsconfigRootDir: '/Users/mleduc/work/zirtue/zirtue-next-gen-platform/zng',
+        tsconfigRootDir: __dirname,
       },
     },
 
