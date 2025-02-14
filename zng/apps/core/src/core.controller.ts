@@ -6,8 +6,9 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { CoreService } from './core.service';
+import { ApiQuery } from '@nestjs/swagger';
 
 @Controller()
 export class CoreController {
@@ -15,7 +16,10 @@ export class CoreController {
 
   // Need to turn this into an Integration test!!!
   @Get('transactional')
-  public async transactional(): Promise<void> {
-    return await this.coreService.transactionalTest();
+  @ApiQuery({ name: 'shouldFail', required: false, description: 'Should this crash or not?' })
+  public async transactional(@Query('shouldFail') shouldFail: boolean): Promise<{ message: string }> {
+    const result = await this.coreService.transactionalTest(shouldFail);
+
+    return { message: result ? 'Transaction committed' : 'Transaction rolled back' };
   }
 }

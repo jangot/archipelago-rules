@@ -22,10 +22,11 @@ export class SharedModule {
           imports: [ConfigModule],
           inject: [ConfigService],
           useFactory: async (configService: ConfigService): Promise<Params> => {
+            const logLevel = configService.get('LOG_LEVEL');
             return {
               pinoHttp: {
                 autoLogging: false,
-                level: configService.get('LOG_LEVEL') || 'debug',
+                level: logLevel || 'debug',
                 genReqId: (request) => request.headers['x-correlation-id'] || uuidv4(),
                 transport: {
                   targets: getPinoTransports(configService),
