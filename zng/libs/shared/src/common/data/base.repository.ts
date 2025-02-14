@@ -11,6 +11,14 @@ import { IRepositoryBase } from './ibase.repository';
 import { FindManyOptions, FindOneOptions, FindOptionsWhere, Repository } from 'typeorm';
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
 
+/**
+ * RepositoryBase class
+ *
+ * @export
+ * @class RepositoryBase
+ * @implements {IRepositoryBase<Entity>}
+ * @template Entity - must support Primary keys (either singular and named id, or composite)
+ */
 export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | CompositeIdEntityType>>
   implements IRepositoryBase<Entity>
 {
@@ -30,9 +38,9 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
 
   public async update(id: Entity['id'], item: Entity): Promise<boolean> {
     // Handles Compound Primary keys as well as simple Primary keys
-    const whereCondition = typeof id === 'object' ? id : { id };
+    const whereCondition = this.normalizedIdWhereCondition(id);
 
-    const updateResult = await this.repository.update(whereCondition as FindOptionsWhere<Entity>, item);
+    const updateResult = await this.repository.update(whereCondition, item);
 
     return (updateResult.affected || 0) > 0;
   }
@@ -54,5 +62,11 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
 
   public async findBy(where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[]): Promise<Entity[]> {
     return await this.repository.findBy(where);
+  }
+
+  protected normalizedIdWhereCondition(id: Entity['id']): FindOptionsWhere<Entity> {
+    const whereCondition = typeof id === 'object' ? id : { id };
+
+    return whereCondition as FindOptionsWhere<Entity>;
   }
 }

@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IDataService } from '../data/idata.service';
-import { plainToClass } from 'class-transformer';
 import { ApplicationUser } from '../data/entity';
 import { v4 } from 'uuid';
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
+import { EntityMapper } from '@library/entity/mapping/entity.mapper';
+import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 
 @Injectable()
 export class UsersService {
@@ -23,8 +24,9 @@ export class UsersService {
     this.logger.debug(`getUserById: Getting User by Id: ${id}`);
 
     const result = await this.dataService.users.findOneBy({ id });
+    const dtoResult = DtoMapper.toDto(result, UserResponseDto);
 
-    return result ? plainToClass(UserResponseDto, result, { excludeExtraneousValues: true }) : null;
+    return dtoResult;
   }
 
   // Need to expose a more generic 'Search' method on the Repository
@@ -34,16 +36,18 @@ export class UsersService {
     this.logger.debug(`getUserByEmail: Getting User by Email: ${email}`);
 
     const result = await this.dataService.users.findOneBy({ email });
+    const dtoResult = DtoMapper.toDto(result, UserResponseDto);
 
-    return result ? plainToClass(UserResponseDto, result, { excludeExtraneousValues: true }) : null;
+    return dtoResult;
   }
 
   public async getUserByPhoneNumber(phoneNumber: string): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserByPhoneNumber: Getting User by Phone Number: ${phoneNumber}`);
 
     const result = await this.dataService.users.findOneBy({ phoneNumber });
+    const dtoResult = DtoMapper.toDto(result, UserResponseDto);
 
-    return result ? plainToClass(UserResponseDto, result, { excludeExtraneousValues: true }) : null;
+    return dtoResult;
   }
 
   public async createUser(input: UserCreateRequestDto): Promise<UserResponseDto | null> {
@@ -52,10 +56,14 @@ export class UsersService {
     // Hack for now
     this.fixUpUserPhoneNumber(input);
 
+    const user = EntityMapper.toEntity(input, ApplicationUser);
+    user.id = v4();
     // TODO: Do we really want to assign id here instead of Database?
     // If service will generate uuid then we keep full control support for tests cases with pre-defined ids
-    const result = await this.dataService.users.create({ ...input, id: v4() });
-    return result ? plainToClass(UserResponseDto, result, { excludeExtraneousValues: true }) : null;
+    const result = await this.dataService.users.create(user);
+    const dtoResult = DtoMapper.toDto(result, UserResponseDto);
+
+    return dtoResult;
   }
 
   public async updateUser(input: UserUpdateRequestDto): Promise<boolean> {
@@ -70,8 +78,8 @@ export class UsersService {
     // - change base 'update' method to support partial updates (along with data validation)
     // - do updates in 'merge' way where each field goes through check 'is change provided or not' and then update
     // For me p.1 seems way easier and straightforward
-    const { id } = input;
-    const result = await this.dataService.users.update(id, { ...input } as ApplicationUser); // for sure we should avoid 'as' casts everywhere
+    const user = EntityMapper.toEntity(input, ApplicationUser);
+    const result = await this.dataService.users.update(user.id, user);
     return result;
   }
 

@@ -11,9 +11,11 @@ import { runOnTransactionCommit, runOnTransactionRollback } from 'typeorm-transa
 
 /**
  * A generic wrapper for handling commit, rollback, and completion in @Transactional methods.
- * @param transactionalFunction - The transactional function to execute.
- * @param logger - Optional Logger if you want more logs to parse through
- * @returns A promise that resolves on commit and rejects on rollback or error.
+ *
+ * @export
+ * @param {Function} transactionalFunction - The transactional function to execute.
+ * @param {Logger} [logger] - Optional Logger instance for additional logs.
+ * @returns {Promise<void>} A promise that resolves on commit and rejects on rollback or error.
  */
 export async function withTransactionHandler<T>(transactionalFunction: () => Promise<T>, logger?: Logger): Promise<T> {
   return new Promise<T>((resolve, reject) => {
