@@ -80,6 +80,21 @@ export class UsersService {
     return result;
   }
 
+  public async deleteUser(id: string): Promise<boolean> {
+    this.logger.debug(`deleteUser: Soft-Deleting User: ${id}`);
+
+    // Do soft delete as many other Entities may be referenced to this one
+    const result = await this.dataService.users.softDelete({ id });
+    return result;
+  }
+
+  public async restoreUser(id: string): Promise<boolean> {
+    this.logger.debug(`restoreUser: Restoring User: ${id}`);
+
+    const result = await this.dataService.users.restore({ id });
+    return result;
+  }
+
   private fixUpUserPhoneNumber(user: { phoneNumber?: string; normalizedPhoneNumber?: string }) {
     if (user.phoneNumber) {
       user.phoneNumber = user.normalizedPhoneNumber;

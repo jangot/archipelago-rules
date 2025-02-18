@@ -312,4 +312,70 @@ describe('UsersService Integration Tests', () => {
       });
     });
   });
+
+  describe('deleteUser', () => {
+    it('should soft delete a user', async () => {
+      // Simulate controller-level behaviour for phone number normalization
+      const phoneNumber = '+12124567891';
+      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
+
+      const mockUser: UserCreateRequestDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        phoneNumber,
+        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
+      };
+
+      const creationResult = await service.createUser(mockUser);
+
+      const deleteResult = await service.deleteUser(creationResult.id);
+      expect(deleteResult).toBe(true);
+
+      const deletedUser = await service.getUserById(creationResult.id);
+      expect(deletedUser).toBeNull();
+    });
+
+    it('should return false if user deletion fails', async () => {
+      const deleteResult = await service.deleteUser(uuidv4());
+      expect(deleteResult).toBe(false);
+    });
+  });
+
+  describe('restoreUser', () => {
+    it('should restore a soft deleted user', async () => {
+      // Simulate controller-level behaviour for phone number normalization
+      const phoneNumber = '+12124567891';
+      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
+
+      const mockUser: UserCreateRequestDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        phoneNumber,
+        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
+      };
+
+      const creationResult = await service.createUser(mockUser);
+
+      await service.deleteUser(creationResult.id);
+
+      const restoreResult = await service.restoreUser(creationResult.id);
+      expect(restoreResult).toBe(true);
+
+      const restoredUser = await service.getUserById(creationResult.id);
+      expect(restoredUser).toEqual({
+        id: creationResult.id,
+        firstName: mockUser.firstName,
+        lastName: mockUser.lastName,
+        email: mockUser.email,
+        phoneNumber: mockUser.phoneNumber,
+      });
+    });
+
+    it('should return false if user restoration fails', async () => {
+      const restoreResult = await service.restoreUser(uuidv4());
+      expect(restoreResult).toBe(false);
+    });
+  });
 });

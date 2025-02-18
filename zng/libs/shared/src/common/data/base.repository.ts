@@ -67,6 +67,7 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
   public async delete(
     criteria: string | number | FindOptionsWhere<Entity> | Date | ObjectId | string[] | number[] | Date[] | ObjectId[]
   ): Promise<boolean> {
+    // TODO: Should we have separated delete and deleteMany?
     const deleteResult = await this.repository.delete(criteria);
     return this.actionResult(deleteResult);
   }
