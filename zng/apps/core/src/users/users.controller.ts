@@ -1,4 +1,4 @@
-import { Controller, HttpException, HttpStatus, Logger, Query } from '@nestjs/common';
+import { Controller, Delete, HttpException, HttpStatus, Logger, Patch, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { Get, Post, Put, Param, Body } from '@nestjs/common';
 import {
@@ -91,7 +91,7 @@ export class UsersController {
   @ApiOkResponse({ description: 'Updated existing User', type: UserResponseDto, isArray: false })
   @ApiBadRequestResponse({ description: 'Invalid User data payload provided', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  @Put()
+  @Patch()
   public async updateUser(@Body() user: UserUpdateRequestDto): Promise<boolean> {
     // Validate phoneNumber separately here as we don't want to require the User to have to
     // enter this in the exact right way we are looking for.
@@ -101,5 +101,35 @@ export class UsersController {
     user.normalizedPhoneNumber = normalizedPhoneResult?.phoneNumber ?? undefined;
 
     return await this.userService.updateUser(user);
+  }
+
+  @ApiParam({ name: 'id', required: true, description: 'User id' })
+  @ApiOkResponse({ description: 'Deleted User', type: Boolean, isArray: false })
+  @ApiBadRequestResponse({ description: 'Invalid Id', isArray: false })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
+  @Delete(':id')
+  public async deleteUser(@Param('id') id: string): Promise<boolean> {
+    const result = await this.userService.deleteUser(id);
+
+    if (!result) {
+      throw new HttpException('User not found', HttpStatus.NO_CONTENT);
+    }
+
+    return result;
+  }
+
+  @ApiParam({ name: 'id', required: true, description: 'User id' })
+  @ApiOkResponse({ description: 'Restored User', type: Boolean, isArray: false })
+  @ApiBadRequestResponse({ description: 'Invalid Id', isArray: false })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
+  @Put('restore/:id')
+  public async restoreUser(@Param('id') id: string): Promise<boolean> {
+    const result = await this.userService.restoreUser(id);
+
+    if (!result) {
+      throw new HttpException('User not found', HttpStatus.NO_CONTENT);
+    }
+
+    return result;
   }
 }
