@@ -4,7 +4,7 @@ import { ApplicationUser } from '../data/entity';
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
-import { SearchFiler } from '@library/shared/common/search/search-query';
+import { SearchFilter } from '@library/shared/common/search/search-query';
 import { v4 } from 'uuid';
 
 @Injectable()
@@ -99,7 +99,7 @@ export class UsersService {
     return result;
   }
 
-  public async search(filters: SearchFiler[]): Promise<UserResponseDto[]> {
+  public async search(filters: SearchFilter[]): Promise<UserResponseDto[]> {
     this.logger.debug(`search: Searching for Users with filters: ${filters}`);
 
     const result = await this.dataService.users.search(filters);

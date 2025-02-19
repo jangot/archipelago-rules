@@ -5,7 +5,7 @@ export type FieldType = string | number | boolean | Date;
 /**
  * Represents a search filter used in a query.
  */
-export interface SearchFiler {
+export interface SearchFilter {
   /**
    * The name of the field to filter on.
    */
@@ -33,9 +33,9 @@ export interface SearchFiler {
  *
  * @template T - The type of the field value, which extends `FieldType`.
  *
- * @extends SearchFiler
+ * @extends SearchFilter
  */
-export interface BaseSearchCondition<T extends FieldType> extends SearchFiler {
+export interface BaseSearchCondition<T extends FieldType> extends SearchFilter {
   /**
    * The operator to apply to the field value.
    */

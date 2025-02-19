@@ -1,4 +1,4 @@
-import { SearchFiler } from './search-query';
+import { SearchFilter } from './search-query';
 import { SingleValueOperator, MultiValueOperator } from './value-operator';
 import {
   And,
@@ -21,14 +21,14 @@ import {
  * Builds a search query object based on the provided filters.
  *
  * @template Entity - The type of the entity for which the search query is being built.
- * @param {SearchFiler[]} filters - An array of search filters to apply.
+ * @param {SearchFilter[]} filters - An array of search filters to apply.
  * @returns {FindOptionsWhere<Entity>} - The constructed search query object.
  *
  * @remarks
  * This function groups the filters by their field and then maps each group to the appropriate query condition.
  * If a field has multiple filters, they are combined using an `And` condition.
  */
-export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFiler[]): FindOptionsWhere<Entity> {
+export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFilter[]): FindOptionsWhere<Entity> {
   // TODO: Make field existance and relation to Entity check on DTO's (?) layer
   const fieldGroups = filters.reduce(
     (groups, filter) => {
@@ -36,7 +36,7 @@ export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFi
       groups[filter.field].push(filter);
       return groups;
     },
-    {} as Record<string, SearchFiler[]>
+    {} as Record<string, SearchFilter[]>
   );
 
   const searchQuery = {};
@@ -57,7 +57,7 @@ export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFi
 /**
  * Maps a given filter to a corresponding TypeORM `FindOperator`.
  *
- * @param {SearchFiler} filter - The filter object containing the operator and value to be mapped.
+ * @param {SearchFilter} filter - The filter object containing the operator and value to be mapped.
  * @param {SingleValueOperator | MultiValueOperator} filter.operator - The operator to be used for filtering.
  * @param {unknown} filter.value - The value to be used with the operator.
  * @param {boolean} [filter.reverse] - Optional flag to reverse the filter condition.
@@ -72,7 +72,7 @@ export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFi
  * @typedef {('EQUALS' | 'GREATER_THAN' | 'GREATER_THAN_OR_EQUAL' | 'LESS_THAN' | 'LESS_THAN_OR_EQUAL' | 'IN' | 'LIKE' | 'EMPTY')} SingleValueOperator
  * @typedef {('BETWEEN')} MultiValueOperator
  */
-function mapFilter(filter: SearchFiler): FindOperator<unknown> {
+function mapFilter(filter: SearchFilter): FindOperator<unknown> {
   const { operator, value } = filter;
   let mappedOperator: FindOperator<unknown>;
   switch (operator) {

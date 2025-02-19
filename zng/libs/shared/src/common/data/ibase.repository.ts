@@ -8,7 +8,7 @@
 
 import { FindManyOptions, FindOneOptions, FindOptionsWhere, ObjectId, RemoveOptions } from 'typeorm';
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
-import { SearchFiler } from '../search/search-query';
+import { SearchFilter } from '../search/search-query';
 
 /**
  * Base Repository interface
@@ -148,9 +148,9 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
   /**
    * Searches for entities that match the given filters.
    *
-   * @param {SearchFiler[]} filters - Search filters for finding the entities.
+   * @param {SearchFilter[]} filters - Search filters for finding the entities.
    * @returns {Promise<Entity[]>} A promise resolving to an array of Entities, could be empty.
    * @memberof IRepositoryBase
    */
-  search(filters: SearchFiler[]): Promise<Entity[]>;
+  search(filters: SearchFilter[]): Promise<Entity[]>;
 }
