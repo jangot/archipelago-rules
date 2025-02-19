@@ -10,6 +10,8 @@ import { DEFAULT_PAGING_LIMIT } from '../paging/paging.order.constants';
 import { IRepositoryBase } from './ibase.repository';
 import { DeleteResult, FindManyOptions, FindOneOptions, FindOptionsWhere, ObjectId, RemoveOptions, Repository, UpdateResult } from 'typeorm';
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
+import { SearchFiler } from '../search/search-query';
+import { buildSearchQuery } from '../search/entity-search-query';
 
 /**
  * RepositoryBase class
@@ -94,6 +96,12 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
   ): Promise<boolean> {
     const restoreResult = await this.repository.restore(criteria);
     return this.actionResult(restoreResult);
+  }
+
+  public async search(filters: SearchFiler[]): Promise<Entity[]> {
+    const searchQuery = buildSearchQuery<Entity>(filters);
+    const result = await this.repository.find({ where: searchQuery });
+    return result;
   }
 
   protected normalizedIdWhereCondition(id: Entity['id']): FindOptionsWhere<Entity> {
