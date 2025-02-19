@@ -8,6 +8,7 @@ import { UsersModule } from '../../src/users/users.module';
 import { UsersService } from '../../src/users/users.service';
 import phone from 'phone';
 import { IBackup } from 'pg-mem';
+import { MultiValueOperator, SingleValueOperator } from '@library/shared/common/search';
 
 describe('UsersService Integration Tests', () => {
   let module: TestingModule;
@@ -310,6 +311,139 @@ describe('UsersService Integration Tests', () => {
         email: '',
         phoneNumber: creationResult.phoneNumber,
       });
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should soft delete a user', async () => {
+      // Simulate controller-level behaviour for phone number normalization
+      const phoneNumber = '+12124567891';
+      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
+
+      const mockUser: UserCreateRequestDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        phoneNumber,
+        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
+      };
+
+      const creationResult = await service.createUser(mockUser);
+
+      const deleteResult = await service.deleteUser(creationResult.id);
+      expect(deleteResult).toBe(true);
+
+      const deletedUser = await service.getUserById(creationResult.id);
+      expect(deletedUser).toBeNull();
+    });
+
+    it('should return false if user deletion fails', async () => {
+      const deleteResult = await service.deleteUser(uuidv4());
+      expect(deleteResult).toBe(false);
+    });
+  });
+
+  describe('restoreUser', () => {
+    it('should restore a soft deleted user', async () => {
+      // Simulate controller-level behaviour for phone number normalization
+      const phoneNumber = '+12124567891';
+      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
+
+      const mockUser: UserCreateRequestDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        phoneNumber,
+        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
+      };
+
+      const creationResult = await service.createUser(mockUser);
+
+      await service.deleteUser(creationResult.id);
+
+      const restoreResult = await service.restoreUser(creationResult.id);
+      expect(restoreResult).toBe(true);
+
+      const restoredUser = await service.getUserById(creationResult.id);
+      expect(restoredUser).toEqual({
+        id: creationResult.id,
+        firstName: mockUser.firstName,
+        lastName: mockUser.lastName,
+        email: mockUser.email,
+        phoneNumber: mockUser.phoneNumber,
+      });
+    });
+
+    it('should return false if user restoration fails', async () => {
+      const restoreResult = await service.restoreUser(uuidv4());
+      expect(restoreResult).toBe(false);
+    });
+  });
+
+  describe('search', () => {
+    it('should return users matching the search criteria', async () => {
+      const users = [
+        { firstName: 'Alice', lastName: 'Smith', email: 'alice.smith@example.com', phoneNumber: '+12124567890' },
+        { firstName: 'Bob', lastName: 'Davis', email: 'bob.davis@example.com', phoneNumber: '+12124567891' },
+        { firstName: 'Charlie', lastName: 'Davis', email: 'charlie.davis@example.com', phoneNumber: '+12124567892' },
+        { firstName: 'David', lastName: 'Evans', email: 'david.evans@example.com', phoneNumber: '+12124567893' },
+        { firstName: 'Eve', lastName: 'Foster', email: 'eve.foster@example.com', phoneNumber: '+12124567894' },
+      ];
+
+      for (const user of users) {
+        const normalizedPhoneNumber = phone(user.phoneNumber, { country: 'USA' });
+        await service.createUser({ ...user, normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber });
+      }
+
+      // EQ
+      const equalsFilters = [{ field: 'firstName', operator: SingleValueOperator.EQUALS, value: 'Alice' }];
+      const equalsResult = await service.search(equalsFilters);
+
+      expect(equalsResult).toHaveLength(1);
+      expect(equalsResult[0].firstName).toBe('Alice');
+
+      // ILIKE (Case-insensitive LIKE)
+      const likeFilters = [{ field: 'email', operator: SingleValueOperator.LIKE, value: 'davis' }];
+      const likeResult = await service.search(likeFilters);
+
+      expect(likeResult).toHaveLength(2);
+      expect(likeResult.map((r) => r.firstName)).toEqual(['Bob', 'Charlie']);
+
+      // NOT EQ
+      const notEqualsFilters = [
+        { field: 'lastName', operator: SingleValueOperator.EQUALS, reverse: true, value: 'Davis' },
+      ];
+      const notEqualsResult = await service.search(notEqualsFilters);
+
+      expect(notEqualsResult).toHaveLength(3);
+
+      // MORE THAN EQ
+      const moreThanFilters = [
+        { field: 'phoneNumber', operator: SingleValueOperator.GREATER_THAN_OR_EQUAL, value: '+12124567892' },
+      ];
+      const moreThanResult = await service.search(moreThanFilters);
+
+      expect(moreThanResult).toHaveLength(3);
+
+      // IN
+      const inFilters = [{ field: 'firstName', operator: SingleValueOperator.IN, value: ['Alice', 'Bob'] }];
+      const inResult = await service.search(inFilters);
+
+      expect(inResult).toHaveLength(2);
+
+      // BETWEEN
+      const betweenFilter = [
+        { field: 'phoneNumber', operator: MultiValueOperator.BETWEEN, value: ['+12124567893', '+12124567894'] },
+      ];
+      const betweenResult = await service.search(betweenFilter);
+
+      expect(betweenResult).toHaveLength(2);
+
+      // EMPTY
+      const emptyFilter = [{ field: 'deletedAt', operator: SingleValueOperator.EMPTY, value: null }];
+      const emptyResult = await service.search(emptyFilter);
+
+      expect(emptyResult).toHaveLength(5);
     });
   });
 });

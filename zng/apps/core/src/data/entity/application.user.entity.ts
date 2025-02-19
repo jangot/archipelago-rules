@@ -1,5 +1,5 @@
 import { IApplicationUser } from '@library/entity/interface';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn } from 'typeorm';
 
 // Thoughts to consider
 // Should we add additional `normalized` versions of some of these fields to the Database?
@@ -24,4 +24,7 @@ export class ApplicationUser implements IApplicationUser {
 
   @Column('text')
   phoneNumber: string;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 }
