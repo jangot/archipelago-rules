@@ -26,5 +26,5 @@ export class ApplicationUser implements IApplicationUser {
   phoneNumber: string;
 
   @DeleteDateColumn()
-  deletedAt: Date;
+  deletedAt?: Date | null;
 }

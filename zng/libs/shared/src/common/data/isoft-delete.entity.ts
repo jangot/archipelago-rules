@@ -11,5 +11,5 @@
  * }
  */
 export interface ISoftDeleteEntity {
-  deletedAt: Date;
+  deletedAt?: Date | null;
 }
