@@ -12,3 +12,5 @@ export enum PagingOrder {
 }
 
 export const DEFAULT_PAGING_LIMIT = 20;
+export const DEFAULT_PAGING_ORDER = PagingOrder.ASC;
+export const DEFAULT_PAGING_ORDER_BY = 'id';

@@ -6,12 +6,12 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { DEFAULT_PAGING_LIMIT } from '../paging/paging.order.constants';
 import { AllowedCriteriaTypes, IRepositoryBase } from './ibase.repository';
 import {
   DeleteResult,
   FindManyOptions,
   FindOneOptions,
+  FindOptionsOrder,
   FindOptionsWhere,
   ObjectId,
   RemoveOptions,
@@ -20,7 +20,8 @@ import {
 } from 'typeorm';
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
 import { SearchFilter } from '../search/search-query';
-import { buildSearchQuery } from '../search/entity-search-query';
+import { buildPagingQuery, IPaging, IPagingOptions } from '../paging';
+import { buildSearchQuery } from '../search';
 
 /**
  * RepositoryBase class
@@ -64,15 +65,43 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return await this.repository.findOneBy(where);
   }
 
-  public async find(options: FindManyOptions<Entity>): Promise<Entity[]> {
-    // Apply default Paging Limit only if it is not already set
-    // As 0 is falsy for number, we need to check if it is undefined
-    if (options?.take === undefined) options = { ...options, take: DEFAULT_PAGING_LIMIT };
-    return await this.repository.find(options);
+  public async find(options: FindManyOptions<Entity>): Promise<IPaging<Entity>> {
+    // For now lets support only single field order
+    let orderKey;
+    let orderDirection;
+    if (options.order) {
+      const order = options.order as FindOptionsOrder<Entity>;
+      const orderKeys = Object.keys(order);
+      orderKey = orderKeys[0];
+      orderDirection = order[orderKey];
+    }
+    // Apply default Paging only if it is not already set
+    const searchPaging = buildPagingQuery<Entity>({
+      limit: options?.take,
+      offset: options?.skip,
+      order: orderDirection,
+      orderBy: orderKey,
+    });
+    const { skip, take } = searchPaging;
+    options = { ...options, ...searchPaging };
+    const result = await this.repository.findAndCount(options);
+    return {
+      data: result[0],
+      meta: { offset: skip, limit: take, totalCount: result[1] },
+    };
   }
 
-  public async findBy(where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[]): Promise<Entity[]> {
-    return await this.repository.findBy(where);
+  public async findBy(
+    where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    paging?: IPagingOptions
+  ): Promise<IPaging<Entity>> {
+    const searchPaging = buildPagingQuery<Entity>(paging);
+    const { skip, take } = searchPaging;
+    const result = await this.repository.findAndCount({ where, ...searchPaging });
+    return {
+      data: result[0],
+      meta: { offset: skip, limit: take, totalCount: result[1] },
+    };
   }
 
   public async delete(
@@ -112,7 +141,18 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return this.actionResult(restoreResult);
   }
 
-  public async search(filters: SearchFilter[]): Promise<Entity[]> {
+  public async search(filters: SearchFilter[], paging?: IPagingOptions): Promise<IPaging<Entity>> {
+    const searchQuery = buildSearchQuery<Entity>(filters);
+    const searchPaging = buildPagingQuery<Entity>(paging);
+    const { skip, take } = searchPaging;
+    const result = await this.repository.findAndCount({ where: searchQuery, ...searchPaging });
+    return {
+      data: result[0],
+      meta: { offset: skip, limit: take, totalCount: result[1] },
+    };
+  }
+
+  public async searchAll(filters: SearchFilter[]): Promise<Entity[]> {
     const searchQuery = buildSearchQuery<Entity>(filters);
     const result = await this.repository.find({ where: searchQuery });
     return result;

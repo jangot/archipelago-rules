@@ -8,7 +8,8 @@
 
 import { FindManyOptions, FindOneOptions, FindOptionsWhere, ObjectId, RemoveOptions } from 'typeorm';
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
-import { SearchFilter } from '../search/search-query';
+import { IPaging, IPagingOptions } from '../paging';
+import { SearchFilter } from '../search';
 
 export type AllowedCriteriaTypes = string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[];
 
@@ -71,21 +72,25 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
    * Finds entities that match given find options.
    *
    * @param {FindManyOptions<Entity>} options - Search  criteria for finding the entities.
-   * @returns {Promise<Entity[]>}  A promise resolving to an array of Entities, could be empty.
+   * @returns {Promise<IPaging<Entity>>}  A promise resolving to a paginated array of Entities, could be empty.
    * @memberof IRepositoryBase
    * @see {@link https://orkhan.gitbook.io/typeorm/docs/find-options TypeORM Find Options Documentation}
    */
-  find(options: FindManyOptions<Entity>): Promise<Entity[]>;
+  find(options: FindManyOptions<Entity>): Promise<IPaging<Entity>>;
 
   /**
    * Finds entities that match given find options.
    *
    * @param {(FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[])} where - Search  criteria for finding the entities.
-   * @returns {Promise<Entity[]>}  A promise resolving to an array of Entities, could be empty.
+   * @param {IPagingOptions} [paging] - Paging options for the search.
+   * @returns {Promise<IPaging<Entity>>}  A promise resolving to a paginated array of Entities, could be empty.
    * @memberof IRepositoryBase
    * @see {@link https://orkhan.gitbook.io/typeorm/docs/find-options TypeORM Find Options Documentation}
    */
-  findBy(where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[]): Promise<Entity[]>;
+  findBy(
+    where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    paging?: IPagingOptions
+  ): Promise<IPaging<Entity>>;
 
   /**
    * Deletes entities by a given criteria.
@@ -147,8 +152,18 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
    * Searches for entities that match the given filters.
    *
    * @param {SearchFilter[]} filters - Search filters for finding the entities.
+   * @param {IPagingOptions} [paging] - Paging options for the search.
+   * @returns {Promise<IPaging<Entity>>} A promise resolving to a paginated array of Entities, could be empty.
+   * @memberof IRepositoryBase
+   */
+  search(filters: SearchFilter[], paging?: IPagingOptions): Promise<IPaging<Entity>>;
+
+  /**
+   * Searches for all entities that match the given filters.
+   *
+   * @param {SearchFilter[]} filters - Search filters for finding the entities.
    * @returns {Promise<Entity[]>} A promise resolving to an array of Entities, could be empty.
    * @memberof IRepositoryBase
    */
-  search(filters: SearchFilter[]): Promise<Entity[]>;
+  searchAll(filters: SearchFilter[]): Promise<Entity[]>;
 }

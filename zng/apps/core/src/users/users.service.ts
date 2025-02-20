@@ -102,7 +102,7 @@ export class UsersService {
   public async search(filters: SearchFilter[]): Promise<UserResponseDto[]> {
     this.logger.debug(`search: Searching for Users with filters: ${filters}`);
 
-    const result = await this.dataService.users.search(filters);
+    const result = await this.dataService.users.searchAll(filters);
 
     if (result.length === 0) {
       return [];

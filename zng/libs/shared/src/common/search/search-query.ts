@@ -1,6 +1,8 @@
 import { MultiValueOperator, ValueOperator } from './value-operator';
 
-export type FieldType = string | number | boolean | Date;
+export type FilterableFieldType = SimpleFieldType | ArrayFieldType;
+export type SimpleFieldType = string | number | boolean | Date;
+export type ArrayFieldType = string[] | number[] | Date[];
 
 /**
  * Represents a search filter used in a query.
@@ -35,7 +37,7 @@ export interface SearchFilter {
  *
  * @extends SearchFilter
  */
-export interface BaseSearchCondition<T extends FieldType> extends SearchFilter {
+export interface BaseSearchCondition<T extends FilterableFieldType> extends SearchFilter {
   /**
    * The operator to apply to the field value.
    */
@@ -69,6 +71,6 @@ export interface BetweenSearchCondition<T extends number | Date> extends BaseSea
  * @see BaseSearchCondition
  * @see BetweenSearchCondition
  */
-export type SearchCondition<T extends FieldType> =
+export type SearchCondition<T extends FilterableFieldType> =
   | BaseSearchCondition<T>
   | BetweenSearchCondition<Extract<T, number | Date>>;
