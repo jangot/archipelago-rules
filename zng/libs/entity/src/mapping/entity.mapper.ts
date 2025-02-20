@@ -15,15 +15,26 @@ export class EntityMapper {
    */
   public static toEntity<DTO extends object, Entity extends object>(dto: DTO, entityClass: new () => Entity): Entity {
     const entity = new entityClass();
-    const metadata = MetadataCache.getMetadata(entityClass);
+    const metadata = MetadataCache.getMetadata(dto.constructor as new () => DTO);
 
     for (const key of Object.keys(dto)) {
       if (metadata.excludedFields.has(key)) continue;
 
-      const mappedField = metadata.mappings.get(key) || key;
+      const mappingOptions = metadata.mappings.get(key);
+
+      // Use mapping options if available; otherwise, default to the key.
+      const mappedField = mappingOptions ? mappingOptions.entityField || key : key;
       const targetType = metadata.types.get(mappedField);
 
-      (entity as any)[mappedField] = TypeConverter.convert((dto as any)[key], targetType);
+      // Get the raw value.
+      let value = (dto as any)[key];
+
+      // Apply transformation if defined.
+      if (mappingOptions?.transform) {
+        value = mappingOptions.transform(value);
+      }
+
+      (entity as any)[mappedField] = TypeConverter.convert(value, targetType);
     }
 
     return entity;
@@ -41,15 +52,26 @@ export class EntityMapper {
    * @memberof EntityMapper
    */
   public static toEntityPartial<DTO extends object, Entity extends object>(dto: Partial<DTO>, entity: Entity): Entity {
-    const metadata = MetadataCache.getMetadata(entity.constructor as new () => Entity);
+    const metadata = MetadataCache.getMetadata(dto.constructor as new () => DTO);
 
     for (const key of Object.keys(dto)) {
       if (metadata.excludedFields.has(key)) continue;
 
-      const mappedField = metadata.mappings.get(key) || key;
+      const mappingOptions = metadata.mappings.get(key);
+
+      // Use mapping options if available; otherwise, default to the key.
+      const mappedField = mappingOptions ? mappingOptions.entityField || key : key;
       const targetType = metadata.types.get(mappedField);
 
-      (entity as any)[mappedField] = TypeConverter.convert((dto as any)[key], targetType);
+      // Get the raw value.
+      let value = (dto as any)[key];
+
+      // Apply transformation if defined.
+      if (mappingOptions?.transform) {
+        value = mappingOptions.transform(value);
+      }
+
+      (entity as any)[mappedField] = TypeConverter.convert(value, targetType);
     }
 
     return entity;

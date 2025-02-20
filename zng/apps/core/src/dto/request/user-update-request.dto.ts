@@ -1,3 +1,6 @@
+import { MapTo } from '@library/entity/mapping/mapping.decorators';
+import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
+import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
@@ -38,7 +41,7 @@ export class UserUpdateRequestDto {
   @IsString()
   @IsNotEmpty()
   @IsOptional()
+  @IsValidPhoneNumber()
+  @MapTo({ transform: transformPhoneNumber })
   phoneNumber?: string;
-
-  normalizedPhoneNumber?: string | null;
 }

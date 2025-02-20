@@ -6,7 +6,6 @@ import { memoryDataSourceForTests } from '../postgress-memory-datasource';
 import { UserCreateRequestDto, UserUpdateRequestDto } from '../../src/dto';
 import { UsersModule } from '../../src/users/users.module';
 import { UsersService } from '../../src/users/users.service';
-import phone from 'phone';
 import { IBackup } from 'pg-mem';
 import { MultiValueOperator, SingleValueOperator } from '@library/shared/common/search';
 
@@ -41,14 +40,12 @@ describe('UsersService Integration Tests', () => {
     it('should return a user by id', async () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567890';
-      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
 
       const mockUser: UserCreateRequestDto = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
         phoneNumber,
-        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const createResult = await service.createUser(mockUser);
@@ -71,16 +68,11 @@ describe('UsersService Integration Tests', () => {
 
   describe('getUserByEmail', () => {
     it('should return a user by email', async () => {
-      // Simulate controller-level behaviour for phone number normalization
-      const phoneNumber = '+12124567890';
-      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
-
       const mockUser: UserCreateRequestDto = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doez@example.com',
         phoneNumber: '1234567890',
-        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const createResult = await service.createUser(mockUser);
@@ -103,16 +95,11 @@ describe('UsersService Integration Tests', () => {
 
   describe('getUserByPhoneNumber', () => {
     it('should return a user by phone number', async () => {
-      // Simulate controller-level behaviour for phone number normalization
-      const phoneNumber = '+12124567890';
-      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
-
       const mockUser: UserCreateRequestDto = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doep@example.com',
         phoneNumber: '1234567800',
-        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const createResult = await service.createUser(mockUser);
@@ -137,14 +124,12 @@ describe('UsersService Integration Tests', () => {
     it('should create a user', async () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567890';
-      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
 
       const createUserDto: UserCreateRequestDto = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doex@example.com',
         phoneNumber,
-        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const result = await service.createUser(createUserDto);
@@ -185,14 +170,12 @@ describe('UsersService Integration Tests', () => {
     it('should update a user', async () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567891';
-      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
 
       const mockUser: UserCreateRequestDto = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
         phoneNumber,
-        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const creationResult = await service.createUser(mockUser);
@@ -203,7 +186,6 @@ describe('UsersService Integration Tests', () => {
         lastName: 'Doe',
         email: 'jane.doe@example.com',
         phoneNumber: creationResult!.phoneNumber,
-        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const result = await service.updateUser(updateUserDto);
@@ -237,14 +219,12 @@ describe('UsersService Integration Tests', () => {
     it('should partially update a user ignoring undefined fields', async () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567891';
-      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
 
       const mockUser: UserCreateRequestDto = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
         phoneNumber,
-        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const creationResult = await service.createUser(mockUser);
@@ -255,7 +235,6 @@ describe('UsersService Integration Tests', () => {
         lastName: undefined,
         email: undefined,
         phoneNumber: undefined,
-        normalizedPhoneNumber: undefined,
       };
 
       const result = await service.updateUser(updateUserDto);
@@ -279,14 +258,12 @@ describe('UsersService Integration Tests', () => {
     it('wipes values if falsy ones provided for fields', async () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567891';
-      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
 
       const mockUser: UserCreateRequestDto = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
         phoneNumber,
-        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const creationResult = await service.createUser(mockUser);
@@ -297,7 +274,6 @@ describe('UsersService Integration Tests', () => {
         lastName: '',
         email: '',
         phoneNumber: undefined,
-        normalizedPhoneNumber: undefined,
       };
 
       const result = await service.updateUser(updateUserDto);
@@ -318,14 +294,12 @@ describe('UsersService Integration Tests', () => {
     it('should soft delete a user', async () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567891';
-      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
 
       const mockUser: UserCreateRequestDto = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
         phoneNumber,
-        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const creationResult = await service.createUser(mockUser);
@@ -347,14 +321,12 @@ describe('UsersService Integration Tests', () => {
     it('should restore a soft deleted user', async () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567891';
-      const normalizedPhoneNumber = phone(phoneNumber, { country: 'USA' });
 
       const mockUser: UserCreateRequestDto = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
         phoneNumber,
-        normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const creationResult = await service.createUser(mockUser);
@@ -391,8 +363,7 @@ describe('UsersService Integration Tests', () => {
       ];
 
       for (const user of users) {
-        const normalizedPhoneNumber = phone(user.phoneNumber, { country: 'USA' });
-        await service.createUser({ ...user, normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber });
+        await service.createUser({ ...user });
       }
 
       // EQ

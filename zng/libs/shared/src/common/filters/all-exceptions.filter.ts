@@ -6,7 +6,7 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { Catch, ArgumentsHost, HttpStatus, HttpException, Logger } from '@nestjs/common';
+import { Catch, ArgumentsHost, HttpStatus, HttpException, Logger, BadRequestException } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import { Response, Request } from 'express';
 
@@ -14,9 +14,10 @@ import { Response, Request } from 'express';
 export class AllExceptionsFilter extends BaseExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
-  catch(exception: unknown, host: ArgumentsHost) {
+  public catch(exception: unknown, host: ArgumentsHost) {
     const isProduction = process.env.NODE_ENV === 'production';
     const isHttpException = exception instanceof HttpException;
+    const isBadRequest = this.isBadRequestException(exception);
 
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -26,9 +27,15 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
 
     const stack = !isProduction && !isHttpException && this.isExceptionObject(exception) ? exception.stack : undefined;
 
+    const message = isBadRequest
+      ? this.getBadRequestMessage(exception)
+      : isHttpException
+        ? exception.message
+        : 'Internal Server Error';
+
     const responseBody = {
       statusCode: httpStatus,
-      message: isHttpException ? exception.message : 'Internal Server Error',
+      message: message,
       timestamp: new Date().toISOString(),
       path: request.url,
       stack: stack,
@@ -41,5 +48,14 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
     }
 
     response.status(httpStatus).json(responseBody);
+  }
+
+  private getBadRequestMessage(exception: BadRequestException): string {
+    const response = exception.getResponse();
+    return typeof response === 'string' ? response : response['message'][0];
+  }
+
+  private isBadRequestException(exception: unknown): exception is BadRequestException {
+    return exception instanceof BadRequestException && exception.getStatus() === HttpStatus.BAD_REQUEST;
   }
 }
