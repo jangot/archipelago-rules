@@ -1,4 +1,4 @@
-import { getMappedField, isExcludedFromMapping } from './mapping.decorators';
+import { FieldMappingOptions, getFieldMapping, isExcludedFromMapping } from './mapping.decorators';
 
 export class MetadataCache {
   private static cache = new Map<string, MetadataInfo>();
@@ -21,7 +21,7 @@ export class MetadataCache {
 
     for (const key of Object.keys(instance)) {
       // Check for @MapTo()
-      const mappedField = getMappedField(instance, key);
+      const mappedField = getFieldMapping(instance, key);
       if (mappedField) {
         metadata.mappings.set(key, mappedField);
       }
@@ -43,7 +43,7 @@ export class MetadataCache {
 }
 
 export interface MetadataInfo {
-  mappings: Map<string, string>; // DTO -> Entity field mappings
+  mappings: Map<string, FieldMappingOptions>; // DTO -> Entity field mappings
   excludedFields: Set<string>; // Fields to exclude
   types: Map<string, any>; // Expected types
 }

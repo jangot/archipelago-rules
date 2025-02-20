@@ -12,7 +12,6 @@ import {
 } from '@nestjs/swagger';
 import { ValidateOptionalQueryParamsPipe } from '@library/shared/common/pipes/optional.params.pipe';
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
-import phone from 'phone';
 
 @Controller('users')
 export class UsersController {
@@ -76,14 +75,6 @@ export class UsersController {
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
   @Post()
   public async createUser(@Body() user: UserCreateRequestDto): Promise<UserResponseDto | null> {
-    // Validate phoneNumber separately here as we don't want to require the User to have to
-    // enter this in the exact right way we are looking for.
-    // Might want to consider adding an additional field in the Database that is a normalized version to go along with the user entered field
-    const normalizedPhoneResult = phone(user.phoneNumber, { country: 'USA' });
-    if (!normalizedPhoneResult || !normalizedPhoneResult.isValid)
-      throw new HttpException('Invalid phone number', HttpStatus.BAD_REQUEST);
-    user.normalizedPhoneNumber = normalizedPhoneResult?.phoneNumber ?? undefined;
-
     return await this.userService.createUser(user);
   }
 
@@ -93,16 +84,6 @@ export class UsersController {
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
   @Patch()
   public async updateUser(@Body() user: UserUpdateRequestDto): Promise<boolean> {
-    // Validate phoneNumber separately here as we don't want to require the User to have to
-    // enter this in the exact right way we are looking for.
-    if (user.phoneNumber) {
-      const normalizedPhoneResult = phone(user.phoneNumber, { country: 'USA' });
-      if (!normalizedPhoneResult || !normalizedPhoneResult.isValid)
-        throw new HttpException('Invalid phone number', HttpStatus.BAD_REQUEST);
-
-      user.normalizedPhoneNumber = normalizedPhoneResult?.phoneNumber ?? undefined;
-    }
-
     return await this.userService.updateUser(user);
   }
 

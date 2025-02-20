@@ -1,31 +1,40 @@
 import 'reflect-metadata';
 
-const MAP_TO_METADATA_KEY = Symbol('mapTo');
+const FIELD_MAPPING_METADATA_KEY = Symbol('fieldMapping');
 const EXCLUDE_METADATA_KEY = Symbol('excludeFromMapping');
 
+export interface FieldMappingOptions {
+  /**
+   * Optional name of the field in the Entity. Only required if mapping to a field of a different name
+   */
+  entityField?: string;
+  /**
+   * Optional transformation function to apply to the value.
+   */
+  transform?: (value: any) => any;
+}
+
 /**
- * Decorator to specify a custom mapping from a DTO field to an Entity field.
+ * Decorator to specify a custom mapping from a DTO field to an Entity field,
+ * along with an optional transformation function.
  *
- * @export
- * @param {string} entityField - The target field name in the Entity.
- * @return {*}
+ * @param {FieldMappingOptions} options - The mapping options including the target entity field name and an optional transform function.
  */
-export function MapTo(entityField: string) {
+export function MapTo(options: FieldMappingOptions) {
   return function (target: object, propertyKey: string) {
-    Reflect.defineMetadata(MAP_TO_METADATA_KEY, entityField, target, propertyKey);
+    Reflect.defineMetadata(FIELD_MAPPING_METADATA_KEY, options, target, propertyKey);
   };
 }
 
 /**
- * Retrieves the mapped field name for a given property.
+ * Retrieves the mapping options for a given property.
  *
- * @export
- * @param {object} target
- * @param {string} propertyKey - The property to retrieve the mapped field name from
- * @return {(string | undefined)}
+ * @param {object} target - The object (typically the DTO prototype)
+ * @param {string} propertyKey - The property to retrieve the mapping for.
+ * @returns {FieldMappingOptions | undefined} The FieldMappingOptions if defined.
  */
-export function getMappedField(target: object, propertyKey: string): string | undefined {
-  return Reflect.getMetadata(MAP_TO_METADATA_KEY, target, propertyKey);
+export function getFieldMapping(target: object, propertyKey: string): FieldMappingOptions | undefined {
+  return Reflect.getMetadata(FIELD_MAPPING_METADATA_KEY, target, propertyKey);
 }
 
 /**

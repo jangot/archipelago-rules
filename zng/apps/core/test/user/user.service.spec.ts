@@ -4,7 +4,7 @@ import { IDataService } from '../../src/data/idata.service';
 import { HttpException } from '@nestjs/common';
 import { ApplicationUser } from '../../src/data/entity';
 import { v4 } from 'uuid';
-import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from 'apps/core/src/dto';
+import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../../src/dto';
 
 describe('UserService', () => {
   let service: UsersService;
@@ -13,9 +13,9 @@ describe('UserService', () => {
 
   const mockDataService = {
     users: {
-      getById: jest.fn(),
-      getByEmail: jest.fn(),
-      getByPhone: jest.fn(),
+      findOneBy: jest.fn(),
+      getUserByEmail: jest.fn(),
+      getUserByPhoneNumber: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
     },
@@ -37,51 +37,51 @@ describe('UserService', () => {
   describe('getUserById', () => {
     it('should return a user by id', async () => {
       const user = { id: '1', email: 'test@test.com' } as ApplicationUser;
-      mockDataService.users.getById.mockResolvedValue(user);
+      mockDataService.users.findOneBy.mockResolvedValue(user);
 
       const result = await service.getUserById('1');
       expect(result).toEqual(expect.any(UserResponseDto));
-      expect(mockDataService.users.getById).toHaveBeenCalledWith('1');
+      expect(mockDataService.users.findOneBy).toHaveBeenCalledWith({ id: '1' });
     });
 
     it('should throw an exception if user not found', async () => {
-      mockDataService.users.getById.mockResolvedValue(null);
+      mockDataService.users.findOneBy.mockResolvedValue(null);
 
-      await expect(service.getUserById('1')).rejects.toThrow(HttpException);
+      await expect(service.getUserById('1')).resolves.toBe(null);
     });
   });
 
   describe('getUserByEmail', () => {
     it('should return a user by email', async () => {
       const user = { id: '1', email: 'test@test.com' } as ApplicationUser;
-      mockDataService.users.getByEmail.mockResolvedValue(user);
+      mockDataService.users.findOneBy.mockResolvedValue(user);
 
       const result = await service.getUserByEmail('test@test.com');
       expect(result).toEqual(expect.any(UserResponseDto));
-      expect(mockDataService.users.getByEmail).toHaveBeenCalledWith('test@test.com');
+      expect(mockDataService.users.findOneBy).toHaveBeenCalledWith({ email: 'test@test.com' });
     });
 
     it('should throw an exception if user not found', async () => {
-      mockDataService.users.getByEmail.mockResolvedValue(null);
+      mockDataService.users.findOneBy.mockResolvedValue(null);
 
-      await expect(service.getUserByEmail('test@test.com')).rejects.toThrow(HttpException);
+      await expect(service.getUserByEmail('test@test.com')).resolves.toBe(null);
     });
   });
 
   describe('getUserByPhoneNumber', () => {
     it('should return a user by phone number', async () => {
       const user = { id: '1', phoneNumber: '1234567890' } as ApplicationUser;
-      mockDataService.users.getByPhone.mockResolvedValue(user);
+      mockDataService.users.findOneBy.mockResolvedValue(user);
 
       const result = await service.getUserByPhoneNumber('1234567890');
       expect(result).toEqual(expect.any(UserResponseDto));
-      expect(mockDataService.users.getByPhone).toHaveBeenCalledWith('1234567890');
+      expect(mockDataService.users.findOneBy).toHaveBeenCalledWith({ phoneNumber: '1234567890' });
     });
 
     it('should throw an exception if user not found', async () => {
-      mockDataService.users.getByPhone.mockResolvedValue(null);
+      mockDataService.users.findOneBy.mockResolvedValue(null);
 
-      await expect(service.getUserByPhoneNumber('1234567890')).rejects.toThrow(HttpException);
+      await expect(service.getUserByPhoneNumber('1234567890')).resolves.toBe(null);
     });
   });
 

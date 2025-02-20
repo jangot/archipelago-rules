@@ -1,4 +1,4 @@
-import { SearchFilter } from './search-query';
+import { FilterableFieldType, SearchFilter } from './search-query';
 import { SingleValueOperator, MultiValueOperator } from './value-operator';
 import {
   And,
@@ -59,26 +59,21 @@ export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFi
 }
 
 /**
- * Maps a given filter to a corresponding TypeORM `FindOperator`.
+ * Maps a given search filter to a corresponding TypeORM `FindOperator`.
  *
- * @param {SearchFilter} filter - The filter object containing the operator and value to be mapped.
- * @param {SingleValueOperator | MultiValueOperator} filter.operator - The operator to be used for filtering.
- * @param {unknown} filter.value - The value to be used with the operator.
- * @param {boolean} [filter.reverse] - Optional flag to reverse the filter condition.
- * @returns {FindOperator<unknown>} The mapped TypeORM `FindOperator`.
- * @throws {Error} If the operator is unsupported.
+ * @template T - The type of the field being filtered.
+ * @param {SearchFilter} filter - The search filter to map.
+ * @returns {FindOperator<T> | null} - The mapped `FindOperator` or `null` if the operator is not supported.
+ * @throws {Error} - Throws an error if the operator is unsupported.
  *
- * @typedef {Object} SearchFiler
- * @property {SingleValueOperator | MultiValueOperator} operator - The operator to be used for filtering.
- * @property {unknown} value - The value to be used with the operator.
- * @property {boolean} [reverse] - Optional flag to reverse the filter condition.
- *
- * @typedef {('EQUALS' | 'GREATER_THAN' | 'GREATER_THAN_OR_EQUAL' | 'LESS_THAN' | 'LESS_THAN_OR_EQUAL' | 'IN' | 'LIKE' | 'EMPTY')} SingleValueOperator
- * @typedef {('BETWEEN')} MultiValueOperator
+ * @example
+ * const filter: SearchFilter = { operator: SingleValueOperator.EQUALS, value: 'example' };
+ * const result = mapFilter(filter);
+ * // result will be an instance of Equal operator with the value 'example'
  */
-function mapFilter(filter: SearchFilter): FindOperator<unknown> | null {
+function mapFilter<T extends FilterableFieldType>(filter: SearchFilter): FindOperator<T> | null {
   const { operator, value } = filter;
-  let mappedOperator: FindOperator<unknown> | null = null;
+  let mappedOperator: FindOperator<T> | null = null;
 
   switch (operator) {
     case SingleValueOperator.EQUALS:
@@ -102,7 +97,9 @@ function mapFilter(filter: SearchFilter): FindOperator<unknown> | null {
       }
       break;
     case SingleValueOperator.LIKE:
-      mappedOperator = ILike(`%${value}%`);
+      if (typeof value === 'string') {
+        mappedOperator = ILike(`%${value}%`) as FindOperator<T>;
+      }
       break;
     case SingleValueOperator.EMPTY:
       mappedOperator = IsNull();
