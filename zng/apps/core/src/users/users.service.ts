@@ -112,8 +112,8 @@ export class UsersService {
     return dtoResult;
   }
 
-  private fixUpUserPhoneNumber(user: { phoneNumber?: string; normalizedPhoneNumber?: string }) {
-    if (user.phoneNumber) {
+  private fixUpUserPhoneNumber(user: { phoneNumber?: string; normalizedPhoneNumber?: string | null }) {
+    if (user.phoneNumber && user.normalizedPhoneNumber) {
       user.phoneNumber = user.normalizedPhoneNumber;
       delete user.normalizedPhoneNumber;
     }

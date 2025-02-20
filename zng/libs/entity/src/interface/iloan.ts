@@ -6,8 +6,8 @@ export interface ILoan extends EntityId<string> {
   amount: number;
 
   lenderId: string;
-  lender: IApplicationUser;
+  lender?: IApplicationUser;
 
   borrowerId: string;
-  borrower: IApplicationUser;
+  borrower?: IApplicationUser;
 }

@@ -33,5 +33,5 @@ export class UserCreateRequestDto {
   @IsOptional()
   phoneNumber: string;
 
-  normalizedPhoneNumber?: string;
+  normalizedPhoneNumber?: string | null;
 }

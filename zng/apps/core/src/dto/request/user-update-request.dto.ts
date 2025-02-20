@@ -40,5 +40,5 @@ export class UserUpdateRequestDto {
   @IsOptional()
   phoneNumber?: string;
 
-  normalizedPhoneNumber?: string;
+  normalizedPhoneNumber?: string | null;
 }

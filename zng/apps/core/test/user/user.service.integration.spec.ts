@@ -53,9 +53,9 @@ describe('UsersService Integration Tests', () => {
 
       const createResult = await service.createUser(mockUser);
 
-      const result = await service.getUserById(createResult.id);
+      const result = await service.getUserById(createResult!.id);
       expect(result).toEqual({
-        id: createResult.id,
+        id: createResult!.id,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
@@ -85,9 +85,9 @@ describe('UsersService Integration Tests', () => {
 
       const createResult = await service.createUser(mockUser);
 
-      const result = await service.getUserByEmail(createResult.email);
+      const result = await service.getUserByEmail(createResult!.email);
       expect(result).toEqual({
-        id: createResult.id,
+        id: createResult!.id,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
@@ -117,9 +117,9 @@ describe('UsersService Integration Tests', () => {
 
       const createResult = await service.createUser(mockUser);
 
-      const result = await service.getUserByPhoneNumber(createResult.phoneNumber);
+      const result = await service.getUserByPhoneNumber(createResult!.phoneNumber);
       expect(result).toEqual({
-        id: createResult.id,
+        id: createResult!.id,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
@@ -156,9 +156,9 @@ describe('UsersService Integration Tests', () => {
         phoneNumber: createUserDto.phoneNumber,
       });
 
-      const createdUser = await service.getUserById(result.id);
+      const createdUser = await service.getUserById(result!.id);
       expect(createdUser).toEqual({
-        id: result.id,
+        id: result!.id,
         firstName: createUserDto.firstName,
         lastName: createUserDto.lastName,
         email: createUserDto.email,
@@ -198,20 +198,20 @@ describe('UsersService Integration Tests', () => {
       const creationResult = await service.createUser(mockUser);
 
       const updateUserDto: UserUpdateRequestDto = {
-        id: creationResult.id,
+        id: creationResult!.id,
         firstName: 'Jane',
         lastName: 'Doe',
         email: 'jane.doe@example.com',
-        phoneNumber: creationResult.phoneNumber,
+        phoneNumber: creationResult!.phoneNumber,
         normalizedPhoneNumber: normalizedPhoneNumber.phoneNumber,
       };
 
       const result = await service.updateUser(updateUserDto);
       expect(result).toBe(true);
 
-      const updatedUser = await service.getUserById(creationResult.id);
+      const updatedUser = await service.getUserById(creationResult!.id);
       expect(updatedUser).toEqual({
-        id: creationResult.id,
+        id: creationResult!.id,
         firstName: updateUserDto.firstName,
         lastName: updateUserDto.lastName,
         email: updateUserDto.email,
@@ -250,7 +250,7 @@ describe('UsersService Integration Tests', () => {
       const creationResult = await service.createUser(mockUser);
 
       const updateUserDto: UserUpdateRequestDto = {
-        id: creationResult.id,
+        id: creationResult!.id,
         firstName: 'Jane',
         lastName: undefined,
         email: undefined,
@@ -261,13 +261,13 @@ describe('UsersService Integration Tests', () => {
       const result = await service.updateUser(updateUserDto);
       expect(result).toBe(true);
 
-      const updatedUser = await service.getUserById(creationResult.id);
+      const updatedUser = await service.getUserById(creationResult!.id);
       expect(updatedUser).toEqual({
-        id: creationResult.id,
+        id: creationResult!.id,
         firstName: updateUserDto.firstName,
-        lastName: creationResult.lastName,
-        email: creationResult.email,
-        phoneNumber: creationResult.phoneNumber,
+        lastName: creationResult!.lastName,
+        email: creationResult!.email,
+        phoneNumber: creationResult!.phoneNumber,
       });
     });
 
@@ -292,7 +292,7 @@ describe('UsersService Integration Tests', () => {
       const creationResult = await service.createUser(mockUser);
 
       const updateUserDto: UserUpdateRequestDto = {
-        id: creationResult.id,
+        id: creationResult!.id,
         firstName: 'Jane',
         lastName: '',
         email: '',
@@ -303,13 +303,13 @@ describe('UsersService Integration Tests', () => {
       const result = await service.updateUser(updateUserDto);
       expect(result).toBe(true);
 
-      const updatedUser = await service.getUserById(creationResult.id);
+      const updatedUser = await service.getUserById(creationResult!.id);
       expect(updatedUser).toEqual({
-        id: creationResult.id,
+        id: creationResult!.id,
         firstName: updateUserDto.firstName,
         lastName: '',
         email: '',
-        phoneNumber: creationResult.phoneNumber,
+        phoneNumber: creationResult!.phoneNumber,
       });
     });
   });
@@ -330,10 +330,10 @@ describe('UsersService Integration Tests', () => {
 
       const creationResult = await service.createUser(mockUser);
 
-      const deleteResult = await service.deleteUser(creationResult.id);
+      const deleteResult = await service.deleteUser(creationResult!.id);
       expect(deleteResult).toBe(true);
 
-      const deletedUser = await service.getUserById(creationResult.id);
+      const deletedUser = await service.getUserById(creationResult!.id);
       expect(deletedUser).toBeNull();
     });
 
@@ -359,14 +359,14 @@ describe('UsersService Integration Tests', () => {
 
       const creationResult = await service.createUser(mockUser);
 
-      await service.deleteUser(creationResult.id);
+      await service.deleteUser(creationResult!.id);
 
-      const restoreResult = await service.restoreUser(creationResult.id);
+      const restoreResult = await service.restoreUser(creationResult!.id);
       expect(restoreResult).toBe(true);
 
-      const restoredUser = await service.getUserById(creationResult.id);
+      const restoredUser = await service.getUserById(creationResult!.id);
       expect(restoredUser).toEqual({
-        id: creationResult.id,
+        id: creationResult!.id,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,

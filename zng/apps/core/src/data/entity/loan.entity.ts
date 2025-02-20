@@ -18,12 +18,12 @@ export class Loan implements ILoan {
 
   @ManyToOne(() => ApplicationUser)
   @JoinColumn({ name: 'lender_id' }) // FYI, column names defined here must match the DB generated ones!
-  lender: ApplicationUser;
+  lender?: ApplicationUser;
 
   @Column('uuid')
   borrowerId: string;
 
   @ManyToOne(() => ApplicationUser)
   @JoinColumn({ name: 'borrower_id' })
-  borrower: ApplicationUser;
+  borrower?: ApplicationUser;
 }

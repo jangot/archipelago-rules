@@ -90,14 +90,14 @@ describe('UserController', () => {
     it('should create a new user', async () => {
       const userCreateDto: UserCreateRequestDto = {
         email: 'test@test.com',
-        phoneNumber: '1234567890',
+        phoneNumber: '+12124567890',
         firstName: 'Test',
         lastName: 'User',
       };
       const userResponse: UserResponseDto = {
         id: '1',
         email: 'test@test.com',
-        phoneNumber: '1234567890',
+        phoneNumber: '+12124567890',
         firstName: 'Test',
         lastName: 'User',
       };
@@ -111,7 +111,7 @@ describe('UserController', () => {
 
   describe('updateUser', () => {
     it('should update an existing user', async () => {
-      const userUpdateDto: UserUpdateRequestDto = { id: '1', email: 'updated@test.com', phoneNumber: '0987654321' };
+      const userUpdateDto: UserUpdateRequestDto = { id: '1', email: 'updated@test.com', phoneNumber: '+12124567890' };
       jest.spyOn(service, 'updateUser').mockResolvedValue(true);
 
       const result = await controller.updateUser(userUpdateDto);
