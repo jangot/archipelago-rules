@@ -46,7 +46,11 @@ export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFi
     if (fieldFilters.length === 1) {
       searchQuery[field] = mapFilter(fieldFilters[0]);
     } else {
-      const mappedFilters = fieldFilters.map((filter) => mapFilter(filter)).filter(Boolean);
+      const mappedFilters = fieldFilters
+        .map((filter) => mapFilter(filter))
+        .filter((filter) => filter !== null)
+        .filter(Boolean);
+
       searchQuery[field] = And(...mappedFilters);
     }
   });
@@ -72,9 +76,10 @@ export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFi
  * @typedef {('EQUALS' | 'GREATER_THAN' | 'GREATER_THAN_OR_EQUAL' | 'LESS_THAN' | 'LESS_THAN_OR_EQUAL' | 'IN' | 'LIKE' | 'EMPTY')} SingleValueOperator
  * @typedef {('BETWEEN')} MultiValueOperator
  */
-function mapFilter(filter: SearchFilter): FindOperator<unknown> {
+function mapFilter(filter: SearchFilter): FindOperator<unknown> | null {
   const { operator, value } = filter;
-  let mappedOperator: FindOperator<unknown>;
+  let mappedOperator: FindOperator<unknown> | null = null;
+
   switch (operator) {
     case SingleValueOperator.EQUALS:
       mappedOperator = Equal(value);

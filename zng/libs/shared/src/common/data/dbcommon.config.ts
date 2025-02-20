@@ -25,7 +25,7 @@ export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOp
   return {
     type: 'postgres',
     host: options.configService.get<string>('DB_HOST'),
-    port: parseInt(options.configService.get<string>('DB_PORT')),
+    port: parseInt(options.configService.get<string>('DB_PORT') || '0'),
     username: options.configService.get<string>('DB_USERNAME'),
     password: options.configService.get<string>('DB_PASSWORD'),
     database: options.configService.get<string>('DB_NAME'),

@@ -7,8 +7,17 @@
  */
 
 import { DEFAULT_PAGING_LIMIT } from '../paging/paging.order.constants';
-import { IRepositoryBase } from './ibase.repository';
-import { DeleteResult, FindManyOptions, FindOneOptions, FindOptionsWhere, ObjectId, RemoveOptions, Repository, UpdateResult } from 'typeorm';
+import { AllowedCriteriaTypes, IRepositoryBase } from './ibase.repository';
+import {
+  DeleteResult,
+  FindManyOptions,
+  FindOneOptions,
+  FindOptionsWhere,
+  ObjectId,
+  RemoveOptions,
+  Repository,
+  UpdateResult,
+} from 'typeorm';
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
 import { SearchFilter } from '../search/search-query';
 import { buildSearchQuery } from '../search/entity-search-query';
@@ -84,16 +93,21 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     }
   }
 
-  public async softDelete(
-    criteria: string | number | Date | string[] | number[] | Date[] | ObjectId | ObjectId[] | FindOptionsWhere<Entity>
-  ): Promise<boolean> {
+  public async softDelete(criteria: AllowedCriteriaTypes | FindOptionsWhere<Entity>): Promise<boolean> {
+    // We should check to ensure the Entity supports Soft Deletes
+    const deletedDataColumnMeta = this.repository.metadata.deleteDateColumn;
+
+    if (!deletedDataColumnMeta) {
+      throw new Error(
+        `Entity ${this.repository.metadata.name} does not support Soft Deletes. Please ensure the Entity has a deleteDateColumn defined.`
+      );
+    }
+
     const deleteResult = await this.repository.softDelete(criteria);
     return this.actionResult(deleteResult);
   }
 
-  public async restore(
-    criteria: string | number | Date | string[] | number[] | Date[] | ObjectId | ObjectId[] | FindOptionsWhere<Entity>
-  ): Promise<boolean> {
+  public async restore(criteria: AllowedCriteriaTypes | FindOptionsWhere<Entity>): Promise<boolean> {
     const restoreResult = await this.repository.restore(criteria);
     return this.actionResult(restoreResult);
   }

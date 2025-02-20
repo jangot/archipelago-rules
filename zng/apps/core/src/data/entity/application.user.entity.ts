@@ -25,6 +25,6 @@ export class ApplicationUser implements IApplicationUser {
   @Column('text')
   phoneNumber: string;
 
-  @DeleteDateColumn()
-  deletedAt: Date;
+  @DeleteDateColumn({ type: 'timestamp with time zone' })
+  deletedAt?: Date | null;
 }

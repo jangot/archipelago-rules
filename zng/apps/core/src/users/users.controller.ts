@@ -50,7 +50,7 @@ export class UsersController {
     @Query(new ValidateOptionalQueryParamsPipe(['phoneNumber', 'email'])) data: any
   ): Promise<UserResponseDto> {
     const { email, phoneNumber, crash } = data;
-    let result: UserResponseDto | null;
+    let result: UserResponseDto | null = null;
 
     // Some test stuff to try and get the Error logs doing what I want them to
     if (crash) {
@@ -75,7 +75,7 @@ export class UsersController {
   @ApiBadRequestResponse({ description: 'Invalid User data payload provided', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
   @Post()
-  public async createUser(@Body() user: UserCreateRequestDto): Promise<UserResponseDto> {
+  public async createUser(@Body() user: UserCreateRequestDto): Promise<UserResponseDto | null> {
     // Validate phoneNumber separately here as we don't want to require the User to have to
     // enter this in the exact right way we are looking for.
     // Might want to consider adding an additional field in the Database that is a normalized version to go along with the user entered field
@@ -95,10 +95,13 @@ export class UsersController {
   public async updateUser(@Body() user: UserUpdateRequestDto): Promise<boolean> {
     // Validate phoneNumber separately here as we don't want to require the User to have to
     // enter this in the exact right way we are looking for.
-    const normalizedPhoneResult = phone(user.phoneNumber, { country: 'USA' });
-    if (!normalizedPhoneResult || !normalizedPhoneResult.isValid)
-      throw new HttpException('Invalid phone number', HttpStatus.BAD_REQUEST);
-    user.normalizedPhoneNumber = normalizedPhoneResult?.phoneNumber ?? undefined;
+    if (user.phoneNumber) {
+      const normalizedPhoneResult = phone(user.phoneNumber, { country: 'USA' });
+      if (!normalizedPhoneResult || !normalizedPhoneResult.isValid)
+        throw new HttpException('Invalid phone number', HttpStatus.BAD_REQUEST);
+
+      user.normalizedPhoneNumber = normalizedPhoneResult?.phoneNumber ?? undefined;
+    }
 
     return await this.userService.updateUser(user);
   }

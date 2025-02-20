@@ -104,7 +104,12 @@ export class UsersService {
 
     const result = await this.dataService.users.search(filters);
 
-    return result.map((r) => DtoMapper.toDto(r, UserResponseDto));
+    if (result.length === 0) {
+      return [];
+    }
+
+    const dtoResult = result.map((r) => DtoMapper.toDto(r, UserResponseDto)).filter((dto) => dto !== null);
+    return dtoResult;
   }
 
   private fixUpUserPhoneNumber(user: { phoneNumber?: string; normalizedPhoneNumber?: string }) {
