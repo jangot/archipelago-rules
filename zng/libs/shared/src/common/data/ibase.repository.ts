@@ -10,6 +10,8 @@ import { FindManyOptions, FindOneOptions, FindOptionsWhere, ObjectId, RemoveOpti
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
 import { SearchFilter } from '../search/search-query';
 
+export type AllowedCriteriaTypes = string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[];
+
 /**
  * Base Repository interface
  *
@@ -90,7 +92,7 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
    * Unlike save method executes a primitive operation without cascades, relations and other operations included.
    * Executes fast and efficient DELETE query.
    * Does not check if entity exist in the database.
-   * @param {(string | number | FindOptionsWhere<Entity> | Date | ObjectId | string[] | number[] | Date[] | ObjectId[])} criteria - Search criteria for entities to delete.
+   * @param {AllowedCriteriaTypes} criteria - Search criteria for entities to delete.
    * @returns {Promise<boolean>} A promise resolving to `true` if entities were successfully deleted, `false` otherwise.
    * @memberof IRepositoryBase
    * @see {@link https://orkhan.gitbook.io/typeorm/docs/delete-query-builder TypeORM Delete Query Builder Documentation}
@@ -122,28 +124,24 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
    * Unlike save method executes a primitive operation without cascades, relations and other operations included.
    * Executes fast and efficient DELETE query.
    * Does not check if entity exist in the database.
-   * @param {(string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[] | FindOptionsWhere<Entity>)} criteria - Search criteria for entities to delete.
+   * @param {(AllowedCriteriaTypes | FindOptionsWhere<Entity>)} criteria - Search criteria for entities to delete.
    * @returns {Promise<boolean>} A promise resolving to `true` if entities were successfully deleted, `false` otherwise.
    * @memberof IRepositoryBase
    * @see {@link https://orkhan.gitbook.io/typeorm/docs/delete-query-builder TypeORM Soft Delete Documentation}
    */
-  softDelete(
-    criteria: string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[] | FindOptionsWhere<Entity>
-  ): Promise<boolean>;
+  softDelete(criteria: AllowedCriteriaTypes | FindOptionsWhere<Entity>): Promise<boolean>;
 
   /**
    * Restores entities by a given criteria.
    * Unlike save method executes a primitive operation without cascades, relations and other operations included.
    * Executes fast and efficient DELETE query.
    * Does not check if entity exist in the database.
-   * @param {(string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[] | FindOptionsWhere<Entity>)} criteria - Search criteria for entities to delete.
+   * @param {(AllowedCriteriaTypes | FindOptionsWhere<Entity>)} criteria - Search criteria for entities to delete.
    * @returns {Promise<boolean>} A promise resolving to `true` if entities were successfully deleted, `false` otherwise.
    * @memberof IRepositoryBase
    * @see {@link https://orkhan.gitbook.io/typeorm/docs/delete-query-builder TypeORM Soft Delete Documentation}
    */
-  restore(
-    criteria: string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[] | FindOptionsWhere<Entity>
-  ): Promise<boolean>;
+  restore(criteria: AllowedCriteriaTypes | FindOptionsWhere<Entity>): Promise<boolean>;
 
   /**
    * Searches for entities that match the given filters.
