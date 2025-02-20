@@ -1,4 +1,3 @@
-/* eslint-disable prefer-const */
 import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { DataModule } from '../src/data';
@@ -118,11 +117,17 @@ describe('DataModule Integration Tests', () => {
 
       lenderGetResult = await dataService.users.findOneBy({ id: lenderUserId });
       borrowerGetResult = await dataService.users.findOneBy({ id: borrowerUserId });
-      loanGetResult = await dataService.loans.findOneBy({ id: expectedLoanId });
+      // Use findOne if you need to load the Relations associated with this Entity, as you can provide
+      // options to have it load the relationships as well (findOneBy does not support this functionality)
+      loanGetResult = await dataService.loans.findOne({
+        where: { id: expectedLoanId },
+        relations: ['lender', 'borrower'],
+      });
 
+      // No longer needed because of switching to using the findOne() method instead of the findOneBy() method
       // Band-aid to solve BaseRepo Lazy Load for this test. Definetely should work in supposed way instead.
-      expectedLoan.lender = undefined;
-      expectedLoan.borrower = undefined;
+      // expectedLoan.lender = undefined;
+      // expectedLoan.borrower = undefined;
 
       expect(lenderGetResult).toEqual(lenderUser);
       expect(borrowerGetResult).toEqual(borrowerUser);
