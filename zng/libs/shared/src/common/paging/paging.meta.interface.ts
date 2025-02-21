@@ -12,6 +12,6 @@ export interface IPagingMeta {
   offset: number;
   limit: number;
   totalCount: number;
-  previousPage?: IPagingOptions;
-  nextPage?: IPagingOptions;
+  previousPage?: IPagingOptions | null;
+  nextPage?: IPagingOptions | null;
 }
