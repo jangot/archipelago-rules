@@ -1,4 +1,4 @@
-import { FilterableFieldType, SearchFilter } from './search-query';
+import { FilterableFieldType, ISearchFilter } from './search-query';
 import { SingleValueOperator, MultiValueOperator } from './value-operator';
 import {
   And,
@@ -21,14 +21,17 @@ import {
  * Builds a search query object based on the provided filters.
  *
  * @template Entity - The type of the entity for which the search query is being built.
- * @param {SearchFilter[]} filters - An array of search filters to apply.
+ * @param {ISearchFilter[]} filters - An array of search filters to apply.
  * @returns {FindOptionsWhere<Entity>} - The constructed search query object.
  *
  * @remarks
  * This function groups the filters by their field and then maps each group to the appropriate query condition.
  * If a field has multiple filters, they are combined using an `And` condition.
  */
-export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFilter[]): FindOptionsWhere<Entity> {
+export function buildSearchQuery<Entity extends ObjectLiteral>(filters?: ISearchFilter[]): FindOptionsWhere<Entity> {
+  const searchQuery = {};
+  if (!filters || filters.length === 0) return searchQuery;
+
   // TODO: Make field existance and relation to Entity check on DTO's (?) layer
   const fieldGroups = filters.reduce(
     (groups, filter) => {
@@ -36,10 +39,8 @@ export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFi
       groups[filter.field].push(filter);
       return groups;
     },
-    {} as Record<string, SearchFilter[]>
+    {} as Record<string, ISearchFilter[]>
   );
-
-  const searchQuery = {};
 
   Object.keys(fieldGroups).forEach((field) => {
     const fieldFilters = fieldGroups[field];
@@ -62,7 +63,7 @@ export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFi
  * Maps a given search filter to a corresponding TypeORM `FindOperator`.
  *
  * @template T - The type of the field being filtered.
- * @param {SearchFilter} filter - The search filter to map.
+ * @param {ISearchFilter} filter - The search filter to map.
  * @returns {FindOperator<T> | null} - The mapped `FindOperator` or `null` if the operator is not supported.
  * @throws {Error} - Throws an error if the operator is unsupported.
  *
@@ -71,7 +72,7 @@ export function buildSearchQuery<Entity extends ObjectLiteral>(filters: SearchFi
  * const result = mapFilter(filter);
  * // result will be an instance of Equal operator with the value 'example'
  */
-function mapFilter<T extends FilterableFieldType>(filter: SearchFilter): FindOperator<T> | null {
+function mapFilter<T extends FilterableFieldType>(filter: ISearchFilter): FindOperator<T> | null {
   const { operator, value } = filter;
   let mappedOperator: FindOperator<T> | null = null;
 

@@ -19,7 +19,7 @@ import {
   UpdateResult,
 } from 'typeorm';
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
-import { SearchFilter } from '../search/search-query';
+import { ISearchFilter } from '../search/search-query';
 import { buildPagingQuery, IPaging, IPagingOptions } from '../paging';
 import { buildSearchQuery } from '../search';
 
@@ -141,7 +141,7 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return this.actionResult(restoreResult);
   }
 
-  public async search(filters: SearchFilter[], paging?: IPagingOptions): Promise<IPaging<Entity>> {
+  public async search(filters?: ISearchFilter[], paging?: IPagingOptions): Promise<IPaging<Entity>> {
     const searchQuery = buildSearchQuery<Entity>(filters);
     const searchPaging = buildPagingQuery<Entity>(paging);
     const { skip, take } = searchPaging;
@@ -152,7 +152,7 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     };
   }
 
-  public async searchAll(filters: SearchFilter[]): Promise<Entity[]> {
+  public async searchAll(filters: ISearchFilter[]): Promise<Entity[]> {
     const searchQuery = buildSearchQuery<Entity>(filters);
     const result = await this.repository.find({ where: searchQuery });
     return result;

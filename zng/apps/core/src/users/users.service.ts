@@ -4,8 +4,9 @@ import { ApplicationUser } from '../data/entity';
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
-import { SearchFilter } from '@library/shared/common/search/search-query';
 import { v4 } from 'uuid';
+import { SearchQueryDto } from '@library/shared/common/search';
+import { createPaginationWrapper, PagingDto } from '@library/shared/common/paging';
 
 @Injectable()
 export class UsersService {
@@ -92,16 +93,19 @@ export class UsersService {
     return result;
   }
 
-  public async search(filters: SearchFilter[]): Promise<UserResponseDto[]> {
-    this.logger.debug(`search: Searching for Users with filters: ${filters}`);
+  public async search(query: SearchQueryDto): Promise<PagingDto<UserResponseDto>> {
+    this.logger.debug(`search: Searching for Users with query: ${query}`);
 
-    const result = await this.dataService.users.searchAll(filters);
+    const { filters, paging } = query;
+    const result = await this.dataService.users.search(filters, paging);
 
-    if (result.length === 0) {
-      return [];
+    if (!result?.data?.length) {
+      return createPaginationWrapper<UserResponseDto>({ ...paging, currentCount: 0, totalCount: 0, data: [] });
     }
 
-    const dtoResult = result.map((r) => DtoMapper.toDto(r, UserResponseDto)).filter((dto) => dto !== null);
-    return dtoResult;
+    const { data, meta } = result;
+    const dtoResult = data.map((r) => DtoMapper.toDto(r, UserResponseDto)).filter((dto) => dto !== null);
+    // Whats actually current count stands for? limit+skip?
+    return createPaginationWrapper<UserResponseDto>({ ...meta, currentCount: meta.limit, data: dtoResult });
   }
 }

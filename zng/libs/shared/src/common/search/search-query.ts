@@ -7,7 +7,7 @@ export type ArrayFieldType = string[] | number[] | Date[];
 /**
  * Represents a search filter used in a query.
  */
-export interface SearchFilter {
+export interface ISearchFilter {
   /**
    * The name of the field to filter on.
    */
@@ -35,9 +35,9 @@ export interface SearchFilter {
  *
  * @template T - The type of the field value, which extends `FieldType`.
  *
- * @extends SearchFilter
+ * @extends ISearchFilter
  */
-export interface BaseSearchCondition<T extends FilterableFieldType> extends SearchFilter {
+export interface BaseSearchCondition<T extends FilterableFieldType> extends ISearchFilter {
   /**
    * The operator to apply to the field value.
    */

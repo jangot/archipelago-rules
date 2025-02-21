@@ -9,20 +9,25 @@
 import { ApiPropertyOptional, ApiSchema } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
-import { DEFAULT_PAGING_LIMIT, PagingOrder } from './paging.order.constants';
+import {
+  DEFAULT_PAGING_LIMIT,
+  DEFAULT_PAGING_ORDER,
+  DEFAULT_PAGING_ORDER_BY,
+  PagingOrder,
+} from './paging.order.constants';
 import { IPagingOptions } from './paging.options.interface';
 
 @ApiSchema({ name: 'pagingOptions' })
 export class PagingOptionsDto implements IPagingOptions {
-  @ApiPropertyOptional({ enum: PagingOrder, default: PagingOrder.ASC })
+  @ApiPropertyOptional({ enum: PagingOrder, default: DEFAULT_PAGING_ORDER })
   @IsEnum(PagingOrder)
   @IsOptional()
-  order?: PagingOrder = PagingOrder.ASC;
+  order?: PagingOrder = DEFAULT_PAGING_ORDER;
 
-  @ApiPropertyOptional({ default: 'Id' })
+  @ApiPropertyOptional({ default: DEFAULT_PAGING_ORDER_BY })
   @IsOptional()
   @IsString()
-  orderBy?: string = 'Id';
+  orderBy?: string = DEFAULT_PAGING_ORDER_BY;
 
   @ApiPropertyOptional({ minimum: 0, default: 1 })
   @Type(() => Number)
