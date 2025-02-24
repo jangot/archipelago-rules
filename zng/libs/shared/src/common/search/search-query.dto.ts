@@ -1,9 +1,11 @@
+import { ApiSchema } from '@nestjs/swagger';
 import { PagingOptionsDto } from '../paging';
 import { ISearchFilter } from './search-query';
 import { ValueOperator } from './value-operator';
 import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsOptional, IsString, ValidateNested } from 'class-validator';
 
+@ApiSchema({ name: 'search-query' })
 export class SearchQueryDto {
   @IsOptional()
   @IsArray()
