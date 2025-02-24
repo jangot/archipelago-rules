@@ -1,5 +1,4 @@
 import { FilterableFieldType, ISearchFilter } from './search-query';
-import { SingleValueOperator, MultiValueOperator } from './value-operator';
 import {
   And,
   Between,
@@ -16,6 +15,7 @@ import {
   Not,
   ObjectLiteral,
 } from 'typeorm';
+import { ValueOperator } from './value-operator';
 
 /**
  * Builds a search query object based on the provided filters.
@@ -77,42 +77,48 @@ function mapFilter<T extends FilterableFieldType>(filter: ISearchFilter): FindOp
   let mappedOperator: FindOperator<T> | null = null;
 
   switch (operator) {
-    case SingleValueOperator.EQUALS:
+    case ValueOperator.EQUALS:
       mappedOperator = Equal(value);
       break;
-    case SingleValueOperator.GREATER_THAN:
+    case ValueOperator.NOT_EQUALS:
+      mappedOperator = Not(Equal(value));
+      break;
+    case ValueOperator.NOT_IN:
+      mappedOperator = Not(In(value));
+      break;
+    case ValueOperator.NOT_EMPTY:
+      mappedOperator = Not(IsNull());
+      break;
+    case ValueOperator.GREATER_THAN:
       mappedOperator = MoreThan(value);
       break;
-    case SingleValueOperator.GREATER_THAN_OR_EQUAL:
+    case ValueOperator.GREATER_THAN_OR_EQUAL:
       mappedOperator = MoreThanOrEqual(value);
       break;
-    case SingleValueOperator.LESS_THAN:
+    case ValueOperator.LESS_THAN:
       mappedOperator = LessThan(value);
       break;
-    case SingleValueOperator.LESS_THAN_OR_EQUAL:
+    case ValueOperator.LESS_THAN_OR_EQUAL:
       mappedOperator = LessThanOrEqual(value);
       break;
-    case SingleValueOperator.IN:
+    case ValueOperator.IN:
       if (Array.isArray(value)) {
         mappedOperator = In(value);
       }
       break;
-    case SingleValueOperator.LIKE:
+    case ValueOperator.LIKE:
       if (typeof value === 'string') {
         mappedOperator = ILike(`%${value}%`) as FindOperator<T>;
       }
       break;
-    case SingleValueOperator.EMPTY:
+    case ValueOperator.EMPTY:
       mappedOperator = IsNull();
       break;
-    case MultiValueOperator.BETWEEN:
+    case ValueOperator.BETWEEN:
       mappedOperator = Between(value[0], value[1]);
       break;
     default:
       throw new Error(`Unsupported operator: ${operator}`);
-  }
-  if (filter.reverse === true && mappedOperator) {
-    mappedOperator = Not(mappedOperator);
   }
   return mappedOperator;
 }

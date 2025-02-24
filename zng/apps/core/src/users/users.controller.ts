@@ -4,6 +4,7 @@ import { Get, Post, Put, Param, Body } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiExtraModels,
   ApiInternalServerErrorResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -12,8 +13,8 @@ import {
 } from '@nestjs/swagger';
 import { ValidateOptionalQueryParamsPipe } from '@library/shared/common/pipes/optional.params.pipe';
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
-import { SearchQueryDto } from '@library/shared/common/search';
-import { PagingDto } from '@library/shared/common/paging';
+import { SearchFilterDto, SearchQueryDto } from '@library/shared/common/search';
+import { PagingDto, PagingOptionsDto } from '@library/shared/common/paging';
 
 @Controller('users')
 export class UsersController {
@@ -119,13 +120,14 @@ export class UsersController {
     return result;
   }
 
-  @ApiQuery({ name: 'query', required: false, description: 'Search filters and pagination settings' })
+  @ApiExtraModels(SearchQueryDto, SearchFilterDto, PagingOptionsDto)
+  @ApiBody({ type: SearchQueryDto })
   @ApiOkResponse({ description: 'Found Users array with pagination meta', type: PagingDto<UserResponseDto> })
   @ApiNoContentResponse({ description: 'No Users found', isArray: false })
   @ApiBadRequestResponse({ description: 'Invalid search parameters', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  @Get('/search')
-  public async searchUsers(@Query() query: SearchQueryDto): Promise<PagingDto<UserResponseDto>> {
+  @Post('/search')
+  public async searchUsers(@Body() query: SearchQueryDto): Promise<PagingDto<UserResponseDto>> {
     const result = await this.userService.search(query);
 
     if (!result.data.length) {
