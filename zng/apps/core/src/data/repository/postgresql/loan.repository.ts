@@ -14,17 +14,12 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     @InjectRepository(Loan)
     protected readonly repository: Repository<Loan>
   ) {
-    super(repository);
+    super(repository, Loan);
   }
 
   public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {
     this.logger.debug(`getByLenderId: ${lenderId}`);
 
     return this.repository.findBy({ lenderId });
-  }
-
-  protected hasFilterableField(field: string): boolean {
-    const loanFields = Object.keys(new Loan());
-    return loanFields.includes(field);
   }
 }

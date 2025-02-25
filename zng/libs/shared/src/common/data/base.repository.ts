@@ -31,12 +31,15 @@ import { buildSearchQuery } from '../search';
  * @implements {IRepositoryBase<Entity>}
  * @template Entity - must support Primary keys (either singular and named id, or composite)
  */
-export abstract class RepositoryBase<Entity extends EntityId<SingleIdEntityType | CompositeIdEntityType>>
+export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | CompositeIdEntityType>>
   implements IRepositoryBase<Entity>
 {
   protected readonly repository: Repository<Entity>;
 
-  constructor(protected readonly repo: Repository<Entity>) {
+  constructor(
+    protected readonly repo: Repository<Entity>,
+    private readonly entityClass: { new (...args: any[]): Entity } // Ensures entityClass can be instantiated
+  ) {
     this.repository = repo;
   }
 
@@ -143,7 +146,7 @@ export abstract class RepositoryBase<Entity extends EntityId<SingleIdEntityType 
 
   public async search(filters?: ISearchFilter[], paging?: IPagingOptions): Promise<IPaging<Entity>> {
     let correctFilters = filters || [];
-    if (filters) correctFilters = filters.filter((f) => this.hasFilterableField(f.field));
+    if (filters) correctFilters = filters.filter((f) => this.isFieldFilterable(f.field));
     const searchQuery = buildSearchQuery<Entity>(correctFilters);
     const searchPaging = buildPagingQuery<Entity>(paging);
     const { skip, take } = searchPaging;
@@ -176,5 +179,13 @@ export abstract class RepositoryBase<Entity extends EntityId<SingleIdEntityType 
    * @param {String} field - Field name to check
    * @returns {Boolean} - True if the field is filterable, false otherwise
    */
-  protected abstract hasFilterableField(field: string): boolean;
+  protected isFieldFilterable(field: string): boolean {
+    const entityInstance = this.getEntityInstance();
+
+    return Object.keys(entityInstance).includes(field);
+  }
+
+  private getEntityInstance(): Entity {
+    return new this.entityClass();
+  }
 }
