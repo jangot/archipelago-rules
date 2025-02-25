@@ -22,4 +22,9 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
 
     return this.repository.findBy({ lenderId });
   }
+
+  protected hasFilterableField(field: string): boolean {
+    const loanFields = Object.keys(new Loan());
+    return loanFields.includes(field);
+  }
 }

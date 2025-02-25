@@ -15,4 +15,9 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
   ) {
     super(repository);
   }
+
+  protected hasFilterableField(field: string): boolean {
+    const userFields = Object.keys(new ApplicationUser());
+    return userFields.includes(field);
+  }
 }

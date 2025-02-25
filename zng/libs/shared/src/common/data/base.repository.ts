@@ -31,7 +31,7 @@ import { buildSearchQuery } from '../search';
  * @implements {IRepositoryBase<Entity>}
  * @template Entity - must support Primary keys (either singular and named id, or composite)
  */
-export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | CompositeIdEntityType>>
+export abstract class RepositoryBase<Entity extends EntityId<SingleIdEntityType | CompositeIdEntityType>>
   implements IRepositoryBase<Entity>
 {
   protected readonly repository: Repository<Entity>;
@@ -142,7 +142,9 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
   }
 
   public async search(filters?: ISearchFilter[], paging?: IPagingOptions): Promise<IPaging<Entity>> {
-    const searchQuery = buildSearchQuery<Entity>(filters);
+    let correctFilters = filters || [];
+    if (filters) correctFilters = filters.filter((f) => this.hasFilterableField(f.field));
+    const searchQuery = buildSearchQuery<Entity>(correctFilters);
     const searchPaging = buildPagingQuery<Entity>(paging);
     const { skip, take } = searchPaging;
     const result = await this.repository.findAndCount({ where: searchQuery, ...searchPaging });
@@ -167,4 +169,12 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
   protected actionResult(result: UpdateResult | DeleteResult): boolean {
     return (result.affected || 0) > 0;
   }
+
+  /**
+   * Function to check if the field of the Entity is filterable.
+   * If returns false, the field will be ignored in the search query.
+   * @param {String} field - Field name to check
+   * @returns {Boolean} - True if the field is filterable, false otherwise
+   */
+  protected abstract hasFilterableField(field: string): boolean;
 }
