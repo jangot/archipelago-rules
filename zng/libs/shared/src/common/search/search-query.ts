@@ -1,4 +1,4 @@
-import { MultiValueOperator, ValueOperator } from './value-operator';
+import { ValueOperator } from './value-operator';
 
 export type FilterableFieldType = SimpleFieldType | ArrayFieldType;
 export type SimpleFieldType = string | number | boolean | Date;
@@ -7,7 +7,7 @@ export type ArrayFieldType = string[] | number[] | Date[];
 /**
  * Represents a search filter used in a query.
  */
-export interface SearchFilter {
+export interface ISearchFilter {
   /**
    * The name of the field to filter on.
    */
@@ -23,11 +23,6 @@ export interface SearchFilter {
    * The value(s) to apply the operator to.
    */
   value: any | any[];
-
-  /**
-   * Optional flag to reverse the condition.
-   */
-  reverse?: boolean;
 }
 
 /**
@@ -35,9 +30,9 @@ export interface SearchFilter {
  *
  * @template T - The type of the field value, which extends `FieldType`.
  *
- * @extends SearchFilter
+ * @extends ISearchFilter
  */
-export interface BaseSearchCondition<T extends FilterableFieldType> extends SearchFilter {
+export interface BaseSearchCondition<T extends FilterableFieldType> extends ISearchFilter {
   /**
    * The operator to apply to the field value.
    */
@@ -55,11 +50,11 @@ export interface BaseSearchCondition<T extends FilterableFieldType> extends Sear
  * @template T - The type of the values to compare, which can be either a number or a Date.
  * @extends BaseSearchCondition<T>
  *
- * @property {MultiValueOperator.BETWEEN} operator - The operator used for the condition, which is always `BETWEEN`.
+ * @property {ValueOperator.BETWEEN} operator - The operator used for the condition, which is always `BETWEEN`.
  * @property {[T, T]} value - A tuple containing the two values to compare against.
  */
 export interface BetweenSearchCondition<T extends number | Date> extends BaseSearchCondition<T> {
-  operator: MultiValueOperator.BETWEEN;
+  operator: ValueOperator.BETWEEN;
   value: [T, T];
 }
 

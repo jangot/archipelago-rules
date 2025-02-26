@@ -9,7 +9,7 @@
 import { FindManyOptions, FindOneOptions, FindOptionsWhere, ObjectId, RemoveOptions } from 'typeorm';
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
 import { IPaging, IPagingOptions } from '../paging';
-import { SearchFilter } from '../search';
+import { ISearchFilter } from '../search';
 
 export type AllowedCriteriaTypes = string | string[] | number | number[] | Date | Date[] | ObjectId | ObjectId[];
 
@@ -151,19 +151,19 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
   /**
    * Searches for entities that match the given filters.
    *
-   * @param {SearchFilter[]} filters - Search filters for finding the entities.
+   * @param {ISearchFilter[]} filters - Search filters for finding the entities.
    * @param {IPagingOptions} [paging] - Paging options for the search.
    * @returns {Promise<IPaging<Entity>>} A promise resolving to a paginated array of Entities, could be empty.
    * @memberof IRepositoryBase
    */
-  search(filters: SearchFilter[], paging?: IPagingOptions): Promise<IPaging<Entity>>;
+  search(filters?: ISearchFilter[], paging?: IPagingOptions): Promise<IPaging<Entity>>;
 
   /**
    * Searches for all entities that match the given filters.
    *
-   * @param {SearchFilter[]} filters - Search filters for finding the entities.
+   * @param {ISearchFilter[]} filters - Search filters for finding the entities.
    * @returns {Promise<Entity[]>} A promise resolving to an array of Entities, could be empty.
    * @memberof IRepositoryBase
    */
-  searchAll(filters: SearchFilter[]): Promise<Entity[]>;
+  searchAll(filters: ISearchFilter[]): Promise<Entity[]>;
 }

@@ -14,7 +14,7 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     @InjectRepository(Loan)
     protected readonly repository: Repository<Loan>
   ) {
-    super(repository);
+    super(repository, Loan);
   }
 
   public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {

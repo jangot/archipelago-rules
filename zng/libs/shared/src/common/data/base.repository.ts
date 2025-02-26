@@ -19,7 +19,7 @@ import {
   UpdateResult,
 } from 'typeorm';
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
-import { SearchFilter } from '../search/search-query';
+import { ISearchFilter } from '../search/search-query';
 import { buildPagingQuery, IPaging, IPagingOptions } from '../paging';
 import { buildSearchQuery } from '../search';
 
@@ -36,7 +36,10 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
 {
   protected readonly repository: Repository<Entity>;
 
-  constructor(protected readonly repo: Repository<Entity>) {
+  constructor(
+    protected readonly repo: Repository<Entity>,
+    private readonly entityClass: { new (...args: any[]): Entity } // Ensures entityClass can be instantiated
+  ) {
     this.repository = repo;
   }
 
@@ -141,8 +144,10 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return this.actionResult(restoreResult);
   }
 
-  public async search(filters: SearchFilter[], paging?: IPagingOptions): Promise<IPaging<Entity>> {
-    const searchQuery = buildSearchQuery<Entity>(filters);
+  public async search(filters?: ISearchFilter[], paging?: IPagingOptions): Promise<IPaging<Entity>> {
+    let correctFilters = filters || [];
+    if (filters) correctFilters = filters.filter((f) => this.isFieldFilterable(f.field));
+    const searchQuery = buildSearchQuery<Entity>(correctFilters);
     const searchPaging = buildPagingQuery<Entity>(paging);
     const { skip, take } = searchPaging;
     const result = await this.repository.findAndCount({ where: searchQuery, ...searchPaging });
@@ -152,7 +157,7 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     };
   }
 
-  public async searchAll(filters: SearchFilter[]): Promise<Entity[]> {
+  public async searchAll(filters: ISearchFilter[]): Promise<Entity[]> {
     const searchQuery = buildSearchQuery<Entity>(filters);
     const result = await this.repository.find({ where: searchQuery });
     return result;
@@ -166,5 +171,21 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
 
   protected actionResult(result: UpdateResult | DeleteResult): boolean {
     return (result.affected || 0) > 0;
+  }
+
+  /**
+   * Function to check if the field of the Entity is filterable.
+   * If returns false, the field will be ignored in the search query.
+   * @param {String} field - Field name to check
+   * @returns {Boolean} - True if the field is filterable, false otherwise
+   */
+  protected isFieldFilterable(field: string): boolean {
+    const entityInstance = this.getEntityInstance();
+
+    return Object.keys(entityInstance).includes(field);
+  }
+
+  private getEntityInstance(): Entity {
+    return new this.entityClass();
   }
 }

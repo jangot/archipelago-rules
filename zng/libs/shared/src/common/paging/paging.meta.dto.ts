@@ -12,6 +12,7 @@ import { cloneDeep } from 'lodash';
 import { IPagingOptions } from './paging.options.interface';
 import { IPagingMeta } from './paging.meta.interface';
 import { PagingOptionsDto } from './paging.options.dto';
+import { DEFAULT_PAGING_LIMIT } from './paging.order.constants';
 
 @ApiSchema({ name: 'pageMeta' })
 export class PagingMetaDto implements IPagingMeta {
@@ -26,15 +27,15 @@ export class PagingMetaDto implements IPagingMeta {
 
   // Will copy over PageOptionsDto and derived class values added to it
   @ApiProperty({ type: PagingOptionsDto })
-  public previousPage?: IPagingOptions = null;
+  public previousPage?: IPagingOptions | null = null;
 
   // Will copy over PageOptionsDto and derived class values added to it
   @ApiProperty({ type: PagingOptionsDto })
-  public nextPage?: IPagingOptions = null;
+  public nextPage?: IPagingOptions | null = null;
 
   constructor({ pageOptions, currentCount, totalCount }: IPageMetaParameters) {
-    this.offset = pageOptions.offset;
-    this.limit = pageOptions.limit;
+    this.offset = pageOptions.offset || 0;
+    this.limit = pageOptions.limit || DEFAULT_PAGING_LIMIT;
     this.totalCount = totalCount;
 
     this.calculatePreviousPage(pageOptions, currentCount);

@@ -7,7 +7,7 @@ import { UserCreateRequestDto, UserUpdateRequestDto } from '../../src/dto';
 import { UsersModule } from '../../src/users/users.module';
 import { UsersService } from '../../src/users/users.service';
 import { IBackup } from 'pg-mem';
-import { MultiValueOperator, SingleValueOperator } from '@library/shared/common/search';
+import { ValueOperator } from '@library/shared/common/search';
 
 describe('UsersService Integration Tests', () => {
   let module: TestingModule;
@@ -367,54 +367,112 @@ describe('UsersService Integration Tests', () => {
       }
 
       // EQ
-      const equalsFilters = [{ field: 'firstName', operator: SingleValueOperator.EQUALS, value: 'Alice' }];
-      const equalsResult = await service.search(equalsFilters);
+      const equalsFilters = [{ field: 'firstName', operator: ValueOperator.EQUALS, value: 'Alice' }];
+      const equalsResult = await service.search({ filters: equalsFilters });
 
-      expect(equalsResult).toHaveLength(1);
-      expect(equalsResult[0].firstName).toBe('Alice');
+      expect(equalsResult.data).toHaveLength(1);
+      expect(equalsResult.data[0].firstName).toBe('Alice');
 
       // ILIKE (Case-insensitive LIKE)
-      const likeFilters = [{ field: 'email', operator: SingleValueOperator.LIKE, value: 'davis' }];
-      const likeResult = await service.search(likeFilters);
+      const likeFilters = [{ field: 'email', operator: ValueOperator.LIKE, value: 'davis' }];
+      const likeResult = await service.search({ filters: likeFilters });
 
-      expect(likeResult).toHaveLength(2);
-      expect(likeResult.map((r) => r.firstName)).toEqual(['Bob', 'Charlie']);
+      expect(likeResult.data).toHaveLength(2);
+      // adding .sort() for each array in comaprison to not recieve false negative
+      expect(likeResult.data.map((r) => r.firstName).sort()).toEqual(['Bob', 'Charlie'].sort());
 
       // NOT EQ
-      const notEqualsFilters = [
-        { field: 'lastName', operator: SingleValueOperator.EQUALS, reverse: true, value: 'Davis' },
-      ];
-      const notEqualsResult = await service.search(notEqualsFilters);
+      const notEqualsFilters = [{ field: 'lastName', operator: ValueOperator.NOT_EQUALS, value: 'Davis' }];
+      const notEqualsResult = await service.search({ filters: notEqualsFilters });
 
-      expect(notEqualsResult).toHaveLength(3);
+      expect(notEqualsResult.data).toHaveLength(3);
 
       // MORE THAN EQ
       const moreThanFilters = [
-        { field: 'phoneNumber', operator: SingleValueOperator.GREATER_THAN_OR_EQUAL, value: '+12124567892' },
+        { field: 'phoneNumber', operator: ValueOperator.GREATER_THAN_OR_EQUAL, value: '+12124567892' },
       ];
-      const moreThanResult = await service.search(moreThanFilters);
+      const moreThanResult = await service.search({ filters: moreThanFilters });
 
-      expect(moreThanResult).toHaveLength(3);
+      expect(moreThanResult.data).toHaveLength(3);
 
       // IN
-      const inFilters = [{ field: 'firstName', operator: SingleValueOperator.IN, value: ['Alice', 'Bob'] }];
-      const inResult = await service.search(inFilters);
+      const inFilters = [{ field: 'firstName', operator: ValueOperator.IN, value: ['Alice', 'Bob'] }];
+      const inResult = await service.search({ filters: inFilters });
 
-      expect(inResult).toHaveLength(2);
+      expect(inResult.data).toHaveLength(2);
 
       // BETWEEN
       const betweenFilter = [
-        { field: 'phoneNumber', operator: MultiValueOperator.BETWEEN, value: ['+12124567893', '+12124567894'] },
+        { field: 'phoneNumber', operator: ValueOperator.BETWEEN, value: ['+12124567893', '+12124567894'] },
       ];
-      const betweenResult = await service.search(betweenFilter);
+      const betweenResult = await service.search({ filters: betweenFilter });
 
-      expect(betweenResult).toHaveLength(2);
+      expect(betweenResult.data).toHaveLength(2);
 
       // EMPTY
-      const emptyFilter = [{ field: 'deletedAt', operator: SingleValueOperator.EMPTY, value: null }];
-      const emptyResult = await service.search(emptyFilter);
+      const emptyFilter = [{ field: 'deletedAt', operator: ValueOperator.EMPTY, value: null }];
+      const emptyResult = await service.search({ filters: emptyFilter });
 
-      expect(emptyResult).toHaveLength(5);
+      expect(emptyResult.data).toHaveLength(5);
+    });
+
+    it('should handle pagination and filtering correctly', async () => {
+      const users = Array.from({ length: 25 }, (_, i) => ({
+        firstName: `User${i + 1}`,
+        lastName: `Last${i + 1}`,
+        email: `user${i + 1}@example.com`,
+        phoneNumber: `+12124567${String(i).padStart(3, '0')}`,
+      }));
+
+      for (const user of users) {
+        await service.createUser({ ...user });
+      }
+
+      // Pagination: Page 1, Limit 10
+      const page1Result = await service.search({ paging: { offset: 0, limit: 10 } });
+      expect(page1Result.data).toHaveLength(10);
+      expect(page1Result.meta.totalCount).toBe(25);
+
+      // Pagination: Page 2, Limit 10
+      const page2Result = await service.search({ paging: { offset: 10, limit: 10 } });
+      expect(page2Result.data).toHaveLength(10);
+      expect(page2Result.meta.totalCount).toBe(25);
+
+      // Pagination: Page 3, Limit 10 (should have 5 users)
+      const page3Result = await service.search({ paging: { offset: 20, limit: 10 } });
+      expect(page3Result.data).toHaveLength(5);
+      expect(page3Result.meta.totalCount).toBe(25);
+
+      // Filter: firstName EQUALS 'User1'
+      const equalsFilter = [{ field: 'firstName', operator: ValueOperator.EQUALS, value: 'User1' }];
+      const equalsResult = await service.search({ filters: equalsFilter });
+      expect(equalsResult.data).toHaveLength(1);
+      expect(equalsResult.data[0].firstName).toBe('User1');
+
+      // Filter: lastName LIKE 'Last2'
+      const likeFilter = [{ field: 'lastName', operator: ValueOperator.LIKE, value: 'Last2' }];
+      const likeResult = await service.search({ filters: likeFilter });
+      expect(likeResult.data).toHaveLength(7);
+
+      // Filter: phoneNumber GREATER_THAN '+12124567010'
+      const greaterThanFilter = [{ field: 'phoneNumber', operator: ValueOperator.GREATER_THAN, value: '+12124567010' }];
+      const greaterThanResult = await service.search({ filters: greaterThanFilter });
+      expect(greaterThanResult.data).toHaveLength(14);
+
+      // Filter: firstName IN ['User1', 'User2', 'User3']
+      const inFilter = [{ field: 'firstName', operator: ValueOperator.IN, value: ['User1', 'User2', 'User3'] }];
+      const inResult = await service.search({ filters: inFilter });
+      expect(inResult.data).toHaveLength(3);
+    });
+  });
+
+  describe('edge-cases', () => {
+    it('should properly handle empty search request', async () => {
+      const result = await service.search({
+        filters: [{ field: 'nonexistent', operator: ValueOperator.EQUALS, value: 'nonexistent' }],
+      });
+      expect(result.data).toHaveLength(0);
+      expect(result.meta.totalCount).toBe(0);
     });
   });
 });
