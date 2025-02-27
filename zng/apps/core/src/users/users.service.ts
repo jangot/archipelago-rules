@@ -52,6 +52,21 @@ export class UsersService {
     return dtoResult;
   }
 
+  /**
+   * Retrieves a user by their contact information, which can be either an email or a phone number.
+   *
+   * @param {string} contact - The contact information of the user (email or phone number).
+   * @returns {Promise<UserResponseDto | null>} - A promise that resolves to a UserResponseDto if a user is found, or null if no user is found.
+   */
+  public async getUserByContact(contact: string): Promise<UserResponseDto | null> {
+    this.logger.debug(`getUserByContact: Getting User by Contact: ${contact}`);
+
+    const result = await this.dataService.users.findOneBy([{ email: contact }, { phoneNumber: contact }]);
+    const dtoResult = DtoMapper.toDto(result, UserResponseDto);
+
+    return dtoResult;
+  }
+
   public async createUser(input: UserCreateRequestDto): Promise<UserResponseDto | null> {
     this.logger.debug(`createUser: Creating User: ${input.email}`);
 
