@@ -4,6 +4,7 @@ import { UserResponseDto } from '../dto';
 import { IDataService } from '../data/idata.service';
 import { compare } from 'bcryptjs';
 import { AuthSecretType } from '@library/entity/interface';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -12,7 +13,8 @@ export class AuthService {
 
   constructor(
     private readonly dataService: IDataService,
-    private readonly usersService: UsersService
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService
   ) {}
 
   public async validatePassword(contact: string, password: string): Promise<UserResponseDto | null> {
@@ -32,5 +34,15 @@ export class AuthService {
     if (!isPasswordValid) return null;
 
     return user;
+  }
+
+  public async login(user: UserResponseDto): Promise<unknown> {
+    this.logger.debug(`login: Logging in user: ${user.id}`);
+
+    // Generate JWT token
+    const payload = { sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 }
