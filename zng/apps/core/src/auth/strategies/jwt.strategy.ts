@@ -3,13 +3,14 @@ import { UsersService } from '../../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { UserResponseDto } from '../../dto';
-import { UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 
 // Interface to avoid using 'any' as a type in 'validate' method
 interface IJwtPayload {
   sub: string;
 }
 
+@Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     private readonly usersService: UsersService,

@@ -1,18 +1,34 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { UserResponseDto } from '../dto';
+import { IDataService } from '../data/idata.service';
+import { compare } from 'bcryptjs';
+import { AuthSecretType } from '@library/entity/interface';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly usersService: UsersService) {}
+  // Creating a Logger like this sets the Context, which will log the class name with the Log entries
+  private readonly logger: Logger = new Logger(UsersService.name);
+
+  constructor(
+    private readonly dataService: IDataService,
+    private readonly usersService: UsersService
+  ) {}
 
   public async validatePassword(contact: string, password: string): Promise<UserResponseDto | null> {
-    const user = await this.usersService.getUserByContact(contact);
+    this.logger.debug(`validatePassword: Validating password for contact: ${contact}`);
 
+    const user = await this.usersService.getUserByContact(contact);
     if (!user) return user; // Returns null if user is not found
 
-    // TODO: We validate password hash here
-    const isPasswordValid = password === 'password';
+    // We validate password hash here
+    const { id } = user;
+    const authSecret = await this.dataService.authSecrets.findOneBy({ ownerId: id, type: AuthSecretType.PASSWORD });
+    // No secret found
+    if (!authSecret) return null;
+
+    const { secret } = authSecret;
+    const isPasswordValid = await compare(password, secret);
     if (!isPasswordValid) return null;
 
     return user;
