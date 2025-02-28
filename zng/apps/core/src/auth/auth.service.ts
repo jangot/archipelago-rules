@@ -1,10 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import { UserResponseDto } from '../dto';
+import { AuthSecretCreateRequestDto, JwtResponseDto, UserResponseDto } from '../dto';
 import { IDataService } from '../data/idata.service';
-import { compare } from 'bcryptjs';
+import { compare, hash } from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { AuthSecretType, ContactType } from '@library/entity/enum';
+import { AuthSecret } from '../data/entity';
+import { EntityMapper } from '@library/entity/mapping/entity.mapper';
+import { v4 } from 'uuid';
 
 @Injectable()
 export class AuthService {
@@ -40,13 +43,39 @@ export class AuthService {
     return user;
   }
 
-  public async login(user: UserResponseDto): Promise<unknown> {
-    this.logger.debug(`login: Logging in user: ${user.id}`);
+  // feels like to much opened to the world
+  public async login(id: string): Promise<JwtResponseDto> {
+    this.logger.debug(`login: Logging in user: ${id}`);
 
     // Generate JWT token
-    const payload = { sub: user.id };
+    const payload = { sub: id };
     return {
-      access_token: this.jwtService.sign(payload),
+      accessToken: this.jwtService.sign(payload),
     };
+  }
+
+  // TODO: for sure should be refactored. Maybe to factory pattern
+  public async linkPasswordSecret(userId: string, password: string): Promise<JwtResponseDto | null> {
+    this.logger.debug(`linkPasswordSecret: Linking password secret for user: ${userId}`);
+
+    const hashedPassword = await hash(password, 10);
+    const createPayload: AuthSecretCreateRequestDto = {
+      userId,
+      type: AuthSecretType.PASSWORD,
+      secret: hashedPassword,
+    };
+    const secret = await this.createAuthSecret(createPayload);
+    if (!secret) return null;
+
+    return this.login(userId);
+  }
+
+  private async createAuthSecret(input: AuthSecretCreateRequestDto): Promise<AuthSecret | null> {
+    this.logger.debug(`createAuthSecret: Creating AuthSecret ${input.type} for user: ${input.userId}`);
+
+    const secret = EntityMapper.toEntity(input, AuthSecret);
+    secret.id = v4();
+    const result = await this.dataService.authSecrets.create(secret);
+    return result;
   }
 }

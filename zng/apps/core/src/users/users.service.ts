@@ -115,4 +115,20 @@ export class UsersService {
     // Whats actually current count stands for? limit+skip?
     return createPaginationWrapper<UserResponseDto>({ ...meta, currentCount: meta.limit, data: dtoResult });
   }
+
+  /**
+   * Checks if a user with the given email or phone number already exists.
+   *
+   * @param {string} email - The email of the user to check.
+   * @param {string} phoneNumber - The phone number of the user to check.
+   * @returns {Promise<boolean>} - A promise that resolves to true if the user is new (does not exist), or false if the user already exists.
+   */
+  public async isNewUser(email: string, phoneNumber: string): Promise<boolean> {
+    const [userByEmail, userByPhone] = await Promise.all([
+      this.getUserByContact(email, ContactType.EMAIL),
+      this.getUserByContact(phoneNumber, ContactType.PHONE_NUMBER)
+    ]);
+
+    return !userByEmail && !userByPhone;
+  }
 }
