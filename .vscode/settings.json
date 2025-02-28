@@ -1,0 +1,5 @@
+{
+  "jestrunner.debugOptions": {
+    "runtimeExecutable": "${workspaceRoot}/zng/scripts/run-jest.sh"
+  }
+}
