@@ -13,7 +13,7 @@ import { ApplicationUser } from './application.user.entity';
 import { AuthSecretType } from '@library/entity/enum';
 
 @Entity('auth_secrets', { schema: 'core' })
-@Unique('auth_secrets_user_id_per_type_unique', ['ownuserIderId', 'type'])
+@Unique('auth_secrets_user_id_per_type_unique', ['userId', 'type'])
 export class AuthSecret implements IAuthSecret {
   @PrimaryGeneratedColumn('uuid')
   id: string;
