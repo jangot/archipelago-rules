@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from '../../src/users/users.controller';
 import { UsersService } from '../../src/users/users.service';
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from 'apps/core/src/dto';
+import { ContactType } from '@library/entity/enum';
 
 describe('UserController', () => {
   let controller: UsersController;
@@ -15,8 +16,7 @@ describe('UserController', () => {
           provide: UsersService,
           useValue: {
             getUserById: jest.fn(),
-            getUserByEmail: jest.fn(),
-            getUserByPhoneNumber: jest.fn(),
+            getUserByContact: jest.fn(),
             createUser: jest.fn(),
             updateUser: jest.fn(),
           },
@@ -60,11 +60,11 @@ describe('UserController', () => {
         firstName: 'Test',
         lastName: 'User',
       };
-      jest.spyOn(service, 'getUserByEmail').mockResolvedValue(userResponse);
+      jest.spyOn(service, 'getUserByContact').mockResolvedValue(userResponse);
 
       const result = await controller.getUserByParameter({ email });
       expect(result).toEqual(userResponse);
-      expect(service.getUserByEmail).toHaveBeenCalledWith(email);
+      expect(service.getUserByContact).toHaveBeenCalledWith(email, ContactType.EMAIL);
     });
   });
 
@@ -78,11 +78,11 @@ describe('UserController', () => {
         firstName: 'Test',
         lastName: 'User',
       };
-      jest.spyOn(service, 'getUserByPhoneNumber').mockResolvedValue(userResponse);
+      jest.spyOn(service, 'getUserByContact').mockResolvedValue(userResponse);
 
       const result = await controller.getUserByParameter({ phoneNumber });
       expect(result).toEqual(userResponse);
-      expect(service.getUserByPhoneNumber).toHaveBeenCalledWith(phoneNumber);
+      expect(service.getUserByContact).toHaveBeenCalledWith(phoneNumber, ContactType.PHONE_NUMBER);
     });
   });
 

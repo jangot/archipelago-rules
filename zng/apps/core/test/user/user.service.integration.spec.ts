@@ -8,6 +8,7 @@ import { UsersModule } from '../../src/users/users.module';
 import { UsersService } from '../../src/users/users.service';
 import { IBackup } from 'pg-mem';
 import { ValueOperator } from '@library/shared/common/search';
+import { ContactType } from '@library/entity/enum';
 
 describe('UsersService Integration Tests', () => {
   let module: TestingModule;
@@ -77,7 +78,7 @@ describe('UsersService Integration Tests', () => {
 
       const createResult = await service.createUser(mockUser);
 
-      const result = await service.getUserByEmail(createResult!.email);
+      const result = await service.getUserByContact(createResult!.email, ContactType.EMAIL);
       expect(result).toEqual({
         id: createResult!.id,
         firstName: mockUser.firstName,
@@ -88,7 +89,7 @@ describe('UsersService Integration Tests', () => {
     });
 
     it('should return null if user not found', async () => {
-      const result = await service.getUserByEmail('nonexistent@example.com');
+      const result = await service.getUserByContact('nonexistent@example.com', ContactType.EMAIL);
       expect(result).toBeNull();
     });
   });
@@ -104,7 +105,7 @@ describe('UsersService Integration Tests', () => {
 
       const createResult = await service.createUser(mockUser);
 
-      const result = await service.getUserByPhoneNumber(createResult!.phoneNumber);
+      const result = await service.getUserByContact(createResult!.phoneNumber, ContactType.PHONE_NUMBER);
       expect(result).toEqual({
         id: createResult!.id,
         firstName: mockUser.firstName,
@@ -115,7 +116,7 @@ describe('UsersService Integration Tests', () => {
     });
 
     it('should return null if user not found', async () => {
-      const result = await service.getUserByPhoneNumber('0000000000');
+      const result = await service.getUserByContact('0000000000', ContactType.PHONE_NUMBER);
       expect(result).toBeNull();
     });
   });

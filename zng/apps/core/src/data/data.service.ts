@@ -4,22 +4,11 @@ import { IUserRepository, ILoanRepository, IAuthSecretRepository } from './repos
 
 @Injectable()
 export class DataService implements IDataService {
-  readonly users: IUserRepository;
-  readonly loans: ILoanRepository;
-  readonly authSecrets: IAuthSecretRepository;
-
   constructor(
-    @Inject(IUserRepository)
-    protected readonly userRepository: IUserRepository,
-    @Inject(ILoanRepository)
-    protected readonly loanRepository: ILoanRepository,
-    @Inject(IAuthSecretRepository)
-    protected readonly authSecretRepository: IAuthSecretRepository
-  ) {
-    this.users = userRepository;
-    this.loans = loanRepository;
-    this.authSecrets = authSecretRepository;
-  }
+    @Inject(IUserRepository) public readonly users: IUserRepository,
+    @Inject(ILoanRepository) public readonly loans: ILoanRepository,
+    @Inject(IAuthSecretRepository) public readonly authSecrets: IAuthSecretRepository
+  ) {}
 
   // Additional methods for IDataService can be implemented here
 }

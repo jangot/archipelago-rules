@@ -17,9 +17,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     // Make it 'protected' not 'private' to be able to access it in the super() call
     protected readonly config: ConfigService
   ) {
+    const jwtSecret = config.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not defined');
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: config.get('JWT_SECRET') || '', // ConfigService provides 'undefined' as return option while 'secretOrKey' does not support this
+      secretOrKey: jwtSecret,
       ignoreExpiration: false, // TODO: Should we make it dynamic for testing purposes?
     });
   }

@@ -15,6 +15,7 @@ import { ValidateOptionalQueryParamsPipe } from '@library/shared/common/pipes/op
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
 import { SearchFilterDto, SearchQueryDto } from '@library/shared/common/search';
 import { PagingDto, PagingOptionsDto } from '@library/shared/common/paging';
+import { ContactType } from '@library/entity/enum';
 
 @Controller('users')
 export class UsersController {
@@ -60,9 +61,9 @@ export class UsersController {
     }
 
     if (email) {
-      result = await this.userService.getUserByEmail(email);
+      result = await this.userService.getUserByContact(email, ContactType.EMAIL);
     } else if (phoneNumber) {
-      result = await this.userService.getUserByPhoneNumber(phoneNumber);
+      result = await this.userService.getUserByContact(phoneNumber, ContactType.PHONE_NUMBER);
     }
 
     if (!result) {

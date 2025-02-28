@@ -7,6 +7,7 @@ import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { v4 } from 'uuid';
 import { SearchQueryDto } from '@library/shared/common/search';
 import { createPaginationWrapper, PagingDto } from '@library/shared/common/paging';
+import { ContactType } from '@library/entity/enum';
 
 @Injectable()
 export class UsersService {
@@ -31,39 +32,30 @@ export class UsersService {
     return dtoResult;
   }
 
-  // Need to expose a more generic 'Search' method on the Repository
-  // I do not want to have tons of these simple Methods that do the same thing
-  // With the only difference being what field is being looked up by
-  public async getUserByEmail(email: string): Promise<UserResponseDto | null> {
-    this.logger.debug(`getUserByEmail: Getting User by Email: ${email}`);
-
-    const result = await this.dataService.users.findOneBy({ email });
-    const dtoResult = DtoMapper.toDto(result, UserResponseDto);
-
-    return dtoResult;
-  }
-
-  public async getUserByPhoneNumber(phoneNumber: string): Promise<UserResponseDto | null> {
-    this.logger.debug(`getUserByPhoneNumber: Getting User by Phone Number: ${phoneNumber}`);
-
-    const result = await this.dataService.users.findOneBy({ phoneNumber });
-    const dtoResult = DtoMapper.toDto(result, UserResponseDto);
-
-    return dtoResult;
-  }
-
   /**
    * Retrieves a user by their contact information, which can be either an email or a phone number.
    *
    * @param {string} contact - The contact information of the user (email or phone number).
+   * @param {ContactType} type - The type of contact information (EMAIL or PHONE_NUMBER).
    * @returns {Promise<UserResponseDto | null>} - A promise that resolves to a UserResponseDto if a user is found, or null if no user is found.
    */
-  public async getUserByContact(contact: string): Promise<UserResponseDto | null> {
-    this.logger.debug(`getUserByContact: Getting User by Contact: ${contact}`);
+  public async getUserByContact(contact: string, type: ContactType): Promise<UserResponseDto | null> {
+    this.logger.debug(`getUserByContact: Getting User by ${type} Contact: ${contact}`);
 
-    const result = await this.dataService.users.findOneBy([{ email: contact }, { phoneNumber: contact }]);
-    const dtoResult = DtoMapper.toDto(result, UserResponseDto);
+    let dtoResult: UserResponseDto | null = null;
 
+    switch (type) {
+      case ContactType.EMAIL:
+        const byEmail = await this.dataService.users.findOneBy({ email: contact });
+        dtoResult = DtoMapper.toDto(byEmail, UserResponseDto);
+        break;
+      case ContactType.PHONE_NUMBER:
+        const byPhone = await this.dataService.users.findOneBy({ phoneNumber: contact });
+        dtoResult = DtoMapper.toDto(byPhone, UserResponseDto);
+        break;
+      default:
+        break;
+    }
     return dtoResult;
   }
 

@@ -1,15 +1,10 @@
 import { EntityId } from '@library/shared/common/data';
-
-export enum AuthSecretType {
-  PASSWORD = 'password',
-  TOTP = 'totp',
-  APPLE = 'apple',
-}
+import { AuthSecretType } from '../enum';
 
 export interface IAuthSecret extends EntityId<string> {
   id: string;
   type: AuthSecretType;
-  ownerId: string;
+  userId: string;
   secret: string;
   expiresAt?: Date;
   // externalId?: string; // For case if Auth Provider needs to store some one more key

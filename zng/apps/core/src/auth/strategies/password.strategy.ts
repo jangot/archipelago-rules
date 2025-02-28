@@ -2,19 +2,28 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
 import { AuthService } from '../auth.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UserResponseDto } from '../../dto';
+import { PasswordVerificationDto, UserResponseDto } from '../../dto';
+import { ContactType } from '@library/entity/enum';
 
 @Injectable()
 export class PasswordStrategy extends PassportStrategy(Strategy, 'password') {
   constructor(private authService: AuthService) {
-    super({
-      // Renaming 'username' to 'contact' to highlight that it can be either an email or a phone number
-      usernameField: 'contact',
-    });
+    super({ passReqToCallback: true });
   }
 
-  async validate(contact: string, password: string): Promise<UserResponseDto> {
-    const user = await this.authService.validatePassword(contact, password);
+  async validate(req: Request): Promise<UserResponseDto> {
+    const body = req.body;
+    const validationBody: PasswordVerificationDto = {
+      password: body!['password'],
+      email: body!['email'],
+      phoneNumber: body!['phoneNumber'],
+    };
+    const contactType = validationBody.email ? ContactType.EMAIL : ContactType.PHONE_NUMBER;
+    const contact = validationBody.email || validationBody.phoneNumber || '';
+    if (!contact || !validationBody.password) {
+      throw new UnauthorizedException();
+    }
+    const user = await this.authService.validatePassword(contact, contactType, validationBody.password);
     if (!user) {
       throw new UnauthorizedException();
     }

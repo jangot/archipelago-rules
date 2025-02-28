@@ -3,8 +3,8 @@ import { UsersService } from '../users/users.service';
 import { UserResponseDto } from '../dto';
 import { IDataService } from '../data/idata.service';
 import { compare } from 'bcryptjs';
-import { AuthSecretType } from '@library/entity/interface';
 import { JwtService } from '@nestjs/jwt';
+import { AuthSecretType, ContactType } from '@library/entity/enum';
 
 @Injectable()
 export class AuthService {
@@ -17,15 +17,19 @@ export class AuthService {
     private readonly jwtService: JwtService
   ) {}
 
-  public async validatePassword(contact: string, password: string): Promise<UserResponseDto | null> {
-    this.logger.debug(`validatePassword: Validating password for contact: ${contact}`);
+  public async validatePassword(
+    contact: string,
+    contactType: ContactType,
+    password: string
+  ): Promise<UserResponseDto | null> {
+    this.logger.debug(`validatePassword: Validating password for ${contactType} contact: ${contact}`);
 
-    const user = await this.usersService.getUserByContact(contact);
+    const user = await this.usersService.getUserByContact(contact, contactType);
     if (!user) return user; // Returns null if user is not found
 
     // We validate password hash here
     const { id } = user;
-    const authSecret = await this.dataService.authSecrets.findOneBy({ ownerId: id, type: AuthSecretType.PASSWORD });
+    const authSecret = await this.dataService.authSecrets.getUserSecretByType(id, AuthSecretType.PASSWORD);
     // No secret found
     if (!authSecret) return null;
 

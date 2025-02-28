@@ -1,4 +1,4 @@
-import { AuthSecretType, IAuthSecret } from '@library/entity/interface';
+import { IAuthSecret } from '@library/entity/interface';
 import {
   Column,
   CreateDateColumn,
@@ -10,22 +10,23 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
+import { AuthSecretType } from '@library/entity/enum';
 
 @Entity('auth_secrets', { schema: 'core' })
-@Unique('auth_secrets_owner_id_per_type_unique', ['ownerId', 'type'])
+@Unique('auth_secrets_user_id_per_type_unique', ['ownuserIderId', 'type'])
 export class AuthSecret implements IAuthSecret {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'enum', enum: AuthSecretType }) // Not sure that it is the best way for enums
+  @Column({ type: 'text', enum: AuthSecretType }) // Not sure that it is the best way for enums
   type: AuthSecretType;
 
   @Column('uuid')
-  ownerId: string;
+  userId: string;
 
   @ManyToOne(() => ApplicationUser)
-  @JoinColumn({ name: 'owner_id' })
-  owner: ApplicationUser;
+  @JoinColumn({ name: 'user_id' })
+  user: ApplicationUser;
 
   @Column('text')
   secret: string;
