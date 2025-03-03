@@ -10,7 +10,7 @@ export abstract class RegistratorBase<D extends object, I extends RegistrationDt
 
   constructor(
     protected readonly data: IDataService,
-    protected readonly jwtService: JwtService,
+    protected readonly jwtService: JwtService
   ) {}
 
   public async advance(input: I, token: string | null): Promise<void> {

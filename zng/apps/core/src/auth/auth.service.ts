@@ -19,7 +19,7 @@ export class AuthService {
     private readonly dataService: IDataService,
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    private readonly config: ConfigService,
+    private readonly config: ConfigService
   ) {}
 
   public async validatePassword(
