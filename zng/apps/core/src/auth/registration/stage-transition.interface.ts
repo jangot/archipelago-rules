@@ -4,5 +4,6 @@ import { RegistrationDto } from '../../dto';
 export interface RegistrationStageTransition {
   from?: RegistrationStage;
   to: RegistrationStage;
-  action: (id?: string, input?: RegistrationDto) => Promise<void>;
+  // TODO: Fix the return type of the action
+  action: (id?: string, input?: RegistrationDto) => Promise<unknown>;
 }

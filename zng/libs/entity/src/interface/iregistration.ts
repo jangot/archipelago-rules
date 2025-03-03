@@ -58,8 +58,8 @@ export interface IRegistration extends EntityId<string> {
 }
 
 export interface OrganicRegistrationData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
 }

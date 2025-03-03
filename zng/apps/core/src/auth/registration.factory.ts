@@ -11,7 +11,7 @@ export class RegistrationFactory {
     private readonly sandbox: SandboxRegistrator
   ) {}
 
-  public async advance(input: RegistrationDto, token: string | null): Promise<void> {
+  public async advance(input: RegistrationDto, token: string | null): Promise<unknown> {
     const { type } = input;
 
     // TODO: think more about types - TS should automatically handle type, w/o need for casting
