@@ -1,15 +1,13 @@
 import { RegistrationStage } from '@library/entity/enum';
 import { RegistrationDto } from '../../dto';
 import { IDataService } from '../../data/idata.service';
-import { Registration } from '../../data/entity';
 import { RegistrationStageTransition } from './stage-transition.interface';
 import { JwtService } from '@nestjs/jwt';
 import { v4 } from 'uuid';
-import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
 
-export abstract class RegistratorBase<D extends object, I extends RegistrationDto> {
+export abstract class RegistratorBase<Payload extends RegistrationDto> {
   protected abstract stageTransitions: RegistrationStageTransition[];
 
   constructor(
@@ -19,7 +17,7 @@ export abstract class RegistratorBase<D extends object, I extends RegistrationDt
     protected readonly usersService: UsersService
   ) {}
 
-  public async advance(input: I, token: string | null): Promise<unknown> {
+  public async advance(input: Payload, token: string | null): Promise<unknown> {
     // Initial step of registration
     if (!token) {
       const transition = this.stageTransitions.find((t) => !t.from);
@@ -40,36 +38,22 @@ export abstract class RegistratorBase<D extends object, I extends RegistrationDt
     return this.next(transition.to, registration?.stage, tokenPayload.id, input);
   }
 
-  protected stringifyPayload(payload: D): string {
-    return JSON.stringify(payload);
-  }
-
-  protected parsePayload(payload: string): D {
-    return JSON.parse(payload) as D;
-  }
-
-  protected async getRegistrationState(id: string | null): Promise<Registration | null> {
+  protected async getRegistrationState(id: string | null): Promise<unknown | null> {
     if (!id) return null;
-    return await this.data.registrations.findOneBy({ id });
+    return {}; //TODO: complete
   }
 
-  protected async createRegistrationState(inputDto: I, data: D, stage: RegistrationStage): Promise<string> {
+  protected async createRegistrationState(inputDto: Payload, stage: RegistrationStage): Promise<string> {
     const id = v4();
-    const stringifiedData = this.stringifyPayload(data);
-    const registration = EntityMapper.toEntity(inputDto, Registration);
-    registration.id = id;
-    registration.data = stringifiedData;
-    registration.stage = stage;
-
-    const createResult = await this.data.registrations.create(registration);
-    return createResult.id;
+    // TODO: complete
+    return id;
   }
 
   protected next(
     targetStage: RegistrationStage,
     currentStage?: RegistrationStage,
     id?: string,
-    input?: I
+    input?: Payload
   ): Promise<unknown> {
     const transition = this.stageTransitions.find((t) => t.to === targetStage && t.from === currentStage);
     if (!transition) {
