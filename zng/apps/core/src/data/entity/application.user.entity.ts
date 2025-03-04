@@ -1,3 +1,4 @@
+import { RegistrationType } from '@library/entity/enum';
 import { IApplicationUser } from '@library/entity/interface';
 import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn } from 'typeorm';
 
@@ -13,18 +14,24 @@ export class ApplicationUser implements IApplicationUser {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('text')
-  firstName: string;
+  @Column('text', { nullable: true })
+  firstName: string | null;
 
-  @Column('text')
+  @Column('text', { nullable: true })
   lastName: string;
 
   @Column('text', { unique: true })
   email: string;
 
-  @Column('text')
-  phoneNumber: string;
+  @Column('text', { unique: true, nullable: true })
+  phoneNumber: string | null;
 
   @DeleteDateColumn({ type: 'timestamp with time zone' })
   deletedAt?: Date | null;
+
+  @Column({ type: 'text', nullable: true, enum: RegistrationType })
+  registrationType: RegistrationType | null;
+
+  @Column('timestamp with time zone', { nullable: true })
+  registeredAt: Date | null;
 }
