@@ -63,5 +63,4 @@ export abstract class RegistratorBase<Type extends RegistrationType, Payload ext
     }
     return transition.action(id, input);
   }
-
 }

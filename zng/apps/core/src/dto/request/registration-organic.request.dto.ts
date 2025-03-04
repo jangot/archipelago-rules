@@ -60,6 +60,6 @@ export class OrganicRegistrationRequestDto {
   @IsBoolean()
   retry = false;
 
-  @ApiProperty({ description: 'Registration flow type', type: String, required: true})
+  @ApiProperty({ description: 'Registration flow type', type: String, required: true })
   type: RegistrationType.Organic = RegistrationType.Organic;
 }
