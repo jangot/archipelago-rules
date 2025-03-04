@@ -10,7 +10,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
-import { AuthSecretType, RegistrationStage } from '@library/entity/enum';
+import { LoginType, RegistrationStage } from '@library/entity/enum';
 
 @Entity('logins', { schema: 'core' })
 @Unique('logins_user_id_per_type_unique', ['userId', 'type'])
@@ -18,8 +18,8 @@ export class Login implements ILogin {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'text', enum: AuthSecretType }) // Not sure that it is the best way for enums
-  type: AuthSecretType;
+  @Column({ type: 'text', enum: LoginType }) // Not sure that it is the best way for enums
+  type: LoginType;
 
   @Column('uuid')
   userId: string;

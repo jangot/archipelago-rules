@@ -1,11 +1,11 @@
-import { AuthSecretType } from '@library/entity/enum';
+import { LoginType } from '@library/entity/enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString, IsOptional, IsDate } from 'class-validator';
 
 export class AuthSecretCreateRequestDto {
-  @ApiProperty({ enum: AuthSecretType })
-  @IsEnum(AuthSecretType)
-  type: AuthSecretType;
+  @ApiProperty({ enum: LoginType })
+  @IsEnum(LoginType)
+  type: LoginType;
 
   @ApiProperty()
   @IsString()

@@ -7,6 +7,13 @@ import { Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class SandboxRegistrationRequestDto {
+  @ApiProperty({ description: 'User ID', type: String, required: false, maxLength: 36 })
+  @Expose()
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  userId: string | null;
+
   @ApiProperty({ description: 'User First Name', type: String, required: false, maxLength: 100 })
   @Expose()
   @IsString()
@@ -39,5 +46,5 @@ export class SandboxRegistrationRequestDto {
 
   @ApiProperty({ description: 'Registration flow type', type: String, required: false, enum: RegistrationType })
   @IsOptional()
-  type = RegistrationType.SandboxBypass;
+  type: RegistrationType.SandboxBypass = RegistrationType.SandboxBypass;
 }

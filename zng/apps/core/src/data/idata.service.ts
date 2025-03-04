@@ -3,5 +3,5 @@ import { ILoginRepository, ILoanRepository, IUserRepository } from './repository
 export abstract class IDataService {
   readonly users: IUserRepository;
   readonly loans: ILoanRepository;
-  readonly authSecrets: ILoginRepository;
+  readonly logins: ILoginRepository;
 }

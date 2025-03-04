@@ -4,7 +4,7 @@ import { AuthSecretCreateRequestDto, JwtResponseDto, UserResponseDto } from '../
 import { IDataService } from '../data/idata.service';
 import { compare, hash } from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { AuthSecretType, ContactType, JwtType } from '@library/entity/enum';
+import { LoginType, ContactType, JwtType } from '@library/entity/enum';
 import { Login } from '../data/entity';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { v4 } from 'uuid';
@@ -34,7 +34,7 @@ export class AuthService {
 
     // We validate password hash here
     const { id } = user;
-    const authSecret = await this.dataService.authSecrets.getUserSecretByType(id, AuthSecretType.PASSWORD);
+    const authSecret = await this.dataService.logins.getUserSecretByType(id, LoginType.PASSWORD);
     // No secret found
     if (!authSecret) return null;
 
@@ -63,7 +63,7 @@ export class AuthService {
     const hashedPassword = await hash(password, 10);
     const createPayload: AuthSecretCreateRequestDto = {
       userId,
-      type: AuthSecretType.PASSWORD,
+      type: LoginType.PASSWORD,
       secret: hashedPassword,
     };
     const secret = await this.createAuthSecret(createPayload);
@@ -102,7 +102,7 @@ export class AuthService {
 
     const secret = EntityMapper.toEntity(input, Login);
     secret.id = v4();
-    const result = await this.dataService.authSecrets.create(secret);
+    const result = await this.dataService.logins.create(secret);
     return result;
   }
 }

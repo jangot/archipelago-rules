@@ -1,25 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { OrganicRegistrationRequestDto, RegistrationDto, SandboxRegistrationRequestDto } from '../dto';
+import { RegistrationDto } from '../dto';
 import { RegistrationType } from '@library/entity/enum';
 import { OrganicRegistrator } from './registration/registrator.organic';
 import { SandboxRegistrator } from './registration/registrator.sandbox';
+import { RegistratorBase } from './registration';
+import { IDataService } from '../data/idata.service';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class RegistrationFactory {
-  constructor(
-    private readonly organic: OrganicRegistrator,
-    private readonly sandbox: SandboxRegistrator
-  ) {}
-
-  public async advance(input: RegistrationDto, token: string | null): Promise<unknown> {
-    const { type } = input;
-
-    // TODO: think more about types - TS should automatically handle type, w/o need for casting
+  public static getRegistrator(
+    type: RegistrationType,
+    data: IDataService,
+    jwtService: JwtService,
+    config: ConfigService,
+    usersService: UsersService
+  ): RegistratorBase<RegistrationType, RegistrationDto> | null {
     switch (type) {
       case RegistrationType.Organic:
-        return await this.organic.advance(input as OrganicRegistrationRequestDto, token);
+        return new OrganicRegistrator(data, jwtService, config, usersService);
       case RegistrationType.SandboxBypass:
-        return await this.sandbox.advance(input as SandboxRegistrationRequestDto, token);
+        return new SandboxRegistrator(data, jwtService, config, usersService);
     }
   }
 }

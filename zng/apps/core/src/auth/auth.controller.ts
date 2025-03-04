@@ -5,13 +5,18 @@ import { JwtResponseDto, PasswordVerificationDto, RegistrationDto } from '../dto
 import { UsersService } from '../users/users.service';
 import { JwtType } from '@library/entity/enum';
 import { RegistrationFactory } from './registration.factory';
+import { IDataService } from '../data/idata.service';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
-    private readonly registrationFactory: RegistrationFactory
+    protected readonly data: IDataService,
+    protected readonly jwtService: JwtService,
+    protected readonly config: ConfigService
   ) {}
 
   @UseGuards(PasswordAuthGuard)
@@ -42,6 +47,18 @@ export class AuthController {
       }
     }
 
-    return this.registrationFactory.advance(body, token);
+    const registrator = RegistrationFactory.getRegistrator(
+      type,
+      this.data,
+      this.jwtService,
+      this.config,
+      this.usersService
+    );
+
+    if (!registrator) {
+      throw new BadRequestException('invalid_registration_type');
+    }
+
+    return registrator.advance(body, token);
   }
 }

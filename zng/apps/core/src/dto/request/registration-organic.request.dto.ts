@@ -7,6 +7,13 @@ import { Expose } from 'class-transformer';
 import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class OrganicRegistrationRequestDto {
+  @ApiProperty({ description: 'User ID', type: String, required: false, maxLength: 36 })
+  @Expose()
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  userId: string | null;
+
   @ApiProperty({ description: 'User First Name', type: String, required: false, maxLength: 100 })
   @Expose()
   @IsString()
@@ -53,6 +60,6 @@ export class OrganicRegistrationRequestDto {
   @IsBoolean()
   retry = false;
 
-  @ApiProperty({ description: 'Registration flow type', type: String, required: true, enum: RegistrationType })
-  type = RegistrationType.Organic;
+  @ApiProperty({ description: 'Registration flow type', type: String, required: true})
+  type: RegistrationType.Organic = RegistrationType.Organic;
 }

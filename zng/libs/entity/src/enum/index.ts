@@ -5,7 +5,7 @@ import {
 } from './registration.stage';
 
 export * from './contact.type';
-export * from './auth-secret.type';
+export * from './login.type';
 export * from './jwt.type';
 
 // Registration
@@ -16,4 +16,10 @@ export type RegistrationStage =
   | OrganicEmailRegistrationStage
   | OrganicPhoneRegistrationStage
   | SandboxBypassRegistrationStage;
+
+export const RegistrationCompletedStates = [
+  OrganicEmailRegistrationStage.Verified,
+  OrganicPhoneRegistrationStage.Verified,
+  SandboxBypassRegistrationStage.Verified,
+];
 //

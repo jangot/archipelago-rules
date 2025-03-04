@@ -1,14 +1,15 @@
-import { RegistrationStage } from '@library/entity/enum';
+import { LoginType, RegistrationStage, RegistrationType } from '@library/entity/enum';
 import { RegistrationDto } from '../../dto';
 import { IDataService } from '../../data/idata.service';
 import { RegistrationStageTransition } from './stage-transition.interface';
 import { JwtService } from '@nestjs/jwt';
-import { v4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
+import { Login } from '../../data/entity';
 
-export abstract class RegistratorBase<Payload extends RegistrationDto> {
+export abstract class RegistratorBase<Type extends RegistrationType, Payload extends RegistrationDto & { type: Type }> {
   protected abstract stageTransitions: RegistrationStageTransition[];
+  protected abstract supportedRegistrationLogins: LoginType[];
 
   constructor(
     protected readonly data: IDataService,
@@ -17,9 +18,14 @@ export abstract class RegistratorBase<Payload extends RegistrationDto> {
     protected readonly usersService: UsersService
   ) {}
 
-  public async advance(input: Payload, token: string | null): Promise<unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async advance(input: Payload, _token: string | null): Promise<unknown> {
+    if (!input) {
+      throw new Error('No input provided');
+    }
+    const { userId } = input;
     // Initial step of registration
-    if (!token) {
+    if (!userId) {
       const transition = this.stageTransitions.find((t) => !t.from);
       if (!transition) {
         throw new Error('No initial transition found');
@@ -28,25 +34,21 @@ export abstract class RegistratorBase<Payload extends RegistrationDto> {
     }
 
     // All other registration steps for multi-step registrations
-    const tokenPayload = this.jwtService.decode(token) as { id: string };
+    //const tokenPayload = this.jwtService.decode(token) as { id: string };
 
-    const registration = await this.getRegistrationState(tokenPayload.id);
+    const registration = await this.getRegistrationState(userId);
     const transition = this.stageTransitions.find((t) => t.from === registration?.stage);
     if (!transition) {
       throw new Error(`No transition found from ${registration?.stage}`);
     }
-    return this.next(transition.to, registration?.stage, tokenPayload.id, input);
+    return this.next(transition.to, registration?.stage, userId, input);
   }
 
-  protected async getRegistrationState(id: string | null): Promise<unknown | null> {
-    if (!id) return null;
-    return {}; //TODO: complete
-  }
+  protected async getRegistrationState(userId: string | null): Promise<Login | null> {
+    if (!userId) return null;
+    const unfinishedRegistration = await this.data.logins.getFirstUnfinished(userId, this.supportedRegistrationLogins);
 
-  protected async createRegistrationState(inputDto: Payload, stage: RegistrationStage): Promise<string> {
-    const id = v4();
-    // TODO: complete
-    return id;
+    return unfinishedRegistration;
   }
 
   protected next(
@@ -61,4 +63,5 @@ export abstract class RegistratorBase<Payload extends RegistrationDto> {
     }
     return transition.action(id, input);
   }
+
 }
