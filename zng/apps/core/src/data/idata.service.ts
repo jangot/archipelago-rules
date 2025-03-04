@@ -1,7 +1,7 @@
-import { IAuthSecretRepository, ILoanRepository, IUserRepository } from './repository/interfaces';
+import { ILoginRepository, ILoanRepository, IUserRepository } from './repository/interfaces';
 
 export abstract class IDataService {
   readonly users: IUserRepository;
   readonly loans: ILoanRepository;
-  readonly authSecrets: IAuthSecretRepository;
+  readonly authSecrets: ILoginRepository;
 }

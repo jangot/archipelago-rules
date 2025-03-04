@@ -5,7 +5,7 @@ import { IDataService } from '../data/idata.service';
 import { compare, hash } from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { AuthSecretType, ContactType, JwtType } from '@library/entity/enum';
-import { AuthSecret } from '../data/entity';
+import { Login } from '../data/entity';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { v4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
@@ -97,10 +97,10 @@ export class AuthService {
     }
   }
 
-  private async createAuthSecret(input: AuthSecretCreateRequestDto): Promise<AuthSecret | null> {
+  private async createAuthSecret(input: AuthSecretCreateRequestDto): Promise<Login | null> {
     this.logger.debug(`createAuthSecret: Creating AuthSecret ${input.type} for user: ${input.userId}`);
 
-    const secret = EntityMapper.toEntity(input, AuthSecret);
+    const secret = EntityMapper.toEntity(input, Login);
     secret.id = v4();
     const result = await this.dataService.authSecrets.create(secret);
     return result;

@@ -1,5 +1,6 @@
 export enum AuthSecretType {
   PASSWORD = 'password',
-  ONE_TIME_PASSWORD = 'onetimepassword',
+  EMAIL_ONE_TIME_CODE = 'emailonetimecode',
+  PHONE_ONE_TIME_CODE = 'phoneonetimecode',
   APPLE = 'apple',
 }
