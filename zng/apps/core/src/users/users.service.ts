@@ -126,7 +126,7 @@ export class UsersService {
   public async isNewUser(email: string, phoneNumber: string): Promise<boolean> {
     const [userByEmail, userByPhone] = await Promise.all([
       this.getUserByContact(email, ContactType.EMAIL),
-      this.getUserByContact(phoneNumber, ContactType.PHONE_NUMBER)
+      this.getUserByContact(phoneNumber, ContactType.PHONE_NUMBER),
     ]);
 
     return !userByEmail && !userByPhone;
