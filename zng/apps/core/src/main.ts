@@ -33,7 +33,9 @@ async function bootstrap() {
   app.setGlobalPrefix('/api/core');
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true,
+      whitelist: true, // Removes unknown properties
+      forbidNonWhitelisted: true, // Rejects requests with extra fields
+      transform: true, // Automatically transforms types
     })
   );
 
