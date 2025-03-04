@@ -23,15 +23,15 @@ export class ApplicationUser implements IApplicationUser {
   @Column('text', { unique: true })
   email: string;
 
-  @Column('text', { unique: true, nullable: true })
+  @Column('text', { nullable: true })
   phoneNumber: string | null;
 
   @DeleteDateColumn({ type: 'timestamp with time zone' })
   deletedAt?: Date | null;
 
   @Column({ type: 'text', nullable: true, enum: RegistrationType })
-  registrationType: RegistrationType | null;
+  registrationType?: RegistrationType | null;
 
   @Column('timestamp with time zone', { nullable: true })
-  registeredAt: Date | null;
+  registeredAt?: Date | null;
 }

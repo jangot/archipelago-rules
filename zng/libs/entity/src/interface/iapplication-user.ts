@@ -7,6 +7,6 @@ export interface IApplicationUser extends EntityId<string>, ISoftDeleteEntity {
   lastName: string | null;
   email: string;
   phoneNumber: string | null;
-  registrationType: RegistrationType | null;
-  registeredAt: Date | null;
+  registrationType?: RegistrationType | null;
+  registeredAt?: Date | null;
 }

@@ -7,7 +7,7 @@ export class DataService implements IDataService {
   constructor(
     @Inject(IUserRepository) public readonly users: IUserRepository,
     @Inject(ILoanRepository) public readonly loans: ILoanRepository,
-    @Inject(IAuthSecretRepository) public readonly logins: ILoginRepository
+    @Inject(ILoginRepository) public readonly logins: ILoginRepository
   ) {}
 
   // Additional methods for IDataService can be implemented here

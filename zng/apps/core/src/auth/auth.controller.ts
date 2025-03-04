@@ -26,7 +26,7 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() body: RegistrationDto, @Request() req: Request): Promise<void> {
+  async register(@Body() body: RegistrationDto, @Request() req: Request): Promise<unknown> {
     if (!body) {
       throw new BadRequestException('missing_registration_body');
     }
@@ -39,6 +39,7 @@ export class AuthController {
       throw new BadRequestException('missing_both_registration_type_and_token');
     }
 
+    // TODO: Remove?
     // If Authorization token provided - verify it
     if (token) {
       const isTokenValid = await this.authService.verifyJwtSignature(token, JwtType.Registration);

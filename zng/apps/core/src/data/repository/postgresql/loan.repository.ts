@@ -1,6 +1,5 @@
 import { ILoanRepository } from '../interfaces';
 import { Injectable, Logger } from '@nestjs/common';
-import { ILoan } from '@library/entity/interface';
 import { Loan } from '../../entity';
 import { Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
@@ -17,7 +16,7 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     super(repository, Loan);
   }
 
-  public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {
+  public async getByLenderId(lenderId: string): Promise<Loan[] | null> {
     this.logger.debug(`getByLenderId: ${lenderId}`);
 
     return this.repository.findBy({ lenderId });
