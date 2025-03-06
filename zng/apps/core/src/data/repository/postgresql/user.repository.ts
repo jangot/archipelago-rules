@@ -4,6 +4,7 @@ import { ApplicationUser } from '../../entity';
 import { Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ContactType } from '@library/entity/enum';
 
 @Injectable()
 export class UserRepository extends RepositoryBase<ApplicationUser> implements IUserRepository {
@@ -14,5 +15,25 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
     protected readonly repository: Repository<ApplicationUser>
   ) {
     super(repository, ApplicationUser);
+  }
+
+  public async getUserById(id: string): Promise<ApplicationUser | null> {
+    this.logger.debug(`getUserById: Getting User by Id: ${id}`);
+    return await this.repository.findOneBy({ id });
+  }
+
+  public async getUserByContact(contact: string, type: ContactType): Promise<ApplicationUser | null> {
+    this.logger.debug(`getUserByContact: Getting User by ${type} Contact: ${contact}`);
+
+    switch (type) {
+      case ContactType.EMAIL:
+        return await this.repository.findOneBy({ email: contact });
+      case ContactType.PHONE_NUMBER:
+        return await this.repository.findOneBy({ phoneNumber: contact });
+      default:
+        break;
+    }
+
+    return null;
   }
 }

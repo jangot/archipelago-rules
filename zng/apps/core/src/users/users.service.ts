@@ -26,7 +26,7 @@ export class UsersService {
   public async getUserById(id: string): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserById: Getting User by Id: ${id}`);
 
-    const result = await this.dataService.users.findOneBy({ id });
+    const result = await this.dataService.users.getUserById(id);
     const dtoResult = DtoMapper.toDto(result, UserResponseDto);
 
     return dtoResult;
@@ -41,21 +41,12 @@ export class UsersService {
    */
   public async getUserByContact(contact: string, type: ContactType): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserByContact: Getting User by ${type} Contact: ${contact}`);
+    const user = this.dataService.users.getUserByContact(contact, type);
 
-    let dtoResult: UserResponseDto | null = null;
-
-    switch (type) {
-      case ContactType.EMAIL:
-        const byEmail = await this.dataService.users.findOneBy({ email: contact });
-        dtoResult = DtoMapper.toDto(byEmail, UserResponseDto);
-        break;
-      case ContactType.PHONE_NUMBER:
-        const byPhone = await this.dataService.users.findOneBy({ phoneNumber: contact });
-        dtoResult = DtoMapper.toDto(byPhone, UserResponseDto);
-        break;
-      default:
-        break;
+    if (!user) {
+      return null;
     }
+    const dtoResult = DtoMapper.toDto(user, UserResponseDto);
     return dtoResult;
   }
 

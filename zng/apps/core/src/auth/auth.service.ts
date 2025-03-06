@@ -40,7 +40,7 @@ export class AuthService {
   ): Promise<UserResponseDto | null> {
     this.logger.debug(`validatePassword: Validating password for ${contactType} contact: ${contact}`);
 
-    const user = await this.getUserByContact(contact, contactType);
+    const user = await this.dataService.users.getUserByContact(contact, contactType);
     if (!user) return user; // Returns null if user is not found
 
     // We validate password hash here
@@ -81,7 +81,7 @@ export class AuthService {
       throw new HttpException('Either email or phone number must be provided', HttpStatus.BAD_REQUEST);
     }
 
-    const existingUser = await this.getUserByContact(contact, contactType);
+    const existingUser = await this.dataService.users.getUserByContact(contact, contactType);
     if (existingUser) {
       throw new HttpException('User already exists', HttpStatus.CONFLICT);
     }
@@ -124,7 +124,7 @@ export class AuthService {
   ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
     this.logger.debug(`verify: Verifying user: ${id}`);
 
-    const user = await this.dataService.users.findOneBy({ id });
+    const user = await this.dataService.users.getUserById(id);
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
@@ -257,19 +257,6 @@ export class AuthService {
     secret.id = v4();
     const result = await this.dataService.logins.create(secret);
     return result;
-  }
-
-  private async getUserByContact(contact: string, contactType: ContactType): Promise<ApplicationUser | null> {
-    switch (contactType) {
-      case ContactType.EMAIL:
-        return await this.dataService.users.findOneBy({ email: contact });
-      case ContactType.PHONE_NUMBER:
-        return await this.dataService.users.findOneBy({ phoneNumber: contact });
-      default:
-        break;
-    }
-
-    return null;
   }
 
   private getVerificationFlow(): IVerificationFlow {
