@@ -10,15 +10,15 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
-import { LoginType, RegistrationStage } from '@library/entity/enum';
+import { LoginType } from '@library/entity/enum';
 
-@Entity('logins', { schema: 'core' })
+@Entity('user_logins', { schema: 'core' })
 @Unique('logins_user_id_per_type_unique', ['userId', 'type'])
 export class Login implements ILogin {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'text', enum: LoginType }) // Not sure that it is the best way for enums
+  @Column({ type: 'text' })
   type: LoginType;
 
   @Column('uuid')
@@ -28,8 +28,8 @@ export class Login implements ILogin {
   @JoinColumn({ name: 'user_id' })
   user: ApplicationUser;
 
-  @Column('text')
-  secret: string;
+  @Column('text', { nullable: true })
+  secret: string | null;
 
   @Column('timestamp with time zone', { nullable: true })
   expiresAt: Date | null;
@@ -40,11 +40,8 @@ export class Login implements ILogin {
   @UpdateDateColumn({ type: 'timestamp with time zone', nullable: true })
   updatedAt: Date | null;
 
-  @Column({ type: 'text' })
-  stage: RegistrationStage;
-
-  @Column('int', { nullable: true })
-  attempts: number | null;
+  @Column('int', { default: 0 })
+  attempts: number;
 
   @Column('timestamp with time zone', { nullable: true })
   unlocksAt: Date | null;

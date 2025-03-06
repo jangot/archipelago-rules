@@ -1,65 +1,40 @@
-import { BadRequestException, Body, Controller, Post, Request, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpException, HttpStatus, Post, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { PasswordAuthGuard } from './guards';
-import { JwtResponseDto, PasswordVerificationDto, RegistrationDto } from '../dto';
-import { UsersService } from '../users/users.service';
-import { JwtType } from '@library/entity/enum';
-import { RegistrationFactory } from './registration.factory';
-import { IDataService } from '../data/idata.service';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { JwtResponseDto, PasswordVerificationDto } from '../dto';
+import { RegistrationRequestDTO } from '../dto/request/registration.request.dto';
+import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
+import { UserVerificationRequestDto } from '../dto/request/user-verification-request.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly usersService: UsersService,
-    protected readonly data: IDataService,
-    protected readonly jwtService: JwtService,
-    protected readonly config: ConfigService
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @UseGuards(PasswordAuthGuard)
   @Post('login')
   async login(@Body() body: PasswordVerificationDto, @Request() req): Promise<JwtResponseDto> {
-    return this.authService.login(req.user.id);
+    // Shouldn't this come from the body parameter?
+    return await this.authService.login(req.user.id);
   }
 
   @Post('register')
-  async register(@Body() body: RegistrationDto, @Request() req: Request): Promise<unknown> {
-    if (!body) {
-      throw new BadRequestException('missing_registration_body');
+  async register(@Body() authRequest: RegistrationRequestDTO): Promise<UserRegisterResponseDto> {
+    if (!authRequest.isValid()) {
+      throw new HttpException(
+        `Invalid registration request. You must provide either an email or a phone number.`,
+        HttpStatus.BAD_REQUEST
+      );
     }
 
-    const { type } = body;
-    const token = req.headers.get('Authorization');
+    const { firstName, lastName, email, phoneNumber } = authRequest;
 
-    // Call should either initiate registration with 'type' or continue existed with token
-    if (!type && !token) {
-      throw new BadRequestException('missing_both_registration_type_and_token');
-    }
+    return await this.authService.register(firstName, lastName, email, phoneNumber);
+  }
 
-    // TODO: Remove?
-    // If Authorization token provided - verify it
-    if (token) {
-      const isTokenValid = await this.authService.verifyJwtSignature(token, JwtType.Registration);
-      if (!isTokenValid) {
-        throw new UnauthorizedException('invalid_registration_token');
-      }
-    }
+  @Post('verify')
+  async verify(@Body() body: UserVerificationRequestDto): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
+    const { id, verificationCode, verificationState } = body;
 
-    const registrator = RegistrationFactory.getRegistrator(
-      type,
-      this.data,
-      this.jwtService,
-      this.config,
-      this.usersService
-    );
-
-    if (!registrator) {
-      throw new BadRequestException('invalid_registration_type');
-    }
-
-    return registrator.advance(body, token);
+    return await this.authService.verify(id, verificationCode, verificationState);
   }
 }

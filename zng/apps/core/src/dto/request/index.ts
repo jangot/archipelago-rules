@@ -10,6 +10,7 @@ export * from './auth-secret-create-request.dto';
 // Registration
 export * from './registration-organic.request.dto';
 export * from './registration-sandbox.request.dto';
+export * from './registration-organic.request.dto';
 
 export type RegistrationDto = OrganicRegistrationRequestDto | SandboxRegistrationRequestDto;
 //

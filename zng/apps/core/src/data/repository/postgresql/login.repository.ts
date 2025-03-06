@@ -3,8 +3,8 @@ import { Login } from '../../entity';
 import { ILoginRepository } from '../interfaces';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Repository } from 'typeorm';
-import { LoginType, RegistrationCompletedStates } from '@library/entity/enum';
+import { Repository } from 'typeorm';
+import { LoginType } from '@library/entity/enum';
 
 @Injectable()
 export class LoginRepository extends RepositoryBase<Login> implements ILoginRepository {
@@ -17,11 +17,13 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
     super(repository, Login);
   }
 
-  public async getFirstUnfinished(userId: string, types: LoginType[]): Promise<Login | null> {
-    return await this.repository.findOne({
-      where: { userId, type: In(types), stage: Not(In(RegistrationCompletedStates)) },
-      order: { updatedAt: `ASC` },
-    });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getFirstUnfinished(_userId: string, _types: LoginType[]): Promise<Login | null> {
+    return null;
+    // return await this.repository.findOne({
+    //   where: { userId, type: In(types), stage: Not(In(RegistrationCompletedStates)) },
+    //   order: { updatedAt: `ASC` },
+    // });
   }
 
   public async getUserSecretByType(userId: string, type: LoginType): Promise<Login | null> {

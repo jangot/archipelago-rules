@@ -1,6 +1,6 @@
-import { RegistrationType } from '@library/entity/enum';
+import { VerificationState } from '@library/entity/enum/verification.state';
 import { IApplicationUser } from '@library/entity/interface';
-import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, CreateDateColumn } from 'typeorm';
 
 // Thoughts to consider
 // Should we add additional `normalized` versions of some of these fields to the Database?
@@ -20,18 +20,24 @@ export class ApplicationUser implements IApplicationUser {
   @Column('text', { nullable: true })
   lastName: string;
 
-  @Column('text', { unique: true })
-  email: string;
+  @Column('text', { nullable: true, unique: true })
+  email: string | null;
 
-  @Column('text', { nullable: true })
+  @Column('text', { nullable: true, unique: true })
   phoneNumber: string | null;
 
   @DeleteDateColumn({ type: 'timestamp with time zone' })
   deletedAt?: Date | null;
 
-  @Column({ type: 'text', nullable: true, enum: RegistrationType })
-  registrationType?: RegistrationType | null;
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  createdAt: Date;
+
+  @Column('text', { nullable: true })
+  verificationCode: string | null;
 
   @Column('timestamp with time zone', { nullable: true })
-  registeredAt?: Date | null;
+  verificationCodeExpiresAt: Date | null;
+
+  @Column('text', { default: VerificationState.NotVerified })
+  verificationState: VerificationState;
 }
