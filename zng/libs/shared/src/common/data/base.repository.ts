@@ -8,6 +8,7 @@
 
 import { AllowedCriteriaTypes, IRepositoryBase } from './ibase.repository';
 import {
+  DeepPartial,
   DeleteResult,
   FindManyOptions,
   FindOneOptions,
@@ -47,11 +48,11 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return await this.repository.find();
   }
 
-  public async create(item: Entity): Promise<Entity> {
+  public async create(item: DeepPartial<Entity>): Promise<Entity> {
     return await this.repository.save(item);
   }
 
-  public async update(id: Entity['id'], item: Entity): Promise<boolean> {
+  public async update(id: Entity['id'], item: DeepPartial<Entity>): Promise<boolean> {
     // Handles Compound Primary keys as well as simple Primary keys
     const whereCondition = this.normalizedIdWhereCondition(id);
 

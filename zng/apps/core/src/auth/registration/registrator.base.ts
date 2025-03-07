@@ -36,12 +36,13 @@ export abstract class RegistratorBase<Type extends RegistrationType, Payload ext
     // All other registration steps for multi-step registrations
     //const tokenPayload = this.jwtService.decode(token) as { id: string };
 
-    const registration = await this.getRegistrationState(userId);
-    const transition = this.stageTransitions.find((t) => t.from === registration?.stage);
+    //const registration = await this.getRegistrationState(userId);
+    const transition = null; //this.stageTransitions.find((t) => t.from === ''); registration?.stage);
     if (!transition) {
-      throw new Error(`No transition found from ${registration?.stage}`);
+      throw new Error(`No transition found from`);
     }
-    return this.next(transition.to, registration?.stage, userId, input);
+    //return this.next(transition.to, transition.to, userId, input);
+    return null;
   }
 
   protected async getRegistrationState(userId: string | null): Promise<Login | null> {

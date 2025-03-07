@@ -6,7 +6,7 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { FindManyOptions, FindOneOptions, FindOptionsWhere, ObjectId, RemoveOptions } from 'typeorm';
+import { DeepPartial, FindManyOptions, FindOneOptions, FindOptionsWhere, ObjectId, RemoveOptions } from 'typeorm';
 import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
 import { IPaging, IPagingOptions } from '../paging';
 import { ISearchFilter } from '../search';
@@ -36,7 +36,7 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
    * @return {Promise<Entity>} Entity with all fields populated created in the DB
    * @memberof IRepositoryBase
    */
-  create(item: Entity): Promise<Entity>;
+  create(item: DeepPartial<Entity>): Promise<Entity>;
 
   /**
    * Updates an Entity of the given type (it must exist in the DB already)
@@ -46,7 +46,7 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
    * @return {Promise<boolean>} Returns true if Entity was successfully update, false otherwise
    * @memberof IRepositoryBase
    */
-  update(id: Entity['id'], item: Entity): Promise<boolean>;
+  update(id: Entity['id'], item: DeepPartial<Entity>): Promise<boolean>;
 
   /**
    * Finds the first entity that matches the given search options.

@@ -1,13 +1,12 @@
 import { EntityId } from '@library/shared/common/data';
-import { LoginType, RegistrationStage } from '../enum';
+import { LoginType } from '../enum';
 
 export interface ILogin extends EntityId<string> {
   id: string;
   type: LoginType;
   userId: string;
-  secret: string;
+  secret: string | null;
   expiresAt: Date | null;
-  stage: RegistrationStage;
   attempts: number | null;
   unlocksAt: Date | null;
 
