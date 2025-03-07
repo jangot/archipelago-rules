@@ -6,6 +6,7 @@ import {
 
 export * from './contact.type';
 export * from './login.type';
+export * from './login.status';
 export * from './jwt.type';
 
 // Registration

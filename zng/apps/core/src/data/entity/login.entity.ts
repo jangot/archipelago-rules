@@ -10,16 +10,13 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
-import { LoginType } from '@library/entity/enum';
+import { LoginStatus, LoginType } from '@library/entity/enum';
 
 @Entity('user_logins', { schema: 'core' })
 @Unique('logins_user_id_per_type_unique', ['userId', 'type'])
 export class Login implements ILogin {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column({ type: 'text' })
-  type: LoginType;
 
   @Column('uuid')
   userId: string;
@@ -28,11 +25,20 @@ export class Login implements ILogin {
   @JoinColumn({ name: 'user_id' })
   user: ApplicationUser;
 
+  @Column({ type: 'text' })
+  loginType: LoginType;
+
+  @Column({ type: 'text' })
+  loginStatus: LoginStatus;
+
+  @Column('int', { default: 0 })
+  attempts: number;
+
   @Column('text', { nullable: true })
   secret: string | null;
 
   @Column('timestamp with time zone', { nullable: true })
-  expiresAt: Date | null;
+  secretExpiresAt: Date | null;
 
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
@@ -40,11 +46,11 @@ export class Login implements ILogin {
   @UpdateDateColumn({ type: 'timestamp with time zone', nullable: true })
   updatedAt: Date | null;
 
-  @Column('int', { default: 0 })
-  attempts: number;
-
   @Column('timestamp with time zone', { nullable: true })
-  unlocksAt: Date | null;
+  lastLoggedInAt: Date | null;
+
+  @Column('text', { nullable: true })
+  refreshToken: string | null;
 
   @Column('text', { nullable: true })
   externalId: string | null;
