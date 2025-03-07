@@ -1,9 +1,10 @@
 import { RegistrationStatus } from '@library/entity/enum/verification.state';
 import { IUserRegistration } from '@library/entity/interface';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
 
 @Entity('user_registrations', { schema: 'core' })
+@Unique('registrations_per_user_id_unique', ['id', 'userId'])
 export class UserRegistration implements IUserRegistration {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -11,7 +12,7 @@ export class UserRegistration implements IUserRegistration {
   @Column('uuid')
   userId: string;
 
-  @ManyToOne(() => ApplicationUser)
+  @OneToOne(() => ApplicationUser)
   @JoinColumn({ name: 'user_id' })
   user: ApplicationUser;
 

@@ -13,7 +13,7 @@ import { ApplicationUser } from './application.user.entity';
 import { LoginStatus, LoginType } from '@library/entity/enum';
 
 @Entity('user_logins', { schema: 'core' })
-@Unique('logins_user_id_per_type_unique', ['userId', 'type'])
+@Unique('logins_user_id_per_login_type_unique', ['userId', 'loginType'])
 export class Login implements ILogin {
   @PrimaryGeneratedColumn('uuid')
   id: string;

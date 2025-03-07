@@ -10,7 +10,7 @@ import { LoginType, RegistrationType } from '@library/entity/enum';
 
 @Injectable()
 export class OrganicRegistrator extends RegistratorBase<RegistrationType.Organic, OrganicRegistrationRequestDto> {
-  protected supportedRegistrationLogins = [LoginType.EMAIL_ONE_TIME_CODE, LoginType.PHONE_ONE_TIME_CODE];
+  protected supportedRegistrationLogins = [LoginType.OneTimeCodeEmail, LoginType.OneTimeCodePhoneNumber];
 
   protected stageTransitions: RegistrationStageTransition[] = [
     // { from: undefined, to: OrganicRegistrationStage.Initiated, action: this.initiateRegistration },

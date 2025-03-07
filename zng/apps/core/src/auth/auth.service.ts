@@ -45,7 +45,7 @@ export class AuthService {
 
     // We validate password hash here
     const { id } = user;
-    const authSecret = await this.dataService.logins.getUserSecretByType(id, LoginType.PASSWORD);
+    const authSecret = await this.dataService.logins.getUserSecretByType(id, LoginType.Password);
     // No secret found
     if (!authSecret) return null;
 
@@ -104,7 +104,7 @@ export class AuthService {
 
     // TODO: Add Notification call here
     // Email or Text: Send Notification
-    this.sendVerificationNotification(user, user.verificationState);
+    this.sendVerificationNotification(user, user.registrationStatus);
 
     // Return the user id, email, and phonenumber (email or phonenumber will be null)
     // TODO: Remove verificationCode once we get Notifications working
@@ -119,7 +119,9 @@ export class AuthService {
 
   public async verify(
     id: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     verificationCode: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     verificationState: string
   ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
     this.logger.debug(`verify: Verifying user: ${id}`);
@@ -129,30 +131,33 @@ export class AuthService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    const {
-      verificationCode: storedVerificationCode,
-      verificationCodeExpiresAt,
-      verificationState: storedVerificationState,
-    } = user;
+    // TODO: Take this from UserRegistration
+    // const {
+    //   verificationCode: storedVerificationCode,
+    //   verificationCodeExpiresAt,
+    //   verificationState: storedVerificationState,
+    // } = user;
 
-    // We are trying to verify the user and they don't have a verificationCode or verificationCodeExpiresAt value
-    if (!verificationCode || !verificationCodeExpiresAt) {
-      throw new HttpException('No verification code exists for user', HttpStatus.BAD_REQUEST);
-    }
+    // TODO: Fix validation after UserRegistration inmplemented
+    // // We are trying to verify the user and they don't have a verificationCode or verificationCodeExpiresAt value
+    // if (!verificationCode || !verificationCodeExpiresAt) {
+    //   throw new HttpException('No verification code exists for user', HttpStatus.BAD_REQUEST);
+    // }
 
-    // Check if the verification code is valid and not expired
-    if (verificationCode !== storedVerificationCode || new Date() > verificationCodeExpiresAt) {
-      throw new HttpException('Invalid or expired verification code', HttpStatus.BAD_REQUEST);
-    }
+    // // Check if the verification code is valid and not expired
+    // if (verificationCode !== storedVerificationCode || new Date() > verificationCodeExpiresAt) {
+    //   throw new HttpException('Invalid or expired verification code', HttpStatus.BAD_REQUEST);
+    // }
 
-    // Check if the verification state is valid
-    if (verificationState !== storedVerificationState) {
-      throw new HttpException(`Invalid verification state: ${storedVerificationState}`, HttpStatus.BAD_REQUEST);
-    }
+    // // Check if the verification state is valid
+    // if (verificationState !== storedVerificationState) {
+    //   throw new HttpException(`Invalid verification state: ${storedVerificationState}`, HttpStatus.BAD_REQUEST);
+    // }
 
     let currentUser = user;
     const verificationFlow = this.getVerificationFlow();
-    verificationFlow.setCurrentState(storedVerificationState);
+    // TODO: Take this from UserRegistration
+    //verificationFlow.setCurrentState(storedVerificationState);
     const updates = await this.updateUserAndAdvance(verificationFlow, user);
     const shouldReturnToken = updates?.flowState?.returnToken ?? false;
     currentUser = updates?.user ?? currentUser;
@@ -199,10 +204,11 @@ export class AuthService {
       throw new HttpException('Failed to update user verification status', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    // Manually update User values
-    user.verificationState = state;
-    user.verificationCode = verificationCode ?? null;
-    user.verificationCodeExpiresAt = verificationCodeExpiresAt ?? null;
+    // TODO: update UserRegistration instead of User
+    // // Manually update User values
+    // user.verificationState = state;
+    // user.verificationCode = verificationCode ?? null;
+    // user.verificationCodeExpiresAt = verificationCodeExpiresAt ?? null;
 
     verificationFlow.sendNotification(user);
 
@@ -216,7 +222,7 @@ export class AuthService {
     const hashedPassword = await hash(password, 10);
     const createPayload: AuthSecretCreateRequestDto = {
       userId,
-      type: LoginType.PASSWORD,
+      type: LoginType.Password,
       secret: hashedPassword,
     };
     const secret = await this.createAuthSecret(createPayload);
