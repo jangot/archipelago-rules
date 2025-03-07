@@ -1,8 +1,8 @@
 export enum VerificationState {
-  NotVerified = 'notverified',
-  VerifyingEmail = 'verifyingemail',
+  NotRegistered = 'notregistered',
+  EmailVerifying = 'verifyingemail',
   EmailVerified = 'emailverified',
-  VerifyingPhoneNumber = 'verifyingphonenumber',
+  PhoneNumberVerifying = 'verifyingphonenumber',
   PhoneNumberVerified = 'phonenumberverified',
-  Verified = 'verified',
+  Registered = 'registered',
 }

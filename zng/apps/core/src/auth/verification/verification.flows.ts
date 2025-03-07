@@ -5,15 +5,15 @@ import { VerificationEvents } from './verification-event.factory';
 // NotVerified -> VerifyingEmail -> EmailVerified -> VerifyingPhoneNumber -> PhoneNumberVerified - > Verified
 export const standardVerificationFlow: VerificationFlowState[] = [
   {
-    state: VerificationState.NotVerified,
-    nextState: VerificationState.VerifyingEmail,
+    state: VerificationState.NotRegistered,
+    nextState: VerificationState.EmailVerifying,
     isVerified: false,
     requiresVerificationCode: false,
     returnToken: false,
     notificationName: null,
   },
   {
-    state: VerificationState.VerifyingEmail,
+    state: VerificationState.EmailVerifying,
     nextState: VerificationState.EmailVerified,
     isVerified: false,
     requiresVerificationCode: true,
@@ -22,14 +22,14 @@ export const standardVerificationFlow: VerificationFlowState[] = [
   },
   {
     state: VerificationState.EmailVerified,
-    nextState: VerificationState.VerifyingPhoneNumber,
+    nextState: VerificationState.PhoneNumberVerifying,
     isVerified: false,
     requiresVerificationCode: false,
     returnToken: true,
     notificationName: VerificationEvents.VerificationEmailVerifiedEvent,
   },
   {
-    state: VerificationState.VerifyingPhoneNumber,
+    state: VerificationState.PhoneNumberVerifying,
     nextState: VerificationState.PhoneNumberVerified,
     isVerified: false,
     requiresVerificationCode: true,
@@ -38,14 +38,14 @@ export const standardVerificationFlow: VerificationFlowState[] = [
   },
   {
     state: VerificationState.PhoneNumberVerified,
-    nextState: VerificationState.Verified,
+    nextState: VerificationState.Registered,
     isVerified: false,
     requiresVerificationCode: false,
     returnToken: false,
     notificationName: VerificationEvents.VerificationPhoneNumberVerifiedEvent,
   },
   {
-    state: VerificationState.Verified,
+    state: VerificationState.Registered,
     nextState: null,
     isVerified: true,
     requiresVerificationCode: false,

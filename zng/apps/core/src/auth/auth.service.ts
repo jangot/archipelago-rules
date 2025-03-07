@@ -96,7 +96,7 @@ export class AuthService {
       phoneNumber: transformPhoneNumber(phoneNumber ?? null),
       verificationCode,
       verificationCodeExpiresAt,
-      verificationState: VerificationState.VerifyingEmail,
+      verificationState: VerificationState.EmailVerifying,
     };
 
     // Create the barebones User here

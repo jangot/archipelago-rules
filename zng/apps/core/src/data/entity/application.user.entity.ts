@@ -38,6 +38,6 @@ export class ApplicationUser implements IApplicationUser {
   @Column('timestamp with time zone', { nullable: true })
   verificationCodeExpiresAt: Date | null;
 
-  @Column('text', { default: VerificationState.NotVerified })
+  @Column('text', { default: VerificationState.NotRegistered })
   verificationState: VerificationState;
 }
