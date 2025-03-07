@@ -3,7 +3,7 @@ import { IVerificationFlow } from './iverification-flow.base';
 import { VerificationFlowState } from './verification-flow.state';
 import { VerificationEventFactory } from './verification-event.factory';
 import { IApplicationUser } from '@library/entity/interface';
-import { VerificationState } from '@library/entity/enum/verification.state';
+import { RegistrationStatus } from '@library/entity/enum/verification.state';
 
 export class VerificationFlow implements IVerificationFlow {
   protected currentVerificationFlowState: VerificationFlowState;
@@ -36,7 +36,7 @@ export class VerificationFlow implements IVerificationFlow {
     return nextVerificationFlowState;
   }
 
-  public setCurrentState(currentState: VerificationState): VerificationFlowState {
+  public setCurrentState(currentState: RegistrationStatus): VerificationFlowState {
     const state = this.verificationFlowStates.find((state) => state.state === currentState);
     if (!state) {
       throw new Error('No verification flow state found');

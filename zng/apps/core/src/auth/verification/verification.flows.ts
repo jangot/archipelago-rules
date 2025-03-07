@@ -1,51 +1,51 @@
-import { VerificationState } from '@library/entity/enum/verification.state';
+import { RegistrationStatus } from '@library/entity/enum/verification.state';
 import { VerificationFlowState } from './verification-flow.state';
 import { VerificationEvents } from './verification-event.factory';
 
 // NotVerified -> VerifyingEmail -> EmailVerified -> VerifyingPhoneNumber -> PhoneNumberVerified - > Verified
 export const standardVerificationFlow: VerificationFlowState[] = [
   {
-    state: VerificationState.NotRegistered,
-    nextState: VerificationState.EmailVerifying,
+    state: RegistrationStatus.NotRegistered,
+    nextState: RegistrationStatus.EmailVerifying,
     isVerified: false,
     requiresVerificationCode: false,
     returnToken: false,
     notificationName: null,
   },
   {
-    state: VerificationState.EmailVerifying,
-    nextState: VerificationState.EmailVerified,
+    state: RegistrationStatus.EmailVerifying,
+    nextState: RegistrationStatus.EmailVerified,
     isVerified: false,
     requiresVerificationCode: true,
     returnToken: false,
     notificationName: VerificationEvents.VerificationEmailVerifyingEvent,
   },
   {
-    state: VerificationState.EmailVerified,
-    nextState: VerificationState.PhoneNumberVerifying,
+    state: RegistrationStatus.EmailVerified,
+    nextState: RegistrationStatus.PhoneNumberVerifying,
     isVerified: false,
     requiresVerificationCode: false,
     returnToken: true,
     notificationName: VerificationEvents.VerificationEmailVerifiedEvent,
   },
   {
-    state: VerificationState.PhoneNumberVerifying,
-    nextState: VerificationState.PhoneNumberVerified,
+    state: RegistrationStatus.PhoneNumberVerifying,
+    nextState: RegistrationStatus.PhoneNumberVerified,
     isVerified: false,
     requiresVerificationCode: true,
     returnToken: false,
     notificationName: VerificationEvents.VerificationPhoneNumberVerifyingEvent,
   },
   {
-    state: VerificationState.PhoneNumberVerified,
-    nextState: VerificationState.Registered,
+    state: RegistrationStatus.PhoneNumberVerified,
+    nextState: RegistrationStatus.Registered,
     isVerified: false,
     requiresVerificationCode: false,
     returnToken: false,
     notificationName: VerificationEvents.VerificationPhoneNumberVerifiedEvent,
   },
   {
-    state: VerificationState.Registered,
+    state: RegistrationStatus.Registered,
     nextState: null,
     isVerified: true,
     requiresVerificationCode: false,

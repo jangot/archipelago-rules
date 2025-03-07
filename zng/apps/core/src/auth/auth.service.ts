@@ -10,7 +10,7 @@ import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { v4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { generateSecureCode } from '@library/shared/common/helpers';
-import { VerificationState } from '@library/entity/enum/verification.state';
+import { RegistrationStatus } from '@library/entity/enum/verification.state';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
@@ -96,7 +96,7 @@ export class AuthService {
       phoneNumber: transformPhoneNumber(phoneNumber ?? null),
       verificationCode,
       verificationCodeExpiresAt,
-      verificationState: VerificationState.EmailVerifying,
+      verificationState: RegistrationStatus.EmailVerifying,
     };
 
     // Create the barebones User here
@@ -267,7 +267,7 @@ export class AuthService {
     return this.verificationFlow;
   }
 
-  private sendVerificationNotification(user: IApplicationUser, currentState: VerificationState): void {
+  private sendVerificationNotification(user: IApplicationUser, currentState: RegistrationStatus): void {
     const verificationFlow = this.getVerificationFlow();
     verificationFlow.setCurrentState(currentState);
     verificationFlow.sendNotification(user);

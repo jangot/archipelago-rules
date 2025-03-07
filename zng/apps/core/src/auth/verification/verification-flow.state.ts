@@ -1,9 +1,9 @@
-import { VerificationState } from '@library/entity/enum/verification.state';
+import { RegistrationStatus } from '@library/entity/enum/verification.state';
 import { VerificationEvents } from './verification-event.factory';
 
 export interface VerificationFlowState {
-  state: VerificationState;
-  nextState: VerificationState | null;
+  state: RegistrationStatus;
+  nextState: RegistrationStatus | null;
   isVerified: boolean;
   requiresVerificationCode: boolean;
   returnToken: boolean;
