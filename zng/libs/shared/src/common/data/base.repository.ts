@@ -23,6 +23,9 @@ import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity
 import { ISearchFilter } from '../search/search-query';
 import { buildPagingQuery, IPaging, IPagingOptions } from '../paging';
 import { buildSearchQuery } from '../search';
+import { IDatabaseConnection } from '@pgtyped/runtime';
+import { Pool } from 'pg';
+import { PgPoolAdapter } from './pg-pool-adapter';
 
 /**
  * RepositoryBase class
@@ -163,6 +166,19 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     const result = await this.repository.find({ where: searchQuery });
     return result;
   }
+
+  //#region pgtyped specific code
+  // Caution: This code is brittle as it makes use of underlying TypeORM internals
+  // to get access to the underlying pg Pool for reuse with pgtyped
+  // a new release of TypeORM could break this!
+  protected getIDatabaseConnection(): IDatabaseConnection {
+    const dataSource = this.repository.manager.connection;
+    const pool = (dataSource.driver as any).master as Pool;
+    const poolAdapter = new PgPoolAdapter(pool);
+
+    return poolAdapter;
+  }
+  //#endregion
 
   protected normalizedIdWhereCondition(id: Entity['id']): FindOptionsWhere<Entity> {
     const whereCondition = typeof id === 'object' ? id : { id };

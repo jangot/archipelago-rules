@@ -52,7 +52,18 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
 
   private getBadRequestMessage(exception: BadRequestException): string {
     const response = exception.getResponse();
-    return typeof response === 'string' ? response : response['message'][0];
+    if (typeof response === 'string') {
+      return response;
+    }
+
+    const responseMessage = response['message'];
+    if (typeof responseMessage === 'string') {
+      return responseMessage;
+    } else if (Array.isArray(responseMessage) && responseMessage.length > 0) {
+      return responseMessage[0];
+    }
+
+    return 'Invalid Request';
   }
 
   private isBadRequestException(exception: unknown): exception is BadRequestException {

@@ -1,11 +1,12 @@
 import { MapTo } from '@library/entity/mapping/mapping.decorators';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
+import { ApiSchema } from '@library/shared/common/decorators/api-schema.decorator';
 import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
-import { ApiProperty, ApiSchema } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 
-@ApiSchema({ name: 'auth' })
+@ApiSchema({ name: 'passwordVerification' })
 export class PasswordVerificationDto {
   @ApiProperty({ description: 'User email', type: String, required: false, maxLength: 320 })
   @ValidateIf((o) => !o.phoneNumber, { always: true, message: 'Either email or phoneNumber is required' })

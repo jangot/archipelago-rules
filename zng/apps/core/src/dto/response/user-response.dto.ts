@@ -1,8 +1,8 @@
-import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { Exclude, Expose } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, IsUUID, MaxLength } from 'class-validator';
-
-@ApiSchema({ name: 'user' })
+import { ApiSchema } from '@library/shared/common/decorators/api-schema.decorator';
+@ApiSchema({ name: 'userResponse' })
 export class UserResponseDto {
   @ApiProperty({ description: 'Id of the User', type: String, required: true })
   @Expose()

@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ContactType } from '@library/entity/enum';
+import { getUserDetailById, IGetUserDetailByIdResult } from '../../sql_generated/get-user-detail.queries';
 
 @Injectable()
 export class UserRepository extends RepositoryBase<ApplicationUser> implements IUserRepository {
@@ -12,7 +13,7 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
 
   constructor(
     @InjectRepository(ApplicationUser)
-    protected readonly repository: Repository<ApplicationUser>
+    protected readonly repository: Repository<ApplicationUser>,
   ) {
     super(repository, ApplicationUser);
   }
@@ -35,5 +36,13 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
     }
 
     return null;
+  }
+
+  public async getUserDetailById(userId: string): Promise<IGetUserDetailByIdResult | null> {
+    // Need this for pgtyped usage!
+    const poolAdapter = this.getIDatabaseConnection();
+
+    const result = await getUserDetailById.run({ userId }, poolAdapter);
+    return result.length === 0 ? null : result[0];
   }
 }

@@ -1,11 +1,12 @@
 import { MapTo } from '@library/entity/mapping/mapping.decorators';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
-import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { Exclude, Expose } from 'class-transformer';
+import { ApiSchema } from '@library/shared/common/decorators/api-schema.decorator';
+import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
-@ApiSchema({ name: 'user' })
+@ApiSchema({ name: 'userUpdateRequest' })
 export class UserUpdateRequestDto {
   @ApiProperty({ description: 'Id of the User', type: String, required: true })
   @Expose()

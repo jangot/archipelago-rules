@@ -8,9 +8,10 @@
 
 import { Controller, Get, Query } from '@nestjs/common';
 import { CoreService } from './core.service';
-import { ApiQuery } from '@nestjs/swagger';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @Controller()
+@ApiTags('core')
 export class CoreController {
   constructor(private readonly coreService: CoreService) {}
 

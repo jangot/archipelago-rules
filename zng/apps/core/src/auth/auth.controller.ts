@@ -5,8 +5,10 @@ import { JwtResponseDto, PasswordVerificationDto } from '../dto';
 import { RegistrationRequestDTO } from '../dto/request/registration.request.dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { UserVerificationRequestDto } from '../dto/request/user-verification-request.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('auth')
+@ApiTags('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
