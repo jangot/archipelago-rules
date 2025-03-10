@@ -5,11 +5,16 @@ import { JwtResponseDto, PasswordVerificationDto } from '../dto';
 import { RegistrationRequestDTO } from '../dto/request/registration.request.dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { UserVerificationRequestDto } from '../dto/request/user-verification-request.dto';
+import { RegistrationService } from './registration.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly registrationService: RegistrationService
+  ) {}
 
+  // TODO: extend to support different login flows.
   @UseGuards(PasswordAuthGuard)
   @Post('login')
   async login(@Body() body: PasswordVerificationDto, @Request() req): Promise<JwtResponseDto> {
@@ -28,13 +33,20 @@ export class AuthController {
 
     const { firstName, lastName, email, phoneNumber } = authRequest;
 
-    return await this.authService.register(firstName, lastName, email, phoneNumber);
+    return await this.registrationService.register(firstName, lastName, email, phoneNumber);
   }
 
+  // MOCK. Endpoint to accept second contact verification call
+  @Post('register/advance')
+  async advanceRegistration(): Promise<unknown> {
+    return true;
+  }
+
+  // TODO?: Add Guard that accepts either anonymous (for 1st contact verification) or JWT (for 2nd contact verification)
   @Post('verify')
   async verify(@Body() body: UserVerificationRequestDto): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
     const { id, verificationCode, verificationState } = body;
 
-    return await this.authService.verify(id, verificationCode, verificationState);
+    return await this.registrationService.verify(id, verificationCode, verificationState);
   }
 }

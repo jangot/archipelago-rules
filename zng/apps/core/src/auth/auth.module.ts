@@ -9,6 +9,7 @@ import { DataModule } from '../data';
 import { JwtModule } from '@nestjs/jwt';
 import { RegistrationFactory } from './registration.factory';
 import { Registrators } from './registration';
+import { RegistrationService } from './registration.service';
 
 @Module({
   imports: [
@@ -25,6 +26,13 @@ import { Registrators } from './registration';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, RegistrationFactory, ...CustomAuthStrategies, ...CustomAuthGuards, ...Registrators],
+  providers: [
+    AuthService,
+    RegistrationService,
+    RegistrationFactory,
+    ...CustomAuthStrategies,
+    ...CustomAuthGuards,
+    ...Registrators,
+  ],
 })
 export class AuthModule {}
