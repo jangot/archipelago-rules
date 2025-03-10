@@ -10,14 +10,18 @@ import {
   ApiOkResponse,
   ApiParam,
   ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
 import { ValidateOptionalQueryParamsPipe } from '@library/shared/common/pipes/optional.params.pipe';
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
 import { SearchFilterDto, SearchQueryDto } from '@library/shared/common/search';
 import { PagingDto, PagingOptionsDto } from '@library/shared/common/paging';
 import { ContactType } from '@library/entity/enum';
+import { IGetUserDetailByIdResult } from '../data/sql_generated/get-user-detail.queries';
+import { UUIDParam } from '@library/shared/common/pipes/uuidparam';
 
 @Controller('users')
+@ApiTags('users')
 export class UsersController {
   private readonly logger: Logger = new Logger(UsersController.name);
 
@@ -29,7 +33,7 @@ export class UsersController {
   @ApiNoContentResponse({ description: 'User not found', isArray: false })
   @ApiBadRequestResponse({ description: 'Invalid Id', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  public async getUserById(@Param('id') id: string): Promise<UserResponseDto> {
+  public async getUserById(@UUIDParam('id') id: string): Promise<UserResponseDto> {
     const result = await this.userService.getUserById(id);
 
     if (!result) {
@@ -39,6 +43,24 @@ export class UsersController {
     return result;
   }
 
+  // Using this to test out pgtyped stuff
+  @Get('/test/:id')
+  @ApiParam({ name: 'id', required: true, description: 'User id' })
+  @ApiOkResponse({ description: 'Get User by Id', type: UserResponseDto, isArray: false })
+  @ApiNoContentResponse({ description: 'User not found', isArray: false })
+  @ApiBadRequestResponse({ description: 'Invalid Id', isArray: false })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
+  public async getUserDetailById(@UUIDParam('id') id: string): Promise<IGetUserDetailByIdResult> {
+    const result = await this.userService.getUserDetailById(id);
+
+    if (!result) {
+      throw new HttpException('User not found', HttpStatus.NO_CONTENT);
+    }
+
+    return result;
+  }
+
+  //getUserDetailById
   //GET /users?email=test@mail.com
   //GET /users?phoneNumber=1234567890
   @ApiQuery({ name: 'phoneNumber', required: false, description: 'User phone number' })
@@ -111,7 +133,7 @@ export class UsersController {
   @ApiBadRequestResponse({ description: 'Invalid Id', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
   @Put('restore/:id')
-  public async restoreUser(@Param('id') id: string): Promise<boolean> {
+  public async restoreUser(@UUIDParam('id') id: string): Promise<boolean> {
     const result = await this.userService.restoreUser(id);
 
     if (!result) {

@@ -14,7 +14,7 @@ export const memoryDataSource = async (): Promise<DataSource> => {
     namingStrategy: new ZngNamingStrategy(),
   });
 
-  registerMemeoryBatabaseFunctions(memoryDatabase.public);
+  registerMemoryDatabaseFunctions(memoryDatabase.public);
 
   memoryDatabase.createSchema('core');
 
@@ -34,7 +34,7 @@ export const memoryDataSourceForTests = async (): Promise<{ dataSource: DataSour
     namingStrategy: new ZngNamingStrategy(),
   });
 
-  registerMemeoryBatabaseFunctions(database.public);
+  registerMemoryDatabaseFunctions(database.public);
 
   database.createSchema('core');
 
@@ -45,7 +45,7 @@ export const memoryDataSourceForTests = async (): Promise<{ dataSource: DataSour
 };
 
 // Workaround for missing functions in pg-mem implementation
-function registerMemeoryBatabaseFunctions(schema: ISchema) {
+function registerMemoryDatabaseFunctions(schema: ISchema) {
   schema.registerFunction({
     implementation: () => 'test',
     name: 'current_database',

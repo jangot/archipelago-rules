@@ -8,6 +8,7 @@ import { v4 } from 'uuid';
 import { SearchQueryDto } from '@library/shared/common/search';
 import { createPaginationWrapper, PagingDto } from '@library/shared/common/paging';
 import { ContactType } from '@library/entity/enum';
+import { IGetUserDetailByIdResult } from '../data/sql_generated/get-user-detail.queries';
 
 @Injectable()
 export class UsersService {
@@ -15,6 +16,12 @@ export class UsersService {
   private readonly logger: Logger = new Logger(UsersService.name);
 
   constructor(private readonly dataService: IDataService) {}
+
+  public async getUserDetailById(userId: string): Promise<IGetUserDetailByIdResult | null> {
+    const result = await this.dataService.users.getUserDetailById(userId);
+
+    return result;
+  }
 
   // I don't want the Service classes to throw Exceptions if a User isn't found.
   // I would prefer to have the Controller or any other consumer determine if not finding

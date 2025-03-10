@@ -37,6 +37,33 @@ describe('UsersService Integration Tests', () => {
     databaseBackup.restore();
   });
 
+  describe('getUserDetailById', () => {
+    it('should return pgtyped typed User object', async () => {
+      const phoneNumber = '+12124567890';
+
+      const mockUser: UserCreateRequestDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        phoneNumber,
+      };
+
+      const createResult = await service.createUser(mockUser);
+      const result = await service.getUserDetailById(createResult!.id);
+
+      // This fails because of mapping issues. The returned fields are not automatically camel-cased
+      // Need to add this capability
+      // TODO: Add camel casing to returned fields!!!
+      expect(result).toEqual({
+        id: createResult!.id,
+        firstName: mockUser.firstName,
+        lastName: mockUser.lastName,
+        email: mockUser.email,
+        phoneNumber: mockUser.phoneNumber,
+      });
+    });
+  });
+
   describe('getUserById', () => {
     it('should return a user by id', async () => {
       // Simulate controller-level behaviour for phone number normalization
