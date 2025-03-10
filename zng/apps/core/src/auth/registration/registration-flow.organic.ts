@@ -1,40 +1,61 @@
 import { Injectable } from '@nestjs/common';
-import { RegistratorBase } from './registrator.base';
-import { OrganicRegistrationRequestDto } from '../../dto';
+import { RegistrationFlow } from './registration-flow.base';
+import { OrganicRegistrationRequestDto, RegistrationTransitionResultDto } from '../../dto';
 import { RegistrationStageTransition } from './stage-transition.interface';
-import { LoginType, RegistrationType } from '@library/entity/enum';
+import { LoginType, RegistrationStatus, RegistrationType } from '@library/entity/enum';
+import { VerificationEvent } from '../verification';
 // // TODO: Move to config?
 // const VERIFICATION_ATTEMPTS_LIMIT = 3;
 // const VERIFICATION_LOCK_MINUTES = 5;
 // const VERIFICATION_CODE_TTL_MINUTES = 2;
 
 @Injectable()
-export class OrganicRegistrator extends RegistratorBase<RegistrationType.Organic, OrganicRegistrationRequestDto> {
+export class OrganicRegistrationFlow extends RegistrationFlow<RegistrationType.Organic, OrganicRegistrationRequestDto> {
   protected supportedRegistrationLogins = [LoginType.OneTimeCodeEmail, LoginType.OneTimeCodePhoneNumber];
 
   protected stageTransitions: RegistrationStageTransition[] = [
-    // { from: undefined, to: OrganicRegistrationStage.Initiated, action: this.initiateRegistration },
-    // { from: OrganicRegistrationStage.Initiated, to: OrganicRegistrationStage.EmailSet, action: this.setEmail },
-    // {
-    //   from: OrganicRegistrationStage.EmailSet,
-    //   to: OrganicRegistrationStage.EmailVerificationSent,
-    //   action: this.verifyEmail,
-    // },
-    // {
-    //   from: OrganicRegistrationStage.EmailVerificationSent,
-    //   to: OrganicRegistrationStage.PhoneNumberSet,
-    //   action: this.setPhoneNumber,
-    // },
-    // {
-    //   from: OrganicRegistrationStage.PhoneNumberSet,
-    //   to: OrganicRegistrationStage.PhoneNumberVerificationSent,
-    //   action: this.verifyPhoneNumber,
-    // },
-    // {
-    //   from: OrganicRegistrationStage.PhoneNumberVerificationSent,
-    //   to: OrganicRegistrationStage.Verified,
-    //   action: this.completeVerification,
-    // },
+    {
+      state: RegistrationStatus.NotRegistered,
+      nextState: RegistrationStatus.EmailVerifying,
+      successEvent: null,
+      failureEvent: null,
+      action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
+    },
+    {
+      state: RegistrationStatus.EmailVerifying,
+      nextState: RegistrationStatus.EmailVerified,
+      successEvent: VerificationEvent.EmailVerifying,
+      failureEvent: null,
+      action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
+    },
+    {
+      state: RegistrationStatus.EmailVerified,
+      nextState: RegistrationStatus.PhoneNumberVerifying,
+      successEvent: VerificationEvent.EmailVerified,
+      failureEvent: null,
+      action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
+    },
+    {
+      state: RegistrationStatus.PhoneNumberVerifying,
+      nextState: RegistrationStatus.PhoneNumberVerified,
+      successEvent: VerificationEvent.PhoneNumberVerifying,
+      failureEvent: null,
+      action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
+    },
+    {
+      state: RegistrationStatus.PhoneNumberVerified,
+      nextState: RegistrationStatus.Registered,
+      successEvent: VerificationEvent.PhoneNumberVerified,
+      failureEvent: null,
+      action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
+    },
+    {
+      state: RegistrationStatus.Registered,
+      nextState: null,
+      successEvent: VerificationEvent.Verified,
+      failureEvent: null,
+      action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
+    },
   ];
 
   // // eslint-disable-next-line @typescript-eslint/no-unused-vars

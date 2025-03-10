@@ -1,6 +1,6 @@
 import { IApplicationUser } from '@library/entity/interface';
 import { VerificationFlowState } from './verification-flow.state';
-import { RegistrationStatus } from '@library/entity/enum/verification.state';
+import { RegistrationStatus } from '@library/entity/enum/registration.status';
 
 export interface IVerificationFlow {
   next(): VerificationFlowState | null;

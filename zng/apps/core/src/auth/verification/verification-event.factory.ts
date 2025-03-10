@@ -7,26 +7,26 @@ import { VerificationVerifiedEvent } from './verification-event.verified';
 import { IApplicationUser } from '@library/entity/interface';
 import { VerificationEventBase } from './verification-event.base';
 
-export enum VerificationEvents {
-  VerificationEmailVerifyingEvent = 'VerificationEmailVerifyingEvent',
-  VerificationEmailVerifiedEvent = 'VerificationEmailVerifiedEvent',
-  VerificationPhoneNumberVerifyingEvent = 'VerificationPhoneNumberVerifyingEvent',
-  VerificationPhoneNumberVerifiedEvent = 'VerificationPhoneNumberVerifiedEvent',
-  VerificationVerifiedEvent = 'VerificationVerifiedEvent',
+export enum VerificationEvent {
+  EmailVerifying = 'VerificationEmailVerifyingEvent',
+  EmailVerified = 'VerificationEmailVerifiedEvent',
+  PhoneNumberVerifying = 'VerificationPhoneNumberVerifyingEvent',
+  PhoneNumberVerified = 'VerificationPhoneNumberVerifiedEvent',
+  Verified = 'VerificationVerifiedEvent',
 }
 
 // Create a mapping from notification name to the class constructor.
 // The type "new (user: IApplicationUser) => VerificationEventBase" indicates that each constructor takes an IApplicationUser parameter.
-const eventMapping: Record<VerificationEvents, new (user: IApplicationUser) => VerificationEventBase> = {
-  [VerificationEvents.VerificationEmailVerifyingEvent]: VerificationEmailVerifyingEvent,
-  [VerificationEvents.VerificationEmailVerifiedEvent]: VerificationEmailVerifiedEvent,
-  [VerificationEvents.VerificationPhoneNumberVerifyingEvent]: VerificationPhoneNumberVerifyingEvent,
-  [VerificationEvents.VerificationPhoneNumberVerifiedEvent]: VerificationPhoneNumberVerifiedEvent,
-  [VerificationEvents.VerificationVerifiedEvent]: VerificationVerifiedEvent,
+const eventMapping: Record<VerificationEvent, new (user: IApplicationUser) => VerificationEventBase> = {
+  [VerificationEvent.EmailVerifying]: VerificationEmailVerifyingEvent,
+  [VerificationEvent.EmailVerified]: VerificationEmailVerifiedEvent,
+  [VerificationEvent.PhoneNumberVerifying]: VerificationPhoneNumberVerifyingEvent,
+  [VerificationEvent.PhoneNumberVerified]: VerificationPhoneNumberVerifiedEvent,
+  [VerificationEvent.Verified]: VerificationVerifiedEvent,
 };
 
 export class VerificationEventFactory {
-  public static create(user: IApplicationUser, notificationName: VerificationEvents): VerificationEventBase | null {
+  public static create(user: IApplicationUser, notificationName: VerificationEvent): VerificationEventBase | null {
     if (!notificationName) return null;
 
     const EventClass = eventMapping[notificationName];

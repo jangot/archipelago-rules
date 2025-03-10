@@ -1,6 +1,6 @@
-import { RegistrationStatus } from '@library/entity/enum/verification.state';
+import { RegistrationStatus } from '@library/entity/enum/registration.status';
 import { VerificationFlowState } from './verification-flow.state';
-import { VerificationEvents } from './verification-event.factory';
+import { VerificationEvent } from './verification-event.factory';
 
 // NotVerified -> VerifyingEmail -> EmailVerified -> VerifyingPhoneNumber -> PhoneNumberVerified - > Verified
 export const standardVerificationFlow: VerificationFlowState[] = [
@@ -18,7 +18,7 @@ export const standardVerificationFlow: VerificationFlowState[] = [
     isVerified: false,
     requiresVerificationCode: true,
     returnToken: false,
-    notificationName: VerificationEvents.VerificationEmailVerifyingEvent,
+    notificationName: VerificationEvent.EmailVerifying,
   },
   {
     state: RegistrationStatus.EmailVerified,
@@ -26,7 +26,7 @@ export const standardVerificationFlow: VerificationFlowState[] = [
     isVerified: false,
     requiresVerificationCode: false,
     returnToken: true,
-    notificationName: VerificationEvents.VerificationEmailVerifiedEvent,
+    notificationName: VerificationEvent.EmailVerified,
   },
   {
     state: RegistrationStatus.PhoneNumberVerifying,
@@ -34,7 +34,7 @@ export const standardVerificationFlow: VerificationFlowState[] = [
     isVerified: false,
     requiresVerificationCode: true,
     returnToken: false,
-    notificationName: VerificationEvents.VerificationPhoneNumberVerifyingEvent,
+    notificationName: VerificationEvent.PhoneNumberVerifying,
   },
   {
     state: RegistrationStatus.PhoneNumberVerified,
@@ -42,7 +42,7 @@ export const standardVerificationFlow: VerificationFlowState[] = [
     isVerified: false,
     requiresVerificationCode: false,
     returnToken: false,
-    notificationName: VerificationEvents.VerificationPhoneNumberVerifiedEvent,
+    notificationName: VerificationEvent.PhoneNumberVerified,
   },
   {
     state: RegistrationStatus.Registered,
@@ -50,6 +50,6 @@ export const standardVerificationFlow: VerificationFlowState[] = [
     isVerified: true,
     requiresVerificationCode: false,
     returnToken: false,
-    notificationName: VerificationEvents.VerificationVerifiedEvent,
+    notificationName: VerificationEvent.Verified,
   },
 ];

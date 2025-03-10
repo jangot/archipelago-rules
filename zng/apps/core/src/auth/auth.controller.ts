@@ -1,6 +1,5 @@
-import { Body, Controller, HttpException, HttpStatus, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpException, HttpStatus, Post, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { PasswordAuthGuard } from './guards';
 import { JwtResponseDto, PasswordVerificationDto } from '../dto';
 import { RegistrationRequestDTO } from '../dto/request/registration.request.dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
@@ -15,11 +14,17 @@ export class AuthController {
   ) {}
 
   // TODO: extend to support different login flows.
-  @UseGuards(PasswordAuthGuard)
   @Post('login')
   async login(@Body() body: PasswordVerificationDto, @Request() req): Promise<JwtResponseDto> {
     // Shouldn't this come from the body parameter?
     return await this.authService.login(req.user.id);
+  }
+
+  //@UseGuards(PasswordAuthGuard)
+  // MOCK. Endpoint to accept login verification
+  @Post('verify') // --> for login
+  async verify(): Promise<unknown> {
+    return true;
   }
 
   @Post('register')
@@ -43,8 +48,10 @@ export class AuthController {
   }
 
   // TODO?: Add Guard that accepts either anonymous (for 1st contact verification) or JWT (for 2nd contact verification)
-  @Post('verify')
-  async verify(@Body() body: UserVerificationRequestDto): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
+  @Post('register/verify') // !!! --> registration verification
+  async verifyRegistration(
+    @Body() body: UserVerificationRequestDto
+  ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
     const { id, verificationCode, verificationState } = body;
 
     return await this.registrationService.verify(id, verificationCode, verificationState);

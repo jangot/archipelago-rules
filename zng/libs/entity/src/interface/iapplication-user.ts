@@ -1,5 +1,5 @@
 import { EntityId, ISoftDeleteEntity } from '@library/shared/common/data';
-import { RegistrationStatus } from '../enum/verification.state';
+import { RegistrationStatus } from '../enum/registration.status';
 
 export interface IApplicationUser extends EntityId<string>, ISoftDeleteEntity {
   id: string; // UUID

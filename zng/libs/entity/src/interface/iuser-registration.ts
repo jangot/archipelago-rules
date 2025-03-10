@@ -1,5 +1,5 @@
 import { EntityId } from '@library/shared/common/data';
-import { RegistrationStatus } from '../enum/verification.state';
+import { RegistrationStatus } from '../enum/registration.status';
 
 export interface IUserRegistration extends EntityId<string> {
   id: string;

@@ -15,4 +15,8 @@ export class UserRegistrationRepository
   constructor(@InjectRepository(UserRegistration) protected readonly repository: Repository<UserRegistration>) {
     super(repository, UserRegistration);
   }
+
+  public async getByUserId(userId: string): Promise<UserRegistration | null> {
+    return await this.repository.findOneBy({ userId });
+  }
 }

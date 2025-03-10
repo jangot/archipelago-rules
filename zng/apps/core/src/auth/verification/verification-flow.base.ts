@@ -3,7 +3,7 @@ import { IVerificationFlow } from './iverification-flow.base';
 import { VerificationFlowState } from './verification-flow.state';
 import { VerificationEventFactory } from './verification-event.factory';
 import { IApplicationUser } from '@library/entity/interface';
-import { RegistrationStatus } from '@library/entity/enum/verification.state';
+import { RegistrationStatus } from '@library/entity/enum/registration.status';
 
 export class VerificationFlow implements IVerificationFlow {
   protected currentVerificationFlowState: VerificationFlowState;

@@ -1,28 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { RegistrationDto } from '../dto';
 import { RegistrationType } from '@library/entity/enum';
-import { OrganicRegistrator } from './registration/registrator.organic';
-import { SandboxRegistrator } from './registration/registrator.sandbox';
-import { RegistratorBase } from './registration';
+import { OrganicRegistrationFlow } from './registration/registration-flow.organic';
+import { SandboxRegistrationFlow } from './registration/registration-flow.sandbox';
+import { RegistrationFlow } from './registration';
 import { IDataService } from '../data/idata.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../users/users.service';
+import { EventBus } from '@nestjs/cqrs';
 
 @Injectable()
 export class RegistrationFactory {
-  public static getRegistrator(
+  public static create(
     type: RegistrationType,
     data: IDataService,
     jwtService: JwtService,
     config: ConfigService,
-    usersService: UsersService
-  ): RegistratorBase<RegistrationType, RegistrationDto> | null {
+    eventBus: EventBus,
+  ): RegistrationFlow<RegistrationType, RegistrationDto> | null {
     switch (type) {
       case RegistrationType.Organic:
-        return new OrganicRegistrator(data, jwtService, config, usersService);
+        return new OrganicRegistrationFlow(data, jwtService, config, eventBus);
       case RegistrationType.SandboxBypass:
-        return new SandboxRegistrator(data, jwtService, config, usersService);
+        return new SandboxRegistrationFlow(data, jwtService, config, eventBus);
     }
   }
 }

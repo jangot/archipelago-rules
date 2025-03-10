@@ -1,4 +1,4 @@
-import { RegistrationStatus } from '@library/entity/enum/verification.state';
+import { RegistrationStatus } from '@library/entity/enum/registration.status';
 import { IUserRegistration } from '@library/entity/interface';
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';

@@ -8,7 +8,7 @@ import { UserRegisterResponseDto } from '../dto/response/user-register-response.
 import { ContactType } from '@library/entity/enum';
 import { generateSecureCode } from '@library/shared/common/helpers';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
-import { RegistrationStatus } from '@library/entity/enum/verification.state';
+import { RegistrationStatus } from '@library/entity/enum/registration.status';
 import { JwtResponseDto } from '../dto';
 import { AuthService } from './auth.service';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
@@ -21,6 +21,7 @@ import { IApplicationUser } from '@library/entity/interface';
 export class RegistrationService {
   private readonly logger: Logger = new Logger(RegistrationService.name);
   private verificationFlow: IVerificationFlow | null = null;
+
   constructor(
     private readonly dataService: IDataService,
     private readonly jwtService: JwtService,
@@ -43,6 +44,7 @@ export class RegistrationService {
       throw new HttpException('Either email or phone number must be provided', HttpStatus.BAD_REQUEST);
     }
 
+    // TODO: Checks for temporal email and phone number?
     const existingUser = await this.dataService.users.getUserByContact(contact, contactType);
     if (existingUser) {
       throw new HttpException('User already exists', HttpStatus.CONFLICT);
