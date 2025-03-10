@@ -1,8 +1,7 @@
 import { MapTo } from '@library/entity/mapping/mapping.decorators';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
-import { ApiSchema } from '@library/shared/common/decorators/api-schema.decorator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 

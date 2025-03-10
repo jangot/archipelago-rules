@@ -1,11 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { PagingOptionsDto } from '../paging';
 import { ISearchFilter } from './search-query';
 import { ValueOperator } from './value-operator';
 import { Type } from 'class-transformer';
 import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { ApiSchema } from '../decorators/api-schema.decorator';
 
+@ApiSchema({ name: 'searchFilter' })
 export class SearchFilterDto implements ISearchFilter {
   @ApiProperty({ description: 'Field to filter on', type: String, example: 'name' })
   @IsString()

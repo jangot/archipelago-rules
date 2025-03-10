@@ -13,7 +13,7 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
 
   constructor(
     @InjectRepository(ApplicationUser)
-    protected readonly repository: Repository<ApplicationUser>,
+    protected readonly repository: Repository<ApplicationUser>
   ) {
     super(repository, ApplicationUser);
   }

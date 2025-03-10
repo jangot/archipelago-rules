@@ -1,10 +1,11 @@
 import { MapTo } from '@library/entity/mapping/mapping.decorators';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty, MaxLength, IsOptional, IsString } from 'class-validator';
 
+@ApiSchema({ name: 'registrationRequest' })
 export class RegistrationRequestDTO {
   @ApiProperty({ description: 'User First Name', type: String, required: false, maxLength: 100 })
   @Expose()

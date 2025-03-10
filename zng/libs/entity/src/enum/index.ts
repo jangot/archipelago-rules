@@ -7,5 +7,4 @@ export * from './jwt.type';
 export * from './registration.type';
 export * from './registration.status';
 
-
 //

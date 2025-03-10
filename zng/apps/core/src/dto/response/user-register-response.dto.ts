@@ -1,6 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { ApiSchema } from '@library/shared/common/decorators/api-schema.decorator';
 import { IsUUID, IsEmail, IsNotEmpty, MaxLength, IsOptional, IsString } from 'class-validator';
 
 @ApiSchema({ name: 'userRegisterResponse' })

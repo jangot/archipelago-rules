@@ -6,7 +6,7 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional, ApiSchema } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import {
@@ -16,7 +16,6 @@ import {
   PagingOrder,
 } from './paging.order.constants';
 import { IPagingOptions } from './paging.options.interface';
-import { ApiSchema } from '../decorators/api-schema.decorator';
 
 @ApiSchema({ name: 'pagingOptions' })
 export class PagingOptionsDto implements IPagingOptions {

@@ -5,13 +5,13 @@
  *
  * Copyright (c) 2025 Zirtue, Inc.
  */
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsArray } from 'class-validator';
 import { PagingMetaDto } from './paging.meta.dto';
 import { IPaging } from './paging.interface';
 import { IPagingMeta } from './paging.meta.interface';
 import { PagingOrder } from './paging.order.constants';
-import { ApiSchema } from '../decorators/api-schema.decorator';
+
 @ApiSchema({ name: 'paging' })
 export class PagingDto<T> implements IPaging<T> {
   @IsArray()
