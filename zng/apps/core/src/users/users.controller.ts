@@ -17,8 +17,8 @@ import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../
 import { SearchFilterDto, SearchQueryDto } from '@library/shared/common/search';
 import { PagingDto, PagingOptionsDto } from '@library/shared/common/paging';
 import { ContactType } from '@library/entity/enum';
-import { IGetUserDetailByIdResult } from '../data/sql_generated/get-user-detail.queries';
 import { UUIDParam } from '@library/shared/common/pipes/uuidparam';
+import { UserDetailResponseDTO } from '../dto/response/user-detail-response.dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -46,11 +46,11 @@ export class UsersController {
   // Using this to test out pgtyped stuff
   @Get('/test/:id')
   @ApiParam({ name: 'id', required: true, description: 'User id' })
-  @ApiOkResponse({ description: 'Get User by Id', type: UserResponseDto, isArray: false })
+  @ApiOkResponse({ description: 'Get User by Id', type: UserDetailResponseDTO, isArray: false })
   @ApiNoContentResponse({ description: 'User not found', isArray: false })
   @ApiBadRequestResponse({ description: 'Invalid Id', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  public async getUserDetailById(@UUIDParam('id') id: string): Promise<IGetUserDetailByIdResult> {
+  public async getUserDetailById(@UUIDParam('id') id: string): Promise<UserDetailResponseDTO> {
     const result = await this.userService.getUserDetailById(id);
 
     if (!result) {

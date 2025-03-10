@@ -23,9 +23,10 @@ import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity
 import { ISearchFilter } from '../search/search-query';
 import { buildPagingQuery, IPaging, IPagingOptions } from '../paging';
 import { buildSearchQuery } from '../search';
-import { IDatabaseConnection } from '@pgtyped/runtime';
+import { IDatabaseConnection, PreparedQuery } from '@pgtyped/runtime';
 import { Pool } from 'pg';
 import { PgPoolAdapter } from './pg-pool-adapter';
+import camelcaseKeys from 'camelcase-keys';
 
 /**
  * RepositoryBase class
@@ -177,6 +178,30 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     const poolAdapter = new PgPoolAdapter(pool);
 
     return poolAdapter;
+  }
+
+  protected async runSqlQuery<TParamType, TResultType extends Record<string, any>>(
+    params: TParamType,
+    query: PreparedQuery<TParamType, TResultType>
+  ): Promise<TResultType[]> {
+    const databaseConnection = this.getIDatabaseConnection();
+
+    const rawResult = await query.run(params, databaseConnection);
+    const result = camelcaseKeys(rawResult, { deep: true }) as TResultType[];
+
+    return result;
+  }
+
+  protected async runSqlQueryWithCount<TParamType, TResultType extends Record<string, any>>(
+    params: TParamType,
+    query: PreparedQuery<TParamType, TResultType>
+  ): Promise<{ result: Array<TResultType>; rowCount: number }> {
+    const databaseConnection = this.getIDatabaseConnection();
+
+    const rawResult = await query.runWithCounts(params, databaseConnection);
+    const result = camelcaseKeys(rawResult, { deep: true }) as { result: Array<TResultType>; rowCount: number };
+
+    return result;
   }
   //#endregion
 
