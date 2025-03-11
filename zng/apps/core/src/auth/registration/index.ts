@@ -5,5 +5,6 @@ export * from './stage-transition.interface';
 export * from './registration-flow.base';
 export * from './registration-flow.organic';
 export * from './registration-flow.sandbox';
+export * from './registration-exception.factory';
 
 export const Registrators = [OrganicRegistrationFlow, SandboxRegistrationFlow];

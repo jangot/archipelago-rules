@@ -1,11 +1,18 @@
-import { Body, Controller, HttpException, HttpStatus, Post, Request } from '@nestjs/common';
+import { Body, Controller, Post, Req, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { JwtResponseDto, PasswordVerificationDto } from '../dto';
-import { RegistrationRequestDTO } from '../dto/request/registration.request.dto';
+import {
+  JwtResponseDto,
+  OrganicRegistrationAdvanceRequestDto,
+  OrganicRegistrationRequestDto,
+  OrganicRegistrationVerifyRequestDto,
+  RegistrationDto,
+  SandboxRegistrationRequestDto,
+} from '../dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
-import { UserVerificationRequestDto } from '../dto/request/user-verification-request.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { RegistrationService } from './registration.service';
+import { ExtractJwt } from 'passport-jwt';
+import { JwtType } from '@library/entity/enum';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -16,11 +23,11 @@ export class AuthController {
   ) {}
 
   // TODO: extend to support different login flows.
-  @Post('login')
-  async login(@Body() body: PasswordVerificationDto, @Request() req): Promise<JwtResponseDto> {
-    // Shouldn't this come from the body parameter?
-    return await this.authService.login(req.user.id);
-  }
+  // @Post('login')
+  // async login(@Body() body: PasswordVerificationDto, @Request() req): Promise<JwtResponseDto> {
+  //   // Shouldn't this come from the body parameter?
+  //   return await this.authService.login(req.user.id);
+  // }
 
   //@UseGuards(PasswordAuthGuard)
   // MOCK. Endpoint to accept login verification
@@ -30,32 +37,40 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() authRequest: RegistrationRequestDTO): Promise<UserRegisterResponseDto> {
-    if (!authRequest.isValid()) {
-      throw new HttpException(
-        `Invalid registration request. You must provide either an email or a phone number.`,
-        HttpStatus.BAD_REQUEST
-      );
-    }
-
-    const { firstName, lastName, email, phoneNumber } = authRequest;
-
-    return await this.registrationService.register(firstName, lastName, email, phoneNumber);
+  @ApiExtraModels(OrganicRegistrationRequestDto, SandboxRegistrationRequestDto)
+  @ApiBody({
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(OrganicRegistrationRequestDto) },
+        { $ref: getSchemaPath(SandboxRegistrationRequestDto) },
+      ],
+    },
+  })
+  async register(@Body() body: RegistrationDto): Promise<UserRegisterResponseDto> {
+    return await this.registrationService.register(body);
   }
 
-  // MOCK. Endpoint to accept second contact verification call
   @Post('register/advance')
-  async advanceRegistration(): Promise<unknown> {
-    return true;
+  @ApiBearerAuth()
+  @ApiExtraModels(OrganicRegistrationAdvanceRequestDto, SandboxRegistrationRequestDto)
+  @ApiBody({ schema: { $ref: getSchemaPath(OrganicRegistrationAdvanceRequestDto) } })
+  async advanceRegistration(@Body() body: RegistrationDto, @Req() request: Request): Promise<UserRegisterResponseDto> {
+    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
+    if (!token) throw new UnauthorizedException('Unauthorized');
+
+    const isTokenValid = await this.authService.verifyJwtSignature(token, JwtType.Login);
+    if (!isTokenValid) throw new UnauthorizedException('JWT token mismatch');
+
+    return await this.registrationService.advanceRegistration(body);
   }
 
-  // TODO?: Add Guard that accepts either anonymous (for 1st contact verification) or JWT (for 2nd contact verification)
-  @Post('register/verify') // !!! --> registration verification
-  async verifyRegistration(
-    @Body() body: UserVerificationRequestDto
-  ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
-    const { id, verificationCode, verificationState } = body;
-
-    return await this.registrationService.verify(id, verificationCode, verificationState);
+  @ApiExtraModels(OrganicRegistrationVerifyRequestDto, JwtResponseDto)
+  @ApiBody({ schema: { $ref: getSchemaPath(OrganicRegistrationVerifyRequestDto) } })
+  @Post('register/verify') // registration verification
+  async verifyRegistration(@Body() body: RegistrationDto, @Req() request: Request): Promise<JwtResponseDto | null> {
+    //TODO: !! Add support of 'retry' verification
+    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
+    if (!token) return await this.registrationService.verifyRegistration(body);
+    return await this.registrationService.verifyAdvanceRegistration(body);
   }
 }

@@ -45,13 +45,17 @@ export class AuthService {
   }
 
   // feels like to much opened to the world
-  public async login(id: string): Promise<JwtResponseDto> {
+  public async login(id: string, expiresIn?: string | number): Promise<JwtResponseDto | null> {
     this.logger.debug(`login: Logging in user: ${id}`);
 
+    const user = await this.dataService.users.getUserById(id);
+    if (!user) return null;
+
     // Generate JWT token
-    const payload = { sub: id };
+    const payload = { sub: id, registration: user.registrationStatus };
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken: this.jwtService.sign(payload, { expiresIn }),
+      // TODO: RefreshToken? What to do with registrationVerification?
     };
   }
 

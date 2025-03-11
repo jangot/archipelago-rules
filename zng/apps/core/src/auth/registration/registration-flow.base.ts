@@ -7,7 +7,10 @@ import { ConfigService } from '@nestjs/config';
 import { VerificationEvent, VerificationEventFactory } from '../verification';
 import { EventBus } from '@nestjs/cqrs';
 import { IApplicationUser } from '@library/entity/interface';
+import { UserRegistration } from '../../data/entity';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export abstract class RegistrationFlow<
   Type extends RegistrationType,
   Payload extends RegistrationDto & { type: Type },
@@ -22,12 +25,18 @@ export abstract class RegistrationFlow<
     protected readonly eventBus: EventBus
   ) {}
 
-  public async advance(input: Payload): Promise<RegistrationTransitionResultDto | null> {
+  public async advance(
+    input: Payload,
+    startFrom?: RegistrationStatus
+  ): Promise<RegistrationTransitionResultDto | null> {
     if (!input) return { state: null, isSuccessful: false, message: RegistrationTransitionMessage.WrongInput };
     const { userId } = input;
 
     // No userId means first registration step
     if (!userId) {
+      if (startFrom && startFrom !== RegistrationStatus.NotRegistered) {
+        return { state: startFrom, isSuccessful: false, message: RegistrationTransitionMessage.WrongInput };
+      }
       const transition = this.stageTransitions.find((t) => t.state === RegistrationStatus.NotRegistered);
       if (!transition) {
         return {
@@ -43,13 +52,13 @@ export abstract class RegistrationFlow<
       }
       return this.next(state, nextState, null, input);
     } else {
-      const registration = await this.data.userRegistrations.getByUserId(userId);
+      const registration = await this.getUserRegistration(userId);
       if (!registration || !registration.status) {
         return { state: null, isSuccessful: false, message: RegistrationTransitionMessage.NoRegistrationStatusFound };
       }
 
       const transition = this.stageTransitions.find((t) => t.state === registration.status);
-      if (!transition) {
+      if (!transition || (startFrom && transition.state !== startFrom)) {
         return {
           state: registration.status,
           isSuccessful: false,
@@ -79,6 +88,10 @@ export abstract class RegistrationFlow<
     }
 
     return result;
+  }
+
+  protected async getUserRegistration(userId: string): Promise<UserRegistration | null> {
+    return this.data.userRegistrations.getByUserId(userId);
   }
 
   protected sendEvent(user: IApplicationUser | null, event: VerificationEvent | null): void {

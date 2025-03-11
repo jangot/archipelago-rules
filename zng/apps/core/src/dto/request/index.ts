@@ -1,4 +1,4 @@
-import { OrganicRegistrationRequestDto } from './registration-organic.request.dto';
+import { OrganicRegistrationDto } from './registration-organic.request.dto';
 import { SandboxRegistrationRequestDto } from './registration-sandbox.request.dto';
 
 export * from './user-create-request.dto';
@@ -12,5 +12,5 @@ export * from './registration-organic.request.dto';
 export * from './registration-sandbox.request.dto';
 export * from './registration-organic.request.dto';
 
-export type RegistrationDto = OrganicRegistrationRequestDto | SandboxRegistrationRequestDto;
+export type RegistrationDto = OrganicRegistrationDto | SandboxRegistrationRequestDto;
 //
