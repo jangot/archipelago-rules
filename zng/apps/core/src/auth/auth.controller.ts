@@ -1,10 +1,15 @@
-import { Body, Controller, HttpException, HttpStatus, Post, Request } from '@nestjs/common';
+import { Body, Controller, Post, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { JwtResponseDto, PasswordVerificationDto } from '../dto';
-import { RegistrationRequestDTO } from '../dto/request/registration.request.dto';
+import {
+  JwtResponseDto,
+  OrganicRegistrationRequestDto,
+  PasswordVerificationDto,
+  RegistrationDto,
+  SandboxRegistrationRequestDto,
+} from '../dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { UserVerificationRequestDto } from '../dto/request/user-verification-request.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiExtraModels, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { RegistrationService } from './registration.service';
 
 @Controller('auth')
@@ -30,17 +35,17 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() authRequest: RegistrationRequestDTO): Promise<UserRegisterResponseDto> {
-    if (!authRequest.isValid()) {
-      throw new HttpException(
-        `Invalid registration request. You must provide either an email or a phone number.`,
-        HttpStatus.BAD_REQUEST
-      );
-    }
-
-    const { firstName, lastName, email, phoneNumber } = authRequest;
-
-    return await this.registrationService.register(firstName, lastName, email, phoneNumber);
+  @ApiExtraModels(OrganicRegistrationRequestDto, SandboxRegistrationRequestDto)
+  @ApiBody({
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(OrganicRegistrationRequestDto) },
+        { $ref: getSchemaPath(SandboxRegistrationRequestDto) },
+      ],
+    },
+  })
+  async register(@Body() authRequest: RegistrationDto): Promise<UserRegisterResponseDto> {
+    return await this.registrationService.register(authRequest);
   }
 
   // MOCK. Endpoint to accept second contact verification call
@@ -56,6 +61,6 @@ export class AuthController {
   ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
     const { id, verificationCode, verificationState } = body;
 
-    return await this.registrationService.verify(id, verificationCode, verificationState);
+    return await this.registrationService.verifyRegistration(id, verificationCode, verificationState);
   }
 }

@@ -17,7 +17,7 @@ export class RegistrationFactory {
     jwtService: JwtService,
     config: ConfigService,
     eventBus: EventBus
-  ): RegistrationFlow<RegistrationType, RegistrationDto> | null {
+  ): RegistrationFlow<RegistrationType, RegistrationDto> {
     switch (type) {
       case RegistrationType.Organic:
         return new OrganicRegistrationFlow(data, jwtService, config, eventBus);

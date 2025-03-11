@@ -1,62 +1,184 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { RegistrationFlow } from './registration-flow.base';
-import { OrganicRegistrationRequestDto, RegistrationTransitionResultDto } from '../../dto';
+import { OrganicRegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../dto';
 import { RegistrationStageTransition } from './stage-transition.interface';
-import { LoginType, RegistrationStatus, RegistrationType } from '@library/entity/enum';
+import { ContactType, LoginType, RegistrationStatus, RegistrationType } from '@library/entity/enum';
 import { VerificationEvent } from '../verification';
+import { generateSecureCode } from '@library/shared/common/helpers';
+import { Transactional } from 'typeorm-transactional';
 // // TODO: Move to config?
 // const VERIFICATION_ATTEMPTS_LIMIT = 3;
 // const VERIFICATION_LOCK_MINUTES = 5;
 // const VERIFICATION_CODE_TTL_MINUTES = 2;
 
 @Injectable()
-export class OrganicRegistrationFlow extends RegistrationFlow<RegistrationType.Organic, OrganicRegistrationRequestDto> {
+export class OrganicRegistrationFlow extends RegistrationFlow<RegistrationType.Organic, OrganicRegistrationDto> {
+  private readonly logger: Logger = new Logger(OrganicRegistrationFlow.name);
   protected supportedRegistrationLogins = [LoginType.OneTimeCodeEmail, LoginType.OneTimeCodePhoneNumber];
 
   protected stageTransitions: RegistrationStageTransition[] = [
     {
       state: RegistrationStatus.NotRegistered,
       nextState: RegistrationStatus.EmailVerifying,
-      successEvent: null,
+      successEvent: VerificationEvent.EmailVerifying,
       failureEvent: null,
-      action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
+      action: this.initiateRegistration,
     },
     {
       state: RegistrationStatus.EmailVerifying,
       nextState: RegistrationStatus.EmailVerified,
-      successEvent: VerificationEvent.EmailVerifying,
+      successEvent: VerificationEvent.EmailVerified,
       failureEvent: null,
-      action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
+      action: this.verifyEmail,
     },
     {
       state: RegistrationStatus.EmailVerified,
       nextState: RegistrationStatus.PhoneNumberVerifying,
-      successEvent: VerificationEvent.EmailVerified,
+      successEvent: VerificationEvent.PhoneNumberVerifying,
       failureEvent: null,
       action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
     },
     {
       state: RegistrationStatus.PhoneNumberVerifying,
       nextState: RegistrationStatus.PhoneNumberVerified,
-      successEvent: VerificationEvent.PhoneNumberVerifying,
+      successEvent: VerificationEvent.PhoneNumberVerified,
       failureEvent: null,
       action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
     },
     {
       state: RegistrationStatus.PhoneNumberVerified,
       nextState: RegistrationStatus.Registered,
-      successEvent: VerificationEvent.PhoneNumberVerified,
+      successEvent: VerificationEvent.Verified,
       failureEvent: null,
       action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
     },
     {
       state: RegistrationStatus.Registered,
       nextState: null,
-      successEvent: VerificationEvent.Verified,
+      successEvent: null,
       failureEvent: null,
       action: () => Promise.resolve({} as RegistrationTransitionResultDto), // TODO: Implement
     },
   ];
+
+  private async initiateRegistration(
+    id: string | null,
+    input: OrganicRegistrationDto
+  ): Promise<RegistrationTransitionResultDto> {
+    const { firstName, lastName, email } = input;
+
+    if (!email) {
+      return {
+        state: RegistrationStatus.NotRegistered,
+        isSuccessful: false,
+        message: RegistrationTransitionMessage.NoContactProvided,
+      };
+    }
+
+    const userByEmail = await this.data.users.getUserByContact(email, ContactType.EMAIL);
+
+    if (userByEmail) {
+      return {
+        state: RegistrationStatus.NotRegistered,
+        isSuccessful: false,
+        message: RegistrationTransitionMessage.ContactTaken,
+      };
+    }
+
+    const verificationCode = generateSecureCode(6); // Generate new Verification code
+    const verificationCodeExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
+
+    const newUser = {
+      firstName: firstName?.trim(),
+      lastName: lastName?.trim(),
+      pendingEmail: email,
+      registrationStatus: RegistrationStatus.EmailVerifying,
+    };
+
+    // Create the barebones User here
+    const user = await this.data.users.create(newUser);
+    const { id: userId } = user;
+    const newUserRegistration = {
+      userId,
+      status: RegistrationStatus.EmailVerifying,
+      secret: verificationCode,
+      secretExpiresAt: verificationCodeExpiresAt,
+    };
+    // Create User Registration and store verification code with expiration date
+    const userRegistration = await this.data.userRegistrations.create(newUserRegistration);
+    this.logger.debug(`initiateRegistration: Registering user: ${email}`, {
+      user,
+      userRegistration: { ...userRegistration, secret: null },
+    });
+
+    return {
+      state: RegistrationStatus.EmailVerifying,
+      isSuccessful: true,
+      message: null,
+      userId,
+      code: verificationCode,
+    };
+  }
+
+  @Transactional()
+  private async verifyEmail(id: string, input: OrganicRegistrationDto): Promise<RegistrationTransitionResultDto> {
+    // Check that registration is exists and intention is correct
+    const registration = await this.getUserRegistration(id);
+
+    if (!registration || registration.status !== RegistrationStatus.EmailVerifying) {
+      return {
+        state: registration?.status ?? RegistrationStatus.NotRegistered,
+        isSuccessful: false,
+        message: RegistrationTransitionMessage.NoRegistrationStatusFound,
+      };
+    }
+
+    const { secret, secretExpiresAt } = registration;
+    if (!secret) {
+      return {
+        state: registration.status,
+        isSuccessful: false,
+        message: RegistrationTransitionMessage.NoSecretFound,
+      };
+    }
+
+    if (secretExpiresAt && secretExpiresAt < new Date()) {
+      return {
+        state: registration.status,
+        isSuccessful: false,
+        message: RegistrationTransitionMessage.SecretExpired,
+      };
+    }
+
+    const { code } = input;
+    if (secret !== code) {
+      return {
+        state: registration.status,
+        isSuccessful: false,
+        message: RegistrationTransitionMessage.VerificationCodeMismatch,
+      };
+    }
+
+    registration.status = RegistrationStatus.EmailVerified;
+    registration.secret = null;
+    registration.secretExpiresAt = null;
+
+    const user = await this.data.users.getUserById(registration.userId);
+    if (!user) {
+      return {
+        state: registration.status,
+        isSuccessful: false,
+        message: RegistrationTransitionMessage.WrongInput,
+      };
+    }
+    user.email = user.pendingEmail;
+    user.pendingEmail = null;
+    user.registrationStatus = RegistrationStatus.EmailVerified;
+
+    await Promise.all([this.data.userRegistrations.update(id, registration), this.data.users.update(user.id, user)]);
+
+    return { state: RegistrationStatus.EmailVerified, isSuccessful: true, message: null };
+  }
 
   // // eslint-disable-next-line @typescript-eslint/no-unused-vars
   // private async initiateRegistration(_id = undefined, input: OrganicRegistrationRequestDto): Promise<string> {

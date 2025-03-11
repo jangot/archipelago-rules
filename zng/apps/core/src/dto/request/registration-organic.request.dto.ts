@@ -2,19 +2,20 @@ import { RegistrationType } from '@library/entity/enum';
 import { MapTo } from '@library/entity/mapping/mapping.decorators';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { NIL } from 'uuid';
 
-export class OrganicRegistrationRequestDto {
-  @ApiProperty({ description: 'User ID', type: String, required: false, maxLength: 36 })
+export class OrganicRegistrationDto {
+  @ApiProperty({ description: 'User ID', type: String, required: false, maxLength: 36, example: NIL })
   @Expose()
   @IsString()
   @IsNotEmpty()
   @IsOptional()
   userId: string | null;
 
-  @ApiProperty({ description: 'User First Name', type: String, required: false, maxLength: 100 })
+  @ApiProperty({ description: 'User First Name', type: String, required: false, maxLength: 100, example: 'John' })
   @Expose()
   @IsString()
   @IsNotEmpty()
@@ -22,7 +23,7 @@ export class OrganicRegistrationRequestDto {
   @IsOptional()
   firstName?: string;
 
-  @ApiProperty({ description: 'User Last Name', type: String, required: false, maxLength: 100 })
+  @ApiProperty({ description: 'User Last Name', type: String, required: false, maxLength: 100, example: 'Doe' })
   @Expose()
   @IsString()
   @IsNotEmpty()
@@ -30,7 +31,7 @@ export class OrganicRegistrationRequestDto {
   @IsOptional()
   lastName?: string;
 
-  @ApiProperty({ description: 'User email', type: String, required: false, maxLength: 320 })
+  @ApiProperty({ description: 'User email', type: String, required: false, maxLength: 320, example: 'test@email.com' })
   @Expose()
   @IsEmail()
   @IsNotEmpty()
@@ -38,7 +39,7 @@ export class OrganicRegistrationRequestDto {
   @IsOptional()
   email?: string;
 
-  @ApiProperty({ description: 'User phone number', type: String, required: false, maxLength: 32 })
+  @ApiProperty({ description: 'User phone number', type: String, required: false, maxLength: 32, default: null })
   @Expose()
   @IsNotEmpty()
   @MaxLength(32)
@@ -48,18 +49,56 @@ export class OrganicRegistrationRequestDto {
   @MapTo({ transform: transformPhoneNumber })
   phoneNumber?: string;
 
-  @ApiProperty({ description: 'Registration step verification code', type: String, required: false, maxLength: 100 })
+  @ApiProperty({
+    description: 'Registration step verification code',
+    type: String,
+    required: false,
+    maxLength: 100,
+    example: '123456',
+  })
   @IsNotEmpty()
   @MaxLength(32)
   @IsString()
   @IsOptional()
   code?: string;
 
-  @ApiProperty({ description: 'Should last verification step be re-tried', type: Boolean, required: false })
+  @ApiProperty({
+    description: 'Should last verification step be re-tried',
+    type: Boolean,
+    required: false,
+    example: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   retry = false;
 
-  @ApiProperty({ description: 'Registration flow type', type: String, required: true })
+  @ApiProperty({
+    description: 'Registration flow type',
+    type: String,
+    required: true,
+    default: RegistrationType.Organic,
+  })
   type: RegistrationType.Organic = RegistrationType.Organic;
 }
+
+export class OrganicRegistrationRequestDto extends OmitType(OrganicRegistrationDto, [
+  'userId',
+  'phoneNumber',
+  'retry',
+  'code',
+] as const) {}
+
+export class OrganicRegistrationVerifyRequestDto extends OmitType(OrganicRegistrationDto, [
+  'firstName',
+  'lastName',
+  'email',
+  'phoneNumber',
+] as const) {}
+
+export class OrganicRegistrationAdvanceRequestDto extends OmitType(OrganicRegistrationDto, [
+  'firstName',
+  'lastName',
+  'email',
+  'code',
+] as const) {}

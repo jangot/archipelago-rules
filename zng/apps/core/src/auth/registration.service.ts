@@ -5,17 +5,17 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { EventBus } from '@nestjs/cqrs';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
-import { ContactType } from '@library/entity/enum';
 import { generateSecureCode } from '@library/shared/common/helpers';
-import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 import { RegistrationStatus } from '@library/entity/enum/registration.status';
-import { JwtResponseDto } from '../dto';
+import { JwtResponseDto, RegistrationDto } from '../dto';
 import { AuthService } from './auth.service';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { ApplicationUser } from '../data/entity';
 import { VerificationFlowState } from './verification/verification-flow.state';
 import { VerificationFlowFactory } from './verification/verification-flow.factory';
 import { IApplicationUser } from '@library/entity/interface';
+import { RegistrationFactory } from './registration.factory';
+import { RegistrationExceptionFactory } from './registration/registration-exception.factory';
 
 @Injectable()
 export class RegistrationService {
@@ -27,61 +27,44 @@ export class RegistrationService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly authService: AuthService,
-    private readonly eventBus: EventBus
+    private readonly eventBus: EventBus,
   ) {}
 
-  public async register(
-    firstName: string,
-    lastName: string,
-    email?: string | null,
-    phoneNumber?: string | null
-  ): Promise<UserRegisterResponseDto> {
-    this.logger.debug(`register: Registering user: ${email}`);
+  public async register(input: RegistrationDto): Promise<UserRegisterResponseDto> {
+    this.logger.debug(`register: Registering user`, { input });
 
-    const contactType = email ? ContactType.EMAIL : ContactType.PHONE_NUMBER;
-    const contact = email || phoneNumber || null;
-    if (!contact) {
-      throw new HttpException('Either email or phone number must be provided', HttpStatus.BAD_REQUEST);
+    const registrationFlow = RegistrationFactory.create(
+      input.type,
+      this.dataService,
+      this.jwtService,
+      this.config,
+      this.eventBus
+    );
+
+    const result = await registrationFlow.advance(input, RegistrationStatus.NotRegistered);
+    if (!result) {
+      this.logger.warn('register: Registration failed', { input });
+      throw new HttpException('Registration failed', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    const { state, isSuccessful, userId, message, code } = result;
+    const { email } = input;
 
-    // TODO: Checks for temporal email and phone number?
-    const existingUser = await this.dataService.users.getUserByContact(contact, contactType);
-    if (existingUser) {
-      throw new HttpException('User already exists', HttpStatus.CONFLICT);
+    if (isSuccessful) {
+      // We already handled the registration fails in the advance method so we sure to return userId!, state!, code!
+      return {
+        id: userId!,
+        email: email ?? null,
+        phoneNumber: null,
+        verificationState: state!,
+        verificationCode: code!,
+      };
+    } else {
+      const exception = RegistrationExceptionFactory.translate(message, state);
+      throw exception;
     }
-
-    const verificationCode = generateSecureCode(6); // Generate new Verification code
-    const verificationCodeExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
-
-    const newUser = {
-      firstName,
-      lastName,
-      email: email ?? null,
-      phoneNumber: transformPhoneNumber(phoneNumber ?? null),
-      verificationCode,
-      verificationCodeExpiresAt,
-      verificationState: RegistrationStatus.EmailVerifying,
-    };
-
-    // Create the barebones User here
-    const user = await this.dataService.users.create(newUser);
-
-    // TODO: Add Notification call here
-    // Email or Text: Send Notification
-    this.sendVerificationNotification(user, user.registrationStatus);
-
-    // Return the user id, email, and phonenumber (email or phonenumber will be null)
-    // TODO: Remove verificationCode once we get Notifications working
-    return {
-      id: user.id,
-      email: user.email ?? null,
-      phoneNumber: user.phoneNumber ?? null,
-      verificationState: newUser.verificationState,
-      verificationCode,
-    };
   }
 
-  public async verify(
+  public async verifyRegistration(
     id: string,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     verificationCode: string,
