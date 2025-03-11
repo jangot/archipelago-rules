@@ -39,6 +39,10 @@ export class RegistrationExceptionFactory {
         return new HttpException('Verification code has expired', HttpStatus.BAD_REQUEST);
       case RegistrationTransitionMessage.VerificationCodeMismatch:
         return new HttpException('Verification code does not match', HttpStatus.BAD_REQUEST);
+      case RegistrationTransitionMessage.VerificationCouldNotBeCompleted:
+        return new HttpException('Verification could not be completed yet', HttpStatus.BAD_REQUEST);
+      default:
+        return new HttpException('Unknown error during registration process', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

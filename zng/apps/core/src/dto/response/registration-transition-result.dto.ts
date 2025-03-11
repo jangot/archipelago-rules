@@ -20,4 +20,5 @@ export enum RegistrationTransitionMessage {
   NoSecretFound = 'no_secret_found',
   SecretExpired = 'secret_expired',
   VerificationCodeMismatch = 'verification_code_mismatch',
+  VerificationCouldNotBeCompleted = 'verification_could_not_be_completed',
 }
