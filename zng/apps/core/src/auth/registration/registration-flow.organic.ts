@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { RegistrationFlow } from './registration-flow.base';
 import { OrganicRegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../dto';
 import { RegistrationStageTransition } from './stage-transition.interface';
-import { ContactType, LoginType, RegistrationStatus, RegistrationType } from '@library/entity/enum';
+import { ContactType, LoginStatus, LoginType, RegistrationStatus, RegistrationType } from '@library/entity/enum';
 import { VerificationEvent } from '../verification';
 import { generateSecureCode } from '@library/shared/common/helpers';
 import { Transactional } from 'typeorm-transactional';
@@ -175,7 +175,18 @@ export class OrganicRegistrationFlow extends RegistrationFlow<RegistrationType.O
     user.pendingEmail = null;
     user.registrationStatus = RegistrationStatus.EmailVerified;
 
-    await Promise.all([this.data.userRegistrations.update(id, registration), this.data.users.update(user.id, user)]);
+    const emailLogin = {
+      type: LoginType.OneTimeCodeEmail,
+      contact: user.email,
+      userId: user.id,
+      loginStatus: LoginStatus.NotLoggedIn,
+    };
+
+    await Promise.all([
+      this.data.userRegistrations.update(id, registration),
+      this.data.users.update(user.id, user),
+      this.data.logins.create(emailLogin),
+    ]);
 
     return { state: RegistrationStatus.EmailVerified, isSuccessful: true, message: null };
   }

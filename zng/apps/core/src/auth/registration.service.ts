@@ -7,9 +7,8 @@ import { EventBus } from '@nestjs/cqrs';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { generateSecureCode } from '@library/shared/common/helpers';
 import { RegistrationStatus } from '@library/entity/enum/registration.status';
-import { JwtResponseDto, RegistrationDto } from '../dto';
+import { JwtResponseDto, RegistrationDto, RegistrationTransitionResultDto } from '../dto';
 import { AuthService } from './auth.service';
-import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { ApplicationUser } from '../data/entity';
 import { VerificationFlowState } from './verification/verification-flow.state';
 import { VerificationFlowFactory } from './verification/verification-flow.factory';
@@ -27,21 +26,13 @@ export class RegistrationService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly authService: AuthService,
-    private readonly eventBus: EventBus,
+    private readonly eventBus: EventBus
   ) {}
 
   public async register(input: RegistrationDto): Promise<UserRegisterResponseDto> {
     this.logger.debug(`register: Registering user`, { input });
 
-    const registrationFlow = RegistrationFactory.create(
-      input.type,
-      this.dataService,
-      this.jwtService,
-      this.config,
-      this.eventBus
-    );
-
-    const result = await registrationFlow.advance(input, RegistrationStatus.NotRegistered);
+    const result = await this.advanceRegistrationFlow(input, RegistrationStatus.NotRegistered);
     if (!result) {
       this.logger.warn('register: Registration failed', { input });
       throw new HttpException('Registration failed', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -49,7 +40,10 @@ export class RegistrationService {
     const { state, isSuccessful, userId, message, code } = result;
     const { email } = input;
 
-    if (isSuccessful) {
+    if (!isSuccessful) {
+      const exception = RegistrationExceptionFactory.translate(message, state);
+      throw exception;
+    } else {
       // We already handled the registration fails in the advance method so we sure to return userId!, state!, code!
       return {
         id: userId!,
@@ -58,72 +52,29 @@ export class RegistrationService {
         verificationState: state!,
         verificationCode: code!,
       };
-    } else {
-      const exception = RegistrationExceptionFactory.translate(message, state);
-      throw exception;
     }
   }
 
-  public async verifyRegistration(
-    id: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    verificationCode: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    verificationState: string
-  ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
-    this.logger.debug(`verify: Verifying user: ${id}`);
+  public async verifyRegistration(input: RegistrationDto): Promise<JwtResponseDto | null> {
+    const { userId } = input;
+    this.logger.debug(`verifyRegistration: Verifying user: ${userId}`);
 
-    const user = await this.dataService.users.getUserById(id);
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    const result = await this.advanceRegistrationFlow(input, RegistrationStatus.EmailVerifying);
+
+    if (!result) {
+      this.logger.warn('verifyRegistration: Registration Verification failed', { input });
+      throw new HttpException('Registration Verification failed', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    // TODO: Take this from UserRegistration
-    // const {
-    //   verificationCode: storedVerificationCode,
-    //   verificationCodeExpiresAt,
-    //   verificationState: storedVerificationState,
-    // } = user;
+    const { state, isSuccessful, message } = result;
 
-    // TODO: Fix validation after UserRegistration inmplemented
-    // // We are trying to verify the user and they don't have a verificationCode or verificationCodeExpiresAt value
-    // if (!verificationCode || !verificationCodeExpiresAt) {
-    //   throw new HttpException('No verification code exists for user', HttpStatus.BAD_REQUEST);
-    // }
-
-    // // Check if the verification code is valid and not expired
-    // if (verificationCode !== storedVerificationCode || new Date() > verificationCodeExpiresAt) {
-    //   throw new HttpException('Invalid or expired verification code', HttpStatus.BAD_REQUEST);
-    // }
-
-    // // Check if the verification state is valid
-    // if (verificationState !== storedVerificationState) {
-    //   throw new HttpException(`Invalid verification state: ${storedVerificationState}`, HttpStatus.BAD_REQUEST);
-    // }
-
-    let currentUser = user;
-    const verificationFlow = this.getVerificationFlow();
-    // TODO: Take this from UserRegistration
-    //verificationFlow.setCurrentState(storedVerificationState);
-    const updates = await this.updateUserAndAdvance(verificationFlow, user);
-    const shouldReturnToken = updates?.flowState?.returnToken ?? false;
-    currentUser = updates?.user ?? currentUser;
-
-    if (shouldReturnToken) {
-      return await this.authService.login(id);
+    if (!isSuccessful) {
+      const exception = RegistrationExceptionFactory.translate(message, state);
+      throw exception;
+    } else {
+      // providing JWT for 1h, if expired - client need to call '/login'
+      return await this.authService.login(userId!, '1h');
     }
-
-    if (updates) {
-      const updatesPart2 = await this.updateUserAndAdvance(verificationFlow, updates.user);
-      currentUser = updatesPart2?.user ?? currentUser;
-      const shouldReturnToken = updatesPart2?.flowState?.returnToken ?? false;
-
-      if (shouldReturnToken) {
-        return await this.authService.login(id);
-      }
-    }
-
-    return DtoMapper.toDto(currentUser, UserRegisterResponseDto);
   }
 
   private async updateUserAndAdvance(
@@ -174,5 +125,19 @@ export class RegistrationService {
     const verificationFlow = this.getVerificationFlow();
     verificationFlow.setCurrentState(currentState);
     verificationFlow.sendNotification(user);
+  }
+
+  private async advanceRegistrationFlow(
+    input: RegistrationDto,
+    startFrom?: RegistrationStatus
+  ): Promise<RegistrationTransitionResultDto | null> {
+    const registrationFlow = RegistrationFactory.create(
+      input.type,
+      this.dataService,
+      this.jwtService,
+      this.config,
+      this.eventBus
+    );
+    return registrationFlow.advance(input, startFrom);
   }
 }

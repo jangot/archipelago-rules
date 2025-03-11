@@ -1,14 +1,13 @@
-import { Body, Controller, Post, Request } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   JwtResponseDto,
   OrganicRegistrationRequestDto,
-  PasswordVerificationDto,
+  OrganicRegistrationVerifyRequestDto,
   RegistrationDto,
   SandboxRegistrationRequestDto,
 } from '../dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
-import { UserVerificationRequestDto } from '../dto/request/user-verification-request.dto';
 import { ApiBody, ApiExtraModels, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { RegistrationService } from './registration.service';
 
@@ -21,11 +20,11 @@ export class AuthController {
   ) {}
 
   // TODO: extend to support different login flows.
-  @Post('login')
-  async login(@Body() body: PasswordVerificationDto, @Request() req): Promise<JwtResponseDto> {
-    // Shouldn't this come from the body parameter?
-    return await this.authService.login(req.user.id);
-  }
+  // @Post('login')
+  // async login(@Body() body: PasswordVerificationDto, @Request() req): Promise<JwtResponseDto> {
+  //   // Shouldn't this come from the body parameter?
+  //   return await this.authService.login(req.user.id);
+  // }
 
   //@UseGuards(PasswordAuthGuard)
   // MOCK. Endpoint to accept login verification
@@ -44,8 +43,8 @@ export class AuthController {
       ],
     },
   })
-  async register(@Body() authRequest: RegistrationDto): Promise<UserRegisterResponseDto> {
-    return await this.registrationService.register(authRequest);
+  async register(@Body() body: RegistrationDto): Promise<UserRegisterResponseDto> {
+    return await this.registrationService.register(body);
   }
 
   // MOCK. Endpoint to accept second contact verification call
@@ -55,12 +54,11 @@ export class AuthController {
   }
 
   // TODO?: Add Guard that accepts either anonymous (for 1st contact verification) or JWT (for 2nd contact verification)
-  @Post('register/verify') // !!! --> registration verification
-  async verifyRegistration(
-    @Body() body: UserVerificationRequestDto
-  ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
-    const { id, verificationCode, verificationState } = body;
-
-    return await this.registrationService.verifyRegistration(id, verificationCode, verificationState);
+  @ApiExtraModels(OrganicRegistrationVerifyRequestDto, JwtResponseDto)
+  @ApiBody({ schema: { $ref: getSchemaPath(OrganicRegistrationVerifyRequestDto) } })
+  @Post('register/verify') // registration verification
+  async verifyRegistration(@Body() body: RegistrationDto): Promise<JwtResponseDto | null> {
+    //TODO: !! Add support of 'retry' verification
+    return await this.registrationService.verifyRegistration(body);
   }
 }
