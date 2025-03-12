@@ -2,11 +2,12 @@ import { RegistrationType } from '@library/entity/enum';
 import { MapTo } from '@library/entity/mapping/mapping.decorators';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
-import { ApiProperty, OmitType } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema, OmitType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { NIL } from 'uuid';
 
+@ApiSchema({ name: 'organicRegistration' })
 export class OrganicRegistrationDto {
   @ApiProperty({ description: 'User ID', type: String, required: false, maxLength: 36, example: NIL })
   @Expose()
@@ -82,6 +83,7 @@ export class OrganicRegistrationDto {
   type: RegistrationType.Organic = RegistrationType.Organic;
 }
 
+@ApiSchema({ name: 'organicRegistrationRequest' })
 export class OrganicRegistrationRequestDto extends OmitType(OrganicRegistrationDto, [
   'userId',
   'phoneNumber',
@@ -89,6 +91,7 @@ export class OrganicRegistrationRequestDto extends OmitType(OrganicRegistrationD
   'code',
 ] as const) {}
 
+@ApiSchema({ name: 'organicRegistrationVerifyRequest' })
 export class OrganicRegistrationVerifyRequestDto extends OmitType(OrganicRegistrationDto, [
   'firstName',
   'lastName',
@@ -96,6 +99,7 @@ export class OrganicRegistrationVerifyRequestDto extends OmitType(OrganicRegistr
   'phoneNumber',
 ] as const) {}
 
+@ApiSchema({ name: 'organicRegistrationAdvanceRequest' })
 export class OrganicRegistrationAdvanceRequestDto extends OmitType(OrganicRegistrationDto, [
   'firstName',
   'lastName',

@@ -53,7 +53,10 @@ export class AuthController {
   @Post('register/advance')
   @ApiBearerAuth()
   @ApiExtraModels(OrganicRegistrationAdvanceRequestDto, SandboxRegistrationRequestDto)
-  @ApiBody({ schema: { $ref: getSchemaPath(OrganicRegistrationAdvanceRequestDto) } })
+  @ApiBody({
+    type: OrganicRegistrationAdvanceRequestDto,
+    schema: { $ref: getSchemaPath(OrganicRegistrationAdvanceRequestDto) },
+  })
   async advanceRegistration(@Body() body: RegistrationDto, @Req() request: Request): Promise<UserRegisterResponseDto> {
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
     if (!token) throw new UnauthorizedException('Unauthorized');
@@ -65,9 +68,15 @@ export class AuthController {
   }
 
   @ApiExtraModels(OrganicRegistrationVerifyRequestDto, JwtResponseDto)
-  @ApiBody({ schema: { $ref: getSchemaPath(OrganicRegistrationVerifyRequestDto) } })
+  @ApiBody({
+    type: OrganicRegistrationVerifyRequestDto,
+    schema: { $ref: getSchemaPath(OrganicRegistrationVerifyRequestDto) },
+  })
   @Post('register/verify') // registration verification
-  async verifyRegistration(@Body() body: RegistrationDto, @Req() request: Request): Promise<JwtResponseDto | null> {
+  async verifyRegistration(
+    @Body() body: OrganicRegistrationVerifyRequestDto,
+    @Req() request: Request
+  ): Promise<JwtResponseDto | null> {
     //TODO: !! Add support of 'retry' verification
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
     if (!token) return await this.registrationService.verifyRegistration(body);
