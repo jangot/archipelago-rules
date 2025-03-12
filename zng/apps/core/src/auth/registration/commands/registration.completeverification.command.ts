@@ -13,12 +13,17 @@ import { RegistrationBaseCommandHandler } from './registration.base.command-hand
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerificationCompleteCommand } from './registration.commands';
 
-@CommandHandler(VerificationCompleteCommand)
+@CommandHandler(VerificationCompleteCommand<RegistrationType.Organic>)
 export class VerificationCompleteCommandHandler
-  extends RegistrationBaseCommandHandler<RegistrationType.Organic, VerificationCompleteCommand>
-  implements ICommandHandler<VerificationCompleteCommand>
+  extends RegistrationBaseCommandHandler<
+    RegistrationType.Organic,
+    VerificationCompleteCommand<RegistrationType.Organic>
+  >
+  implements ICommandHandler<VerificationCompleteCommand<RegistrationType.Organic>>
 {
-  public async execute(command: VerificationCompleteCommand): Promise<RegistrationTransitionResultDto> {
+  public async execute(
+    command: VerificationCompleteCommand<RegistrationType.Organic>
+  ): Promise<RegistrationTransitionResultDto> {
     if (!command.payload.id) {
       throw new Error('User id cannot be null when completing verification.');
     }

@@ -14,12 +14,17 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { InitiatePhoneNumberVerificationCommand } from './registration.commands';
 
-@CommandHandler(InitiatePhoneNumberVerificationCommand)
+@CommandHandler(InitiatePhoneNumberVerificationCommand<RegistrationType.Organic>)
 export class InitiatePhoneNumberVerificationCommandHandler
-  extends RegistrationBaseCommandHandler<RegistrationType.Organic, InitiatePhoneNumberVerificationCommand>
-  implements ICommandHandler<InitiatePhoneNumberVerificationCommand>
+  extends RegistrationBaseCommandHandler<
+    RegistrationType.Organic,
+    InitiatePhoneNumberVerificationCommand<RegistrationType.Organic>
+  >
+  implements ICommandHandler<InitiatePhoneNumberVerificationCommand<RegistrationType.Organic>>
 {
-  public async execute(command: InitiatePhoneNumberVerificationCommand): Promise<RegistrationTransitionResultDto> {
+  public async execute(
+    command: InitiatePhoneNumberVerificationCommand<RegistrationType.Organic>
+  ): Promise<RegistrationTransitionResultDto> {
     if (!command.payload.id) {
       throw new Error('User id cannot be null when initiating verification of Phone number.');
     }

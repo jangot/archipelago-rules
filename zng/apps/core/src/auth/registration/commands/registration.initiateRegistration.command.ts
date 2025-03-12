@@ -13,12 +13,17 @@ import { RegistrationBaseCommandHandler } from './registration.base.command-hand
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationInitiatedCommand } from './registration.commands';
 
-@CommandHandler(RegistrationInitiatedCommand)
+@CommandHandler(RegistrationInitiatedCommand<RegistrationType.Organic>)
 export class RegistrationInitiatedCommandHandler
-  extends RegistrationBaseCommandHandler<RegistrationType.Organic, RegistrationInitiatedCommand>
-  implements ICommandHandler<RegistrationInitiatedCommand>
+  extends RegistrationBaseCommandHandler<
+    RegistrationType.Organic,
+    RegistrationInitiatedCommand<RegistrationType.Organic>
+  >
+  implements ICommandHandler<RegistrationInitiatedCommand<RegistrationType.Organic>>
 {
-  public async execute(command: RegistrationInitiatedCommand): Promise<RegistrationTransitionResultDto> {
+  public async execute(
+    command: RegistrationInitiatedCommand<RegistrationType.Organic>
+  ): Promise<RegistrationTransitionResultDto> {
     const { firstName, lastName, email } = command.payload.input!;
 
     if (!email) {

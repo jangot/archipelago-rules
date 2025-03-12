@@ -1,4 +1,4 @@
-import { RegistrationStatus } from '@library/entity/enum';
+import { RegistrationStatus, RegistrationType } from '@library/entity/enum';
 //import { RegistrationDto, RegistrationTransitionResultDto } from '../../dto';
 import { VerificationEvent } from '../verification';
 import { RegistrationExecuteParams } from './commands/registration.base.command-handler';
@@ -8,7 +8,7 @@ export interface RegistrationStageTransition {
   state: RegistrationStatus;
   nextState: RegistrationStatus | null;
   //action: (id: string | null, input: RegistrationDto | null) => Promise<RegistrationTransitionResultDto>;
-  action: new (payload: RegistrationExecuteParams) => RegistrationBaseCommand;
+  action: new (payload: RegistrationExecuteParams) => RegistrationBaseCommand<RegistrationType>;
   successEvent: VerificationEvent | null;
   failureEvent: VerificationEvent | null;
 }

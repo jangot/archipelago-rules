@@ -13,13 +13,15 @@ import { RegistrationBaseCommandHandler } from './registration.base.command-hand
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerifyEmailCommand } from './registration.commands';
 
-@CommandHandler(VerifyEmailCommand)
+@CommandHandler(VerifyEmailCommand<RegistrationType.Organic>)
 export class VerifyEmailCommandHandler
-  extends RegistrationBaseCommandHandler<RegistrationType.Organic, VerifyEmailCommand>
-  implements ICommandHandler<VerifyEmailCommand>
+  extends RegistrationBaseCommandHandler<RegistrationType.Organic, VerifyEmailCommand<RegistrationType.Organic>>
+  implements ICommandHandler<VerifyEmailCommand<RegistrationType.Organic>>
 {
   @Transactional()
-  public async execute(command: VerifyEmailCommand): Promise<RegistrationTransitionResultDto> {
+  public async execute(
+    command: VerifyEmailCommand<RegistrationType.Organic>
+  ): Promise<RegistrationTransitionResultDto> {
     if (!command.payload.id) {
       throw new Error('User id cannot be null when verifying Email.');
     }
