@@ -7,6 +7,13 @@ import { VerificationEvent } from '../verification';
 import { generateSecureCode } from '@library/shared/common/helpers';
 import { Transactional } from 'typeorm-transactional';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
+import {
+  InitiatePhoneNumberVerificationCommand,
+  RegistrationInitiatedCommand,
+  VerificationCompleteCommand,
+  VerifyEmailCommand,
+  VerifyPhoneNumberCommand,
+} from './commands/registration.commands';
 
 @Injectable()
 export class OrganicRegistrationFlow extends RegistrationFlow<RegistrationType.Organic, OrganicRegistrationDto> {
@@ -19,35 +26,35 @@ export class OrganicRegistrationFlow extends RegistrationFlow<RegistrationType.O
       nextState: RegistrationStatus.EmailVerifying,
       successEvent: VerificationEvent.EmailVerifying,
       failureEvent: null,
-      action: this.initiateRegistration,
+      action: RegistrationInitiatedCommand,
     },
     {
       state: RegistrationStatus.EmailVerifying,
       nextState: RegistrationStatus.EmailVerified,
       successEvent: VerificationEvent.EmailVerified,
       failureEvent: null,
-      action: this.verifyEmail,
+      action: VerifyEmailCommand,
     },
     {
       state: RegistrationStatus.EmailVerified,
       nextState: RegistrationStatus.PhoneNumberVerifying,
       successEvent: VerificationEvent.PhoneNumberVerifying,
       failureEvent: null,
-      action: this.initiatePhoneNumberVerification,
+      action: InitiatePhoneNumberVerificationCommand,
     },
     {
       state: RegistrationStatus.PhoneNumberVerifying,
       nextState: RegistrationStatus.PhoneNumberVerified,
       successEvent: VerificationEvent.PhoneNumberVerified,
       failureEvent: null,
-      action: this.verifyPhoneNumber,
+      action: VerifyPhoneNumberCommand,
     },
     {
       state: RegistrationStatus.PhoneNumberVerified,
       nextState: RegistrationStatus.Registered,
       successEvent: VerificationEvent.Verified,
       failureEvent: null,
-      action: this.completeVerification,
+      action: VerificationCompleteCommand,
     },
   ];
 

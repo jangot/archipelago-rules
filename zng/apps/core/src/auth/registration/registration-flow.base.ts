@@ -5,7 +5,7 @@ import { RegistrationStageTransition } from './stage-transition.interface';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { VerificationEvent, VerificationEventFactory } from '../verification';
-import { EventBus } from '@nestjs/cqrs';
+import { CommandBus, EventBus } from '@nestjs/cqrs';
 import { IApplicationUser } from '@library/entity/interface';
 import { UserRegistration } from '../../data/entity';
 import { Injectable } from '@nestjs/common';
@@ -22,7 +22,8 @@ export abstract class RegistrationFlow<
     protected readonly data: IDataService,
     protected readonly jwtService: JwtService,
     protected readonly config: ConfigService,
-    protected readonly eventBus: EventBus
+    protected readonly eventBus: EventBus,
+    protected readonly commandBus: CommandBus
   ) {}
 
   public async advance(
@@ -80,7 +81,10 @@ export abstract class RegistrationFlow<
       return { state, isSuccessful: false, message: RegistrationTransitionMessage.NoTransitionFound };
     }
     const { successEvent, failureEvent } = transition;
-    const result = await transition.action(id, input);
+    //const result = await transition.action(id, input);
+    const command = new transition.action({ id, input });
+    const result = await this.commandBus.execute(command);
+
     const { isSuccessful } = result;
     if (id) {
       const user = await this.data.users.getUserById(id);

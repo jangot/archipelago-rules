@@ -15,9 +15,11 @@ import { HealthModule } from '@library/shared/common/health/health.module';
 import { ConfigModule } from '@nestjs/config';
 import { SharedModule } from '@library/shared';
 import { CoreModules } from './index.modules';
+import { CqrsModule } from '@nestjs/cqrs';
 
 @Module({
   imports: [
+    CqrsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     GracefulShutdownModule.forRoot(),
     // Bring in Shared stuff like EventBus, pino Logger properly configured, more to follow

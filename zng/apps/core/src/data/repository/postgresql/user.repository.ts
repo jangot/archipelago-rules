@@ -42,7 +42,7 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
   // Example usage of a pgtyped Query
   // The base repository handles converting things properly
   public async getUserDetailById(userId: string): Promise<UserDetail | null> {
-    const result = await this.runSqlQuery({ userId }, getUserDetailById);
-    return result.length === 0 ? null : result[0];
+    const result = await this.runSqlQuerySingle({ userId }, getUserDetailById);
+    return result;
   }
 }

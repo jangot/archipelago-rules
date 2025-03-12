@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { IDataService } from '../data/idata.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { EventBus } from '@nestjs/cqrs';
+import { CommandBus, EventBus } from '@nestjs/cqrs';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { RegistrationStatus } from '@library/entity/enum/registration.status';
 import { JwtResponseDto, RegistrationDto, RegistrationTransitionResultDto } from '../dto';
@@ -19,7 +19,8 @@ export class RegistrationService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly authService: AuthService,
-    private readonly eventBus: EventBus
+    private readonly eventBus: EventBus,
+    private readonly commandBus: CommandBus
   ) {}
 
   /**
@@ -151,7 +152,8 @@ export class RegistrationService {
       this.dataService,
       this.jwtService,
       this.config,
-      this.eventBus
+      this.eventBus,
+      this.commandBus
     );
     return registrationFlow.advance(input, startFrom);
   }

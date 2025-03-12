@@ -10,9 +10,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { RegistrationFactory } from './registration.factory';
 import { Registrators } from './registration';
 import { RegistrationService } from './registration.service';
+import { CqrsModule } from '@nestjs/cqrs';
+import { CommandHandlers } from './registration/commands';
 
 @Module({
   imports: [
+    CqrsModule,
     UsersModule,
     ConfigModule,
     DataModule,
@@ -33,6 +36,7 @@ import { RegistrationService } from './registration.service';
     ...CustomAuthStrategies,
     ...CustomAuthGuards,
     ...Registrators,
+    ...CommandHandlers,
   ],
 })
 export class AuthModule {}

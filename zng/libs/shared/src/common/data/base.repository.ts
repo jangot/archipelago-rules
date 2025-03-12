@@ -180,6 +180,17 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return poolAdapter;
   }
 
+  // Return only 1 record from the query
+  protected async runSqlQuerySingle<TParamType, TResultType extends Record<string, any>>(
+    params: TParamType,
+    query: PreparedQuery<TParamType, TResultType>
+  ): Promise<TResultType | null> {
+    const results = await this.runSqlQuery(params, query);
+    const result = results && results.length > 0 ? results[0] : null;
+
+    return result;
+  }
+
   protected async runSqlQuery<TParamType, TResultType extends Record<string, any>>(
     params: TParamType,
     query: PreparedQuery<TParamType, TResultType>

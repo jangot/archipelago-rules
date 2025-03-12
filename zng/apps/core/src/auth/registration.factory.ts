@@ -7,7 +7,7 @@ import { RegistrationFlow } from './registration';
 import { IDataService } from '../data/idata.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { EventBus } from '@nestjs/cqrs';
+import { CommandBus, EventBus } from '@nestjs/cqrs';
 
 @Injectable()
 export class RegistrationFactory {
@@ -16,13 +16,14 @@ export class RegistrationFactory {
     data: IDataService,
     jwtService: JwtService,
     config: ConfigService,
-    eventBus: EventBus
+    eventBus: EventBus,
+    commandBus: CommandBus
   ): RegistrationFlow<RegistrationType, RegistrationDto> {
     switch (type) {
       case RegistrationType.Organic:
-        return new OrganicRegistrationFlow(data, jwtService, config, eventBus);
+        return new OrganicRegistrationFlow(data, jwtService, config, eventBus, commandBus);
       case RegistrationType.SandboxBypass:
-        return new SandboxRegistrationFlow(data, jwtService, config, eventBus);
+        return new SandboxRegistrationFlow(data, jwtService, config, eventBus, commandBus);
     }
   }
 }
