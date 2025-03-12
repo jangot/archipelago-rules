@@ -76,6 +76,10 @@ export class RegistrationService {
     this.logger.debug(`verifyAdvanceRegistration: Verifying user: ${userId}`);
 
     const result = await this.advanceRegistrationFlow(input, RegistrationStatus.PhoneNumberVerifying);
+    if (result?.isSuccessful) {
+      const completion = await this.advanceRegistrationFlow(input, RegistrationStatus.PhoneNumberVerified);
+      await this.handleVerificationResult(completion, userId);
+    }
     return this.handleVerificationResult(result, userId);
   }
 

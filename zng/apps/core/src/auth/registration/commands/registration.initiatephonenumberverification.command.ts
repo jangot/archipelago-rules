@@ -79,10 +79,10 @@ export class InitiatePhoneNumberVerificationCommandHandler
     user.registrationStatus = RegistrationStatus.PhoneNumberVerifying;
 
     await Promise.all([
-      this.data.userRegistrations.update(command.payload.id!, registration),
+      this.data.userRegistrations.update(registration.id, registration),
       this.data.users.update(user.id, user),
     ]);
 
-    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null);
+    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, user.id, verificationCode);
   }
 }

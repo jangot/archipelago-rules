@@ -56,6 +56,7 @@ function configureSwagger(app: INestApplication<any>) {
     .setDescription('Zirtue Next Generation Platform Core API')
     .setVersion('1.0')
     .addTag('ZNG Core API')
+    .addBearerAuth()
     .build();
 
   const options: SwaggerDocumentOptions = {

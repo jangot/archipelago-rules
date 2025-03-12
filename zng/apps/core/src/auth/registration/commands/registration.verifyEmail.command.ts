@@ -71,16 +71,15 @@ export class VerifyEmailCommandHandler
     user.registrationStatus = RegistrationStatus.EmailVerified;
 
     const emailLogin = {
-      type: LoginType.OneTimeCodeEmail,
-      contact: user.email,
+      loginType: LoginType.OneTimeCodeEmail,
       userId: user.id,
       loginStatus: LoginStatus.NotLoggedIn,
     };
 
     await Promise.all([
-      this.data.userRegistrations.update(command.payload.id, registration),
+      this.data.userRegistrations.update(registration.id, registration),
       this.data.users.update(user.id, user),
-      this.data.logins.create(emailLogin),
+      this.data.logins.createOrUpdate(emailLogin),
     ]);
 
     return this.createTransitionResult(RegistrationStatus.EmailVerified, true, null);

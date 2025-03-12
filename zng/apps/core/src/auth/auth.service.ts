@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AuthSecretCreateRequestDto, JwtResponseDto, UserResponseDto } from '../dto';
+import { AuthSecretCreateRequestDto, JwtPayloadDto, JwtResponseDto, UserResponseDto } from '../dto';
 import { IDataService } from '../data/idata.service';
 import { compare, hash } from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
@@ -52,11 +52,15 @@ export class AuthService {
     if (!user) return null;
 
     // Generate JWT token
-    const payload = { sub: id, registration: user.registrationStatus };
+    const payload: JwtPayloadDto = { sub: id, registration: user.registrationStatus };
     return {
       accessToken: this.jwtService.sign(payload, { expiresIn }),
       // TODO: RefreshToken? What to do with registrationVerification?
     };
+  }
+
+  public decodeToken(token: string): JwtPayloadDto | null {
+    return this.jwtService.decode<JwtPayloadDto>(token) || null;
   }
 
   // TODO: for sure should be refactored. Maybe to factory pattern
