@@ -12,7 +12,7 @@ import { UserRegisterResponseDto } from '../dto/response/user-register-response.
 import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { RegistrationService } from './registration.service';
 import { ExtractJwt } from 'passport-jwt';
-import { JwtType } from '@library/entity/enum';
+import { JwtType, RegistrationStatus } from '@library/entity/enum';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -71,6 +71,14 @@ export class AuthController {
     //TODO: !! Add support of 'retry' verification
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
     if (!token) return await this.registrationService.verifyRegistration(body);
+
+    const isTokenValid = await this.authService.verifyJwtSignature(token, JwtType.Login);
+    if (!isTokenValid) throw new UnauthorizedException('JWT token mismatch');
+
+    const payload = this.authService.decodeToken(token);
+    if (!payload) throw new UnauthorizedException('Invalid token');
+    if (payload.registration !== RegistrationStatus.PhoneNumberVerifying)
+      throw new UnauthorizedException('Invalid registration status');
     return await this.registrationService.verifyAdvanceRegistration(body);
   }
 }

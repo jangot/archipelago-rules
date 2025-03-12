@@ -3,7 +3,7 @@ import { Login } from '../../entity';
 import { ILoginRepository } from '../interfaces';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { LoginType } from '@library/entity/enum';
 
 @Injectable()
@@ -30,5 +30,14 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
     this.logger.debug(`getUserSecretByType: Getting secret for user: ${userId} and type: ${loginType}`);
 
     return await this.repository.findOneBy({ userId, loginType });
+  }
+
+  public async createOrUpdate(login: DeepPartial<Login>): Promise<Login | null> {
+    const existing = await this.findOneBy({ userId: login.userId, loginType: login.loginType });
+    if (existing) {
+      await this.update(existing.id, login);
+      return this.findOneBy({ id: existing.id });
+    }
+    return this.create(login);
   }
 }

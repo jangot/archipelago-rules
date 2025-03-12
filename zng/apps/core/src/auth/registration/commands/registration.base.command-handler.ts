@@ -7,7 +7,7 @@
  */
 
 import { RegistrationStatus, RegistrationType } from '@library/entity/enum';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UserRegistration } from 'apps/core/src/data/entity';
 import { IDataService } from 'apps/core/src/data/idata.service';
 import { RegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
@@ -24,6 +24,7 @@ export interface RegistrationExecuteParams<Type extends RegistrationType = Regis
   input: (RegistrationDto & { type: Type }) | null;
 }
 
+@Injectable()
 export abstract class RegistrationBaseCommandHandler<
   TType extends RegistrationType = RegistrationType,
   TCommand extends RegistrationBaseCommand<TType> = RegistrationBaseCommand<TType>,

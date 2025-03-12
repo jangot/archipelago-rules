@@ -8,9 +8,9 @@
 
 import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
 import { RegistrationStatus, LoginType, LoginStatus, RegistrationType } from '@library/entity/enum';
-import { RegistrationBaseCommandHandler, RegistrationExecuteParams } from './registration.base.command-handler';
+import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { VerificationCompleteCommand, VerifyPhoneNumberCommand } from './registration.commands';
+import { VerifyPhoneNumberCommand } from './registration.commands';
 
 @CommandHandler(VerifyPhoneNumberCommand)
 export class VerifyPhoneNumberCommandHandler
@@ -63,28 +63,17 @@ export class VerifyPhoneNumberCommandHandler
     user.registrationStatus = RegistrationStatus.PhoneNumberVerified;
 
     const phoneLogin = {
-      type: LoginType.OneTimeCodePhoneNumber,
-      contact: user.phoneNumber,
+      loginType: LoginType.OneTimeCodePhoneNumber,
       userId: user.id,
       loginStatus: LoginStatus.NotLoggedIn,
     };
 
     await Promise.all([
-      this.data.userRegistrations.update(command.payload.id, registration),
+      this.data.userRegistrations.update(registration.id, registration),
       this.data.users.update(user.id, user),
-      this.data.logins.create(phoneLogin),
+      this.data.logins.createOrUpdate(phoneLogin),
     ]);
 
-    return await this.completeVerification(command.payload);
-  }
-
-  private async completeVerification(
-    payload: RegistrationExecuteParams<RegistrationType.Organic>
-  ): Promise<RegistrationTransitionResultDto> {
-    const completeVerificationCommand = new VerificationCompleteCommand(payload);
-
-    const result = await this.commandBus.execute(completeVerificationCommand);
-
-    return result;
+    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerified, true, null);
   }
 }

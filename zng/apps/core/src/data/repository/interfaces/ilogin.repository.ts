@@ -1,6 +1,7 @@
 import { IRepositoryBase } from '@library/shared/common/data';
 import { Login } from '../../entity';
 import { LoginType } from '@library/entity/enum';
+import { DeepPartial } from 'typeorm';
 
 /**
  * Interface representing a repository for managing authentication secrets.
@@ -26,6 +27,12 @@ export interface ILoginRepository extends IRepositoryBase<Login> {
    * @returns A promise that resolves to the first unfinished authentication secret if found, or null if not found.
    * */
   getFirstUnfinished(userId: string, types: LoginType[]): Promise<Login | null>;
+
+  /**
+   * Creates Login if not existed yet, otherwise updates it. Default TypeORM createOrUpdate do not work properly with constrains.
+   * @param login Login to create or update
+   */
+  createOrUpdate(login: DeepPartial<Login>): Promise<Login | null>;
 }
 
 export const ILoginRepository = Symbol('ILoginRepository');

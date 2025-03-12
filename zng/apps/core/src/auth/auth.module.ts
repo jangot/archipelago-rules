@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { CustomAuthStrategies } from './strategies';
@@ -30,6 +30,7 @@ import { CommandHandlers } from './registration/commands';
   ],
   controllers: [AuthController],
   providers: [
+    Logger,
     AuthService,
     RegistrationService,
     RegistrationFactory,
