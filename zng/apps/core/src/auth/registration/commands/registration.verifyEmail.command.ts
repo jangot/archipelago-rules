@@ -24,6 +24,10 @@ export class VerifyEmailCommandHandler
       throw new Error('User id cannot be null when verifying Email.');
     }
 
+    if (!command.payload.input) {
+      throw new Error('input cannot be null when verifying Email.');
+    }
+
     const registration = await this.getUserRegistration(command.payload.id);
 
     if (!registration || registration.status !== RegistrationStatus.EmailVerifying) {
@@ -43,7 +47,7 @@ export class VerifyEmailCommandHandler
       return this.createTransitionResult(registration.status, false, RegistrationTransitionMessage.SecretExpired);
     }
 
-    const { code } = command.payload.input!;
+    const { code } = command.payload.input;
     if (secret !== code) {
       return this.createTransitionResult(
         registration.status,
