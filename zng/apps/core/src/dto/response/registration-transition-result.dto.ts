@@ -22,4 +22,5 @@ export enum RegistrationTransitionMessage {
   VerificationCodeMismatch = 'verification_code_mismatch',
   VerificationCouldNotBeCompleted = 'verification_could_not_be_completed',
   CouldNotCreateUser = 'could_not_create_user',
+  NotAwaitingForCode = 'not_awaiting_for_code',
 }

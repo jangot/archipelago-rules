@@ -97,4 +97,5 @@ export class RegistrationAdvanceRequestDto extends OmitType(RegistrationDto, [
   'lastName',
   'email',
   'code',
+  'retry',
 ] as const) {}

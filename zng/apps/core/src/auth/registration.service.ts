@@ -41,11 +41,16 @@ export class RegistrationService {
    * @param input - The registration data transfer object.
    * @returns A promise that resolves to a JwtResponseDto or null.
    */
-  public async verifyRegistration(input: RegistrationDto): Promise<JwtResponseDto | null> {
-    const { userId } = input;
+  public async verifyRegistration(input: RegistrationDto): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
+    const { userId, retry } = input;
     if (!userId) {
       throw new HttpException('User ID is required for verification', HttpStatus.BAD_REQUEST);
     }
+
+    if (retry) {
+      return this.resendVerificationCode(input, RegistrationStatus.EmailVerifying);
+    }
+
     this.logger.debug(`verifyRegistration: Verifying user: ${userId}`);
 
     const result = await this.advanceRegistrationFlow(input, RegistrationStatus.EmailVerifying);
@@ -69,11 +74,18 @@ export class RegistrationService {
    * @param input - The registration data transfer object.
    * @returns A promise that resolves to a JwtResponseDto or null.
    */
-  public async verifyAdvanceRegistration(input: RegistrationDto): Promise<JwtResponseDto | null> {
-    const { userId } = input;
+  public async verifyAdvanceRegistration(
+    input: RegistrationDto
+  ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
+    const { userId, retry } = input;
     if (!userId) {
       throw new HttpException('User ID is required for verification', HttpStatus.BAD_REQUEST);
     }
+
+    if (retry) {
+      return this.resendVerificationCode(input, RegistrationStatus.PhoneNumberVerifying);
+    }
+
     this.logger.debug(`verifyAdvanceRegistration: Verifying user: ${userId}`);
 
     const result = await this.advanceRegistrationFlow(input, RegistrationStatus.PhoneNumberVerifying);
@@ -82,6 +94,27 @@ export class RegistrationService {
       await this.handleVerificationResult(completion, userId);
     }
     return this.handleVerificationResult(result, userId);
+  }
+
+  /**
+   * Allows to resend the verification code for a user.
+   * @param input The registration data transfer object.
+   * @param state State for which the verification code should be resent.
+   * @returns A promise that resolves to a UserRegisterResponseDto.
+   */
+  public async resendVerificationCode(
+    input: RegistrationDto,
+    state: RegistrationStatus
+  ): Promise<UserRegisterResponseDto> {
+    const { userId } = input;
+    this.logger.debug(`resendVerificationCode: Resending code for: ${userId}`);
+    if (state !== RegistrationStatus.EmailVerifying && state !== RegistrationStatus.PhoneNumberVerifying) {
+      throw new HttpException('Invalid verification state', HttpStatus.BAD_REQUEST);
+    }
+    const { email, phoneNumber } = input;
+
+    const result = await this.advanceRegistrationFlow(input, state);
+    return this.handleRegistrationResult(result, email || null, phoneNumber || null);
   }
 
   /**

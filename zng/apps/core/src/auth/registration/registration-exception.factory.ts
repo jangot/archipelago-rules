@@ -41,6 +41,10 @@ export class RegistrationExceptionFactory {
         return new HttpException('Verification code does not match', HttpStatus.BAD_REQUEST);
       case RegistrationTransitionMessage.VerificationCouldNotBeCompleted:
         return new HttpException('Verification could not be completed yet', HttpStatus.BAD_REQUEST);
+      case RegistrationTransitionMessage.CouldNotCreateUser:
+        return new HttpException('Could not create user', HttpStatus.INTERNAL_SERVER_ERROR);
+      case RegistrationTransitionMessage.NotAwaitingForCode:
+        return new HttpException('User is not awaiting for verification code', HttpStatus.BAD_REQUEST);
       default:
         return new HttpException('Unknown error during registration process', HttpStatus.INTERNAL_SERVER_ERROR);
     }

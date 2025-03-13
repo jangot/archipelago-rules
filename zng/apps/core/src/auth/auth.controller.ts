@@ -69,8 +69,7 @@ export class AuthController {
   async verifyRegistration(
     @Body() body: RegistrationVerifyRequestDto,
     @Req() request: Request
-  ): Promise<JwtResponseDto | null> {
-    //TODO: !! Add support of 'retry' verification
+  ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
     if (!token) return await this.registrationService.verifyRegistration(body);
 

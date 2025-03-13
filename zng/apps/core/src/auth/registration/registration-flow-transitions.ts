@@ -3,6 +3,7 @@ import { VerificationEvent } from '../verification';
 import {
   InitiatePhoneNumberVerificationCommand,
   RegistrationInitiatedCommand,
+  VerificationCodeResendCommand,
   VerificationCompleteCommand,
   VerifyEmailCommand,
   VerifyPhoneNumberCommand,
@@ -45,4 +46,19 @@ export const organicRegistrationFlow: RegistrationStageTransition[] = [
     failureEvent: null,
     action: VerificationCompleteCommand,
   },
+  // Code re-send transitions (keeps registration in the same state)
+  {
+    state: RegistrationStatus.EmailVerifying,
+    nextState: RegistrationStatus.EmailVerifying,
+    successEvent: VerificationEvent.EmailCodeResent,
+    failureEvent: null,
+    action: VerificationCodeResendCommand,
+  },
+  {
+    state: RegistrationStatus.PhoneNumberVerifying,
+    nextState: RegistrationStatus.PhoneNumberVerifying,
+    successEvent: VerificationEvent.PhoneNumberCodeResent,
+    failureEvent: null,
+    action: VerificationCodeResendCommand,
+  }
 ];

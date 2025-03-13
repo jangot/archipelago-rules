@@ -22,11 +22,15 @@ export class InitiatePhoneNumberVerificationCommandHandler
   implements ICommandHandler<InitiatePhoneNumberVerificationCommand>
 {
   public async execute(command: InitiatePhoneNumberVerificationCommand): Promise<RegistrationTransitionResultDto> {
-    if (!command.payload.id) {
+    const {
+      payload: { id: userId, input },
+    } = command;
+
+    if (!userId) {
       throw new Error('User id cannot be null when initiating verification of Phone number.');
     }
 
-    const registration = await this.getUserRegistration(command.payload.id!);
+    const registration = await this.getUserRegistration(userId);
 
     if (!registration || registration.status !== RegistrationStatus.EmailVerified) {
       return this.createTransitionResult(
@@ -36,7 +40,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
       );
     }
 
-    const { phoneNumber } = command.payload.input!;
+    const { phoneNumber } = input!;
 
     if (!phoneNumber) {
       return this.createTransitionResult(
@@ -68,7 +72,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
     const verificationCode = generateSecureCode(6); // Generate new Verification code
     const verificationCodeExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
 
-    this.logger.debug(`About to update registration during adding phone number for user ${user.id}`, {
+    this.logger.debug(`About to update registration during adding phone number for user ${userId}`, {
       user,
       registration: { ...registration, secret: '***' },
     });
@@ -87,9 +91,9 @@ export class InitiatePhoneNumberVerificationCommandHandler
 
     await this.updateData(registration, user);
 
-    this.logger.debug(`Updated registration during adding phone number for user ${user.id}`);
+    this.logger.debug(`Updated registration during adding phone number for user ${userId}`);
 
-    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, user.id, verificationCode);
+    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, userId, verificationCode);
   }
 
   @Transactional()

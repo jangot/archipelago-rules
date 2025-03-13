@@ -19,3 +19,5 @@ export class InitiatePhoneNumberVerificationCommand extends RegistrationBaseComm
 export class VerifyPhoneNumberCommand extends RegistrationBaseCommand {}
 
 export class VerificationCompleteCommand extends RegistrationBaseCommand {}
+
+export class VerificationCodeResendCommand extends RegistrationBaseCommand {}

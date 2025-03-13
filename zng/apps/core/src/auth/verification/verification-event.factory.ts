@@ -6,6 +6,8 @@ import { VerificationPhoneNumberVerifiedEvent } from './verification-event.phone
 import { VerificationVerifiedEvent } from './verification-event.verified';
 import { IApplicationUser } from '@library/entity/interface';
 import { VerificationEventBase } from './verification-event.base';
+import { VerificationEmailCodeResentEvent } from './verification-event.email-code-resent';
+import { VerificationPhoneNumberCodeResentEvent } from './verification-event.phonenumber-code-resent';
 
 export enum VerificationEvent {
   EmailVerifying = 'VerificationEmailVerifyingEvent',
@@ -13,6 +15,8 @@ export enum VerificationEvent {
   PhoneNumberVerifying = 'VerificationPhoneNumberVerifyingEvent',
   PhoneNumberVerified = 'VerificationPhoneNumberVerifiedEvent',
   Verified = 'VerificationVerifiedEvent',
+  EmailCodeResent = 'VerificationEmailCodeResentEvent',
+  PhoneNumberCodeResent = 'VerificationPhoneNumberCodeResentEvent',
 }
 
 // Create a mapping from notification name to the class constructor.
@@ -23,6 +27,8 @@ const eventMapping: Record<VerificationEvent, new (user: IApplicationUser) => Ve
   [VerificationEvent.PhoneNumberVerifying]: VerificationPhoneNumberVerifyingEvent,
   [VerificationEvent.PhoneNumberVerified]: VerificationPhoneNumberVerifiedEvent,
   [VerificationEvent.Verified]: VerificationVerifiedEvent,
+  [VerificationEvent.EmailCodeResent]: VerificationEmailCodeResentEvent,
+  [VerificationEvent.PhoneNumberCodeResent]: VerificationPhoneNumberCodeResentEvent,
 };
 
 export class VerificationEventFactory {
