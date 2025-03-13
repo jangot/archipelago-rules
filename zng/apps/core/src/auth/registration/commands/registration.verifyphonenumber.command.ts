@@ -11,6 +11,9 @@ import { RegistrationStatus, LoginType, LoginStatus } from '@library/entity/enum
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerifyPhoneNumberCommand } from './registration.commands';
+import { Transactional } from 'typeorm-transactional';
+import { ApplicationUser, Login, UserRegistration } from '../../../data/entity';
+import { DeepPartial } from 'typeorm';
 
 @CommandHandler(VerifyPhoneNumberCommand)
 export class VerifyPhoneNumberCommandHandler
@@ -54,17 +57,10 @@ export class VerifyPhoneNumberCommandHandler
       );
     }
 
-    registration.status = RegistrationStatus.PhoneNumberVerified;
-    registration.secret = null;
-    registration.secretExpiresAt = null;
-
     const user = await this.data.users.getUserById(registration.userId);
     if (!user) {
       return this.createTransitionResult(registration.status, false, RegistrationTransitionMessage.WrongInput);
     }
-    user.phoneNumber = user.pendingPhoneNumber;
-    user.pendingPhoneNumber = null;
-    user.registrationStatus = RegistrationStatus.PhoneNumberVerified;
 
     const phoneLogin = {
       loginType: LoginType.OneTimeCodePhoneNumber,
@@ -72,12 +68,46 @@ export class VerifyPhoneNumberCommandHandler
       loginStatus: LoginStatus.NotLoggedIn,
     };
 
+    this.logger.debug(
+      `About to update registration, user and add login during adding phone number for user ${user.id}`,
+      {
+        user,
+        registration: { ...registration, secret: '***' },
+        login: phoneLogin,
+      }
+    );
+
+    registration.status = RegistrationStatus.PhoneNumberVerified;
+    registration.secret = null;
+    registration.secretExpiresAt = null;
+
+    user.phoneNumber = user.pendingPhoneNumber;
+    user.pendingPhoneNumber = null;
+    user.registrationStatus = RegistrationStatus.PhoneNumberVerified;
+
+    this.logger.debug(`Updated registration, user and add login data before apply`, {
+      user,
+      registration: { ...registration, secret: '***' },
+      login: phoneLogin,
+    });
+
+    await this.updateData(registration, user, phoneLogin);
+
+    this.logger.debug(`Updated registration, user and add login for user ${user.id}`);
+
+    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerified, true, null);
+  }
+
+  @Transactional()
+  private async updateData(
+    registration: UserRegistration,
+    user: ApplicationUser,
+    login: DeepPartial<Login>
+  ): Promise<void> {
     await Promise.all([
       this.data.userRegistrations.update(registration.id, registration),
       this.data.users.update(user.id, user),
-      this.data.logins.createOrUpdate(phoneLogin),
+      this.data.logins.createOrUpdate(login),
     ]);
-
-    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerified, true, null);
   }
 }

@@ -20,13 +20,13 @@ export class ApplicationUser implements IApplicationUser {
   @Column('text', { nullable: true })
   lastName: string | null;
 
-  @Column('text', { nullable: true, unique: true })
+  @Column('text', { nullable: true, unique: false })
   pendingEmail: string | null;
 
   @Column('text', { nullable: true, unique: true })
   email: string | null;
 
-  @Column('text', { nullable: true, unique: true })
+  @Column('text', { nullable: true, unique: false })
   pendingPhoneNumber: string | null;
 
   @Column('text', { nullable: true, unique: true })

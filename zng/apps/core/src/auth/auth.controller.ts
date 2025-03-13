@@ -11,7 +11,7 @@ import { UserRegisterResponseDto } from '../dto/response/user-register-response.
 import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { RegistrationService } from './registration.service';
 import { ExtractJwt } from 'passport-jwt';
-import { JwtType, RegistrationStatus } from '@library/entity/enum';
+import { JwtType } from '@library/entity/enum';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -65,6 +65,7 @@ export class AuthController {
     schema: { $ref: getSchemaPath(RegistrationVerifyRequestDto) },
   })
   @Post('register/verify') // registration verification
+  @ApiBearerAuth()
   async verifyRegistration(
     @Body() body: RegistrationVerifyRequestDto,
     @Req() request: Request
@@ -78,8 +79,7 @@ export class AuthController {
 
     const payload = this.authService.decodeToken(token);
     if (!payload) throw new UnauthorizedException('Invalid token');
-    if (payload.registration !== RegistrationStatus.PhoneNumberVerifying)
-      throw new UnauthorizedException('Invalid registration status');
+
     return await this.registrationService.verifyAdvanceRegistration(body);
   }
 }

@@ -12,6 +12,7 @@ import { Transactional } from 'typeorm-transactional';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerificationCompleteCommand } from './registration.commands';
+import { ApplicationUser, UserRegistration } from '../../../data/entity';
 
 @CommandHandler(VerificationCompleteCommand)
 export class VerificationCompleteCommandHandler
@@ -52,11 +53,31 @@ export class VerificationCompleteCommandHandler
       );
     }
 
+    this.logger.debug(`About to update registration and user during registration completion for user ${user.id}`, {
+      user,
+      registration: { ...registration, secret: '***' },
+    });
+
     user.registrationStatus = RegistrationStatus.Registered;
     registration.status = RegistrationStatus.Registered;
 
-    await Promise.all([this.data.users.update(user.id, user), this.data.userRegistrations.update(id, registration)]);
+    this.logger.debug(`Updated registration and user data before apply`, {
+      user,
+      registration: { ...registration, secret: '***' },
+    });
+
+    await this.updateData(registration, user);
+
+    this.logger.debug(`Updated registration and user data for user ${user.id}`);
 
     return this.createTransitionResult(RegistrationStatus.Registered, true, null);
+  }
+
+  @Transactional()
+  private async updateData(registration: UserRegistration, user: ApplicationUser): Promise<void> {
+    await Promise.all([
+      this.data.users.update(user.id, user),
+      this.data.userRegistrations.update(registration.id, registration),
+    ]);
   }
 }

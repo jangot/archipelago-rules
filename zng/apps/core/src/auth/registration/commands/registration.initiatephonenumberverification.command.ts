@@ -13,6 +13,8 @@ import { generateSecureCode } from '@library/shared/common/helpers';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { InitiatePhoneNumberVerificationCommand } from './registration.commands';
+import { Transactional } from 'typeorm-transactional';
+import { UserRegistration, ApplicationUser } from '../../../data/entity';
 
 @CommandHandler(InitiatePhoneNumberVerificationCommand)
 export class InitiatePhoneNumberVerificationCommandHandler
@@ -66,6 +68,11 @@ export class InitiatePhoneNumberVerificationCommandHandler
     const verificationCode = generateSecureCode(6); // Generate new Verification code
     const verificationCodeExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
 
+    this.logger.debug(`About to update registration during adding phone number for user ${user.id}`, {
+      user,
+      registration: { ...registration, secret: '***' },
+    });
+
     registration.secret = verificationCode;
     registration.secretExpiresAt = verificationCodeExpiresAt;
     registration.status = RegistrationStatus.PhoneNumberVerifying;
@@ -73,11 +80,23 @@ export class InitiatePhoneNumberVerificationCommandHandler
     user.pendingPhoneNumber = transformPhoneNumber(phoneNumber);
     user.registrationStatus = RegistrationStatus.PhoneNumberVerifying;
 
+    this.logger.debug(`Updated registration and user data before apply`, {
+      user,
+      registration: { ...registration, secret: '***' },
+    });
+
+    await this.updateData(registration, user);
+
+    this.logger.debug(`Updated registration during adding phone number for user ${user.id}`);
+
+    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, user.id, verificationCode);
+  }
+
+  @Transactional()
+  private async updateData(registration: UserRegistration, user: ApplicationUser): Promise<void> {
     await Promise.all([
       this.data.userRegistrations.update(registration.id, registration),
       this.data.users.update(user.id, user),
     ]);
-
-    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, user.id, verificationCode);
   }
 }

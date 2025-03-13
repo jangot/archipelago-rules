@@ -12,6 +12,8 @@ import { Transactional } from 'typeorm-transactional';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerifyEmailCommand } from './registration.commands';
+import { UserRegistration, ApplicationUser, Login } from '../../../data/entity';
+import { DeepPartial } from 'typeorm';
 
 @CommandHandler(VerifyEmailCommand)
 export class VerifyEmailCommandHandler
@@ -56,17 +58,10 @@ export class VerifyEmailCommandHandler
       );
     }
 
-    registration.status = RegistrationStatus.EmailVerified;
-    registration.secret = null;
-    registration.secretExpiresAt = null;
-
     const user = await this.data.users.getUserById(registration.userId);
     if (!user) {
       return this.createTransitionResult(registration.status, false, RegistrationTransitionMessage.WrongInput);
     }
-    user.email = user.pendingEmail;
-    user.pendingEmail = null;
-    user.registrationStatus = RegistrationStatus.EmailVerified;
 
     const emailLogin = {
       loginType: LoginType.OneTimeCodeEmail,
@@ -74,12 +69,43 @@ export class VerifyEmailCommandHandler
       loginStatus: LoginStatus.NotLoggedIn,
     };
 
+    this.logger.debug(`About to update registration, user and add login during adding email for user ${user.id}`, {
+      user,
+      registration: { ...registration, secret: '***' },
+      login: emailLogin,
+    });
+
+    registration.status = RegistrationStatus.EmailVerified;
+    registration.secret = null;
+    registration.secretExpiresAt = null;
+
+    user.email = user.pendingEmail;
+    user.pendingEmail = null;
+    user.registrationStatus = RegistrationStatus.EmailVerified;
+
+    this.logger.debug(`Updated registration, user and add login data before apply`, {
+      user,
+      registration: { ...registration, secret: '***' },
+      login: emailLogin,
+    });
+
+    await this.updateData(registration, user, emailLogin);
+
+    this.logger.debug(`Updated registration, user and add login for user ${user.id}`);
+
+    return this.createTransitionResult(RegistrationStatus.EmailVerified, true, null);
+  }
+
+  @Transactional()
+  private async updateData(
+    registration: UserRegistration,
+    user: ApplicationUser,
+    login: DeepPartial<Login>
+  ): Promise<void> {
     await Promise.all([
       this.data.userRegistrations.update(registration.id, registration),
       this.data.users.update(user.id, user),
-      this.data.logins.createOrUpdate(emailLogin),
+      this.data.logins.createOrUpdate(login),
     ]);
-
-    return this.createTransitionResult(RegistrationStatus.EmailVerified, true, null);
   }
 }

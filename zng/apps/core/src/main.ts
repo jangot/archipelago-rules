@@ -52,11 +52,11 @@ async function bootstrap() {
 
 function configureSwagger(app: INestApplication<any>) {
   const config = new DocumentBuilder()
+    .addBearerAuth()
     .setTitle('ZNG Core API')
     .setDescription('Zirtue Next Generation Platform Core API')
     .setVersion('1.0')
     .addTag('ZNG Core API')
-    .addBearerAuth()
     .build();
 
   const options: SwaggerDocumentOptions = {
