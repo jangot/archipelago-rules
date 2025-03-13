@@ -55,7 +55,15 @@ export class RegistrationInitiatedCommandHandler
     };
 
     // Create the barebones User here
-    const user = await this.data.users.create(newUser);
+    const user = await this.data.users.insert(newUser, true);
+    if (!user) {
+      this.logger.error(`initiateRegistration: Failed to create user: ${email}`, { newUser });
+      return this.createTransitionResult(
+        RegistrationStatus.NotRegistered,
+        false,
+        RegistrationTransitionMessage.CouldNotCreateUser
+      );
+    }
     const { id: userId } = user;
     const newUserRegistration = {
       userId,

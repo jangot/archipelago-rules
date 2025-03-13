@@ -109,7 +109,7 @@ export class AuthService {
 
     const secret = EntityMapper.toEntity(input, Login);
     secret.id = v4();
-    const result = await this.dataService.logins.create(secret);
+    const result = await this.dataService.logins.insert(secret, true);
     return result;
   }
 }

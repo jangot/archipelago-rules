@@ -38,6 +38,6 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
       await this.update(existing.id, login);
       return this.findOneBy({ id: existing.id });
     }
-    return this.create(login);
+    return this.insert(login, true);
   }
 }

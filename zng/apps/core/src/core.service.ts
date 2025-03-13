@@ -24,29 +24,35 @@ export class CoreService {
     const borrowerId = v4();
 
     try {
-      const lender = await this.dataService.users.create({
-        firstName: 'John',
-        lastName: 'Doe',
-        email: email1,
-        id: lenderId,
-        phoneNumber: '123',
-      });
+      const lender = await this.dataService.users.insert(
+        {
+          firstName: 'John',
+          lastName: 'Doe',
+          email: email1,
+          id: lenderId,
+          phoneNumber: '123',
+        },
+        true
+      );
 
-      const borrower = await this.dataService.users.create({
-        firstName: 'John',
-        lastName: 'Doe',
-        email: email2,
-        id: borrowerId,
-        phoneNumber: '123',
-      });
+      const borrower = await this.dataService.users.insert(
+        {
+          firstName: 'John',
+          lastName: 'Doe',
+          email: email2,
+          id: borrowerId,
+          phoneNumber: '123',
+        },
+        true
+      );
 
-      await this.dataService.loans.create({
+      await this.dataService.loans.insert({
         id: v4(),
         amount: random(100, 1000, false),
         borrowerId: lenderId,
         lenderId: borrowerId,
-        lender: lender,
-        borrower: borrower,
+        lender: lender!,
+        borrower: borrower!,
       });
 
       // Do something after the transaction is committed

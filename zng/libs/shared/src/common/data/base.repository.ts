@@ -52,6 +52,15 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return await this.repository.find();
   }
 
+  public async insert(item: DeepPartial<Entity>, returnResult: false): Promise<Entity['id'] | null>;
+  public async insert(item: DeepPartial<Entity>, returnResult: true): Promise<Entity | null>;
+  public async insert(item: DeepPartial<Entity>, returnResult: boolean = false): Promise<Entity['id'] | Entity | null> {
+    const insertResult = await this.repository.insert(item);
+    const id = insertResult.identifiers[0].id;
+    if (!returnResult) return id;
+    return await this.findOne({ where: { id } });
+  }
+
   public async create(item: DeepPartial<Entity>): Promise<Entity> {
     return await this.repository.save(item);
   }

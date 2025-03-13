@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DataSource } from 'typeorm';
+import { DataSource, DeepPartial } from 'typeorm';
 import { DataModule } from '../src/data';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { IDataService } from '../src/data/idata.service';
@@ -74,7 +74,7 @@ describe('DataModule Integration Tests', () => {
       let loanGetResult: Loan | null = {} as Loan;
 
       lenderUserId = v4();
-      const lenderUser: ApplicationUser = {
+      const lenderUser: DeepPartial<ApplicationUser> = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'test-lender@mail.com',
@@ -83,7 +83,7 @@ describe('DataModule Integration Tests', () => {
       };
 
       borrowerUserId = v4();
-      const borrowerUser: ApplicationUser = {
+      const borrowerUser: DeepPartial<ApplicationUser> = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'test-borrower@mail.com',
@@ -92,7 +92,7 @@ describe('DataModule Integration Tests', () => {
       };
 
       expectedLoanId = v4();
-      const expectedLoan: Loan = {
+      const expectedLoan: DeepPartial<Loan> = {
         id: expectedLoanId,
         amount: 1000,
         borrowerId: borrowerUserId,
@@ -102,9 +102,9 @@ describe('DataModule Integration Tests', () => {
       };
 
       await withTransactionHandler(async () => {
-        lenderResult = await dataService.users.create(lenderUser);
-        borrowerResult = await dataService.users.create(borrowerUser);
-        loanResult = await dataService.loans.create(expectedLoan);
+        lenderResult = await dataService.users.insert(lenderUser, true);
+        borrowerResult = await dataService.users.insert(borrowerUser, true);
+        loanResult = await dataService.loans.insert(expectedLoan, true);
       });
       expect(userCreateSpy).toHaveBeenCalledTimes(2);
       expect(loanCreateSpy).toHaveBeenCalledTimes(1);
@@ -139,7 +139,7 @@ describe('DataModule Integration Tests', () => {
     it.skip('should rollback create a lender, borrower and a loan', async () => {
       // now we will try to create fake users and duplicate loan insert
       fakeLenderId = v4();
-      const fakeLender: ApplicationUser = {
+      const fakeLender: DeepPartial<ApplicationUser> = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'test-fake-lender@mail.com',
@@ -148,7 +148,7 @@ describe('DataModule Integration Tests', () => {
       };
 
       fakeBorrowerId = v4();
-      const fakeBorrower: ApplicationUser = {
+      const fakeBorrower: DeepPartial<ApplicationUser> = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'test-fake-borrower@mail.com',

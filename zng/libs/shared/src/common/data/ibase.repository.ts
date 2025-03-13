@@ -30,6 +30,16 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
   getAll(): Promise<Entity[]>;
 
   /**
+   * Fast insert of a new Entity into the DB
+   * @param {Entity} item Populated Entity to Insert in the DB
+   * @return {Promise<Entity>} Entity with all fields populated inserted in the DB
+   * @memberof IRepositoryBase
+   */
+  insert(item: DeepPartial<Entity>, returnResult: false): Promise<Entity['id'] | null>;
+  insert(item: DeepPartial<Entity>, returnResult: true): Promise<Entity | null>;
+  insert(item: DeepPartial<Entity>, returnResult?: boolean): Promise<Entity['id'] | Entity | null>;
+
+  /**
    * Creates a new Entity of the given type
    *
    * @param {Entity} item Populated Entity to Create in the DB
