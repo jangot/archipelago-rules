@@ -40,6 +40,14 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
   insert(item: DeepPartial<Entity>, returnResult?: boolean): Promise<Entity['id'] | Entity | null>;
 
   /**
+   * Fast insert of a new Entity into the DB return the Entity using the RETURNING clause of Postgres
+   * @param {Entity} item Populated Entity to Insert in the DB
+   * @return {Promise<Entity>} Entity with all fields populated inserted in the DB
+   * @memberof IRepositoryBase
+   */
+  insertWithResult(item: DeepPartial<Entity>): Promise<Entity>;
+
+  /**
    * Creates a new Entity of the given type
    *
    * @param {Entity} item Populated Entity to Create in the DB

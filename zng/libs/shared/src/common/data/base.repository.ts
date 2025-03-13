@@ -55,10 +55,29 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
   public async insert(item: DeepPartial<Entity>, returnResult: false): Promise<Entity['id'] | null>;
   public async insert(item: DeepPartial<Entity>, returnResult: true): Promise<Entity | null>;
   public async insert(item: DeepPartial<Entity>, returnResult: boolean = false): Promise<Entity['id'] | Entity | null> {
+    if (returnResult) {
+      return await this.insertWithResult(item);
+    }
+
     const insertResult = await this.repository.insert(item);
     const id = insertResult.identifiers[0].id;
-    if (!returnResult) return id;
-    return await this.findOne({ where: { id } });
+    return id;
+  }
+
+  public async insertWithResult(item: DeepPartial<Entity>): Promise<Entity> {
+    const insertResult = await this.repository
+      .createQueryBuilder()
+      .insert()
+      .into(this.repository.metadata.target)
+      .values(item)
+      .returning('*')
+      .execute();
+
+    if (!insertResult.generatedMaps || insertResult.generatedMaps.length === 0) {
+      throw new Error('Insert failed: no entity was returned');
+    }
+    // generatedMaps[0] will have keys matching entity's properties (camelCased)
+    return insertResult.generatedMaps[0] as Entity;
   }
 
   public async create(item: DeepPartial<Entity>): Promise<Entity> {
