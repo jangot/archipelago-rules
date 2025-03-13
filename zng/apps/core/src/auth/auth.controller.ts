@@ -2,11 +2,10 @@ import { Body, Controller, Post, Req, UnauthorizedException } from '@nestjs/comm
 import { AuthService } from './auth.service';
 import {
   JwtResponseDto,
-  OrganicRegistrationAdvanceRequestDto,
-  OrganicRegistrationRequestDto,
-  OrganicRegistrationVerifyRequestDto,
+  RegistrationAdvanceRequestDto,
+  RegistrationRequestDto,
+  RegistrationVerifyRequestDto,
   RegistrationDto,
-  SandboxRegistrationRequestDto,
 } from '../dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiTags, getSchemaPath } from '@nestjs/swagger';
@@ -37,25 +36,18 @@ export class AuthController {
   }
 
   @Post('register')
-  @ApiExtraModels(OrganicRegistrationRequestDto, SandboxRegistrationRequestDto)
-  @ApiBody({
-    schema: {
-      oneOf: [
-        { $ref: getSchemaPath(OrganicRegistrationRequestDto) },
-        { $ref: getSchemaPath(SandboxRegistrationRequestDto) },
-      ],
-    },
-  })
+  @ApiExtraModels(RegistrationRequestDto)
+  @ApiBody({ schema: { $ref: getSchemaPath(RegistrationRequestDto) } })
   async register(@Body() body: RegistrationDto): Promise<UserRegisterResponseDto> {
     return await this.registrationService.register(body);
   }
 
   @Post('register/advance')
   @ApiBearerAuth()
-  @ApiExtraModels(OrganicRegistrationAdvanceRequestDto, SandboxRegistrationRequestDto)
+  @ApiExtraModels(RegistrationAdvanceRequestDto)
   @ApiBody({
-    type: OrganicRegistrationAdvanceRequestDto,
-    schema: { $ref: getSchemaPath(OrganicRegistrationAdvanceRequestDto) },
+    type: RegistrationAdvanceRequestDto,
+    schema: { $ref: getSchemaPath(RegistrationAdvanceRequestDto) },
   })
   async advanceRegistration(@Body() body: RegistrationDto, @Req() request: Request): Promise<UserRegisterResponseDto> {
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
@@ -67,14 +59,14 @@ export class AuthController {
     return await this.registrationService.advanceRegistration(body);
   }
 
-  @ApiExtraModels(OrganicRegistrationVerifyRequestDto, JwtResponseDto)
+  @ApiExtraModels(RegistrationVerifyRequestDto, JwtResponseDto)
   @ApiBody({
-    type: OrganicRegistrationVerifyRequestDto,
-    schema: { $ref: getSchemaPath(OrganicRegistrationVerifyRequestDto) },
+    type: RegistrationVerifyRequestDto,
+    schema: { $ref: getSchemaPath(RegistrationVerifyRequestDto) },
   })
   @Post('register/verify') // registration verification
   async verifyRegistration(
-    @Body() body: OrganicRegistrationVerifyRequestDto,
+    @Body() body: RegistrationVerifyRequestDto,
     @Req() request: Request
   ): Promise<JwtResponseDto | null> {
     //TODO: !! Add support of 'retry' verification

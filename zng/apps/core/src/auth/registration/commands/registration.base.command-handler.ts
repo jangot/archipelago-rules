@@ -6,7 +6,7 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { RegistrationStatus, RegistrationType } from '@library/entity/enum';
+import { RegistrationStatus } from '@library/entity/enum';
 import { Injectable, Logger } from '@nestjs/common';
 import { UserRegistration } from 'apps/core/src/data/entity';
 import { IDataService } from 'apps/core/src/data/idata.service';
@@ -19,15 +19,14 @@ export interface RegistrationParams {
   logger: Logger;
 }
 
-export interface RegistrationExecuteParams<Type extends RegistrationType = RegistrationType> {
+export interface RegistrationExecuteParams {
   id: string | null;
-  input: (RegistrationDto & { type: Type }) | null;
+  input: RegistrationDto | null;
 }
 
 @Injectable()
 export abstract class RegistrationBaseCommandHandler<
-  TType extends RegistrationType = RegistrationType,
-  TCommand extends RegistrationBaseCommand<TType> = RegistrationBaseCommand<TType>,
+  TCommand extends RegistrationBaseCommand = RegistrationBaseCommand,
 > {
   protected readonly data: IDataService;
   protected readonly logger: Logger;

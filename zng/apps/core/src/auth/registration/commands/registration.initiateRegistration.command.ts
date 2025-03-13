@@ -6,24 +6,19 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { ContactType, RegistrationStatus, RegistrationType } from '@library/entity/enum';
+import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { generateSecureCode } from '@library/shared/common/helpers';
 import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationInitiatedCommand } from './registration.commands';
 
-@CommandHandler(RegistrationInitiatedCommand<RegistrationType.Organic>)
+@CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler
-  extends RegistrationBaseCommandHandler<
-    RegistrationType.Organic,
-    RegistrationInitiatedCommand<RegistrationType.Organic>
-  >
-  implements ICommandHandler<RegistrationInitiatedCommand<RegistrationType.Organic>>
+  extends RegistrationBaseCommandHandler<RegistrationInitiatedCommand>
+  implements ICommandHandler<RegistrationInitiatedCommand>
 {
-  public async execute(
-    command: RegistrationInitiatedCommand<RegistrationType.Organic>
-  ): Promise<RegistrationTransitionResultDto> {
+  public async execute(command: RegistrationInitiatedCommand): Promise<RegistrationTransitionResultDto> {
     const { firstName, lastName, email } = command.payload.input!;
 
     if (!email) {

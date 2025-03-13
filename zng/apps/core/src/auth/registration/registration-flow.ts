@@ -1,4 +1,4 @@
-import { LoginType, RegistrationStatus, RegistrationType } from '@library/entity/enum';
+import { RegistrationStatus } from '@library/entity/enum';
 import { RegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../dto';
 import { IDataService } from '../../data/idata.service';
 import { RegistrationStageTransition } from './stage-transition.interface';
@@ -11,23 +11,22 @@ import { UserRegistration } from '../../data/entity';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export abstract class RegistrationFlow<
-  Type extends RegistrationType,
-  Payload extends RegistrationDto & { type: Type },
-> {
-  protected abstract stageTransitions: RegistrationStageTransition[];
-  protected abstract supportedRegistrationLogins: LoginType[]; // TODO: Remove
+export class RegistrationFlow {
+  private stageTransitions: RegistrationStageTransition[];
 
   constructor(
+    protected readonly transitions: RegistrationStageTransition[],
     protected readonly data: IDataService,
     protected readonly jwtService: JwtService,
     protected readonly config: ConfigService,
     protected readonly eventBus: EventBus,
     protected readonly commandBus: CommandBus
-  ) {}
+  ) {
+    this.stageTransitions = transitions;
+  }
 
   public async advance(
-    input: Payload,
+    input: RegistrationDto,
     startFrom?: RegistrationStatus
   ): Promise<RegistrationTransitionResultDto | null> {
     if (!input) return { state: null, isSuccessful: false, message: RegistrationTransitionMessage.WrongInput };
@@ -74,7 +73,7 @@ export abstract class RegistrationFlow<
     state: RegistrationStatus | null,
     nextState: RegistrationStatus | null,
     id: string | null,
-    input: Payload | null
+    input: RegistrationDto | null
   ): Promise<RegistrationTransitionResultDto> {
     const transition = this.stageTransitions.find((t) => t.nextState === nextState && t.state === state);
     if (!transition) {

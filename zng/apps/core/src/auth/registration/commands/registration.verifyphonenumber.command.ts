@@ -7,19 +7,17 @@
  */
 
 import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
-import { RegistrationStatus, LoginType, LoginStatus, RegistrationType } from '@library/entity/enum';
+import { RegistrationStatus, LoginType, LoginStatus } from '@library/entity/enum';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerifyPhoneNumberCommand } from './registration.commands';
 
-@CommandHandler(VerifyPhoneNumberCommand<RegistrationType.Organic>)
+@CommandHandler(VerifyPhoneNumberCommand)
 export class VerifyPhoneNumberCommandHandler
-  extends RegistrationBaseCommandHandler<RegistrationType.Organic, VerifyPhoneNumberCommand<RegistrationType.Organic>>
-  implements ICommandHandler<VerifyPhoneNumberCommand<RegistrationType.Organic>>
+  extends RegistrationBaseCommandHandler<VerifyPhoneNumberCommand>
+  implements ICommandHandler<VerifyPhoneNumberCommand>
 {
-  public async execute(
-    command: VerifyPhoneNumberCommand<RegistrationType.Organic>
-  ): Promise<RegistrationTransitionResultDto> {
+  public async execute(command: VerifyPhoneNumberCommand): Promise<RegistrationTransitionResultDto> {
     if (!command.payload.id) {
       throw new Error('User id cannot be null when verifying Phone number.');
     }

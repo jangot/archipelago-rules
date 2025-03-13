@@ -7,8 +7,9 @@ import { UserRegisterResponseDto } from '../dto/response/user-register-response.
 import { RegistrationStatus } from '@library/entity/enum/registration.status';
 import { JwtResponseDto, RegistrationDto, RegistrationTransitionResultDto } from '../dto';
 import { AuthService } from './auth.service';
-import { RegistrationFactory } from './registration.factory';
 import { RegistrationExceptionFactory } from './registration/registration-exception.factory';
+import { RegistrationFlow } from './registration';
+import { organicRegistrationFlow } from './registration/registration-flow-transitions';
 
 @Injectable()
 export class RegistrationService {
@@ -151,8 +152,8 @@ export class RegistrationService {
     input: RegistrationDto,
     startFrom?: RegistrationStatus
   ): Promise<RegistrationTransitionResultDto | null> {
-    const registrationFlow = RegistrationFactory.create(
-      input.type,
+    const registrationFlow = new RegistrationFlow(
+      organicRegistrationFlow,
       this.dataService,
       this.jwtService,
       this.config,

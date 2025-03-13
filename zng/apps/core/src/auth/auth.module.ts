@@ -7,8 +7,6 @@ import { UsersModule } from '../users';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DataModule } from '../data';
 import { JwtModule } from '@nestjs/jwt';
-import { RegistrationFactory } from './registration.factory';
-import { Registrators } from './registration';
 import { RegistrationService } from './registration.service';
 import { CqrsModule } from '@nestjs/cqrs';
 import { CommandHandlers } from './registration/commands';
@@ -33,10 +31,8 @@ import { CommandHandlers } from './registration/commands';
     Logger,
     AuthService,
     RegistrationService,
-    RegistrationFactory,
     ...CustomAuthStrategies,
     ...CustomAuthGuards,
-    ...Registrators,
     ...CommandHandlers,
   ],
 })

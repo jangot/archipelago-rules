@@ -7,23 +7,18 @@
  */
 
 import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
-import { RegistrationStatus, RegistrationType } from '@library/entity/enum';
+import { RegistrationStatus } from '@library/entity/enum';
 import { Transactional } from 'typeorm-transactional';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerificationCompleteCommand } from './registration.commands';
 
-@CommandHandler(VerificationCompleteCommand<RegistrationType.Organic>)
+@CommandHandler(VerificationCompleteCommand)
 export class VerificationCompleteCommandHandler
-  extends RegistrationBaseCommandHandler<
-    RegistrationType.Organic,
-    VerificationCompleteCommand<RegistrationType.Organic>
-  >
-  implements ICommandHandler<VerificationCompleteCommand<RegistrationType.Organic>>
+  extends RegistrationBaseCommandHandler<VerificationCompleteCommand>
+  implements ICommandHandler<VerificationCompleteCommand>
 {
-  public async execute(
-    command: VerificationCompleteCommand<RegistrationType.Organic>
-  ): Promise<RegistrationTransitionResultDto> {
+  public async execute(command: VerificationCompleteCommand): Promise<RegistrationTransitionResultDto> {
     if (!command.payload.id) {
       throw new Error('User id cannot be null when completing verification.');
     }

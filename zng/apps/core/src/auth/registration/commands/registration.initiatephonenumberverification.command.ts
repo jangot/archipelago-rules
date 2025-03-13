@@ -7,24 +7,19 @@
  */
 
 import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
-import { RegistrationStatus, ContactType, RegistrationType } from '@library/entity/enum';
+import { RegistrationStatus, ContactType } from '@library/entity/enum';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 import { generateSecureCode } from '@library/shared/common/helpers';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { InitiatePhoneNumberVerificationCommand } from './registration.commands';
 
-@CommandHandler(InitiatePhoneNumberVerificationCommand<RegistrationType.Organic>)
+@CommandHandler(InitiatePhoneNumberVerificationCommand)
 export class InitiatePhoneNumberVerificationCommandHandler
-  extends RegistrationBaseCommandHandler<
-    RegistrationType.Organic,
-    InitiatePhoneNumberVerificationCommand<RegistrationType.Organic>
-  >
-  implements ICommandHandler<InitiatePhoneNumberVerificationCommand<RegistrationType.Organic>>
+  extends RegistrationBaseCommandHandler<InitiatePhoneNumberVerificationCommand>
+  implements ICommandHandler<InitiatePhoneNumberVerificationCommand>
 {
-  public async execute(
-    command: InitiatePhoneNumberVerificationCommand<RegistrationType.Organic>
-  ): Promise<RegistrationTransitionResultDto> {
+  public async execute(command: InitiatePhoneNumberVerificationCommand): Promise<RegistrationTransitionResultDto> {
     if (!command.payload.id) {
       throw new Error('User id cannot be null when initiating verification of Phone number.');
     }

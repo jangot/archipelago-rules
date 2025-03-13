@@ -1,4 +1,3 @@
-import { RegistrationType } from '@library/entity/enum';
 import { MapTo } from '@library/entity/mapping/mapping.decorators';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
@@ -7,8 +6,8 @@ import { Expose } from 'class-transformer';
 import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { NIL } from 'uuid';
 
-@ApiSchema({ name: 'organicRegistration' })
-export class OrganicRegistrationDto {
+@ApiSchema({ name: 'registration' })
+export class RegistrationDto {
   @ApiProperty({ description: 'User ID', type: String, required: false, maxLength: 36, example: NIL })
   @Expose()
   @IsString()
@@ -74,33 +73,26 @@ export class OrganicRegistrationDto {
   @IsBoolean()
   retry = false;
 
-  @ApiProperty({
-    description: 'Registration flow type',
-    type: String,
-    required: true,
-    default: RegistrationType.Organic,
-  })
-  type: RegistrationType.Organic = RegistrationType.Organic;
 }
 
-@ApiSchema({ name: 'organicRegistrationRequest' })
-export class OrganicRegistrationRequestDto extends OmitType(OrganicRegistrationDto, [
+@ApiSchema({ name: 'registrationRequest' })
+export class RegistrationRequestDto extends OmitType(RegistrationDto, [
   'userId',
   'phoneNumber',
   'retry',
   'code',
 ] as const) {}
 
-@ApiSchema({ name: 'organicRegistrationVerifyRequest' })
-export class OrganicRegistrationVerifyRequestDto extends OmitType(OrganicRegistrationDto, [
+@ApiSchema({ name: 'registrationVerifyRequest' })
+export class RegistrationVerifyRequestDto extends OmitType(RegistrationDto, [
   'firstName',
   'lastName',
   'email',
   'phoneNumber',
 ] as const) {}
 
-@ApiSchema({ name: 'organicRegistrationAdvanceRequest' })
-export class OrganicRegistrationAdvanceRequestDto extends OmitType(OrganicRegistrationDto, [
+@ApiSchema({ name: 'registrationAdvanceRequest' })
+export class RegistrationAdvanceRequestDto extends OmitType(RegistrationDto, [
   'firstName',
   'lastName',
   'email',

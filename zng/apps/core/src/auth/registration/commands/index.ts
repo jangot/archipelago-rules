@@ -20,3 +20,5 @@ export const CommandHandlers = [
   VerificationCompleteCommandHandler,
   // Insert Command Handler Here
 ];
+
+export * from './registration.commands';

@@ -6,26 +6,16 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { RegistrationType } from '@library/entity/enum';
 import { RegistrationExecuteParams } from './registration.base.command-handler';
 
-export class RegistrationBaseCommand<Type extends RegistrationType> {
-  constructor(public readonly payload: RegistrationExecuteParams<Type>) {}
+export class RegistrationBaseCommand {
+  constructor(public readonly payload: RegistrationExecuteParams) {}
 }
 
-export class RegistrationInitiatedCommand<
-  T extends RegistrationType = RegistrationType,
-> extends RegistrationBaseCommand<T> {}
+export class RegistrationInitiatedCommand extends RegistrationBaseCommand {}
+export class VerifyEmailCommand extends RegistrationBaseCommand {}
 
-export class VerifyEmailCommand<T extends RegistrationType = RegistrationType> extends RegistrationBaseCommand<T> {}
-export class InitiatePhoneNumberVerificationCommand<
-  T extends RegistrationType = RegistrationType,
-> extends RegistrationBaseCommand<T> {}
+export class InitiatePhoneNumberVerificationCommand extends RegistrationBaseCommand {}
+export class VerifyPhoneNumberCommand extends RegistrationBaseCommand {}
 
-export class VerifyPhoneNumberCommand<
-  T extends RegistrationType = RegistrationType,
-> extends RegistrationBaseCommand<T> {}
-
-export class VerificationCompleteCommand<
-  T extends RegistrationType = RegistrationType,
-> extends RegistrationBaseCommand<T> {}
+export class VerificationCompleteCommand extends RegistrationBaseCommand {}
