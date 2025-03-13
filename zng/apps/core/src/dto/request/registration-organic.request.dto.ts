@@ -72,7 +72,6 @@ export class RegistrationDto {
   @IsOptional()
   @IsBoolean()
   retry = false;
-
 }
 
 @ApiSchema({ name: 'registrationRequest' })

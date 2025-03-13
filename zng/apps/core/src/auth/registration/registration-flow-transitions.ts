@@ -60,5 +60,5 @@ export const organicRegistrationFlow: RegistrationStageTransition[] = [
     successEvent: VerificationEvent.PhoneNumberCodeResent,
     failureEvent: null,
     action: VerificationCodeResendCommand,
-  }
+  },
 ];
