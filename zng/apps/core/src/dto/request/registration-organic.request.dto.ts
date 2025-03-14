@@ -3,7 +3,7 @@ import { transformPhoneNumber } from '@library/shared/common/data/transformers/p
 import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
 import { ApiProperty, ApiSchema, OmitType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { NIL } from 'uuid';
 
 @ApiSchema({ name: 'registration' })
@@ -61,40 +61,32 @@ export class RegistrationDto {
   @IsString()
   @IsOptional()
   code?: string;
-
-  @ApiProperty({
-    description: 'Should last verification step be re-tried',
-    type: Boolean,
-    required: false,
-    example: false,
-    default: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  retry = false;
 }
 
 @ApiSchema({ name: 'registrationRequest' })
-export class RegistrationRequestDto extends OmitType(RegistrationDto, [
-  'userId',
-  'phoneNumber',
-  'retry',
-  'code',
-] as const) {}
+export class RegistrationRequestDto extends OmitType(RegistrationDto, ['userId', 'phoneNumber', 'code'] as const) {}
 
 @ApiSchema({ name: 'registrationVerifyRequest' })
-export class RegistrationVerifyRequestDto extends OmitType(RegistrationDto, [
-  'firstName',
-  'lastName',
-  'email',
-  'phoneNumber',
-] as const) {}
+export class RegistrationVerifyRequestDto extends OmitType(RegistrationDto, ['code'] as const) {
+  @ApiProperty({
+    description: 'Registration step verification code',
+    type: String,
+    required: true, // now required
+    maxLength: 100,
+    example: '123456',
+  })
+  @IsNotEmpty()
+  @MaxLength(32)
+  @IsString()
+  code: string;
+}
 
-@ApiSchema({ name: 'registrationAdvanceRequest' })
-export class RegistrationAdvanceRequestDto extends OmitType(RegistrationDto, [
+@ApiSchema({ name: 'loginRequest' })
+export class LoginRequestDto extends OmitType(RegistrationDto, ['userId', 'firstName', 'lastName', 'code'] as const) {}
+
+@ApiSchema({ name: 'registrationUpdateRequest' })
+export class RegistrationUpdateRequestDto extends OmitType(RegistrationDto, [
   'firstName',
   'lastName',
-  'email',
   'code',
-  'retry',
 ] as const) {}

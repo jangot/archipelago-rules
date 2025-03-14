@@ -10,6 +10,7 @@ import { AuthService } from './auth.service';
 import { RegistrationExceptionFactory } from './registration/registration-exception.factory';
 import { RegistrationFlow } from './registration';
 import { organicRegistrationFlow } from './registration/registration-flow-transitions';
+import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 
 @Injectable()
 export class RegistrationService {
@@ -41,20 +42,19 @@ export class RegistrationService {
    * @param input - The registration data transfer object.
    * @returns A promise that resolves to a JwtResponseDto or null.
    */
-  public async verifyRegistration(input: RegistrationDto): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
-    const { userId, retry } = input;
+  public async verifyRegistration(input: RegistrationDto): Promise<UserLoginPayloadDto | null> {
+    const { userId } = input;
     if (!userId) {
       throw new HttpException('User ID is required for verification', HttpStatus.BAD_REQUEST);
     }
 
-    if (retry) {
-      return this.resendVerificationCode(input, RegistrationStatus.EmailVerifying);
-    }
+    //return this.resendVerificationCode(input, RegistrationStatus.EmailVerifying);
 
     this.logger.debug(`verifyRegistration: Verifying user: ${userId}`);
 
-    const result = await this.advanceRegistrationFlow(input, RegistrationStatus.EmailVerifying);
-    return this.handleVerificationResult(result, userId);
+    //const result = await this.advanceRegistrationFlow(input, RegistrationStatus.EmailVerifying);
+    //return this.handleVerificationResult(result, userId);
+    return null;
   }
 
   /**
@@ -77,14 +77,12 @@ export class RegistrationService {
   public async verifyAdvanceRegistration(
     input: RegistrationDto
   ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
-    const { userId, retry } = input;
+    const { userId } = input;
     if (!userId) {
       throw new HttpException('User ID is required for verification', HttpStatus.BAD_REQUEST);
     }
 
-    if (retry) {
-      return this.resendVerificationCode(input, RegistrationStatus.PhoneNumberVerifying);
-    }
+    //return this.resendVerificationCode(input, RegistrationStatus.PhoneNumberVerifying);
 
     this.logger.debug(`verifyAdvanceRegistration: Verifying user: ${userId}`);
 
@@ -131,6 +129,10 @@ export class RegistrationService {
   ): Promise<UserRegisterResponseDto> {
     if (!result) {
       this.logger.warn('handleRegistrationResult: Registration failed');
+      // TODO: Should NOT return a 500 StatusCode here
+      // Why would we log a warning here?
+      // Did we throw an Exception previously and we caught it and Logged it?
+      // Not sure what a Registration failure here means? What can the User do to resolve this issue?
       throw new HttpException('Registration failed', HttpStatus.INTERNAL_SERVER_ERROR);
     }
     const { state, isSuccessful, userId, message, code } = result;
@@ -171,7 +173,7 @@ export class RegistrationService {
       throw exception;
     } else {
       // TODO: might require split to different JWTs based on a step
-      return await this.authService.login(userId, '1h');
+      return await this.authService.loginById(userId, '1h');
     }
   }
 

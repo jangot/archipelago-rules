@@ -30,7 +30,7 @@ export class RegistrationFlow {
     startFrom?: RegistrationStatus
   ): Promise<RegistrationTransitionResultDto | null> {
     if (!input) return { state: null, isSuccessful: false, message: RegistrationTransitionMessage.WrongInput };
-    const { userId, retry } = input;
+    const { userId } = input;
 
     // No userId means first registration step
     if (!userId) {
@@ -57,9 +57,7 @@ export class RegistrationFlow {
         return { state: null, isSuccessful: false, message: RegistrationTransitionMessage.NoRegistrationStatusFound };
       }
 
-      const transition = retry
-        ? this.stageTransitions.find((t) => t.state === t.nextState && t.state === registration.status)
-        : this.stageTransitions.find((t) => t.state === registration.status);
+      const transition = this.stageTransitions.find((t) => t.state === registration.status);
       if (!transition || (startFrom && transition.state !== startFrom)) {
         return {
           state: registration.status,

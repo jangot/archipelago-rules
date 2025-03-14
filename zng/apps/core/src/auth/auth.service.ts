@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { AuthSecretCreateRequestDto, JwtPayloadDto, JwtResponseDto, UserResponseDto } from '../dto';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { AuthSecretCreateRequestDto, JwtPayloadDto, LoginRequestDto, UserResponseDto } from '../dto';
 import { IDataService } from '../data/idata.service';
 import { compare, hash } from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
@@ -9,6 +9,8 @@ import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { v4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
+import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
+import { IApplicationUser } from '@library/entity/interface';
 
 @Injectable()
 export class AuthService {
@@ -44,19 +46,29 @@ export class AuthService {
     return DtoMapper.toDto(user, UserResponseDto);
   }
 
+  public async login(loginInfo: LoginRequestDto, expiresIn?: string): Promise<UserLoginPayloadDto> {
+    const contactInfo = this.extractContactInfo(loginInfo);
+    const user = await this.dataService.users.getUserByContact(contactInfo.contact, contactInfo.contactType);
+
+    return this.loginWithUser(user, expiresIn);
+  }
+
   // feels like to much opened to the world
-  public async login(id: string, expiresIn?: string | number): Promise<JwtResponseDto | null> {
+  public async loginById(id: string, expiresIn?: string): Promise<UserLoginPayloadDto> {
     this.logger.debug(`login: Logging in user: ${id}`);
 
     const user = await this.dataService.users.getUserById(id);
-    if (!user) return null;
+    return this.loginWithUser(user, expiresIn);
+  }
 
-    // Generate JWT token
-    const payload: JwtPayloadDto = { sub: id, registration: user.registrationStatus };
-    return {
-      accessToken: this.jwtService.sign(payload, { expiresIn }),
-      // TODO: RefreshToken? What to do with registrationVerification?
-    };
+  private async loginWithUser(user: IApplicationUser | null, expiresIn?: string): Promise<UserLoginPayloadDto> {
+    if (!user) {
+      throw new HttpException('U', HttpStatus.NOT_FOUND);
+    }
+
+    const result = this.generateLoginPayload(user.id, user.onboardStatus || '', expiresIn);
+
+    return result;
   }
 
   public decodeToken(token: string): JwtPayloadDto | null {
@@ -64,7 +76,7 @@ export class AuthService {
   }
 
   // TODO: for sure should be refactored. Maybe to factory pattern
-  public async linkPasswordSecret(userId: string, password: string): Promise<JwtResponseDto | null> {
+  public async linkPasswordSecret(userId: string, password: string): Promise<UserLoginPayloadDto | null> {
     this.logger.debug(`linkPasswordSecret: Linking password secret for user: ${userId}`);
 
     const hashedPassword = await hash(password, 10);
@@ -76,7 +88,7 @@ export class AuthService {
     const secret = await this.createAuthSecret(createPayload);
     if (!secret) return null;
 
-    return this.login(userId);
+    return this.loginById(userId);
   }
 
   public async verifyJwtSignature(token: string, type: JwtType): Promise<boolean> {
@@ -111,5 +123,51 @@ export class AuthService {
     secret.id = v4();
     const result = await this.dataService.logins.insert(secret, true);
     return result;
+  }
+
+  private generateLoginPayload(userId: string, onboardingStatus: string, expiresIn?: string): UserLoginPayloadDto {
+    const exp = Math.floor((Date.now() + 3600000) / 1000); // 1 hour expiration in Unix Epoch time
+    const iat = Math.floor(Date.now() / 1000); // Current dateTime in Unix Epoch time
+    const payload: JwtPayloadDto = {
+      iss: 'https://auth.zirtue.com',
+      sub: userId,
+      aud: 'api-zirtue.com',
+      exp: exp,
+      iat: iat,
+      scope: 'read write profile',
+      isAdmin: false,
+    };
+
+    // Default to 1 hour unless we override this
+    if (!expiresIn) {
+      expiresIn = '1h';
+    }
+
+    const accessToken =  this.jwtService.sign(payload, { expiresIn });
+
+    const result: UserLoginPayloadDto = {
+      userId,
+      onboardingStatus,
+      accessToken,
+    };
+
+    return result;
+  }
+
+  private extractContactInfo(loginInfo: LoginRequestDto): { contact: string; contactType: ContactType } {
+    const email = (loginInfo.email || '').trim();
+    const phoneNumber = (loginInfo.phoneNumber || '').trim();
+
+    if (email && phoneNumber) {
+      throw new Error('A valid email or phone number must be provided to login.');
+    }
+
+    if (email) {
+      return { contact: email, contactType: ContactType.EMAIL };
+    } else if (phoneNumber) {
+      return { contact: phoneNumber, contactType: ContactType.PHONE_NUMBER };
+    }
+
+    throw new Error('A valid email or phone number must be provided to login.');
   }
 }

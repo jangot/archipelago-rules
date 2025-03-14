@@ -1,17 +1,17 @@
-import { Body, Controller, Post, Req, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Post, Put, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
-  JwtResponseDto,
-  RegistrationAdvanceRequestDto,
   RegistrationRequestDto,
   RegistrationVerifyRequestDto,
   RegistrationDto,
+  RegistrationUpdateRequestDto,
+  LoginRequestDto,
 } from '../dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
-import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiTags, getSchemaPath } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiOperation, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { RegistrationService } from './registration.service';
-import { ExtractJwt } from 'passport-jwt';
-import { JwtType } from '@library/entity/enum';
+import { JwtAuthGuard } from './guards';
+import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -21,64 +21,50 @@ export class AuthController {
     private readonly registrationService: RegistrationService
   ) {}
 
-  // TODO: extend to support different login flows.
-  // @Post('login')
-  // async login(@Body() body: PasswordVerificationDto, @Request() req): Promise<JwtResponseDto> {
-  //   // Shouldn't this come from the body parameter?
-  //   return await this.authService.login(req.user.id);
-  // }
+  @Post('login')
+  @ApiOperation({
+    description: 'User Login',
+    summary: 'Begins user login with Phone number or Email, pending successful code verification',
+  })
+  @ApiBody({ type: LoginRequestDto, schema: { $ref: getSchemaPath(LoginRequestDto) } })
+  async login(@Body() body: LoginRequestDto): Promise<UserLoginPayloadDto> {
+    return this.authService.login(body);
+  }
 
-  //@UseGuards(PasswordAuthGuard)
-  // MOCK. Endpoint to accept login verification
   @Post('verify') // --> for login
-  async verify(): Promise<unknown> {
+  public async verify(): Promise<unknown> {
     return true;
   }
 
   @Post('register')
   @ApiExtraModels(RegistrationRequestDto)
   @ApiBody({ schema: { $ref: getSchemaPath(RegistrationRequestDto) } })
-  async register(@Body() body: RegistrationDto): Promise<UserRegisterResponseDto> {
+  public async register(@Body() body: RegistrationDto): Promise<UserRegisterResponseDto> {
     return await this.registrationService.register(body);
   }
 
-  @Post('register/advance')
-  @ApiBearerAuth()
-  @ApiExtraModels(RegistrationAdvanceRequestDto)
-  @ApiBody({
-    type: RegistrationAdvanceRequestDto,
-    schema: { $ref: getSchemaPath(RegistrationAdvanceRequestDto) },
+  @Put('register')
+  @ApiOperation({
+    description: 'Update Email or Phone number',
+    summary: 'Update Email or Phone number during user registration',
   })
-  async advanceRegistration(@Body() body: RegistrationDto, @Req() request: Request): Promise<UserRegisterResponseDto> {
-    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
-    if (!token) throw new UnauthorizedException('Unauthorized');
-
-    const isTokenValid = await this.authService.verifyJwtSignature(token, JwtType.Login);
-    if (!isTokenValid) throw new UnauthorizedException('JWT token mismatch');
-
-    return await this.registrationService.advanceRegistration(body);
+  @ApiBearerAuth()
+  @ApiBody({ type: RegistrationUpdateRequestDto, schema: { $ref: getSchemaPath(RegistrationUpdateRequestDto) } })
+  @UseGuards(JwtAuthGuard)
+  public async updateVerificationField(@Body() body: RegistrationUpdateRequestDto): Promise<any> {
+    return await this.registrationService.verifyRegistration(body);
   }
 
-  @ApiExtraModels(RegistrationVerifyRequestDto, JwtResponseDto)
+  // Calling /register/verify again after sending initial code
+  // will trigger the generation of a new code and a resend (no need for retry)
+  // Making this an unAuthenticated endpoint in all cases... Not worth making it 1/2 and 1/2
+  @Post('register/verify') // registration verification
+  @ApiExtraModels(RegistrationVerifyRequestDto, UserLoginPayloadDto)
   @ApiBody({
     type: RegistrationVerifyRequestDto,
     schema: { $ref: getSchemaPath(RegistrationVerifyRequestDto) },
   })
-  @Post('register/verify') // registration verification
-  @ApiBearerAuth()
-  async verifyRegistration(
-    @Body() body: RegistrationVerifyRequestDto,
-    @Req() request: Request
-  ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
-    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
-    if (!token) return await this.registrationService.verifyRegistration(body);
-
-    const isTokenValid = await this.authService.verifyJwtSignature(token, JwtType.Login);
-    if (!isTokenValid) throw new UnauthorizedException('JWT token mismatch');
-
-    const payload = this.authService.decodeToken(token);
-    if (!payload) throw new UnauthorizedException('Invalid token');
-
-    return await this.registrationService.verifyAdvanceRegistration(body);
+  public async verifyRegistration(@Body() body: RegistrationVerifyRequestDto): Promise<UserLoginPayloadDto | null> {
+    return await this.registrationService.verifyRegistration(body);
   }
 }
