@@ -143,7 +143,7 @@ export class AuthService {
       expiresIn = '1h';
     }
 
-    const accessToken =  this.jwtService.sign(payload, { expiresIn });
+    const accessToken = this.jwtService.sign(payload, { expiresIn });
 
     const result: UserLoginPayloadDto = {
       userId,

@@ -28,6 +28,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
+  // Need to consider caching scenarios here, as performing a DB lookup on every request
+  // will incur performance costs
+  // Also, do we need to store the entire User Entity here?
   async validate(payload: IJwtPayload): Promise<UserResponseDto> {
     const id = payload.sub;
     const user = await this.usersService.getUserById(id);

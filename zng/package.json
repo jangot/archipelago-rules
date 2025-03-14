@@ -5,6 +5,7 @@
   "author": "Michael LeDuc",
   "private": true,
   "license": "UNLICENSED",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "nest build",
     "build:all": "./scripts/build-all.sh",

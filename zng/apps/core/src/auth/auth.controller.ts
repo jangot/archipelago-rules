@@ -1,4 +1,5 @@
-import { Body, Controller, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import {
   RegistrationRequestDto,
@@ -51,8 +52,12 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiBody({ type: RegistrationUpdateRequestDto, schema: { $ref: getSchemaPath(RegistrationUpdateRequestDto) } })
   @UseGuards(JwtAuthGuard)
-  public async updateVerificationField(@Body() body: RegistrationUpdateRequestDto): Promise<any> {
-    return await this.registrationService.verifyRegistration(body);
+  public async updateVerificationField(
+    @Body() body: RegistrationUpdateRequestDto,
+    @Req() request: Request
+  ): Promise<UserLoginPayloadDto | null> {
+    const userId = request.user?.id;
+    return await this.registrationService.verifyRegistration(body, userId);
   }
 
   // Calling /register/verify again after sending initial code

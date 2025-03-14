@@ -42,10 +42,15 @@ export class RegistrationService {
    * @param input - The registration data transfer object.
    * @returns A promise that resolves to a JwtResponseDto or null.
    */
-  public async verifyRegistration(input: RegistrationDto): Promise<UserLoginPayloadDto | null> {
+  public async verifyRegistration(input: RegistrationDto, authUserId?: string): Promise<UserLoginPayloadDto | null> {
     const { userId } = input;
     if (!userId) {
       throw new HttpException('User ID is required for verification', HttpStatus.BAD_REQUEST);
+    }
+
+    // Validate that the User Id of the Authenticated User matches the User Id in the body payload (if this is an Authenticated request)
+    if (authUserId && authUserId !== userId) {
+      throw new HttpException('User Id does not match authenticated user.', HttpStatus.BAD_REQUEST);
     }
 
     //return this.resendVerificationCode(input, RegistrationStatus.EmailVerifying);
