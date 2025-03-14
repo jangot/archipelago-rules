@@ -8,10 +8,13 @@
 
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { generateSecureCode } from '@library/shared/common/helpers';
-import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
+import { RegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationInitiatedCommand } from './registration.commands';
+import { ApplicationUser, UserRegistration } from '../../../data/entity';
+import { Transactional } from 'typeorm-transactional';
+import { VerificationEvent } from '../../verification';
 
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler
@@ -37,6 +40,12 @@ export class RegistrationInitiatedCommandHandler
         false,
         RegistrationTransitionMessage.ContactTaken
       );
+    }
+
+    // Check if the user already exists but only has a pending email
+    const pendingUser = await this.data.users.getUserByContact(email, ContactType.PENDING_EMAIL);
+    if (pendingUser) {
+      return this.reInitiateEmailVerification(pendingUser, command.payload.input!);
     }
 
     const verificationCode = generateSecureCode(6); // Generate new Verification code
@@ -73,6 +82,63 @@ export class RegistrationInitiatedCommandHandler
       userRegistration: { ...userRegistration, secret: null },
     });
 
+    this.sendEvent(user, VerificationEvent.EmailVerifying);
+
     return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, userId, verificationCode);
+  }
+
+  private async reInitiateEmailVerification(
+    user: ApplicationUser,
+    input: RegistrationDto
+  ): Promise<RegistrationTransitionResultDto> {
+    const { firstName, lastName, email } = input;
+
+    const registration = await this.getUserRegistration(user.id);
+    if (!registration) {
+      return this.createTransitionResult(
+        RegistrationStatus.EmailVerifying,
+        false,
+        RegistrationTransitionMessage.NoRegistrationStatusFound
+      );
+    }
+
+    const verificationCode = generateSecureCode(6); // Generate new Verification code
+    const verificationCodeExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
+
+    this.logger.debug(`About to update registration during adding email for user ${user.id}`, {
+      user,
+      registration: { ...registration, secret: '***' },
+    });
+
+    registration.secret = verificationCode;
+    registration.secretExpiresAt = verificationCodeExpiresAt;
+    registration.status = RegistrationStatus.EmailVerifying;
+
+    user.pendingEmail = email!;
+    user.email = null;
+    user.firstName = firstName?.trim() || user.firstName;
+    user.lastName = lastName?.trim() || user.lastName;
+    user.registrationStatus = RegistrationStatus.EmailVerifying;
+
+    this.logger.debug(`Updated registration and user data before apply`, {
+      user,
+      registration: { ...registration, secret: '***' },
+    });
+
+    await this.updateData(registration, user);
+
+    this.logger.debug(`Updated registration during adding email for user ${user.id}`);
+
+    this.sendEvent(user, VerificationEvent.EmailCodeResent);
+
+    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, user.id, verificationCode);
+  }
+
+  @Transactional()
+  private async updateData(registration: UserRegistration, user: ApplicationUser): Promise<void> {
+    await Promise.all([
+      this.data.userRegistrations.update(registration.id, registration),
+      this.data.users.update(user.id, user),
+    ]);
   }
 }

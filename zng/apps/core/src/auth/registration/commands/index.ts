@@ -9,9 +9,10 @@
 import { VerificationCompleteCommandHandler } from './registration.completeverification.command';
 import { InitiatePhoneNumberVerificationCommandHandler } from './registration.initiatephonenumberverification.command';
 import { RegistrationInitiatedCommandHandler } from './registration.initiateRegistration.command';
-import { VerificationCodeResendCommandHandler } from './registration.verificationcoderesend.command';
-import { VerifyEmailCommandHandler } from './registration.verifyEmail.command';
-import { VerifyPhoneNumberCommandHandler } from './registration.verifyphonenumber.command';
+import { VerificationCodeResendCommandHandler } from './_registration.verificationcoderesend.command';
+import { VerifyContactCommandHandler } from './registration.verifycontact.command';
+import { VerifyEmailCommandHandler } from './_registration.verifyEmail.command';
+import { VerifyPhoneNumberCommandHandler } from './_registration.verifyphonenumber.command';
 
 export const CommandHandlers = [
   RegistrationInitiatedCommandHandler,
@@ -20,6 +21,7 @@ export const CommandHandlers = [
   VerifyPhoneNumberCommandHandler,
   VerificationCompleteCommandHandler,
   VerificationCodeResendCommandHandler,
+  VerifyContactCommandHandler,
   // Insert Command Handler Here
 ];
 

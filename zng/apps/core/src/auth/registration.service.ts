@@ -1,27 +1,25 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { IDataService } from '../data/idata.service';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { CommandBus, EventBus } from '@nestjs/cqrs';
+import { CommandBus } from '@nestjs/cqrs';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
-import { RegistrationStatus } from '@library/entity/enum/registration.status';
-import { JwtResponseDto, RegistrationDto, RegistrationTransitionResultDto } from '../dto';
+import { RegistrationDto, RegistrationTransitionResultDto } from '../dto';
 import { AuthService } from './auth.service';
 import { RegistrationExceptionFactory } from './registration/registration-exception.factory';
-import { RegistrationFlow } from './registration';
-import { organicRegistrationFlow } from './registration/registration-flow-transitions';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
+import {
+  InitiateEmailVerificationCommand,
+  InitiatePhoneNumberVerificationCommand,
+  RegistrationInitiatedCommand,
+  VerificationCompleteCommand,
+  VerifyContactCommand,
+} from './registration/commands';
+import { RegistrationStatus } from '@library/entity/enum';
 
 @Injectable()
 export class RegistrationService {
   private readonly logger: Logger = new Logger(RegistrationService.name);
 
   constructor(
-    private readonly dataService: IDataService,
-    private readonly jwtService: JwtService,
-    private readonly config: ConfigService,
     private readonly authService: AuthService,
-    private readonly eventBus: EventBus,
     private readonly commandBus: CommandBus
   ) {}
 
@@ -33,8 +31,10 @@ export class RegistrationService {
   public async register(input: RegistrationDto): Promise<UserRegisterResponseDto> {
     this.logger.debug(`register: Registering user`, { input });
 
-    const result = await this.advanceRegistrationFlow(input, RegistrationStatus.NotRegistered);
-    return this.handleRegistrationResult(result, input?.email ?? null);
+    const newResult = await this.commandBus.execute(new RegistrationInitiatedCommand({ id: null, input }));
+
+    //const result = await this.advanceRegistrationFlow(input, RegistrationStatus.NotRegistered);
+    return this.handleRegistrationResult(newResult, input?.email ?? null);
   }
 
   /**
@@ -42,82 +42,50 @@ export class RegistrationService {
    * @param input - The registration data transfer object.
    * @returns A promise that resolves to a JwtResponseDto or null.
    */
-  public async verifyRegistration(input: RegistrationDto, authUserId?: string): Promise<UserLoginPayloadDto | null> {
+  public async verifyRegistration(input: RegistrationDto): Promise<UserLoginPayloadDto | null> {
     const { userId } = input;
     if (!userId) {
       throw new HttpException('User ID is required for verification', HttpStatus.BAD_REQUEST);
     }
-
-    // Validate that the User Id of the Authenticated User matches the User Id in the body payload (if this is an Authenticated request)
-    if (authUserId && authUserId !== userId) {
-      throw new HttpException('User Id does not match authenticated user.', HttpStatus.BAD_REQUEST);
-    }
-
-    //return this.resendVerificationCode(input, RegistrationStatus.EmailVerifying);
 
     this.logger.debug(`verifyRegistration: Verifying user: ${userId}`);
 
-    //const result = await this.advanceRegistrationFlow(input, RegistrationStatus.EmailVerifying);
-    //return this.handleVerificationResult(result, userId);
-    return null;
+    // Do email / phone number verification by code
+    const verificationResult = await this.commandBus.execute(new VerifyContactCommand({ id: userId, input }));
+    return this.handleVerificationResult(verificationResult, userId);
   }
 
-  /**
-   * Advances the registration process for a user.
-   * @param input - The registration data transfer object.
-   * @returns A promise that resolves to a UserRegisterResponseDto.
-   */
-  public async advanceRegistration(input: RegistrationDto): Promise<UserRegisterResponseDto> {
-    this.logger.debug(`advanceRegistration: Advancing registration`, { input });
-
-    const result = await this.advanceRegistrationFlow(input, RegistrationStatus.EmailVerified);
-    return this.handleRegistrationResult(result, null, input.phoneNumber);
-  }
-
-  /**
-   * Verifies the advanced registration of a user.
-   * @param input - The registration data transfer object.
-   * @returns A promise that resolves to a JwtResponseDto or null.
-   */
-  public async verifyAdvanceRegistration(
-    input: RegistrationDto
-  ): Promise<JwtResponseDto | UserRegisterResponseDto | null> {
-    const { userId } = input;
+  public async updateRegistrationContact(
+    input: RegistrationDto,
+    authUserId?: string
+  ): Promise<UserRegisterResponseDto | null> {
+    const { userId, email, phoneNumber } = input;
     if (!userId) {
       throw new HttpException('User ID is required for verification', HttpStatus.BAD_REQUEST);
     }
-
-    //return this.resendVerificationCode(input, RegistrationStatus.PhoneNumberVerifying);
-
-    this.logger.debug(`verifyAdvanceRegistration: Verifying user: ${userId}`);
-
-    const result = await this.advanceRegistrationFlow(input, RegistrationStatus.PhoneNumberVerifying);
-    if (result?.isSuccessful) {
-      const completion = await this.advanceRegistrationFlow(input, RegistrationStatus.PhoneNumberVerified);
-      await this.handleVerificationResult(completion, userId);
+    if (!email && !phoneNumber) {
+      throw new HttpException('Email or Phone Number is required for verification', HttpStatus.BAD_REQUEST);
     }
-    return this.handleVerificationResult(result, userId);
-  }
-
-  /**
-   * Allows to resend the verification code for a user.
-   * @param input The registration data transfer object.
-   * @param state State for which the verification code should be resent.
-   * @returns A promise that resolves to a UserRegisterResponseDto.
-   */
-  public async resendVerificationCode(
-    input: RegistrationDto,
-    state: RegistrationStatus
-  ): Promise<UserRegisterResponseDto> {
-    const { userId } = input;
-    this.logger.debug(`resendVerificationCode: Resending code for: ${userId}`);
-    if (state !== RegistrationStatus.EmailVerifying && state !== RegistrationStatus.PhoneNumberVerifying) {
-      throw new HttpException('Invalid verification state', HttpStatus.BAD_REQUEST);
+    // Validate that the User Id of the Authenticated User matches the User Id in the body payload (if this is an Authenticated request)
+    if (!authUserId || authUserId !== userId) {
+      throw new HttpException('User Id does not match authenticated user.', HttpStatus.BAD_REQUEST);
     }
-    const { email, phoneNumber } = input;
-
-    const result = await this.advanceRegistrationFlow(input, state);
-    return this.handleRegistrationResult(result, email || null, phoneNumber || null);
+    // Give email a priority in flow:
+    // - if email provided - update email and start email verification
+    // - if email not provided but phone number - update phone number and start phone number verification
+    if (email) {
+      const emailUpdateResult = await this.commandBus.execute(
+        new InitiateEmailVerificationCommand({ id: userId, input })
+      );
+      return this.handleRegistrationResult(emailUpdateResult, userId);
+    }
+    if (phoneNumber) {
+      const phoneUpdateResult = await this.commandBus.execute(
+        new InitiatePhoneNumberVerificationCommand({ id: userId, input })
+      );
+      return this.handleRegistrationResult(phoneUpdateResult, userId);
+    }
+    return null;
   }
 
   /**
@@ -165,7 +133,7 @@ export class RegistrationService {
   private async handleVerificationResult(
     result: RegistrationTransitionResultDto | null,
     userId: string
-  ): Promise<JwtResponseDto | null> {
+  ): Promise<UserLoginPayloadDto | null> {
     if (!result) {
       this.logger.warn('handleVerificationResult: Registration Verification failed');
       throw new HttpException('Registration Verification failed', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -177,29 +145,12 @@ export class RegistrationService {
       const exception = RegistrationExceptionFactory.translate(message, state);
       throw exception;
     } else {
-      // TODO: might require split to different JWTs based on a step
+      // It is possible that after contact verification registration might be called completed
+      // If so - execute completion command
+      if (result.state === RegistrationStatus.Registered) {
+        await this.commandBus.execute(new VerificationCompleteCommand({ id: userId, input: { userId } }));
+      }
       return await this.authService.loginById(userId, '1h');
     }
-  }
-
-  /**
-   * Advances the registration flow based on the input and starting status.
-   * @param input - The registration data transfer object.
-   * @param startFrom - The starting registration status.
-   * @returns A promise that resolves to a RegistrationTransitionResultDto or null.
-   */
-  private async advanceRegistrationFlow(
-    input: RegistrationDto,
-    startFrom?: RegistrationStatus
-  ): Promise<RegistrationTransitionResultDto | null> {
-    const registrationFlow = new RegistrationFlow(
-      organicRegistrationFlow,
-      this.dataService,
-      this.jwtService,
-      this.config,
-      this.eventBus,
-      this.commandBus
-    );
-    return registrationFlow.advance(input, startFrom);
   }
 }

@@ -13,6 +13,7 @@ import { RegistrationBaseCommandHandler } from './registration.base.command-hand
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerificationCompleteCommand } from './registration.commands';
 import { ApplicationUser, UserRegistration } from '../../../data/entity';
+import { VerificationEvent } from '../../verification';
 
 @CommandHandler(VerificationCompleteCommand)
 export class VerificationCompleteCommandHandler
@@ -69,6 +70,8 @@ export class VerificationCompleteCommandHandler
     await this.updateData(registration, user);
 
     this.logger.debug(`Updated registration and user data for user ${user.id}`);
+
+    this.sendEvent(user, VerificationEvent.Verified);
 
     return this.createTransitionResult(RegistrationStatus.Registered, true, null);
   }

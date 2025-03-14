@@ -15,6 +15,7 @@ import { RegistrationBaseCommandHandler } from './registration.base.command-hand
 import { InitiatePhoneNumberVerificationCommand } from './registration.commands';
 import { Transactional } from 'typeorm-transactional';
 import { UserRegistration, ApplicationUser } from '../../../data/entity';
+import { VerificationEvent } from '../../verification';
 
 @CommandHandler(InitiatePhoneNumberVerificationCommand)
 export class InitiatePhoneNumberVerificationCommandHandler
@@ -53,8 +54,15 @@ export class InitiatePhoneNumberVerificationCommandHandler
     const userByPhone = await this.data.users.getUserByContact(phoneNumber, ContactType.PHONE_NUMBER);
 
     if (userByPhone) {
+      if (userByPhone.id === userId) {
+        return this.createTransitionResult(
+          RegistrationStatus.PhoneNumberVerified,
+          false,
+          RegistrationTransitionMessage.AlreadyVerified
+        );
+      }
       return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
+        RegistrationStatus.PhoneNumberVerifying,
         false,
         RegistrationTransitionMessage.ContactTaken
       );
@@ -63,7 +71,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
     const user = await this.data.users.getUserById(registration.userId);
     if (!user) {
       return this.createTransitionResult(
-        RegistrationStatus.EmailVerified,
+        RegistrationStatus.PhoneNumberVerifying,
         false,
         RegistrationTransitionMessage.WrongInput
       );
@@ -92,6 +100,8 @@ export class InitiatePhoneNumberVerificationCommandHandler
     await this.updateData(registration, user);
 
     this.logger.debug(`Updated registration during adding phone number for user ${userId}`);
+
+    this.sendEvent(user, VerificationEvent.PhoneNumberVerifying);
 
     return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, userId, verificationCode);
   }

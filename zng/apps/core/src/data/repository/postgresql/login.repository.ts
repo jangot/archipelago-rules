@@ -40,4 +40,8 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
     }
     return this.insert(login, true);
   }
+
+  public async getUserLogins(userId: string): Promise<Login[]> {
+    return await this.repository.find({ where: { userId } });
+  }
 }

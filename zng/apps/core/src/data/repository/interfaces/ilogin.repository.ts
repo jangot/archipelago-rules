@@ -33,6 +33,13 @@ export interface ILoginRepository extends IRepositoryBase<Login> {
    * @param login Login to create or update
    */
   createOrUpdate(login: DeepPartial<Login>): Promise<Login | null>;
+
+  /**
+   * Retrieves all user logins by user ID.
+   * @param userId The user ID.
+   * @returns A promise that resolves to an array of user logins.
+   */
+  getUserLogins(userId: string): Promise<Login[]>;
 }
 
 export const ILoginRepository = Symbol('ILoginRepository');

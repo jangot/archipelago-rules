@@ -55,9 +55,9 @@ export class AuthController {
   public async updateVerificationField(
     @Body() body: RegistrationUpdateRequestDto,
     @Req() request: Request
-  ): Promise<UserLoginPayloadDto | null> {
+  ): Promise<UserRegisterResponseDto | null> {
     const userId = request.user?.id;
-    return await this.registrationService.verifyRegistration(body, userId);
+    return await this.registrationService.updateRegistrationContact(body, userId);
   }
 
   // Calling /register/verify again after sending initial code

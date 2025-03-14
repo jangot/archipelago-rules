@@ -12,7 +12,9 @@ import { UserRegistration } from 'apps/core/src/data/entity';
 import { IDataService } from 'apps/core/src/data/idata.service';
 import { RegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
 import { RegistrationBaseCommand } from './registration.commands';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, EventBus } from '@nestjs/cqrs';
+import { IApplicationUser } from '@library/entity/interface';
+import { VerificationEvent, VerificationEventFactory } from '../../verification';
 
 export interface RegistrationParams {
   data: IDataService;
@@ -31,6 +33,7 @@ export abstract class RegistrationBaseCommandHandler<
   protected readonly data: IDataService;
   protected readonly logger: Logger;
   protected readonly commandBus: CommandBus;
+  protected readonly eventBus: EventBus;
 
   constructor(data: IDataService, logger: Logger, commandBus: CommandBus) {
     this.data = data;
@@ -67,5 +70,12 @@ export abstract class RegistrationBaseCommandHandler<
 
   protected async getUserRegistration(userId: string): Promise<UserRegistration | null> {
     return this.data.userRegistrations.getByUserId(userId);
+  }
+
+  protected sendEvent(user: IApplicationUser | null, event: VerificationEvent | null): void {
+    if (!event || !user) return;
+    const eventInstance = VerificationEventFactory.create(user, event);
+    if (!eventInstance) return;
+    this.eventBus.publish(eventInstance);
   }
 }
