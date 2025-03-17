@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { JwtPayloadDto, UserResponseDto } from '../dto';
+import { JwtPayloadDto, LoginVerifyRequestDto, UserResponseDto } from '../dto';
 import { IDataService } from '../data/idata.service';
 import { compare } from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
@@ -8,6 +8,8 @@ import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 import { IApplicationUser } from '@library/entity/interface';
 import { LoginRequestDto } from '../dto/request/login.request.dto';
+import { CommandBus } from '@nestjs/cqrs';
+import { LoginInitiateCommand, LoginVerifyCommand } from './login/commands';
 
 @Injectable()
 export class AuthService {
@@ -16,8 +18,29 @@ export class AuthService {
 
   constructor(
     private readonly dataService: IDataService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly commandBus: CommandBus
   ) {}
+
+  public async initiateLoginSession(request: LoginRequestDto): Promise<UserLoginPayloadDto> {
+    const contactInfo = this.extractContactInfo(request);
+
+    return await this.commandBus.execute(
+      new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType })
+    );
+  }
+
+  public async verifyLoginSession(request: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
+    const contactInfo = this.extractContactInfo(request);
+
+    return await this.commandBus.execute(
+      new LoginVerifyCommand({
+        contact: contactInfo.contact,
+        contactType: contactInfo.contactType,
+        verificationCode: request.code,
+      })
+    );
+  }
 
   public async logout(userId: string): Promise<void> {
     this.logger.debug(`logout: Logging out user: ${userId}`);

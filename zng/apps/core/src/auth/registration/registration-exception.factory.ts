@@ -1,6 +1,6 @@
 import { RegistrationStatus } from '@library/entity/enum';
+import { RegistrationTransitionMessage } from '@library/shared/types';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { RegistrationTransitionMessage } from '../../dto';
 
 export class RegistrationExceptionFactory {
   public static translate(

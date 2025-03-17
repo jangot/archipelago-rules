@@ -18,7 +18,9 @@ export class LoginCommandHandler {
   ) {}
 
   async execute(command: LoginCommand): Promise<UserLoginPayloadDto> {
-    const { userId, contact, contactType } = command;
+    const {
+      payload: { userId, contact, contactType },
+    } = command;
 
     if (!userId && !contact) {
       this.logger.error('LoginCommand: No userId or contact provided');

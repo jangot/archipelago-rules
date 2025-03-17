@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
-import { RegistrationDto, RegistrationTransitionResult } from '../dto';
+import { RegistrationDto } from '../dto';
 import { AuthService } from './auth.service';
 import { RegistrationExceptionFactory } from './registration/registration-exception.factory';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
@@ -13,6 +13,7 @@ import {
   VerifyContactCommand,
 } from './registration/commands';
 import { RegistrationStatus } from '@library/entity/enum';
+import { RegistrationTransitionResult } from '@library/shared/types';
 
 @Injectable()
 export class RegistrationService {

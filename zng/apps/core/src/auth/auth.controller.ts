@@ -6,6 +6,7 @@ import {
   RegistrationVerifyRequestDto,
   RegistrationDto,
   RegistrationUpdateRequestDto,
+  LoginVerifyRequestDto,
 } from '../dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiOperation, ApiTags, getSchemaPath } from '@nestjs/swagger';
@@ -29,12 +30,12 @@ export class AuthController {
   })
   @ApiBody({ type: LoginRequestDto, schema: { $ref: getSchemaPath(LoginRequestDto) } })
   async login(@Body() body: LoginRequestDto): Promise<UserLoginPayloadDto> {
-    return this.authService.login(body);
+    return this.authService.initiateLoginSession(body);
   }
 
   @Post('verify') // --> for login
-  public async verify(): Promise<unknown> {
-    return true;
+  public async verify(@Body() body: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
+    return this.authService.verifyLoginSession(body);
   }
 
   @Post('logout')

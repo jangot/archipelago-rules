@@ -7,3 +7,8 @@ export * from './auth-secret-create-request.dto';
 // Registration
 export * from './registration.request.dto';
 //
+
+// Login
+export * from './login.request.dto';
+export * from './login.verify.request.dto';
+//
