@@ -1,9 +1,9 @@
 import {
-  ILoginRepository,
-  ILoanRepository,
   IUserRepository,
+  ILoanRepository,
+  ILoginRepository,
   IUserRegistrationRepository,
-} from './repository/interfaces';
+} from '../shared/interfaces/repositories';
 
 export abstract class IDataService {
   readonly users: IUserRepository;

@@ -1,16 +1,13 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { AuthSecretCreateRequestDto, JwtPayloadDto, LoginRequestDto, UserResponseDto } from '../dto';
+import { JwtPayloadDto, UserResponseDto } from '../dto';
 import { IDataService } from '../data/idata.service';
-import { compare, hash } from 'bcryptjs';
+import { compare } from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { LoginType, ContactType, JwtType } from '@library/entity/enum';
-import { Login } from '../data/entity';
-import { EntityMapper } from '@library/entity/mapping/entity.mapper';
-import { v4 } from 'uuid';
-import { ConfigService } from '@nestjs/config';
+import { LoginType, ContactType } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 import { IApplicationUser } from '@library/entity/interface';
+import { LoginRequestDto } from '../dto/request/login.request.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,9 +16,16 @@ export class AuthService {
 
   constructor(
     private readonly dataService: IDataService,
-    private readonly jwtService: JwtService,
-    private readonly config: ConfigService
+    private readonly jwtService: JwtService
   ) {}
+
+  public async logout(userId: string): Promise<void> {
+    this.logger.debug(`logout: Logging out user: ${userId}`);
+    // Invalidate the JWT token by removing it from the database or marking it as invalid
+    // This is a placeholder for the actual implementation
+    // await this.dataService.logins.invalidateToken(userId);
+    this.logger.log(`User ${userId} logged out successfully`);
+  }
 
   public async validatePassword(
     contact: string,
@@ -68,60 +72,6 @@ export class AuthService {
 
     const result = this.generateLoginPayload(user.id, user.onboardStatus || '', expiresIn);
 
-    return result;
-  }
-
-  public decodeToken(token: string): JwtPayloadDto | null {
-    return this.jwtService.decode<JwtPayloadDto>(token) || null;
-  }
-
-  // TODO: for sure should be refactored. Maybe to factory pattern
-  public async linkPasswordSecret(userId: string, password: string): Promise<UserLoginPayloadDto | null> {
-    this.logger.debug(`linkPasswordSecret: Linking password secret for user: ${userId}`);
-
-    const hashedPassword = await hash(password, 10);
-    const createPayload: AuthSecretCreateRequestDto = {
-      userId,
-      type: LoginType.Password,
-      secret: hashedPassword,
-    };
-    const secret = await this.createAuthSecret(createPayload);
-    if (!secret) return null;
-
-    return this.loginById(userId);
-  }
-
-  public async verifyJwtSignature(token: string, type: JwtType): Promise<boolean> {
-    this.logger.debug(`verifyJwtSignature: Verifying JWT signature for token: ${token}`);
-
-    let secretKey = 'JWT_SECRET';
-    switch (type) {
-      case JwtType.Registration:
-        secretKey = 'JWT_REGISTRATION_SECRET';
-        break;
-      case JwtType.Login:
-      default:
-        break;
-    }
-
-    const secret = this.config.getOrThrow<string>(secretKey);
-
-    try {
-      this.jwtService.verify(token, { secret });
-      return true;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      this.logger.error(`verifyJwtSignature: Failed to verify JWT signature for token: ${token}`);
-      return false;
-    }
-  }
-
-  private async createAuthSecret(input: AuthSecretCreateRequestDto): Promise<Login | null> {
-    this.logger.debug(`createAuthSecret: Creating AuthSecret ${input.type} for user: ${input.userId}`);
-
-    const secret = EntityMapper.toEntity(input, Login);
-    secret.id = v4();
-    const result = await this.dataService.logins.insert(secret, true);
     return result;
   }
 

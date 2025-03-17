@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IDataService } from '../data/idata.service';
-import { ApplicationUser } from '../data/entity';
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
@@ -9,6 +8,7 @@ import { createPaginationWrapper, PagingDto } from '@library/shared/common/pagin
 import { ContactType } from '@library/entity/enum';
 import { UserDetailResponseDTO } from '../dto/response/user-detail-response.dto';
 import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
+import { ApplicationUser } from '../domain/entities';
 
 @Injectable()
 export class UsersService {

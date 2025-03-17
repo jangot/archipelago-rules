@@ -1,27 +1,37 @@
 import { MapTo } from '@library/entity/mapping/mapping.decorators';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
-import { ApiProperty, ApiSchema } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema, OmitType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEmail, IsNotEmpty, MaxLength, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { NIL } from 'uuid';
 
-@ApiSchema({ name: 'registrationRequest' })
-export class RegistrationRequestDTO {
-  @ApiProperty({ description: 'User First Name', type: String, required: false, maxLength: 100 })
+@ApiSchema({ name: 'registration' })
+export class RegistrationDto {
+  @ApiProperty({ description: 'User ID', type: String, required: false, maxLength: 36, example: NIL })
+  @Expose()
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  userId: string | null;
+
+  @ApiProperty({ description: 'User First Name', type: String, required: false, maxLength: 100, example: 'John' })
   @Expose()
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  firstName: string;
+  @IsOptional()
+  firstName?: string;
 
-  @ApiProperty({ description: 'User Last Name', type: String, required: false, maxLength: 100 })
+  @ApiProperty({ description: 'User Last Name', type: String, required: false, maxLength: 100, example: 'Doe' })
   @Expose()
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  lastName: string;
+  @IsOptional()
+  lastName?: string;
 
-  @ApiProperty({ description: 'User email', type: String, required: false, maxLength: 320 })
+  @ApiProperty({ description: 'User email', type: String, required: false, maxLength: 320, example: 'test@email.com' })
   @Expose()
   @IsEmail()
   @IsNotEmpty()
@@ -29,7 +39,7 @@ export class RegistrationRequestDTO {
   @IsOptional()
   email?: string;
 
-  @ApiProperty({ description: 'User phone number', type: String, required: false, maxLength: 32 })
+  @ApiProperty({ description: 'User phone number', type: String, required: false, maxLength: 32, default: null })
   @Expose()
   @IsNotEmpty()
   @MaxLength(32)
@@ -39,11 +49,41 @@ export class RegistrationRequestDTO {
   @MapTo({ transform: transformPhoneNumber })
   phoneNumber?: string;
 
-  public isValid(): boolean {
-    if (this.email && this.phoneNumber) {
-      return false;
-    }
-
-    return this.email || this.phoneNumber ? true : false;
-  }
+  @ApiProperty({
+    description: 'Registration step verification code',
+    type: String,
+    required: false,
+    maxLength: 100,
+    example: '123456',
+  })
+  @IsNotEmpty()
+  @MaxLength(32)
+  @IsString()
+  @IsOptional()
+  code?: string;
 }
+
+@ApiSchema({ name: 'registrationRequest' })
+export class RegistrationRequestDto extends OmitType(RegistrationDto, ['userId', 'phoneNumber', 'code'] as const) {}
+
+@ApiSchema({ name: 'registrationVerifyRequest' })
+export class RegistrationVerifyRequestDto extends OmitType(RegistrationDto, ['code'] as const) {
+  @ApiProperty({
+    description: 'Registration step verification code',
+    type: String,
+    required: true, // now required
+    maxLength: 100,
+    example: '123456',
+  })
+  @IsNotEmpty()
+  @MaxLength(32)
+  @IsString()
+  code: string;
+}
+
+@ApiSchema({ name: 'registrationUpdateRequest' })
+export class RegistrationUpdateRequestDto extends OmitType(RegistrationDto, [
+  'firstName',
+  'lastName',
+  'code',
+] as const) {}

@@ -5,5 +5,5 @@ export * from './user-register-request.dto';
 export * from './auth-secret-create-request.dto';
 
 // Registration
-export * from './registration-organic.request.dto';
+export * from './registration.request.dto';
 //

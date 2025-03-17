@@ -9,7 +9,8 @@ import { DataModule } from '../data';
 import { JwtModule } from '@nestjs/jwt';
 import { RegistrationService } from './registration.service';
 import { CqrsModule } from '@nestjs/cqrs';
-import { CommandHandlers } from './registration/commands';
+import { RegistrationCommandHandlers } from './registration/commands';
+import { DomainModule } from '../domain/domain.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CommandHandlers } from './registration/commands';
     UsersModule,
     ConfigModule,
     DataModule,
+    DomainModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -33,7 +35,7 @@ import { CommandHandlers } from './registration/commands';
     RegistrationService,
     ...CustomAuthStrategies,
     ...CustomAuthGuards,
-    ...CommandHandlers,
+    ...RegistrationCommandHandlers,
   ],
 })
 export class AuthModule {}

@@ -33,7 +33,6 @@ export class RegistrationService {
 
     const newResult = await this.commandBus.execute(new RegistrationInitiatedCommand({ id: null, input }));
 
-    //const result = await this.advanceRegistrationFlow(input, RegistrationStatus.NotRegistered);
     return this.handleRegistrationResult(newResult, input?.email ?? null);
   }
 

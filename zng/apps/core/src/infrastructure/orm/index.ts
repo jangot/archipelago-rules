@@ -1,8 +1,13 @@
-import { ILoginRepository, ILoanRepository, IUserRepository, IUserRegistrationRepository } from '../interfaces';
-import { UserRepository } from './user.repository';
+import {
+  IUserRepository,
+  ILoanRepository,
+  ILoginRepository,
+  IUserRegistrationRepository,
+} from '../../shared/interfaces/repositories';
 import { LoanRepository } from './loan.repository';
 import { LoginRepository } from './login.repository';
 import { UserRegistrationRepository } from './user.registration.repository';
+import { UserRepository } from './user.repository';
 
 export * from './user.repository';
 export * from './loan.repository';

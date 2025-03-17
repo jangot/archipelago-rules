@@ -6,13 +6,12 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
+import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
 import { RegistrationStatus } from '@library/entity/enum';
 import { Transactional } from 'typeorm-transactional';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerificationCompleteCommand } from './registration.commands';
-import { ApplicationUser, UserRegistration } from '../../../data/entity';
 import { VerificationEvent } from '../../verification';
 
 @CommandHandler(VerificationCompleteCommand)
@@ -67,20 +66,12 @@ export class VerificationCompleteCommandHandler
       registration: { ...registration, secret: '***' },
     });
 
-    await this.updateData(registration, user);
+    await this.domainServices.userServices.updateUserRegistration(registration, user);
 
     this.logger.debug(`Updated registration and user data for user ${user.id}`);
 
     this.sendEvent(user, VerificationEvent.Verified);
 
     return this.createTransitionResult(RegistrationStatus.Registered, true, null);
-  }
-
-  @Transactional()
-  private async updateData(registration: UserRegistration, user: ApplicationUser): Promise<void> {
-    await Promise.all([
-      this.data.users.update(user.id, user),
-      this.data.userRegistrations.update(registration.id, registration),
-    ]);
   }
 }

@@ -1,9 +1,10 @@
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
-import { IUserRegistrationRepository } from '../interfaces';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserRegistration } from '../../entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
+import { UserRegistration } from '../../domain/entities';
+import { IUserRegistrationRepository } from '../../shared/interfaces/repositories';
+import { IUserRegistration } from '@library/entity/interface';
 
 @Injectable()
 export class UserRegistrationRepository
@@ -16,7 +17,7 @@ export class UserRegistrationRepository
     super(repository, UserRegistration);
   }
 
-  public async getByUserId(userId: string): Promise<UserRegistration | null> {
+  public async getByUserId(userId: string): Promise<IUserRegistration | null> {
     return await this.repository.findOneBy({ userId });
   }
 }

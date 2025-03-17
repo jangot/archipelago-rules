@@ -3,9 +3,6 @@ import { RegistrationBaseCommandHandler } from './registration.base.command-hand
 import { InitiateEmailVerificationCommand } from './registration.commands';
 import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
-import { generateSecureCode } from '@library/shared/common/helpers';
-import { Transactional } from 'typeorm-transactional';
-import { ApplicationUser, UserRegistration } from '../../../data/entity';
 import { VerificationEvent } from '../../verification';
 
 @CommandHandler(InitiateEmailVerificationCommand)
@@ -23,6 +20,10 @@ export class InitiateEmailVerificationCommandHandler
       throw new Error('User id cannot be null when requesting email verification.');
     }
 
+    if (!input) {
+      throw new Error('input cannot be null when requesting email verification.');
+    }
+
     const user = await this.data.users.getUserById(userId);
     if (!user) {
       return this.createTransitionResult(
@@ -32,12 +33,7 @@ export class InitiateEmailVerificationCommandHandler
       );
     }
 
-    if (!input) {
-      throw new Error('input cannot be null when requesting email verification.');
-    }
-
     const { email } = input;
-
     if (!email) {
       return this.createTransitionResult(
         RegistrationStatus.NotRegistered,
@@ -75,8 +71,7 @@ export class InitiateEmailVerificationCommandHandler
     // #endregion
 
     // #region Generating Code, Updating User and Registration
-    const verificationCode = generateSecureCode(6); // Generate new Verification code
-    const verificationCodeExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
+    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } = this.generateCode();
 
     this.logger.debug(`About to update registration during adding email for user ${userId}`, {
       user,
@@ -96,7 +91,7 @@ export class InitiateEmailVerificationCommandHandler
       registration: { ...registration, secret: '***' },
     });
 
-    await this.updateData(registration, user);
+    await this.domainServices.userServices.updateUserRegistration(registration, user);
 
     this.logger.debug(`Updated registration during adding phone number for user ${userId}`);
 
@@ -105,13 +100,5 @@ export class InitiateEmailVerificationCommandHandler
     this.sendEvent(user, VerificationEvent.EmailVerifying);
 
     return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, userId, verificationCode);
-  }
-
-  @Transactional()
-  private async updateData(registration: UserRegistration, user: ApplicationUser): Promise<void> {
-    await Promise.all([
-      this.data.userRegistrations.update(registration.id, registration),
-      this.data.users.update(user.id, user),
-    ]);
   }
 }

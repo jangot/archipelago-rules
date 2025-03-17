@@ -7,14 +7,12 @@
  */
 
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
-import { generateSecureCode } from '@library/shared/common/helpers';
 import { RegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationInitiatedCommand } from './registration.commands';
-import { ApplicationUser, UserRegistration } from '../../../data/entity';
-import { Transactional } from 'typeorm-transactional';
 import { VerificationEvent } from '../../verification';
+import { IApplicationUser } from '@library/entity/interface';
 
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler
@@ -48,8 +46,7 @@ export class RegistrationInitiatedCommandHandler
       return this.reInitiateEmailVerification(pendingUser, command.payload.input!);
     }
 
-    const verificationCode = generateSecureCode(6); // Generate new Verification code
-    const verificationCodeExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
+    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } = this.generateCode();
 
     const newUser = {
       firstName: firstName?.trim(),
@@ -88,7 +85,7 @@ export class RegistrationInitiatedCommandHandler
   }
 
   private async reInitiateEmailVerification(
-    user: ApplicationUser,
+    user: IApplicationUser,
     input: RegistrationDto
   ): Promise<RegistrationTransitionResultDto> {
     const { firstName, lastName, email } = input;
@@ -102,8 +99,7 @@ export class RegistrationInitiatedCommandHandler
       );
     }
 
-    const verificationCode = generateSecureCode(6); // Generate new Verification code
-    const verificationCodeExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
+    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } = this.generateCode();
 
     this.logger.debug(`About to update registration during adding email for user ${user.id}`, {
       user,
@@ -125,20 +121,12 @@ export class RegistrationInitiatedCommandHandler
       registration: { ...registration, secret: '***' },
     });
 
-    await this.updateData(registration, user);
-
+    //await this.updateData(registration, user);
+    await this.domainServices.userServices.updateUserRegistration(registration, user);
     this.logger.debug(`Updated registration during adding email for user ${user.id}`);
 
     this.sendEvent(user, VerificationEvent.EmailCodeResent);
 
     return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, user.id, verificationCode);
-  }
-
-  @Transactional()
-  private async updateData(registration: UserRegistration, user: ApplicationUser): Promise<void> {
-    await Promise.all([
-      this.data.userRegistrations.update(registration.id, registration),
-      this.data.users.update(user.id, user),
-    ]);
   }
 }

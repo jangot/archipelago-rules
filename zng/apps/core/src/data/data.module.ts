@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { DataService } from './data.service';
 import { IDataService } from './idata.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CustomCoreRepositories } from './repository/postgresql';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
-import { CoreEntities } from './entity';
 import { DbConfiguration } from '@library/shared/common/data/dbcommon.config';
+import { CoreEntities } from '../domain/entities';
+import { CustomCoreRepositories } from '../infrastructure/orm';
 
 @Module({
   imports: [

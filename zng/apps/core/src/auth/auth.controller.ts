@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpException, HttpStatus, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import {
@@ -6,13 +6,13 @@ import {
   RegistrationVerifyRequestDto,
   RegistrationDto,
   RegistrationUpdateRequestDto,
-  LoginRequestDto,
 } from '../dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiOperation, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { RegistrationService } from './registration.service';
 import { JwtAuthGuard } from './guards';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
+import { LoginRequestDto } from '../dto/request/login.request.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -35,6 +35,22 @@ export class AuthController {
   @Post('verify') // --> for login
   public async verify(): Promise<unknown> {
     return true;
+  }
+
+  @Post('logout')
+  @ApiOperation({
+    description: 'User Logout',
+    summary: 'Ends user session and invalidates JWT token',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  public async logout(@Req() request: Request): Promise<unknown> {
+    const userId = request.user?.id;
+    if (!userId) {
+      throw new HttpException('User is not logged in.', HttpStatus.UNAUTHORIZED);
+    }
+
+    return this.authService.logout(userId);
   }
 
   @Post('register')

@@ -7,20 +7,16 @@
  */
 
 import { VerificationCompleteCommandHandler } from './registration.completeverification.command';
+import { InitiateEmailVerificationCommandHandler } from './registration.initiateemailverification.command';
 import { InitiatePhoneNumberVerificationCommandHandler } from './registration.initiatephonenumberverification.command';
 import { RegistrationInitiatedCommandHandler } from './registration.initiateRegistration.command';
-import { VerificationCodeResendCommandHandler } from './_registration.verificationcoderesend.command';
 import { VerifyContactCommandHandler } from './registration.verifycontact.command';
-import { VerifyEmailCommandHandler } from './_registration.verifyEmail.command';
-import { VerifyPhoneNumberCommandHandler } from './_registration.verifyphonenumber.command';
 
-export const CommandHandlers = [
+export const RegistrationCommandHandlers = [
   RegistrationInitiatedCommandHandler,
-  VerifyEmailCommandHandler,
+  InitiateEmailVerificationCommandHandler,
   InitiatePhoneNumberVerificationCommandHandler,
-  VerifyPhoneNumberCommandHandler,
   VerificationCompleteCommandHandler,
-  VerificationCodeResendCommandHandler,
   VerifyContactCommandHandler,
   // Insert Command Handler Here
 ];

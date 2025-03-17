@@ -8,13 +8,15 @@
 
 import { RegistrationStatus } from '@library/entity/enum';
 import { Injectable, Logger } from '@nestjs/common';
-import { UserRegistration } from 'apps/core/src/data/entity';
-import { IDataService } from 'apps/core/src/data/idata.service';
-import { RegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
+import { RegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
 import { RegistrationBaseCommand } from './registration.commands';
 import { CommandBus, EventBus } from '@nestjs/cqrs';
-import { IApplicationUser } from '@library/entity/interface';
+import { IApplicationUser, IUserRegistration } from '@library/entity/interface';
 import { VerificationEvent, VerificationEventFactory } from '../../verification';
+import { generateSecureCode } from '@library/shared/common/helpers';
+import { Transactional } from 'typeorm-transactional';
+import { IDataService } from '../../../data/idata.service';
+import { IDomainServices } from '../../../domain/idomain.services';
 
 export interface RegistrationParams {
   data: IDataService;
@@ -31,14 +33,23 @@ export abstract class RegistrationBaseCommandHandler<
   TCommand extends RegistrationBaseCommand = RegistrationBaseCommand,
 > {
   protected readonly data: IDataService;
+  protected readonly domainServices: IDomainServices;
   protected readonly logger: Logger;
   protected readonly commandBus: CommandBus;
   protected readonly eventBus: EventBus;
 
-  constructor(data: IDataService, logger: Logger, commandBus: CommandBus) {
+  constructor(
+    data: IDataService,
+    domainServices: IDomainServices,
+    logger: Logger,
+    commandBus: CommandBus,
+    eventBus: EventBus
+  ) {
     this.data = data;
+    this.domainServices = domainServices;
     this.logger = logger;
     this.commandBus = commandBus;
+    this.eventBus = eventBus;
   }
 
   public abstract execute(command: TCommand): Promise<RegistrationTransitionResultDto>;
@@ -68,7 +79,7 @@ export abstract class RegistrationBaseCommandHandler<
     };
   }
 
-  protected async getUserRegistration(userId: string): Promise<UserRegistration | null> {
+  protected async getUserRegistration(userId: string): Promise<IUserRegistration | null> {
     return this.data.userRegistrations.getByUserId(userId);
   }
 
@@ -77,5 +88,16 @@ export abstract class RegistrationBaseCommandHandler<
     const eventInstance = VerificationEventFactory.create(user, event);
     if (!eventInstance) return;
     this.eventBus.publish(eventInstance);
+  }
+
+  protected generateCode(): { code: string; expiresAt: Date } {
+    const code = generateSecureCode(6);
+    const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
+    return { code, expiresAt };
+  }
+
+  @Transactional()
+  protected async updateEntities<T extends readonly unknown[] | []>(values: T): Promise<void> {
+    await Promise.all(values);
   }
 }

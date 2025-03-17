@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IDataService } from './idata.service';
 import {
-  IUserRepository,
   ILoanRepository,
   ILoginRepository,
   IUserRegistrationRepository,
-} from './repository/interfaces';
+  IUserRepository,
+} from '../shared/interfaces/repositories';
 
 @Injectable()
 export class DataService implements IDataService {

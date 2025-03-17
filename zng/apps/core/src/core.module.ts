@@ -29,6 +29,7 @@ import { CqrsModule } from '@nestjs/cqrs';
   ],
   controllers: [CoreController],
   providers: [CoreService, Logger],
+  exports: [CoreService],
 })
 export class CoreModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

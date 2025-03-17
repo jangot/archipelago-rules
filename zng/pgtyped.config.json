@@ -2,17 +2,17 @@
   "transforms": [
     {
       "mode": "sql",
-      "include": "apps/core/src/**/*.sql",
+      "include": "apps/core/src/infrastructure/sql/**/*.sql",
       "emitTemplate": "{{dir}}/../sql_generated/{{name}}.queries.ts"
     },
     {
       "mode": "sql",
-      "include": "apps/notification/src/**/*.sql",
+      "include": "apps/notification/src/infrastructure/sql/**/*.sql",
       "emitTemplate": "{{dir}}/../sql_generated/{{name}}.queries.ts"
     },
     {
       "mode": "sql",
-      "include": "apps/payment/src/**/*.sql",
+      "include": "apps/payment/src/infrastructure/sql/**/*.sql",
       "emitTemplate": "{{dir}}/../sql_generated/{{name}}.queries.ts"
     }
   ],

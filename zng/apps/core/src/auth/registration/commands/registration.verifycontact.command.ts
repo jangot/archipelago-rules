@@ -3,10 +3,9 @@ import { RegistrationBaseCommandHandler } from './registration.base.command-hand
 import { VerifyContactCommand } from './registration.commands';
 import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
 import { LoginStatus, LoginType, RegistrationStatus } from '@library/entity/enum';
-import { Transactional } from 'typeorm-transactional';
-import { ApplicationUser, Login, UserRegistration } from '../../../data/entity';
 import { DeepPartial } from 'typeorm';
 import { VerificationEvent } from '../../verification';
+import { IApplicationUser, ILogin, IUserRegistration } from '@library/entity/interface';
 
 const pendingStates: RegistrationStatus[] = [
   RegistrationStatus.EmailVerifying,
@@ -148,13 +147,12 @@ export class VerifyContactCommandHandler
     return this.createTransitionResult(newRegistrationStatus, true, null);
   }
 
-  @Transactional()
   private async updateData(
-    registration: UserRegistration,
-    user: ApplicationUser,
-    login: DeepPartial<Login>
+    registration: IUserRegistration,
+    user: IApplicationUser,
+    login: DeepPartial<ILogin>
   ): Promise<void> {
-    await Promise.all([
+    await this.updateEntities([
       this.data.userRegistrations.update(registration.id, registration),
       this.data.users.update(user.id, user),
       this.data.logins.createOrUpdate(login),

@@ -6,15 +6,12 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from 'apps/core/src/dto';
+import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
 import { RegistrationStatus, ContactType } from '@library/entity/enum';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
-import { generateSecureCode } from '@library/shared/common/helpers';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { InitiatePhoneNumberVerificationCommand } from './registration.commands';
-import { Transactional } from 'typeorm-transactional';
-import { UserRegistration, ApplicationUser } from '../../../data/entity';
 import { VerificationEvent } from '../../verification';
 
 @CommandHandler(InitiatePhoneNumberVerificationCommand)
@@ -77,9 +74,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
       );
     }
 
-    const verificationCode = generateSecureCode(6); // Generate new Verification code
-    const verificationCodeExpiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
-
+    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } = this.generateCode();
     this.logger.debug(`About to update registration during adding phone number for user ${userId}`, {
       user,
       registration: { ...registration, secret: '***' },
@@ -97,20 +92,12 @@ export class InitiatePhoneNumberVerificationCommandHandler
       registration: { ...registration, secret: '***' },
     });
 
-    await this.updateData(registration, user);
+    await this.domainServices.userServices.updateUserRegistration(registration, user);
 
     this.logger.debug(`Updated registration during adding phone number for user ${userId}`);
 
     this.sendEvent(user, VerificationEvent.PhoneNumberVerifying);
 
     return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, userId, verificationCode);
-  }
-
-  @Transactional()
-  private async updateData(registration: UserRegistration, user: ApplicationUser): Promise<void> {
-    await Promise.all([
-      this.data.userRegistrations.update(registration.id, registration),
-      this.data.users.update(user.id, user),
-    ]);
   }
 }

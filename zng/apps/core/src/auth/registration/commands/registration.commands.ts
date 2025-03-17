@@ -13,14 +13,7 @@ export class RegistrationBaseCommand {
 }
 
 export class RegistrationInitiatedCommand extends RegistrationBaseCommand {}
-
-export class VerifyEmailCommand extends RegistrationBaseCommand {}
-export class VerifyPhoneNumberCommand extends RegistrationBaseCommand {}
 export class VerifyContactCommand extends RegistrationBaseCommand {}
-
 export class InitiateEmailVerificationCommand extends RegistrationBaseCommand {}
 export class InitiatePhoneNumberVerificationCommand extends RegistrationBaseCommand {}
-
 export class VerificationCompleteCommand extends RegistrationBaseCommand {}
-
-export class VerificationCodeResendCommand extends RegistrationBaseCommand {}

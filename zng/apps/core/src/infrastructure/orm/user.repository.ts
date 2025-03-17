@@ -1,12 +1,12 @@
-import { IUserRepository } from '../interfaces';
 import { Injectable, Logger } from '@nestjs/common';
-import { ApplicationUser } from '../../entity';
 import { Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ContactType } from '@library/entity/enum';
-import { getUserDetailById } from '../../sql_generated/get-user-detail.queries';
-import { UserDetail } from '../../entity/user.detail.entity';
+import { getUserDetailById, IGetUserDetailByIdResult } from '../sql_generated/get-user-detail.queries';
+import { ApplicationUser } from '../../domain/entities';
+import { IUserRepository } from '../../shared/interfaces/repositories';
+import { IApplicationUser } from '@library/entity/interface';
 
 @Injectable()
 export class UserRepository extends RepositoryBase<ApplicationUser> implements IUserRepository {
@@ -19,12 +19,12 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
     super(repository, ApplicationUser);
   }
 
-  public async getUserById(id: string): Promise<ApplicationUser | null> {
+  public async getUserById(id: string): Promise<IApplicationUser | null> {
     this.logger.debug(`getUserById: Getting User by Id: ${id}`);
     return await this.repository.findOneBy({ id });
   }
 
-  public async getUserByContact(contact: string, type: ContactType): Promise<ApplicationUser | null> {
+  public async getUserByContact(contact: string, type: ContactType): Promise<IApplicationUser | null> {
     this.logger.debug(`getUserByContact: Getting User by ${type} Contact: ${contact}`);
 
     switch (type) {
@@ -45,7 +45,7 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
 
   // Example usage of a pgtyped Query
   // The base repository handles converting things properly
-  public async getUserDetailById(userId: string): Promise<UserDetail | null> {
+  public async getUserDetailById(userId: string): Promise<IGetUserDetailByIdResult | null> {
     const result = await this.runSqlQuerySingle({ userId }, getUserDetailById);
     return result;
   }

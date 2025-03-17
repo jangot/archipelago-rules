@@ -1,9 +1,10 @@
-import { ILoanRepository } from '../interfaces';
 import { Injectable, Logger } from '@nestjs/common';
-import { Loan } from '../../entity';
 import { Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ILoanRepository } from '../../shared/interfaces/repositories';
+import { Loan } from '../../domain/entities';
+import { ILoan } from '@library/entity/interface';
 
 @Injectable()
 export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {
@@ -16,7 +17,7 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     super(repository, Loan);
   }
 
-  public async getByLenderId(lenderId: string): Promise<Loan[] | null> {
+  public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {
     this.logger.debug(`getByLenderId: ${lenderId}`);
 
     return this.repository.findBy({ lenderId });
