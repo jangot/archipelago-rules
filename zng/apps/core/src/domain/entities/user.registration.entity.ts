@@ -12,7 +12,7 @@ export class UserRegistration implements IUserRegistration {
   @Column('uuid')
   userId: string;
 
-  @OneToOne(() => ApplicationUser)
+  @OneToOne(() => ApplicationUser, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: ApplicationUser;
 

@@ -16,6 +16,8 @@ export class Loan implements ILoan {
   @Column('uuid')
   lenderId: string;
 
+  // TODO: In Loan we heve two AppUsers, thats why simple cascade deletion decorator is not make sense (we need to have one User already deleted and socind in deletion)
+  // We might try to achieve this by having custom enitity subscriber and resolve this problem there
   @ManyToOne(() => ApplicationUser)
   @JoinColumn({ name: 'lender_id' }) // FYI, column names defined here must match the DB generated ones!
   lender: ApplicationUser;

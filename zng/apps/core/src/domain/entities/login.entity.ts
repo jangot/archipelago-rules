@@ -21,7 +21,7 @@ export class Login implements ILogin {
   @Column('uuid')
   userId: string;
 
-  @ManyToOne(() => ApplicationUser)
+  @ManyToOne(() => ApplicationUser, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: ApplicationUser;
 
