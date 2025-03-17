@@ -7,19 +7,20 @@
  */
 
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
-import { RegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
+import { RegistrationDto } from '../../../dto';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationInitiatedCommand } from './registration.commands';
 import { VerificationEvent } from '../../verification';
 import { IApplicationUser } from '@library/entity/interface';
+import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler
   extends RegistrationBaseCommandHandler<RegistrationInitiatedCommand>
   implements ICommandHandler<RegistrationInitiatedCommand>
 {
-  public async execute(command: RegistrationInitiatedCommand): Promise<RegistrationTransitionResultDto> {
+  public async execute(command: RegistrationInitiatedCommand): Promise<RegistrationTransitionResult> {
     const { firstName, lastName, email } = command.payload.input!;
 
     if (!email) {
@@ -87,7 +88,7 @@ export class RegistrationInitiatedCommandHandler
   private async reInitiateEmailVerification(
     user: IApplicationUser,
     input: RegistrationDto
-  ): Promise<RegistrationTransitionResultDto> {
+  ): Promise<RegistrationTransitionResult> {
     const { firstName, lastName, email } = input;
 
     const registration = await this.getUserRegistration(user.id);

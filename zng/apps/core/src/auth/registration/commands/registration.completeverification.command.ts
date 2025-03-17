@@ -6,20 +6,20 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
 import { RegistrationStatus } from '@library/entity/enum';
 import { Transactional } from 'typeorm-transactional';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerificationCompleteCommand } from './registration.commands';
 import { VerificationEvent } from '../../verification';
+import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 
 @CommandHandler(VerificationCompleteCommand)
 export class VerificationCompleteCommandHandler
   extends RegistrationBaseCommandHandler<VerificationCompleteCommand>
   implements ICommandHandler<VerificationCompleteCommand>
 {
-  public async execute(command: VerificationCompleteCommand): Promise<RegistrationTransitionResultDto> {
+  public async execute(command: VerificationCompleteCommand): Promise<RegistrationTransitionResult> {
     if (!command.payload.id) {
       throw new Error('User id cannot be null when completing verification.');
     }
@@ -27,7 +27,7 @@ export class VerificationCompleteCommandHandler
   }
 
   @Transactional()
-  private async completeVerification(id: string): Promise<RegistrationTransitionResultDto> {
+  private async completeVerification(id: string): Promise<RegistrationTransitionResult> {
     const user = await this.data.users.getUserById(id);
     const registration = await this.getUserRegistration(id);
 

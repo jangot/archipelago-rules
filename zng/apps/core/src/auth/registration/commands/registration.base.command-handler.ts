@@ -8,7 +8,7 @@
 
 import { RegistrationStatus } from '@library/entity/enum';
 import { Injectable, Logger } from '@nestjs/common';
-import { RegistrationDto, RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
+import { RegistrationDto } from '../../../dto';
 import { RegistrationBaseCommand } from './registration.commands';
 import { CommandBus, EventBus } from '@nestjs/cqrs';
 import { IApplicationUser, IUserRegistration } from '@library/entity/interface';
@@ -17,6 +17,7 @@ import { generateSecureCode } from '@library/shared/common/helpers';
 import { Transactional } from 'typeorm-transactional';
 import { IDataService } from '../../../data/idata.service';
 import { IDomainServices } from '../../../domain/idomain.services';
+import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 
 export interface RegistrationParams {
   data: IDataService;
@@ -52,7 +53,7 @@ export abstract class RegistrationBaseCommandHandler<
     this.eventBus = eventBus;
   }
 
-  public abstract execute(command: TCommand): Promise<RegistrationTransitionResultDto>;
+  public abstract execute(command: TCommand): Promise<RegistrationTransitionResult>;
 
   /**
    * Creates a registration transition result.
@@ -69,7 +70,7 @@ export abstract class RegistrationBaseCommandHandler<
     message: RegistrationTransitionMessage | null,
     userId?: string,
     code?: string
-  ): RegistrationTransitionResultDto {
+  ): RegistrationTransitionResult {
     return {
       state,
       isSuccessful,

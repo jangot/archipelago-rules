@@ -8,8 +8,9 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { IDataService } from '../../data/idata.service';
-import { IApplicationUser, IUserRegistration } from '@library/entity/interface';
+import { IApplicationUser, ILogin, IUserRegistration } from '@library/entity/interface';
 import { Transactional } from 'typeorm-transactional';
+import { DeepPartial } from 'typeorm';
 
 @Injectable()
 export class UserDomainService {
@@ -24,6 +25,21 @@ export class UserDomainService {
     await Promise.all([
       this.data.userRegistrations.update(registration.id, registration),
       this.data.users.update(user.id, user),
+    ]);
+  }
+
+  @Transactional()
+  public async createUserLoginOnRegistration(
+    user: IApplicationUser,
+    registration: IUserRegistration,
+    login: DeepPartial<ILogin>
+  ): Promise<void> {
+    this.logger.debug(`Creating login ${login.loginType} for user ${user.id}`);
+
+    await Promise.all([
+      this.data.userRegistrations.update(registration.id, registration),
+      this.data.users.update(user.id, user),
+      this.data.logins.createOrUpdate(login),
     ]);
   }
 }

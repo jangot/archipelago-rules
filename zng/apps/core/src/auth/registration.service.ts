@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
-import { RegistrationDto, RegistrationTransitionResultDto } from '../dto';
+import { RegistrationDto, RegistrationTransitionResult } from '../dto';
 import { AuthService } from './auth.service';
 import { RegistrationExceptionFactory } from './registration/registration-exception.factory';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
@@ -95,7 +95,7 @@ export class RegistrationService {
    * @returns A promise that resolves to a UserRegisterResponseDto.
    */
   private async handleRegistrationResult(
-    result: RegistrationTransitionResultDto | null,
+    result: RegistrationTransitionResult | null,
     email: string | null,
     phoneNumber: string | null = null
   ): Promise<UserRegisterResponseDto> {
@@ -130,7 +130,7 @@ export class RegistrationService {
    * @returns A promise that resolves to a JwtResponseDto or null.
    */
   private async handleVerificationResult(
-    result: RegistrationTransitionResultDto | null,
+    result: RegistrationTransitionResult | null,
     userId: string
   ): Promise<UserLoginPayloadDto | null> {
     if (!result) {

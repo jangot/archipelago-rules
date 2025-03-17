@@ -1,6 +1,6 @@
 import { RegistrationStatus } from '@library/entity/enum';
 
-export class RegistrationTransitionResultDto {
+export class RegistrationTransitionResult {
   state: RegistrationStatus | null;
   isSuccessful: boolean;
   message: RegistrationTransitionMessage | null;

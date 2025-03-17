@@ -1,11 +1,9 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { VerifyContactCommand } from './registration.commands';
-import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
 import { LoginStatus, LoginType, RegistrationStatus } from '@library/entity/enum';
-import { DeepPartial } from 'typeorm';
 import { VerificationEvent } from '../../verification';
-import { IApplicationUser, ILogin, IUserRegistration } from '@library/entity/interface';
+import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 
 const pendingStates: RegistrationStatus[] = [
   RegistrationStatus.EmailVerifying,
@@ -17,7 +15,7 @@ export class VerifyContactCommandHandler
   extends RegistrationBaseCommandHandler<VerifyContactCommand>
   implements ICommandHandler<VerifyContactCommand>
 {
-  public async execute(command: VerifyContactCommand): Promise<RegistrationTransitionResultDto> {
+  public async execute(command: VerifyContactCommand): Promise<RegistrationTransitionResult> {
     const {
       payload: { id: userId, input },
     } = command;
@@ -122,8 +120,7 @@ export class VerifyContactCommandHandler
       login: newLogin,
     });
 
-    // Calling separate method to update data inside single transaction
-    await this.updateData(registration, user, newLogin);
+    await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
 
     // #endregion
 
@@ -145,18 +142,6 @@ export class VerifyContactCommandHandler
     }
 
     return this.createTransitionResult(newRegistrationStatus, true, null);
-  }
-
-  private async updateData(
-    registration: IUserRegistration,
-    user: IApplicationUser,
-    login: DeepPartial<ILogin>
-  ): Promise<void> {
-    await this.updateEntities([
-      this.data.userRegistrations.update(registration.id, registration),
-      this.data.users.update(user.id, user),
-      this.data.logins.createOrUpdate(login),
-    ]);
   }
 
   private async isSecondContactVerified(userId: string, loginType: LoginType): Promise<boolean> {

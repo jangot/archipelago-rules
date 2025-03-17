@@ -1,16 +1,16 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { InitiateEmailVerificationCommand } from './registration.commands';
-import { RegistrationTransitionMessage, RegistrationTransitionResultDto } from '../../../dto';
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
+import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 
 @CommandHandler(InitiateEmailVerificationCommand)
 export class InitiateEmailVerificationCommandHandler
   extends RegistrationBaseCommandHandler<InitiateEmailVerificationCommand>
   implements ICommandHandler<InitiateEmailVerificationCommand>
 {
-  public async execute(command: InitiateEmailVerificationCommand): Promise<RegistrationTransitionResultDto> {
+  public async execute(command: InitiateEmailVerificationCommand): Promise<RegistrationTransitionResult> {
     const {
       payload: { id: userId, input },
     } = command;
