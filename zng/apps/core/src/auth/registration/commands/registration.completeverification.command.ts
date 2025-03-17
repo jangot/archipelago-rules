@@ -28,8 +28,8 @@ export class VerificationCompleteCommandHandler
 
   @Transactional()
   private async completeVerification(id: string): Promise<RegistrationTransitionResult> {
-    const user = await this.data.users.getUserById(id);
-    const registration = await this.getUserRegistration(id);
+    const user = await this.domainServices.userServices.getUserById(id);
+    const registration = await this.domainServices.userServices.getUserRegistration(id);
 
     if (!user || !registration) {
       return this.createTransitionResult(

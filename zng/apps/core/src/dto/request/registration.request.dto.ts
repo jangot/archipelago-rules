@@ -67,7 +67,13 @@ export class RegistrationDto {
 export class RegistrationRequestDto extends OmitType(RegistrationDto, ['userId', 'phoneNumber', 'code'] as const) {}
 
 @ApiSchema({ name: 'registrationVerifyRequest' })
-export class RegistrationVerifyRequestDto extends OmitType(RegistrationDto, ['code'] as const) {
+export class RegistrationVerifyRequestDto extends OmitType(RegistrationDto, [
+  'code',
+  'firstName',
+  'lastName',
+  'email',
+  'phoneNumber',
+] as const) {
   @ApiProperty({
     description: 'Registration step verification code',
     type: String,

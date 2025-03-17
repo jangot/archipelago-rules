@@ -40,6 +40,13 @@ export interface ILoginRepository extends IRepositoryBase<ILogin> {
    * @returns A promise that resolves to an array of user logins.
    */
   getUserLogins(userId: string): Promise<ILogin[]>;
+
+  /**
+   * Retrieves the current user login by user ID.
+   * @param userId The user ID.
+   * @returns A promise that resolves to the current user login.
+   */
+  getCurrentUserLogin(userId: string): Promise<ILogin | null>;
 }
 
 export const ILoginRepository = Symbol('ILoginRepository');

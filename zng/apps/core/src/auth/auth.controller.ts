@@ -66,7 +66,7 @@ export class AuthController {
     description: 'Update Email or Phone number',
     summary: 'Update Email or Phone number during user registration',
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('jwt')
   @ApiBody({ type: RegistrationUpdateRequestDto, schema: { $ref: getSchemaPath(RegistrationUpdateRequestDto) } })
   @UseGuards(JwtAuthGuard)
   public async updateVerificationField(

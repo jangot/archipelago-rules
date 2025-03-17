@@ -99,13 +99,13 @@ export class AuthService {
   }
 
   private generateLoginPayload(userId: string, onboardingStatus: string, expiresIn?: string): UserLoginPayloadDto {
-    const exp = Math.floor((Date.now() + 3600000) / 1000); // 1 hour expiration in Unix Epoch time
+    //const exp = Math.floor((Date.now() + 3600000) / 1000); // 1 hour expiration in Unix Epoch time
     const iat = Math.floor(Date.now() / 1000); // Current dateTime in Unix Epoch time
     const payload: JwtPayloadDto = {
       iss: 'https://auth.zirtue.com',
       sub: userId,
       aud: 'api-zirtue.com',
-      exp: exp,
+      //exp: exp,
       iat: iat,
       scope: 'read write profile',
       isAdmin: false,

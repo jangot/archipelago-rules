@@ -28,7 +28,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
       throw new Error('User id cannot be null when initiating verification of Phone number.');
     }
 
-    const registration = await this.getUserRegistration(userId);
+    const registration = await this.domainServices.userServices.getUserRegistration(userId);
 
     if (!registration || registration.status !== RegistrationStatus.EmailVerified) {
       return this.createTransitionResult(
@@ -48,7 +48,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
       );
     }
 
-    const userByPhone = await this.data.users.getUserByContact(phoneNumber, ContactType.PHONE_NUMBER);
+    const userByPhone = await this.domainServices.userServices.getUserByContact(phoneNumber, ContactType.PHONE_NUMBER);
 
     if (userByPhone) {
       if (userByPhone.id === userId) {
@@ -65,7 +65,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
       );
     }
 
-    const user = await this.data.users.getUserById(registration.userId);
+    const user = await this.domainServices.userServices.getUserById(registration.userId);
     if (!user) {
       return this.createTransitionResult(
         RegistrationStatus.PhoneNumberVerifying,

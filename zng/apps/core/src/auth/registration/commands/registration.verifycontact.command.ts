@@ -4,6 +4,7 @@ import { VerifyContactCommand } from './registration.commands';
 import { LoginStatus, LoginType, RegistrationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
+import { last } from 'lodash';
 
 const pendingStates: RegistrationStatus[] = [
   RegistrationStatus.EmailVerifying,
@@ -29,7 +30,7 @@ export class VerifyContactCommandHandler
     // #endregion
 
     // #region Registration state validation
-    const registration = await this.getUserRegistration(userId);
+    const registration = await this.domainServices.userServices.getUserRegistration(userId);
     if (!registration) {
       return this.createTransitionResult(
         RegistrationStatus.NotRegistered,
@@ -69,7 +70,7 @@ export class VerifyContactCommandHandler
 
     // #region User valdiation
     // As further we will need User entity to update anyway - we first do validations for that
-    const user = await this.data.users.getUserById(userId);
+    const user = await this.domainServices.userServices.getUserById(userId);
     if (!user) {
       return this.createTransitionResult(registration.status, false, RegistrationTransitionMessage.WrongInput);
     }
@@ -83,20 +84,25 @@ export class VerifyContactCommandHandler
         ? RegistrationStatus.EmailVerified
         : RegistrationStatus.PhoneNumberVerified;
 
+    const userLogin = await this.domainServices.userServices.getCurrentUserLogin(userId);
+    // We should ONLY create a Login for the 1st contact verification (which is currently Email)
     // Login
-    const newLogin = {
-      loginType:
-        newRegistrationStatus === RegistrationStatus.EmailVerified
-          ? LoginType.OneTimeCodeEmail
-          : LoginType.OneTimeCodePhoneNumber,
-      userId: user.id,
-      loginStatus: LoginStatus.NotLoggedIn,
-    };
+    const newLogin = userLogin
+      ? null
+      : {
+          loginType:
+            newRegistrationStatus === RegistrationStatus.EmailVerified
+              ? LoginType.OneTimeCodeEmail
+              : LoginType.OneTimeCodePhoneNumber,
+          userId: user.id,
+          loginStatus: LoginStatus.LoggedIn, // We are logging the user in, indicate that in the state!
+          lastLoggedInAt: new Date(),
+        };
 
     this.logger.debug(`About to update registration, user and add login during verifying contact for user ${user.id}`, {
       user,
       registration: { ...registration, secret: '***' },
-      login: newLogin,
+      login: newLogin || 'null',
     });
 
     // Registration
@@ -117,7 +123,7 @@ export class VerifyContactCommandHandler
     this.logger.debug(`Updated registration, user and add login data before apply`, {
       user,
       registration: { ...registration, secret: '***' },
-      login: newLogin,
+      login: newLogin || 'null',
     });
 
     await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
@@ -145,7 +151,7 @@ export class VerifyContactCommandHandler
   }
 
   private async isSecondContactVerified(userId: string, loginType: LoginType): Promise<boolean> {
-    const login = await this.data.logins.getUserSecretByType(userId, loginType);
+    const login = await this.domainServices.userServices.getUserSecretByType(userId, loginType);
     return !!login;
   }
 }

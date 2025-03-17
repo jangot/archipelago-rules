@@ -31,7 +31,7 @@ export class RegistrationInitiatedCommandHandler
       );
     }
 
-    const userByEmail = await this.data.users.getUserByContact(email, ContactType.EMAIL);
+    const userByEmail = await this.domainServices.userServices.getUserByContact(email, ContactType.EMAIL);
 
     if (userByEmail) {
       return this.createTransitionResult(
@@ -42,7 +42,7 @@ export class RegistrationInitiatedCommandHandler
     }
 
     // Check if the user already exists but only has a pending email
-    const pendingUser = await this.data.users.getUserByContact(email, ContactType.PENDING_EMAIL);
+    const pendingUser = await this.domainServices.userServices.getUserByContact(email, ContactType.PENDING_EMAIL);
     if (pendingUser) {
       return this.reInitiateEmailVerification(pendingUser, command.payload.input!);
     }
@@ -57,7 +57,7 @@ export class RegistrationInitiatedCommandHandler
     };
 
     // Create the barebones User here
-    const user = await this.data.users.insert(newUser, true);
+    const user = await this.domainServices.userServices.createNewUser(newUser);
     if (!user) {
       this.logger.error(`initiateRegistration: Failed to create user: ${email}`, { newUser });
       return this.createTransitionResult(
@@ -74,7 +74,7 @@ export class RegistrationInitiatedCommandHandler
       secretExpiresAt: verificationCodeExpiresAt,
     };
     // Create User Registration and store verification code with expiration date
-    const userRegistration = await this.data.userRegistrations.create(newUserRegistration);
+    const userRegistration = await this.domainServices.userServices.createNewUserRegistration(newUserRegistration);
     this.logger.debug(`initiateRegistration: Registering user: ${email}`, {
       user,
       userRegistration: { ...userRegistration, secret: null },
@@ -91,7 +91,7 @@ export class RegistrationInitiatedCommandHandler
   ): Promise<RegistrationTransitionResult> {
     const { firstName, lastName, email } = input;
 
-    const registration = await this.getUserRegistration(user.id);
+    const registration = await this.domainServices.userServices.getUserRegistration(user.id);
     if (!registration) {
       return this.createTransitionResult(
         RegistrationStatus.EmailVerifying,

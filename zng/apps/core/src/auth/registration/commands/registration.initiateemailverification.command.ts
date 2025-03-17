@@ -24,7 +24,7 @@ export class InitiateEmailVerificationCommandHandler
       throw new Error('input cannot be null when requesting email verification.');
     }
 
-    const user = await this.data.users.getUserById(userId);
+    const user = await this.domainServices.userServices.getUserById(userId);
     if (!user) {
       return this.createTransitionResult(
         RegistrationStatus.NotRegistered,
@@ -42,7 +42,7 @@ export class InitiateEmailVerificationCommandHandler
       );
     }
 
-    const userByEmail = await this.data.users.getUserByContact(email, ContactType.EMAIL);
+    const userByEmail = await this.domainServices.userServices.getUserByContact(email, ContactType.EMAIL);
 
     if (userByEmail) {
       if (userByEmail.id === userId) {
@@ -59,7 +59,7 @@ export class InitiateEmailVerificationCommandHandler
       );
     }
 
-    const registration = await this.getUserRegistration(userId);
+    const registration = await this.domainServices.userServices.getUserRegistration(userId);
     if (!registration) {
       return this.createTransitionResult(
         RegistrationStatus.NotRegistered,
