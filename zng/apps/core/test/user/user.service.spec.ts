@@ -5,6 +5,7 @@ import { HttpException } from '@nestjs/common';
 import { ApplicationUser } from '../../src/data/entity';
 import { v4 } from 'uuid';
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../../src/dto';
+import { ContactType } from '@library/entity/enum';
 
 describe('UserService', () => {
   let service: UsersService;
@@ -14,8 +15,7 @@ describe('UserService', () => {
   const mockDataService = {
     users: {
       findOneBy: jest.fn(),
-      getUserByEmail: jest.fn(),
-      getUserByPhoneNumber: jest.fn(),
+      getUserByContact: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
     },
@@ -56,7 +56,7 @@ describe('UserService', () => {
       const user = { id: '1', email: 'test@test.com' } as ApplicationUser;
       mockDataService.users.findOneBy.mockResolvedValue(user);
 
-      const result = await service.getUserByEmail('test@test.com');
+      const result = await service.getUserByContact('test@test.com', ContactType.EMAIL);
       expect(result).toEqual(expect.any(UserResponseDto));
       expect(mockDataService.users.findOneBy).toHaveBeenCalledWith({ email: 'test@test.com' });
     });
@@ -64,7 +64,7 @@ describe('UserService', () => {
     it('should throw an exception if user not found', async () => {
       mockDataService.users.findOneBy.mockResolvedValue(null);
 
-      await expect(service.getUserByEmail('test@test.com')).resolves.toBe(null);
+      await expect(service.getUserByContact('test@test.com', ContactType.EMAIL)).resolves.toBe(null);
     });
   });
 
@@ -73,7 +73,7 @@ describe('UserService', () => {
       const user = { id: '1', phoneNumber: '1234567890' } as ApplicationUser;
       mockDataService.users.findOneBy.mockResolvedValue(user);
 
-      const result = await service.getUserByPhoneNumber('1234567890');
+      const result = await service.getUserByContact('1234567890', ContactType.PHONE_NUMBER);
       expect(result).toEqual(expect.any(UserResponseDto));
       expect(mockDataService.users.findOneBy).toHaveBeenCalledWith({ phoneNumber: '1234567890' });
     });
@@ -81,7 +81,7 @@ describe('UserService', () => {
     it('should throw an exception if user not found', async () => {
       mockDataService.users.findOneBy.mockResolvedValue(null);
 
-      await expect(service.getUserByPhoneNumber('1234567890')).resolves.toBe(null);
+      await expect(service.getUserByContact('1234567890', ContactType.PHONE_NUMBER)).resolves.toBe(null);
     });
   });
 

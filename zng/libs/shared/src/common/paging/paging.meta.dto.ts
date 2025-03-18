@@ -6,7 +6,7 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { ApiSchema, ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IPageMetaParameters } from './paging.metaparameters.interface';
 import { cloneDeep } from 'lodash';
 import { IPagingOptions } from './paging.options.interface';
@@ -14,7 +14,7 @@ import { IPagingMeta } from './paging.meta.interface';
 import { PagingOptionsDto } from './paging.options.dto';
 import { DEFAULT_PAGING_LIMIT } from './paging.order.constants';
 
-@ApiSchema({ name: 'pageMeta' })
+@ApiSchema({ name: 'pagingMeta' })
 export class PagingMetaDto implements IPagingMeta {
   @ApiProperty()
   offset: number;

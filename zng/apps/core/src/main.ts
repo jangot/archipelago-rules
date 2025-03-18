@@ -33,7 +33,9 @@ async function bootstrap() {
   app.setGlobalPrefix('/api/core');
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true,
+      whitelist: true, // Removes unknown properties
+      forbidNonWhitelisted: true, // Rejects requests with extra fields
+      transform: true, // Automatically transforms types
     })
   );
 
@@ -50,6 +52,7 @@ async function bootstrap() {
 
 function configureSwagger(app: INestApplication<any>) {
   const config = new DocumentBuilder()
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
     .setTitle('ZNG Core API')
     .setDescription('Zirtue Next Generation Platform Core API')
     .setVersion('1.0')

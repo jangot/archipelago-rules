@@ -8,6 +8,7 @@
 
 import { AllowedCriteriaTypes, IRepositoryBase } from './ibase.repository';
 import {
+  DeepPartial,
   DeleteResult,
   FindManyOptions,
   FindOneOptions,
@@ -22,6 +23,10 @@ import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity
 import { ISearchFilter } from '../search/search-query';
 import { buildPagingQuery, IPaging, IPagingOptions } from '../paging';
 import { buildSearchQuery } from '../search';
+import { IDatabaseConnection, PreparedQuery } from '@pgtyped/runtime';
+import { Pool } from 'pg';
+import { PgPoolAdapter } from './pg-pool-adapter';
+import camelcaseKeys from 'camelcase-keys';
 
 /**
  * RepositoryBase class
@@ -47,11 +52,39 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return await this.repository.find();
   }
 
-  public async create(item: Entity): Promise<Entity> {
+  public async insert(item: DeepPartial<Entity>, returnResult: false): Promise<Entity['id'] | null>;
+  public async insert(item: DeepPartial<Entity>, returnResult: true): Promise<Entity | null>;
+  public async insert(item: DeepPartial<Entity>, returnResult: boolean = false): Promise<Entity['id'] | Entity | null> {
+    if (returnResult) {
+      return await this.insertWithResult(item);
+    }
+
+    const insertResult = await this.repository.insert(item);
+    const id = insertResult.identifiers[0].id;
+    return id;
+  }
+
+  public async insertWithResult(item: DeepPartial<Entity>): Promise<Entity> {
+    const insertResult = await this.repository
+      .createQueryBuilder()
+      .insert()
+      .into(this.repository.metadata.target)
+      .values(item)
+      .returning('*')
+      .execute();
+
+    if (!insertResult.generatedMaps || insertResult.generatedMaps.length === 0) {
+      throw new Error('Insert failed: no entity was returned');
+    }
+    // generatedMaps[0] will have keys matching entity's properties (camelCased)
+    return insertResult.generatedMaps[0] as Entity;
+  }
+
+  public async create(item: DeepPartial<Entity>): Promise<Entity> {
     return await this.repository.save(item);
   }
 
-  public async update(id: Entity['id'], item: Entity): Promise<boolean> {
+  public async update(id: Entity['id'], item: DeepPartial<Entity>): Promise<boolean> {
     // Handles Compound Primary keys as well as simple Primary keys
     const whereCondition = this.normalizedIdWhereCondition(id);
 
@@ -162,6 +195,54 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     const result = await this.repository.find({ where: searchQuery });
     return result;
   }
+
+  //#region pgtyped specific code
+  // Caution: This code is brittle as it makes use of underlying TypeORM internals
+  // to get access to the underlying pg Pool for reuse with pgtyped
+  // a new release of TypeORM could break this!
+  protected getIDatabaseConnection(): IDatabaseConnection {
+    const dataSource = this.repository.manager.connection;
+    const pool = (dataSource.driver as any).master as Pool;
+    const poolAdapter = new PgPoolAdapter(pool);
+
+    return poolAdapter;
+  }
+
+  // Return only 1 record from the query
+  protected async runSqlQuerySingle<TParamType, TResultType extends Record<string, any>>(
+    params: TParamType,
+    query: PreparedQuery<TParamType, TResultType>
+  ): Promise<TResultType | null> {
+    const results = await this.runSqlQuery(params, query);
+    const result = results && results.length > 0 ? results[0] : null;
+
+    return result;
+  }
+
+  protected async runSqlQuery<TParamType, TResultType extends Record<string, any>>(
+    params: TParamType,
+    query: PreparedQuery<TParamType, TResultType>
+  ): Promise<TResultType[]> {
+    const databaseConnection = this.getIDatabaseConnection();
+
+    const rawResult = await query.run(params, databaseConnection);
+    const result = camelcaseKeys(rawResult, { deep: true }) as TResultType[];
+
+    return result;
+  }
+
+  protected async runSqlQueryWithCount<TParamType, TResultType extends Record<string, any>>(
+    params: TParamType,
+    query: PreparedQuery<TParamType, TResultType>
+  ): Promise<{ result: Array<TResultType>; rowCount: number }> {
+    const databaseConnection = this.getIDatabaseConnection();
+
+    const rawResult = await query.runWithCounts(params, databaseConnection);
+    const result = camelcaseKeys(rawResult, { deep: true }) as { result: Array<TResultType>; rowCount: number };
+
+    return result;
+  }
+  //#endregion
 
   protected normalizedIdWhereCondition(id: Entity['id']): FindOptionsWhere<Entity> {
     const whereCondition = typeof id === 'object' ? id : { id };

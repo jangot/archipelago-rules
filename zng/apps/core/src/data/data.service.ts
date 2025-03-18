@@ -1,21 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IDataService } from './idata.service';
-import { IUserRepository, ILoanRepository } from './repository/interfaces';
+import {
+  ILoanRepository,
+  ILoginRepository,
+  IUserRegistrationRepository,
+  IUserRepository,
+} from '../shared/interfaces/repositories';
 
 @Injectable()
 export class DataService implements IDataService {
-  readonly users: IUserRepository;
-  readonly loans: ILoanRepository;
-
   constructor(
-    @Inject(IUserRepository)
-    private readonly userRepository: IUserRepository,
-    @Inject(ILoanRepository)
-    private readonly loanRepository: ILoanRepository
-  ) {
-    this.users = userRepository;
-    this.loans = loanRepository;
-  }
+    @Inject(IUserRepository) public readonly users: IUserRepository,
+    @Inject(ILoanRepository) public readonly loans: ILoanRepository,
+    @Inject(ILoginRepository) public readonly logins: ILoginRepository,
+    @Inject(IUserRegistrationRepository) public readonly userRegistrations: IUserRegistrationRepository
+  ) {}
 
   // Additional methods for IDataService can be implemented here
 }

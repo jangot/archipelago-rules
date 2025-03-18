@@ -5,7 +5,7 @@ import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
-@ApiSchema({ name: 'user' })
+@ApiSchema({ name: 'userUpdateRequest' })
 export class UserUpdateRequestDto {
   @ApiProperty({ description: 'Id of the User', type: String, required: true })
   @Expose()

@@ -5,6 +5,7 @@ import { ValueOperator } from './value-operator';
 import { Type } from 'class-transformer';
 import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
 
+@ApiSchema({ name: 'searchFilter' })
 export class SearchFilterDto implements ISearchFilter {
   @ApiProperty({ description: 'Field to filter on', type: String, example: 'name' })
   @IsString()

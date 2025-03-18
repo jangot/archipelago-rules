@@ -1,0 +1,30 @@
+{
+  "transforms": [
+    {
+      "mode": "sql",
+      "include": "apps/core/src/infrastructure/sql/**/*.sql",
+      "emitTemplate": "{{dir}}/../sql_generated/{{name}}.queries.ts"
+    },
+    {
+      "mode": "sql",
+      "include": "apps/notification/src/infrastructure/sql/**/*.sql",
+      "emitTemplate": "{{dir}}/../sql_generated/{{name}}.queries.ts"
+    },
+    {
+      "mode": "sql",
+      "include": "apps/payment/src/infrastructure/sql/**/*.sql",
+      "emitTemplate": "{{dir}}/../sql_generated/{{name}}.queries.ts"
+    }
+  ],
+  "srcDir": "./",
+  "failOnError": false,
+  "camelCaseColumnNames": true,
+  "db": {
+    "dbName": "zirtue_next_gen",
+    "user": "postgres",
+    "password": "postgres",
+    "host": "127.0.0.1",
+    "port": 5433,
+    "ssl": false
+  }
+}

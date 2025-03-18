@@ -8,6 +8,7 @@ import { UsersModule } from '../../src/users/users.module';
 import { UsersService } from '../../src/users/users.service';
 import { IBackup } from 'pg-mem';
 import { ValueOperator } from '@library/shared/common/search';
+import { ContactType } from '@library/entity/enum';
 
 describe('UsersService Integration Tests', () => {
   let module: TestingModule;
@@ -34,6 +35,33 @@ describe('UsersService Integration Tests', () => {
 
   beforeEach(() => {
     databaseBackup.restore();
+  });
+
+  describe('getUserDetailById', () => {
+    it('should return pgtyped typed User object', async () => {
+      const phoneNumber = '+12124567890';
+
+      const mockUser: UserCreateRequestDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        phoneNumber,
+      };
+
+      const createResult = await service.createUser(mockUser);
+      const result = await service.getUserDetailById(createResult!.id);
+
+      // This fails because of mapping issues. The returned fields are not automatically camel-cased
+      // Need to add this capability
+      // TODO: Add camel casing to returned fields!!!
+      expect(result).toEqual({
+        id: createResult!.id,
+        firstName: mockUser.firstName,
+        lastName: mockUser.lastName,
+        email: mockUser.email,
+        phoneNumber: mockUser.phoneNumber,
+      });
+    });
   });
 
   describe('getUserById', () => {
@@ -77,7 +105,7 @@ describe('UsersService Integration Tests', () => {
 
       const createResult = await service.createUser(mockUser);
 
-      const result = await service.getUserByEmail(createResult!.email);
+      const result = await service.getUserByContact(createResult!.email, ContactType.EMAIL);
       expect(result).toEqual({
         id: createResult!.id,
         firstName: mockUser.firstName,
@@ -88,7 +116,7 @@ describe('UsersService Integration Tests', () => {
     });
 
     it('should return null if user not found', async () => {
-      const result = await service.getUserByEmail('nonexistent@example.com');
+      const result = await service.getUserByContact('nonexistent@example.com', ContactType.EMAIL);
       expect(result).toBeNull();
     });
   });
@@ -104,7 +132,7 @@ describe('UsersService Integration Tests', () => {
 
       const createResult = await service.createUser(mockUser);
 
-      const result = await service.getUserByPhoneNumber(createResult!.phoneNumber);
+      const result = await service.getUserByContact(createResult!.phoneNumber, ContactType.PHONE_NUMBER);
       expect(result).toEqual({
         id: createResult!.id,
         firstName: mockUser.firstName,
@@ -115,7 +143,7 @@ describe('UsersService Integration Tests', () => {
     });
 
     it('should return null if user not found', async () => {
-      const result = await service.getUserByPhoneNumber('0000000000');
+      const result = await service.getUserByContact('0000000000', ContactType.PHONE_NUMBER);
       expect(result).toBeNull();
     });
   });

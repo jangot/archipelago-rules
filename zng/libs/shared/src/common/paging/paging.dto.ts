@@ -12,7 +12,7 @@ import { IPaging } from './paging.interface';
 import { IPagingMeta } from './paging.meta.interface';
 import { PagingOrder } from './paging.order.constants';
 
-@ApiSchema({ name: 'page' })
+@ApiSchema({ name: 'paging' })
 export class PagingDto<T> implements IPaging<T> {
   @IsArray()
   @ApiProperty({ isArray: true })
