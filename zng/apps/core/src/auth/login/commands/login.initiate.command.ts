@@ -21,9 +21,9 @@ export class LoginInitiateCommandHandler
     }
 
     const user = userId
-      ? await this.data.users.getUserById(userId)
+      ? await this.domainServices.userServices.getUserById(userId)
       : contact && contactType
-        ? await this.data.users.getUserByContact(contact, contactType)
+        ? await this.domainServices.userServices.getUserByContact(contact, contactType)
         : null;
 
     if (!user) {
@@ -41,7 +41,7 @@ export class LoginInitiateCommandHandler
     }
 
     const loginType = contactType === ContactType.EMAIL ? LoginType.OneTimeCodeEmail : LoginType.OneTimeCodePhoneNumber;
-    const login = await this.data.logins.getUserSecretByType(user.id, loginType);
+    const login = await this.domainServices.loginServices.getUserLoginByType(user.id, loginType);
 
     if (!login) {
       this.logger.warn('LoginInitiateCommand: No login found');
@@ -54,7 +54,7 @@ export class LoginInitiateCommandHandler
     login.expiresAt = expiresAt;
     login.loginStatus = LoginStatus.Verifying;
 
-    await this.data.logins.update(login.id, login);
+    await this.domainServices.loginServices.updateLogin(login.id, login);
 
     // TODO: Send the code to the user
     //this.sendEvent()

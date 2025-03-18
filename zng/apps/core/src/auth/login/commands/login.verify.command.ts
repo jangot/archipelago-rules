@@ -23,9 +23,9 @@ export class LoginVerifyCommandHandler
     }
 
     const user = userId
-      ? await this.data.users.getUserById(userId)
+      ? await this.domainServices.userServices.getUserById(userId)
       : contact && contactType
-        ? await this.data.users.getUserByContact(contact, contactType)
+        ? await this.domainServices.userServices.getUserByContact(contact, contactType)
         : null;
 
     if (!user) {
@@ -43,7 +43,7 @@ export class LoginVerifyCommandHandler
     }
 
     const loginType = contactType === ContactType.EMAIL ? LoginType.OneTimeCodeEmail : LoginType.OneTimeCodePhoneNumber;
-    const login = await this.data.logins.getUserSecretByType(user.id, loginType);
+    const login = await this.domainServices.loginServices.getUserLoginByType(user.id, loginType);
 
     if (!login) {
       this.logger.warn('LoginInitiateCommand: No login found');

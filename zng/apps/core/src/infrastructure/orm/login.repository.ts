@@ -27,7 +27,7 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
     // });
   }
 
-  public async getUserSecretByType(userId: string, loginType: LoginType): Promise<ILogin | null> {
+  public async getUserLoginByType(userId: string, loginType: LoginType): Promise<ILogin | null> {
     this.logger.debug(`getUserSecretByType: Getting secret for user: ${userId} and type: ${loginType}`);
 
     return await this.repository.findOneBy({ userId, loginType });

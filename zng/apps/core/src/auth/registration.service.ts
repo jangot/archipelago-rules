@@ -2,7 +2,6 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { RegistrationDto } from '../dto';
-import { AuthService } from './auth.service';
 import { RegistrationExceptionFactory } from './registration/registration-exception.factory';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 import {
@@ -12,17 +11,15 @@ import {
   VerificationCompleteCommand,
   VerifyContactCommand,
 } from './registration/commands';
-import { RegistrationStatus } from '@library/entity/enum';
+import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { RegistrationTransitionResult } from '@library/shared/types';
+import { LoginOnContactVerifiedCommand } from './login/commands';
 
 @Injectable()
 export class RegistrationService {
   private readonly logger: Logger = new Logger(RegistrationService.name);
 
-  constructor(
-    private readonly authService: AuthService,
-    private readonly commandBus: CommandBus
-  ) {}
+  constructor(private readonly commandBus: CommandBus) {}
 
   /**
    * Registers a new user.
@@ -150,7 +147,9 @@ export class RegistrationService {
       if (result.state === RegistrationStatus.Registered) {
         await this.commandBus.execute(new VerificationCompleteCommand({ id: userId, input: { userId } }));
       }
-      return await this.authService.loginById(userId, '1h');
+      const contactType =
+        result.state === RegistrationStatus.EmailVerified ? ContactType.EMAIL : ContactType.PHONE_NUMBER;
+      return await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType }));
     }
   }
 }

@@ -10,7 +10,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IApplicationUser, ILogin, IUserRegistration } from '@library/entity/interface';
 import { Transactional } from 'typeorm-transactional';
 import { DeepPartial } from 'typeorm';
-import { ContactType, LoginType } from '@library/entity/enum';
+import { ContactType } from '@library/entity/enum';
 import { BaseDomainServices } from './domain.service.base';
 
 @Injectable()
@@ -56,13 +56,7 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.users.getUserByContact(contact, contactType);
   }
 
-  public async getUserSecretByType(userId, loginType: LoginType): Promise<ILogin | null> {
-    return this.data.logins.getUserSecretByType(userId, loginType);
-  }
 
-  public async getCurrentUserLogin(userId: string): Promise<ILogin | null> {
-    return this.data.logins.getCurrentUserLogin(userId);
-  }
   //#endregion
 
   //#region User Related Creation Methods

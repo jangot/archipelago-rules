@@ -17,7 +17,7 @@ export interface ILoginRepository extends IRepositoryBase<ILogin> {
    * @param type - The type of authentication secret to retrieve.
    * @returns A promise that resolves to the authentication secret if found, or null if not found.
    */
-  getUserSecretByType(userId: string, type: LoginType): Promise<ILogin | null>;
+  getUserLoginByType(userId: string, type: LoginType): Promise<ILogin | null>;
 
   /**
    * Retrieves the first unfinished authentication secret of the specified type for the user.

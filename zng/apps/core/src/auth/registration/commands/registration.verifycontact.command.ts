@@ -4,7 +4,6 @@ import { VerifyContactCommand } from './registration.commands';
 import { LoginStatus, LoginType, RegistrationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
-import { last } from 'lodash';
 
 const pendingStates: RegistrationStatus[] = [
   RegistrationStatus.EmailVerifying,
@@ -84,7 +83,7 @@ export class VerifyContactCommandHandler
         ? RegistrationStatus.EmailVerified
         : RegistrationStatus.PhoneNumberVerified;
 
-    const userLogin = await this.domainServices.userServices.getCurrentUserLogin(userId);
+    const userLogin = await this.domainServices.loginServices.getCurrentUserLogin(userId);
     // We should ONLY create a Login for the 1st contact verification (which is currently Email)
     // Login
     const newLogin = userLogin
@@ -151,7 +150,7 @@ export class VerifyContactCommandHandler
   }
 
   private async isSecondContactVerified(userId: string, loginType: LoginType): Promise<boolean> {
-    const login = await this.domainServices.userServices.getUserSecretByType(userId, loginType);
+    const login = await this.domainServices.loginServices.getUserLoginByType(userId, loginType);
     return !!login;
   }
 }
