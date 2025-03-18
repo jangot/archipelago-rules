@@ -8,6 +8,7 @@ export class RegistrationTransitionResult {
   code?: string;
   accessToken?: string;
   refreshToken?: string;
+  loginId?: string;
 }
 
 export enum RegistrationTransitionMessage {

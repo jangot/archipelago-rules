@@ -1,4 +1,5 @@
 import { RegistrationStatus } from '@library/entity/enum/registration.status';
+import { VerificationStatus } from '@library/entity/enum/verification.status';
 import { IApplicationUser } from '@library/entity/interface';
 import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, CreateDateColumn } from 'typeorm';
 
@@ -43,4 +44,17 @@ export class ApplicationUser implements IApplicationUser {
 
   @Column('text', { nullable: true })
   onboardStatus: string | null;
+
+  // New fields related to login verification
+  @Column('text', { nullable: true })
+  secret: string | null;
+
+  @Column('timestamp with time zone', { nullable: true })
+  secretExpiresAt: Date | null; // For storing the expiration date of the secret
+
+  @Column('text', { default: VerificationStatus.NotVerified })
+  verificationStatus: VerificationStatus; // For storing the verification state of the user
+
+  @Column('int', { default: 0 })
+  verificationAttempts: number; // For tracking the number of verification attempts
 }

@@ -74,7 +74,9 @@ export class InitiatePhoneNumberVerificationCommandHandler
       );
     }
 
-    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } = this.generateCode();
+    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } =
+      this.domainServices.userServices.generateCode();
+
     this.logger.debug(`About to update registration during adding phone number for user ${userId}`, {
       user,
       registration: { ...registration, secret: '***' },

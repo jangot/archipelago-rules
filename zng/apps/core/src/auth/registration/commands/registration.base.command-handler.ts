@@ -13,7 +13,6 @@ import { RegistrationBaseCommand } from './registration.commands';
 import { CommandBus, EventBus } from '@nestjs/cqrs';
 import { IApplicationUser } from '@library/entity/interface';
 import { VerificationEvent, VerificationEventFactory } from '../../verification';
-import { generateSecureCode } from '@library/shared/common/helpers';
 import { IDomainServices } from '../../../domain/idomain.services';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 
@@ -47,6 +46,7 @@ export abstract class RegistrationBaseCommandHandler<
    * @param message - The transition message.
    * @param userId - The user ID.
    * @param code - The verification code.
+   * @param loginId - The login ID.
    * @returns A RegistrationTransitionResultDto.
    */
   protected createTransitionResult(
@@ -54,7 +54,8 @@ export abstract class RegistrationBaseCommandHandler<
     isSuccessful: boolean,
     message: RegistrationTransitionMessage | null,
     userId?: string,
-    code?: string
+    code?: string,
+    loginId?: string
   ): RegistrationTransitionResult {
     return {
       state,
@@ -62,6 +63,7 @@ export abstract class RegistrationBaseCommandHandler<
       message,
       userId,
       code,
+      loginId,
     };
   }
 
@@ -70,11 +72,5 @@ export abstract class RegistrationBaseCommandHandler<
     const eventInstance = VerificationEventFactory.create(user, event);
     if (!eventInstance) return;
     this.eventBus.publish(eventInstance);
-  }
-
-  protected generateCode(): { code: string; expiresAt: Date } {
-    const code = generateSecureCode(6);
-    const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
-    return { code, expiresAt };
   }
 }

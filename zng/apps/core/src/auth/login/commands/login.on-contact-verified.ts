@@ -10,7 +10,7 @@ export class LoginOnContactVerifiedCommandHandler
 {
   public async execute(command: LoginOnContactVerifiedCommand): Promise<UserLoginPayloadDto> {
     const {
-      payload: { userId, contactType },
+      payload: { userId, contactType, loginId },
     } = command;
 
     if (!userId) {
@@ -18,6 +18,6 @@ export class LoginOnContactVerifiedCommandHandler
       throw new Error('No userId provided');
     }
 
-    return this.generateLoginPayload(userId, contactType || '');
+    return this.generateLoginPayload(userId, contactType || '', undefined, loginId);
   }
 }

@@ -1,6 +1,6 @@
 import { RegistrationStatus } from '@library/entity/enum';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, IsUUID, MaxLength } from 'class-validator';
 
 @ApiSchema({ name: 'userResponse' })
@@ -42,4 +42,7 @@ export class UserResponseDto {
   @ApiProperty({ description: 'Registration Status', type: String, required: true, enum: RegistrationStatus })
   @Expose()
   registrationStatus: RegistrationStatus;
+
+  @Exclude()
+  loginId?: string | null;
 }

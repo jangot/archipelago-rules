@@ -4,12 +4,9 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { UserResponseDto } from '../../dto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
 
 // Interface to avoid using 'any' as a type in 'validate' method
-interface IJwtPayload {
-  sub: string;
-}
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
@@ -38,6 +35,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!user) {
       throw new UnauthorizedException();
     }
+    // Add the loginId to the user object, so that we can use it in the controller
+    user.loginId = payload.loginId;
     return user;
   }
 }

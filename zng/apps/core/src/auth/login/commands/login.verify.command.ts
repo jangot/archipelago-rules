@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { LoginVerifyCommand } from './login.commands';
 import { UserLoginPayloadDto } from 'apps/core/src/dto/response/user-login-payload.dto';
-import { ContactType, LoginStatus, LoginType, RegistrationStatus } from '@library/entity/enum';
+import { ContactType, LoginType, RegistrationStatus } from '@library/entity/enum';
 
 @CommandHandler(LoginVerifyCommand)
 export class LoginVerifyCommandHandler
@@ -43,7 +43,7 @@ export class LoginVerifyCommandHandler
     }
 
     const loginType = contactType === ContactType.EMAIL ? LoginType.OneTimeCodeEmail : LoginType.OneTimeCodePhoneNumber;
-    const login = await this.domainServices.loginServices.getUserLoginByType(user.id, loginType);
+    const login = await this.domainServices.userServices.getUserLoginByType(user.id, loginType);
 
     if (!login) {
       this.logger.warn('LoginInitiateCommand: No login found');
@@ -67,9 +67,8 @@ export class LoginVerifyCommandHandler
       throw new Error('Verification code mismatch');
     }
 
-    const result = this.generateLoginPayload(user.id, user.onboardStatus || '');
+    const result = this.generateLoginPayload(user.id, login.id, user.onboardStatus || '');
 
-    login.loginStatus = LoginStatus.LoggedIn;
     login.secret = null;
     login.secretExpiresAt = null;
 

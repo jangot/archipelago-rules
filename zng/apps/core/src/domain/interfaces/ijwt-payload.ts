@@ -1,6 +1,4 @@
-import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
-
-export class JwtPayloadDto implements IJwtPayload {
+export interface IJwtPayload {
   iss: string; // Issuer - auth server
   sub: string; // userId
   aud: string; // audience
@@ -8,4 +6,5 @@ export class JwtPayloadDto implements IJwtPayload {
   iat: number; // Issued at time in Seconds since Unix epoch
   scope: string; // Permissions
   isAdmin: boolean; // Shortcut to enable Admin access
+  loginId?: string; // Login ID
 }

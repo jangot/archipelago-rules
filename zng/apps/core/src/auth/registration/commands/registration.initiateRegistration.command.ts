@@ -47,7 +47,8 @@ export class RegistrationInitiatedCommandHandler
       return this.reInitiateEmailVerification(pendingUser, command.payload.input!);
     }
 
-    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } = this.generateCode();
+    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } =
+      this.domainServices.userServices.generateCode();
 
     const newUser = {
       firstName: firstName?.trim(),
@@ -100,7 +101,8 @@ export class RegistrationInitiatedCommandHandler
       );
     }
 
-    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } = this.generateCode();
+    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } =
+      this.domainServices.userServices.generateCode();
 
     this.logger.debug(`About to update registration during adding email for user ${user.id}`, {
       user,

@@ -5,4 +5,5 @@ export interface LoginExecuteParams {
   contact?: string;
   contactType?: ContactType;
   verificationCode?: string;
+  loginId?: string;
 }

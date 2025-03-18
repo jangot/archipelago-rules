@@ -2,7 +2,7 @@ import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
-import { LoginStatus, LoginType } from '@library/entity/enum';
+import { LoginType } from '@library/entity/enum';
 import { Login } from '../../domain/entities';
 import { ILoginRepository } from '../../shared/interfaces/repositories';
 import { ILogin } from '@library/entity/interface';
@@ -46,10 +46,8 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
     return await this.repository.find({ where: { userId } });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async getCurrentUserLogin(userId: string): Promise<ILogin | null> {
-    return await this.repository.findOne({
-      where: { userId, loginStatus: LoginStatus.LoggedIn },
-      order: { lastLoggedInAt: 'DESC' },
-    });
+    return null;
   }
 }
