@@ -17,6 +17,8 @@ import { JwtService } from '@nestjs/jwt';
 import { IDataService } from '../../data/idata.service';
 import { IJwtPayload } from '../interfaces/ijwt-payload';
 import { IRefreshTokenPayload } from '../interfaces/irefresh-token-payload';
+import { ConfigService } from '@nestjs/config';
+import { addSeconds, getUnixTime } from 'date-fns';
 
 @Injectable()
 export class UserDomainService extends BaseDomainServices {
@@ -24,7 +26,8 @@ export class UserDomainService extends BaseDomainServices {
 
   constructor(
     protected readonly data: IDataService,
-    protected readonly jwtService: JwtService
+    protected readonly jwtService: JwtService,
+    protected readonly config: ConfigService
   ) {
     super(data);
   }
@@ -121,8 +124,8 @@ export class UserDomainService extends BaseDomainServices {
   }
 
   public createAccessTokenPayload(userId: string): IJwtPayload {
-    // TODO: Get expiresIn from the config
-    const exp = Math.floor((Date.now() + 3600000) / 1000); // 1 hour expiration in Unix Epoch time
+    const expiration = this.config.getOrThrow<number>('JWT_ACCESS_EXP');
+    const exp = getUnixTime(addSeconds(new Date(Date.now()), expiration)); // 1 hour expiration in Unix Epoch time
     const iat = Math.floor(Date.now() / 1000); // Current dateTime in Unix Epoch time
     const payload: IJwtPayload = {
       iss: 'https://auth.zirtue.com',
@@ -138,8 +141,8 @@ export class UserDomainService extends BaseDomainServices {
   }
 
   public createRefreshTokenPayload(userId: string): IRefreshTokenPayload {
-    // TODO: Get expiresIn from the config
-    const exp = Math.floor((Date.now() + 604800000) / 1000); // 7 days expiration in Unix Epoch time
+    const expiration = this.config.getOrThrow<number>('JWT_REFRESH_EXP');
+    const exp = getUnixTime(addSeconds(new Date(Date.now()), expiration)); // 7 days expiration in Unix Epoch time
     const iat = Math.floor(Date.now() / 1000); // Current dateTime in Unix Epoch time
     const payload: IRefreshTokenPayload = {
       iss: 'https://auth.zirtue.com',
@@ -152,15 +155,27 @@ export class UserDomainService extends BaseDomainServices {
     return payload;
   }
 
-  public async generateToken(payload: IJwtPayload | IRefreshTokenPayload, expiresIn?: string): Promise<string> {
-    // Default to 1 hour unless we override this
-    if (!expiresIn) {
-      expiresIn = '1h';
-    }
+  // Make it separate as we need to know exact token type to apply default expiration and secret
+  public async generateAccessToken(payload: IJwtPayload, expiresIn?: number): Promise<string> {
+    const expiration = expiresIn || this.config.getOrThrow<number>('JWT_ACCESS_EXP');
+    const secret = this.config.getOrThrow<string>('JWT_ACCESS_SECRET');
 
-    const accessToken = await this.jwtService.signAsync(payload, { expiresIn });
+    return this.generateToken(payload, expiration, secret);
+  }
 
-    return accessToken;
+  public async generateRefreshToken(payload: IRefreshTokenPayload, expiresIn?: number): Promise<string> {
+    const expiration = expiresIn || this.config.getOrThrow<number>('JWT_REFRESH_EXP');
+    const secret = this.config.getOrThrow<string>('JWT_REFRESH_SECRET');
+
+    return this.generateToken(payload, expiration, secret);
+  }
+
+  private async generateToken(
+    payload: IJwtPayload | IRefreshTokenPayload,
+    expiresIn: number,
+    secret: string
+  ): Promise<string> {
+    return this.jwtService.signAsync(payload, { secret, expiresIn });
   }
   //#endregion
 }

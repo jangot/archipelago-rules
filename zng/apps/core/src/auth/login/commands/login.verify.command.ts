@@ -67,7 +67,7 @@ export class LoginVerifyCommandHandler
       throw new Error('Verification code mismatch');
     }
 
-    const result = this.generateLoginPayload(user.id, login.id, user.onboardStatus || '');
+    const result = this.generateLoginPayload(user.id, user.onboardStatus || '');
 
     login.secret = null;
     login.secretExpiresAt = null;

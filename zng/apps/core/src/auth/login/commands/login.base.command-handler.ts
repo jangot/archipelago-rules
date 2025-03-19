@@ -5,18 +5,27 @@ import { EventBus } from '@nestjs/cqrs';
 import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dto';
 import { ContactType, LoginType } from '@library/entity/enum';
 import { IDomainServices } from '../../../domain/idomain.services';
+import { ConfigService } from '@nestjs/config';
 
 export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = LoginCommand> {
   protected readonly domainServices: IDomainServices;
   protected readonly jwtService: JwtService;
   protected readonly logger: Logger;
   protected readonly eventBus: EventBus;
+  protected readonly config: ConfigService;
 
-  constructor(domainServices: IDomainServices, jwtService: JwtService, logger: Logger, eventBus: EventBus) {
+  constructor(
+    domainServices: IDomainServices,
+    jwtService: JwtService,
+    logger: Logger,
+    eventBus: EventBus,
+    config: ConfigService
+  ) {
     this.domainServices = domainServices;
     this.jwtService = jwtService;
     this.logger = logger;
     this.eventBus = eventBus;
+    this.config = config;
   }
 
   public abstract execute(command: TCommand): Promise<UserLoginPayloadDto>;
@@ -24,18 +33,16 @@ export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = Lo
   protected async generateLoginPayload(
     userId: string,
     onboardingStatus: string,
-    expiresIn?: string
+    expiresIn?: number
   ): Promise<UserLoginPayloadDto> {
     const payload = this.domainServices.userServices.createAccessTokenPayload(userId);
-    const refreshTokenPayload = this.domainServices.userServices.createRefreshTokenPayload(userId);
+    const refreshPayload = this.domainServices.userServices.createRefreshTokenPayload(userId);
 
-    // Default to 1 hour unless we override this
-    if (!expiresIn) {
-      expiresIn = '1h';
-    }
+    const accessTokenExp = expiresIn || this.config.getOrThrow<number>('JWT_ACCESS_EXP');
+    const refreshTokenExp = this.config.getOrThrow<number>('JWT_REFRESH_EXP');
 
-    const accessToken = await this.domainServices.userServices.generateToken(payload, expiresIn);
-    const refreshToken = await this.domainServices.userServices.generateToken(refreshTokenPayload, expiresIn);
+    const accessToken = await this.domainServices.userServices.generateAccessToken(payload, accessTokenExp);
+    const refreshToken = await this.domainServices.userServices.generateRefreshToken(refreshPayload, refreshTokenExp);
 
     const result: UserLoginPayloadDto = {
       userId,
