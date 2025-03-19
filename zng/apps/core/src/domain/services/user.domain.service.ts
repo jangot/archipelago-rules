@@ -12,7 +12,7 @@ import { Transactional } from 'typeorm-transactional';
 import { DeepPartial } from 'typeorm';
 import { ContactType, LoginType } from '@library/entity/enum';
 import { BaseDomainServices } from './domain.service.base';
-import { generateSecureCode } from '@library/shared/common/helpers';
+import { generateSecureCode, createHashAsync } from '@library/shared/common/helpers';
 import { JwtService } from '@nestjs/jwt';
 import { IDataService } from '../../data/idata.service';
 import { IJwtPayload } from '../interfaces/ijwt-payload';
@@ -83,11 +83,21 @@ export class UserDomainService extends BaseDomainServices {
   //#endregion
 
   //#region User Related Login Methods
-  public async createOrUpdateLogin(login: DeepPartial<ILogin>): Promise<ILogin | null> {
+  public async createOrUpdateLogin(login: DeepPartial<ILogin>, isSecretUpdated = false): Promise<ILogin | null> {
+    if (login.secret && isSecretUpdated) {
+      login.secret = await createHashAsync(login.secret);
+    }
     return this.data.logins.createOrUpdate(login);
   }
 
-  public async updateLogin(loginId: string, login: DeepPartial<ILogin>): Promise<boolean | null> {
+  public async updateLogin(
+    loginId: string,
+    login: DeepPartial<ILogin>,
+    isSecretUpdated = false
+  ): Promise<boolean | null> {
+    if (login.secret && isSecretUpdated) {
+      login.secret = await createHashAsync(login.secret);
+    }
     return this.data.logins.update(loginId, login);
   }
 
