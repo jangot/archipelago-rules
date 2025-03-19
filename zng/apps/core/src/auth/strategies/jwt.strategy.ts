@@ -4,12 +4,9 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { UserResponseDto } from '../../dto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
 
 // Interface to avoid using 'any' as a type in 'validate' method
-interface IJwtPayload {
-  sub: string;
-}
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
@@ -17,9 +14,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     // Make it 'protected' not 'private' to be able to access it in the super() call
     protected readonly config: ConfigService
   ) {
-    const jwtSecret = config.get<string>('JWT_SECRET');
+    const jwtSecret = config.get<string>('JWT_ACCESS_SECRET');
     if (!jwtSecret) {
-      throw new Error('JWT_SECRET is not defined');
+      throw new Error('JWT_ACCESS_SECRET is not defined');
     }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

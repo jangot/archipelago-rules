@@ -1,6 +1,4 @@
-import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
-
-export class JwtPayloadDto implements IJwtPayload {
+export interface IJwtPayload {
   iss: string; // Issuer - auth server
   sub: string; // userId
   aud: string; // audience

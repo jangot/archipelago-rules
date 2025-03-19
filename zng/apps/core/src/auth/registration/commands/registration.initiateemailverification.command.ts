@@ -71,7 +71,8 @@ export class InitiateEmailVerificationCommandHandler
     // #endregion
 
     // #region Generating Code, Updating User and Registration
-    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } = this.generateCode();
+    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } =
+      this.domainServices.userServices.generateCode();
 
     this.logger.debug(`About to update registration during adding email for user ${userId}`, {
       user,

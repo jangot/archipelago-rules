@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LoginInitiateCommand } from './login.commands';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { UserLoginPayloadDto } from 'apps/core/src/dto/response/user-login-payload.dto';
-import { ContactType, LoginStatus, LoginType, RegistrationStatus } from '@library/entity/enum';
+import { ContactType, LoginType, RegistrationStatus } from '@library/entity/enum';
 
 @CommandHandler(LoginInitiateCommand)
 export class LoginInitiateCommandHandler
@@ -41,20 +41,19 @@ export class LoginInitiateCommandHandler
     }
 
     const loginType = contactType === ContactType.EMAIL ? LoginType.OneTimeCodeEmail : LoginType.OneTimeCodePhoneNumber;
-    const login = await this.domainServices.loginServices.getUserLoginByType(user.id, loginType);
+    const login = await this.domainServices.userServices.getUserLoginByType(user.id, loginType);
 
     if (!login) {
       this.logger.warn('LoginInitiateCommand: No login found');
       throw new Error('No login found');
     }
 
-    const { code, expiresAt } = this.generateCode();
+    const { code, expiresAt } = this.domainServices.userServices.generateCode();
 
     login.code = code;
     login.expiresAt = expiresAt;
-    login.loginStatus = LoginStatus.Verifying;
 
-    await this.domainServices.loginServices.updateLogin(login.id, login);
+    await this.domainServices.userServices.updateLogin(login.id, login, true);
 
     // TODO: Send the code to the user
     //this.sendEvent()

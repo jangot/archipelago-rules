@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { VerifyContactCommand } from './registration.commands';
-import { LoginStatus, LoginType, RegistrationStatus } from '@library/entity/enum';
+import { LoginType, RegistrationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 
@@ -83,20 +83,18 @@ export class VerifyContactCommandHandler
         ? RegistrationStatus.EmailVerified
         : RegistrationStatus.PhoneNumberVerified;
 
-    const userLogin = await this.domainServices.loginServices.getCurrentUserLogin(userId);
+    const loginType =
+      newRegistrationStatus === RegistrationStatus.EmailVerified
+        ? LoginType.OneTimeCodeEmail
+        : LoginType.OneTimeCodePhoneNumber;
+
     // We should ONLY create a Login for the 1st contact verification (which is currently Email)
     // Login
-    const newLogin = userLogin
-      ? null
-      : {
-          loginType:
-            newRegistrationStatus === RegistrationStatus.EmailVerified
-              ? LoginType.OneTimeCodeEmail
-              : LoginType.OneTimeCodePhoneNumber,
-          userId: user.id,
-          loginStatus: LoginStatus.LoggedIn, // We are logging the user in, indicate that in the state!
-          lastLoggedInAt: new Date(),
-        };
+    const newLogin = {
+      loginType: loginType,
+      userId: user.id,
+      updatedAt: new Date(),
+    };
 
     this.logger.debug(`About to update registration, user and add login during verifying contact for user ${user.id}`, {
       user,
@@ -137,20 +135,22 @@ export class VerifyContactCommandHandler
     );
 
     // Checking the possibility to complete registration
+    // This looks the same as loginType above? Am I missing something?
     const secondLoginType =
       newRegistrationStatus === RegistrationStatus.EmailVerified
         ? LoginType.OneTimeCodeEmail
         : LoginType.OneTimeCodePhoneNumber;
+
     const isSecondContactVerified = await this.isSecondContactVerified(userId, secondLoginType);
     if (isSecondContactVerified) {
       return this.createTransitionResult(RegistrationStatus.Registered, true, null);
     }
 
-    return this.createTransitionResult(newRegistrationStatus, true, null);
+    return this.createTransitionResult(newRegistrationStatus, true, null, undefined, undefined);
   }
 
   private async isSecondContactVerified(userId: string, loginType: LoginType): Promise<boolean> {
-    const login = await this.domainServices.loginServices.getUserLoginByType(userId, loginType);
+    const login = await this.domainServices.userServices.getUserLoginByType(userId, loginType);
     return !!login;
   }
 }

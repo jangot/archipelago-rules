@@ -13,7 +13,6 @@ import { RegistrationBaseCommand } from './registration.commands';
 import { CommandBus, EventBus } from '@nestjs/cqrs';
 import { IApplicationUser } from '@library/entity/interface';
 import { VerificationEvent, VerificationEventFactory } from '../../verification';
-import { generateSecureCode } from '@library/shared/common/helpers';
 import { IDomainServices } from '../../../domain/idomain.services';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 
@@ -70,11 +69,5 @@ export abstract class RegistrationBaseCommandHandler<
     const eventInstance = VerificationEventFactory.create(user, event);
     if (!eventInstance) return;
     this.eventBus.publish(eventInstance);
-  }
-
-  protected generateCode(): { code: string; expiresAt: Date } {
-    const code = generateSecureCode(6);
-    const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour expiration for now
-    return { code, expiresAt };
   }
 }

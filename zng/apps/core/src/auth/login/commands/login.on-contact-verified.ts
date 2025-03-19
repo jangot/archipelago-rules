@@ -18,6 +18,6 @@ export class LoginOnContactVerifiedCommandHandler
       throw new Error('No userId provided');
     }
 
-    return this.generateLoginPayload(userId, contactType || '');
+    return this.generateLoginPayload(userId, contactType || '', undefined);
   }
 }

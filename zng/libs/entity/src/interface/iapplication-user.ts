@@ -1,5 +1,6 @@
 import { EntityId, ISoftDeleteEntity } from '@library/shared/common/data';
 import { RegistrationStatus } from '../enum/registration.status';
+import { VerificationStatus } from '../enum/verification.status';
 
 export interface IApplicationUser extends EntityId<string>, ISoftDeleteEntity {
   id: string; // UUID
@@ -18,4 +19,10 @@ export interface IApplicationUser extends EntityId<string>, ISoftDeleteEntity {
 
   registrationStatus: RegistrationStatus;
   onboardStatus: string | null;
+
+  // New fields related to login verification (not used during registration)
+  secret: string | null; // For storing the secret used for login verification
+  secretExpiresAt: Date | null; // For storing the expiration date of the secret
+  verificationStatus: VerificationStatus; // For storing the verification state of the user
+  verificationAttempts: number; // For tracking the number of verification attempts
 }
