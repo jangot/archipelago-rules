@@ -83,8 +83,8 @@ export class UserDomainService extends BaseDomainServices {
   //#endregion
 
   //#region User Related Login Methods
-  public async createOrUpdateLogin(login: DeepPartial<ILogin>, isSecretUpdated = false): Promise<ILogin | null> {
-    if (login.secret && isSecretUpdated) {
+  public async createOrUpdateLogin(login: DeepPartial<ILogin>, shouldHashSecret = false): Promise<ILogin | null> {
+    if (login.secret && shouldHashSecret) {
       login.secret = await createHashAsync(login.secret);
     }
     return this.data.logins.createOrUpdate(login);
@@ -93,9 +93,9 @@ export class UserDomainService extends BaseDomainServices {
   public async updateLogin(
     loginId: string,
     login: DeepPartial<ILogin>,
-    isSecretUpdated = false
+    shouldHashSecret = false
   ): Promise<boolean | null> {
-    if (login.secret && isSecretUpdated) {
+    if (login.secret && shouldHashSecret) {
       login.secret = await createHashAsync(login.secret);
     }
     return this.data.logins.update(loginId, login);

@@ -53,7 +53,7 @@ export class LoginInitiateCommandHandler
     login.code = code;
     login.expiresAt = expiresAt;
 
-    await this.domainServices.userServices.updateLogin(login.id, login);
+    await this.domainServices.userServices.updateLogin(login.id, login, true);
 
     // TODO: Send the code to the user
     //this.sendEvent()
