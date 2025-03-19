@@ -110,7 +110,7 @@ export class UserDomainService extends BaseDomainServices {
     return { code, expiresAt };
   }
 
-  public createAccessTokenPayload(userId: string, loginId?: string): IJwtPayload {
+  public createAccessTokenPayload(userId: string): IJwtPayload {
     // TODO: Get expiresIn from the config
     const exp = Math.floor((Date.now() + 3600000) / 1000); // 1 hour expiration in Unix Epoch time
     const iat = Math.floor(Date.now() / 1000); // Current dateTime in Unix Epoch time
@@ -122,13 +122,12 @@ export class UserDomainService extends BaseDomainServices {
       iat: iat,
       scope: 'read write profile',
       isAdmin: false,
-      loginId: loginId,
     };
 
     return payload;
   }
 
-  public createRefreshTokenPayload(userId: string, loginId?: string): IRefreshTokenPayload {
+  public createRefreshTokenPayload(userId: string): IRefreshTokenPayload {
     // TODO: Get expiresIn from the config
     const exp = Math.floor((Date.now() + 604800000) / 1000); // 7 days expiration in Unix Epoch time
     const iat = Math.floor(Date.now() / 1000); // Current dateTime in Unix Epoch time
@@ -138,7 +137,6 @@ export class UserDomainService extends BaseDomainServices {
       aud: 'api-zirtue.com',
       exp: exp,
       iat: iat,
-      loginId: loginId,
     };
 
     return payload;

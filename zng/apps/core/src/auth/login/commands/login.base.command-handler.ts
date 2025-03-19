@@ -24,11 +24,10 @@ export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = Lo
   protected async generateLoginPayload(
     userId: string,
     onboardingStatus: string,
-    expiresIn?: string,
-    loginId?: string
+    expiresIn?: string
   ): Promise<UserLoginPayloadDto> {
-    const payload = this.domainServices.userServices.createAccessTokenPayload(userId, loginId);
-    const refreshTokenPayload = this.domainServices.userServices.createRefreshTokenPayload(userId, loginId);
+    const payload = this.domainServices.userServices.createAccessTokenPayload(userId);
+    const refreshTokenPayload = this.domainServices.userServices.createRefreshTokenPayload(userId);
 
     // Default to 1 hour unless we override this
     if (!expiresIn) {

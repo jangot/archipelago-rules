@@ -46,7 +46,6 @@ export abstract class RegistrationBaseCommandHandler<
    * @param message - The transition message.
    * @param userId - The user ID.
    * @param code - The verification code.
-   * @param loginId - The login ID.
    * @returns A RegistrationTransitionResultDto.
    */
   protected createTransitionResult(
@@ -54,8 +53,7 @@ export abstract class RegistrationBaseCommandHandler<
     isSuccessful: boolean,
     message: RegistrationTransitionMessage | null,
     userId?: string,
-    code?: string,
-    loginId?: string
+    code?: string
   ): RegistrationTransitionResult {
     return {
       state,
@@ -63,7 +61,6 @@ export abstract class RegistrationBaseCommandHandler<
       message,
       userId,
       code,
-      loginId,
     };
   }
 

@@ -4,5 +4,4 @@ export interface IRefreshTokenPayload {
   aud: string; // audience
   exp?: number; // Expiration time in Seconds since Unix epoch
   iat: number; // Issued at time in Seconds since Unix epoch
-  loginId?: string; // Login ID
 }

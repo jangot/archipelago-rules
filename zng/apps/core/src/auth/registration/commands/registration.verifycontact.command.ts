@@ -124,7 +124,6 @@ export class VerifyContactCommandHandler
     });
 
     await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
-    const login = await this.domainServices.userServices.getUserLoginByType(userId, loginType);
 
     // #endregion
 
@@ -147,7 +146,7 @@ export class VerifyContactCommandHandler
       return this.createTransitionResult(RegistrationStatus.Registered, true, null);
     }
 
-    return this.createTransitionResult(newRegistrationStatus, true, null, undefined, undefined, login?.id);
+    return this.createTransitionResult(newRegistrationStatus, true, null, undefined, undefined);
   }
 
   private async isSecondContactVerified(userId: string, loginType: LoginType): Promise<boolean> {

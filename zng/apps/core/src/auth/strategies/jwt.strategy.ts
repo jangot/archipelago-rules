@@ -35,8 +35,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!user) {
       throw new UnauthorizedException();
     }
-    // Add the loginId to the user object, so that we can use it in the controller
-    user.loginId = payload.loginId;
     return user;
   }
 }

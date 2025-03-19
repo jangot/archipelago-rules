@@ -6,5 +6,4 @@ export interface IJwtPayload {
   iat: number; // Issued at time in Seconds since Unix epoch
   scope: string; // Permissions
   isAdmin: boolean; // Shortcut to enable Admin access
-  loginId?: string; // Login ID
 }

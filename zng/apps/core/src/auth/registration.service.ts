@@ -136,7 +136,7 @@ export class RegistrationService {
       throw new HttpException('Registration Verification failed', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    const { state, isSuccessful, message, loginId } = result;
+    const { state, isSuccessful, message } = result;
 
     if (!isSuccessful) {
       const exception = RegistrationExceptionFactory.translate(message, state);
@@ -149,7 +149,7 @@ export class RegistrationService {
       }
       const contactType =
         result.state === RegistrationStatus.EmailVerified ? ContactType.EMAIL : ContactType.PHONE_NUMBER;
-      return await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType, loginId }));
+      return await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType }));
     }
   }
 }
