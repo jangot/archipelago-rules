@@ -14,11 +14,7 @@ export class InitiateEmailVerificationCommandHandler
   public async execute(command: InitiateEmailVerificationCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
       this.logger.warn(`initiateEmailVerification: Invalid command payload`, { command });
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.WrongInput
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
     const {
       payload: { id: userId, input },
@@ -32,21 +28,13 @@ export class InitiateEmailVerificationCommandHandler
     const user = await this.domainServices.userServices.getUserById(userId);
     if (!user) {
       this.logger.debug(`No user found by ${userId}`);
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.WrongInput
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
 
     const { email } = input;
     if (!email) {
       this.logger.warn(`No email provided for email verification`, { input });
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.NoContactProvided
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.NoContactProvided);
     }
 
     const userByEmail = await this.domainServices.userServices.getUserByContact(email, ContactType.EMAIL);
@@ -54,28 +42,16 @@ export class InitiateEmailVerificationCommandHandler
     if (userByEmail) {
       if (userByEmail.id === userId) {
         this.logger.debug(`User ${userId} already has the email ${email}`);
-        return this.createTransitionResult(
-          RegistrationStatus.EmailVerified,
-          false,
-          RegistrationTransitionMessage.AlreadyVerified
-        );
+        return this.createTransitionResult(RegistrationStatus.EmailVerified, false, RegistrationTransitionMessage.AlreadyVerified);
       }
       this.logger.debug(`Email already taken: ${email} by ${userByEmail.id}`, { input });
-      return this.createTransitionResult(
-        RegistrationStatus.EmailVerifying,
-        false,
-        RegistrationTransitionMessage.ContactTaken
-      );
+      return this.createTransitionResult(RegistrationStatus.EmailVerifying, false, RegistrationTransitionMessage.ContactTaken);
     }
 
     const registration = await this.domainServices.userServices.getUserRegistration(userId);
     if (!registration) {
       this.logger.warn(`No registration found for user ${userId}`);
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.NoRegistrationStatusFound
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.NoRegistrationStatusFound);
     }
 
     // #endregion
@@ -109,6 +85,6 @@ export class InitiateEmailVerificationCommandHandler
 
     this.sendEvent(user, VerificationEvent.EmailVerifying);
 
-    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, userId, code);
+    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, userId, undefined, code);
   }
 }

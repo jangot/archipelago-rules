@@ -119,10 +119,7 @@ describe('DataModule Integration Tests', () => {
       borrowerGetResult = await dataService.users.findOneBy({ id: borrowerUserId });
       // Use findOne if you need to load the Relations associated with this Entity, as you can provide
       // options to have it load the relationships as well (findOneBy does not support this functionality)
-      loanGetResult = await dataService.loans.findOne({
-        where: { id: expectedLoanId },
-        relations: ['lender', 'borrower'],
-      });
+      loanGetResult = await dataService.loans.findOne({ where: { id: expectedLoanId }, relations: ['lender', 'borrower'] });
 
       // No longer needed because of switching to using the findOne() method instead of the findOneBy() method
       // Band-aid to solve BaseRepo Lazy Load for this test. Definetely should work in supposed way instead.

@@ -9,9 +9,7 @@ export class ValidateOptionalQueryParamsPipe implements PipeTransform {
     const presentParams = this.optionalParameters.filter((param) => value[param] !== undefined);
 
     if (presentParams.length === 0) {
-      throw new BadRequestException(
-        `Exactly one of the following query parameters must be provided: ${this.optionalParameters.join(', ')}.`
-      );
+      throw new BadRequestException(`Exactly one of the following query parameters must be provided: ${this.optionalParameters.join(', ')}.`);
     }
 
     if (presentParams.length > 1) {

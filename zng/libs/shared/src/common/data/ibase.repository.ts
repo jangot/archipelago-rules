@@ -113,10 +113,7 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
    * @memberof IRepositoryBase
    * @see {@link https://orkhan.gitbook.io/typeorm/docs/find-options TypeORM Find Options Documentation}
    */
-  findBy(
-    where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
-    paging?: IPagingOptions
-  ): Promise<IPaging<Entity>>;
+  findBy(where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[], paging?: IPagingOptions): Promise<IPaging<Entity>>;
 
   /**
    * Deletes entities by a given criteria.

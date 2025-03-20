@@ -12,8 +12,4 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 
 // Add Core specific modules to be Imported into the Core Module here
-export const CoreModules: Array<Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference> = [
-  DataModule,
-  UsersModule,
-  AuthModule,
-];
+export const CoreModules: Array<Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference> = [DataModule, UsersModule, AuthModule];

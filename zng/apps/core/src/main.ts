@@ -59,9 +59,7 @@ function configureSwagger(app: INestApplication<any>) {
     .addTag('ZNG Core API')
     .build();
 
-  const options: SwaggerDocumentOptions = {
-    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
-  };
+  const options: SwaggerDocumentOptions = { operationIdFactory: (controllerKey: string, methodKey: string) => methodKey };
 
   const document = SwaggerModule.createDocument(app, config, options);
 

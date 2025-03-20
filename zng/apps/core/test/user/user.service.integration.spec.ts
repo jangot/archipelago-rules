@@ -41,12 +41,7 @@ describe('UsersService Integration Tests', () => {
     it('should return pgtyped typed User object', async () => {
       const phoneNumber = '+12124567890';
 
-      const mockUser: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber,
-      };
+      const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', phoneNumber };
 
       const createResult = await service.createUser(mockUser);
       const result = await service.getUserDetailById(createResult!.id);
@@ -69,12 +64,7 @@ describe('UsersService Integration Tests', () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567890';
 
-      const mockUser: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber,
-      };
+      const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', phoneNumber };
 
       const createResult = await service.createUser(mockUser);
 
@@ -96,12 +86,7 @@ describe('UsersService Integration Tests', () => {
 
   describe('getUserByEmail', () => {
     it('should return a user by email', async () => {
-      const mockUser: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doez@example.com',
-        phoneNumber: '1234567890',
-      };
+      const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doez@example.com', phoneNumber: '1234567890' };
 
       const createResult = await service.createUser(mockUser);
 
@@ -123,12 +108,7 @@ describe('UsersService Integration Tests', () => {
 
   describe('getUserByPhoneNumber', () => {
     it('should return a user by phone number', async () => {
-      const mockUser: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doep@example.com',
-        phoneNumber: '1234567800',
-      };
+      const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doep@example.com', phoneNumber: '1234567800' };
 
       const createResult = await service.createUser(mockUser);
 
@@ -153,12 +133,7 @@ describe('UsersService Integration Tests', () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567890';
 
-      const createUserDto: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doex@example.com',
-        phoneNumber,
-      };
+      const createUserDto: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doex@example.com', phoneNumber };
 
       const result = await service.createUser(createUserDto);
       expect(result).toEqual({
@@ -182,12 +157,7 @@ describe('UsersService Integration Tests', () => {
     it('should return null if user creation fails', async () => {
       jest.spyOn(service, 'createUser').mockResolvedValueOnce(null);
 
-      const createUserDto: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber: '1234567890',
-      };
+      const createUserDto: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', phoneNumber: '1234567890' };
 
       const result = await service.createUser(createUserDto);
       expect(result).toBeNull();
@@ -199,12 +169,7 @@ describe('UsersService Integration Tests', () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567891';
 
-      const mockUser: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber,
-      };
+      const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', phoneNumber };
 
       const creationResult = await service.createUser(mockUser);
 
@@ -248,12 +213,7 @@ describe('UsersService Integration Tests', () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567891';
 
-      const mockUser: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber,
-      };
+      const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', phoneNumber };
 
       const creationResult = await service.createUser(mockUser);
 
@@ -287,22 +247,11 @@ describe('UsersService Integration Tests', () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567891';
 
-      const mockUser: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber,
-      };
+      const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', phoneNumber };
 
       const creationResult = await service.createUser(mockUser);
 
-      const updateUserDto: UserUpdateRequestDto = {
-        id: creationResult!.id,
-        firstName: 'Jane',
-        lastName: '',
-        email: '',
-        phoneNumber: undefined,
-      };
+      const updateUserDto: UserUpdateRequestDto = { id: creationResult!.id, firstName: 'Jane', lastName: '', email: '', phoneNumber: undefined };
 
       const result = await service.updateUser(updateUserDto);
       expect(result).toBe(true);
@@ -323,12 +272,7 @@ describe('UsersService Integration Tests', () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567891';
 
-      const mockUser: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber,
-      };
+      const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', phoneNumber };
 
       const creationResult = await service.createUser(mockUser);
 
@@ -350,12 +294,7 @@ describe('UsersService Integration Tests', () => {
       // Simulate controller-level behaviour for phone number normalization
       const phoneNumber = '+12124567891';
 
-      const mockUser: UserCreateRequestDto = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber,
-      };
+      const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', phoneNumber };
 
       const creationResult = await service.createUser(mockUser);
 
@@ -416,9 +355,7 @@ describe('UsersService Integration Tests', () => {
       expect(notEqualsResult.data).toHaveLength(3);
 
       // MORE THAN EQ
-      const moreThanFilters = [
-        { field: 'phoneNumber', operator: ValueOperator.GREATER_THAN_OR_EQUAL, value: '+12124567892' },
-      ];
+      const moreThanFilters = [{ field: 'phoneNumber', operator: ValueOperator.GREATER_THAN_OR_EQUAL, value: '+12124567892' }];
       const moreThanResult = await service.search({ filters: moreThanFilters });
 
       expect(moreThanResult.data).toHaveLength(3);
@@ -430,9 +367,7 @@ describe('UsersService Integration Tests', () => {
       expect(inResult.data).toHaveLength(2);
 
       // BETWEEN
-      const betweenFilter = [
-        { field: 'phoneNumber', operator: ValueOperator.BETWEEN, value: ['+12124567893', '+12124567894'] },
-      ];
+      const betweenFilter = [{ field: 'phoneNumber', operator: ValueOperator.BETWEEN, value: ['+12124567893', '+12124567894'] }];
       const betweenResult = await service.search({ filters: betweenFilter });
 
       expect(betweenResult.data).toHaveLength(2);
@@ -496,9 +431,7 @@ describe('UsersService Integration Tests', () => {
 
   describe('edge-cases', () => {
     it('should properly handle empty search request', async () => {
-      const result = await service.search({
-        filters: [{ field: 'nonexistent', operator: ValueOperator.EQUALS, value: 'nonexistent' }],
-      });
+      const result = await service.search({ filters: [{ field: 'nonexistent', operator: ValueOperator.EQUALS, value: 'nonexistent' }] });
       expect(result.data).toHaveLength(0);
       expect(result.meta.totalCount).toBe(0);
     });

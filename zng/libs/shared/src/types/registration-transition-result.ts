@@ -5,6 +5,7 @@ export class RegistrationTransitionResult {
   isSuccessful: boolean;
   message: RegistrationTransitionMessage | null;
   userId?: string;
+  loginId?: string;
   code?: string;
   accessToken?: string;
   refreshToken?: string;

@@ -7,9 +7,7 @@ describe('CoreController (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [CoreModule],
-    }).compile();
+    const moduleFixture: TestingModule = await Test.createTestingModule({ imports: [CoreModule] }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();

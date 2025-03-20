@@ -15,13 +15,7 @@ export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = Lo
   protected readonly eventBus: EventBus;
   protected readonly config: ConfigService;
 
-  constructor(
-    domainServices: IDomainServices,
-    jwtService: JwtService,
-    logger: Logger,
-    eventBus: EventBus,
-    config: ConfigService
-  ) {
+  constructor(domainServices: IDomainServices, jwtService: JwtService, logger: Logger, eventBus: EventBus, config: ConfigService) {
     this.domainServices = domainServices;
     this.jwtService = jwtService;
     this.logger = logger;
@@ -31,11 +25,7 @@ export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = Lo
 
   public abstract execute(command: TCommand): Promise<UserLoginPayloadDto>;
 
-  protected async generateLoginPayload(
-    userId: string,
-    onboardingStatus: string,
-    expiresIn?: number
-  ): Promise<UserLoginPayloadDto> {
+  protected async generateLoginPayload(userId: string, onboardingStatus: string, expiresIn?: number): Promise<UserLoginPayloadDto> {
     const payload = this.domainServices.userServices.createAccessTokenPayload(userId);
     const refreshPayload = this.domainServices.userServices.createRefreshTokenPayload(userId);
 

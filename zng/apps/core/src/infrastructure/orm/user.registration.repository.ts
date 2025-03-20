@@ -7,10 +7,7 @@ import { IUserRegistrationRepository } from '../../shared/interfaces/repositorie
 import { IUserRegistration } from '@library/entity/interface';
 
 @Injectable()
-export class UserRegistrationRepository
-  extends RepositoryBase<UserRegistration>
-  implements IUserRegistrationRepository
-{
+export class UserRegistrationRepository extends RepositoryBase<UserRegistration> implements IUserRegistrationRepository {
   private readonly logger: Logger = new Logger(UserRegistrationRepository.name);
 
   constructor(@InjectRepository(UserRegistration) protected readonly repository: Repository<UserRegistration>) {

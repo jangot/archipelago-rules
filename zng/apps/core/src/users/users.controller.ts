@@ -71,9 +71,7 @@ export class UsersController {
   @ApiBadRequestResponse({ description: 'Invalid phone number', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
   @Get('/')
-  public async getUserByParameter(
-    @Query(new ValidateOptionalQueryParamsPipe(['phoneNumber', 'email'])) data: any
-  ): Promise<UserResponseDto> {
+  public async getUserByParameter(@Query(new ValidateOptionalQueryParamsPipe(['phoneNumber', 'email'])) data: any): Promise<UserResponseDto> {
     const { email, phoneNumber, crash } = data;
     let result: UserResponseDto | null = null;
 

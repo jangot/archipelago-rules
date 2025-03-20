@@ -16,20 +16,14 @@ export class AuthService {
   public async initiateLoginSession(request: LoginRequestDto): Promise<UserLoginPayloadDto> {
     const contactInfo = this.extractContactInfo(request);
 
-    return await this.commandBus.execute(
-      new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType })
-    );
+    return await this.commandBus.execute(new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType }));
   }
 
   public async verifyLoginSession(request: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
     const contactInfo = this.extractContactInfo(request);
 
     return await this.commandBus.execute(
-      new LoginVerifyCommand({
-        contact: contactInfo.contact,
-        contactType: contactInfo.contactType,
-        verificationCode: request.code,
-      })
+      new LoginVerifyCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType, verificationCode: request.code })
     );
   }
 

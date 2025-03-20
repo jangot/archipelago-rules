@@ -12,10 +12,7 @@ export class DtoMapper {
    * @return {(DTO | null)} - returns new DTO instance or null
    * @memberof DtoMapper
    */
-  public static toDto<Entity extends object, DTO extends object>(
-    entity: Entity | null,
-    dtoClass: ClassConstructor<DTO>
-  ): DTO | null {
+  public static toDto<Entity extends object, DTO extends object>(entity: Entity | null, dtoClass: ClassConstructor<DTO>): DTO | null {
     if (!entity) {
       return null;
     }

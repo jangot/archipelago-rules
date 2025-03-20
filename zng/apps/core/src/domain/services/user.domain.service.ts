@@ -36,10 +36,7 @@ export class UserDomainService extends BaseDomainServices {
   public async updateUserRegistration(registration: IUserRegistration, user: IApplicationUser): Promise<void> {
     this.logger.debug(`Updating user registration for user ${user.id}`);
 
-    await Promise.all([
-      this.data.userRegistrations.update(registration.id, registration),
-      this.data.users.update(user.id, user),
-    ]);
+    await Promise.all([this.data.userRegistrations.update(registration.id, registration), this.data.users.update(user.id, user)]);
   }
 
   //#region User Related Fetches
@@ -48,15 +45,16 @@ export class UserDomainService extends BaseDomainServices {
     user: IApplicationUser,
     registration: IUserRegistration,
     login: DeepPartial<ILogin> | null
-  ): Promise<void> {
+  ): Promise<ILogin | null> {
     this.logger.debug(`Creating login ${login?.loginType || '{already logged in - skipping}'} for user ${user.id}`);
 
-    await Promise.all([
+    const [, , loginResult] = await Promise.all([
       this.data.userRegistrations.update(registration.id, registration),
       this.data.users.update(user.id, user),
-      // Conditionally create or update the login
-      login ? this.data.logins.createOrUpdate(login) : Promise.resolve(),
+      login ? this.data.logins.createOrUpdate(login) : Promise.resolve(null),
     ]);
+
+    return loginResult;
   }
 
   public async getUserRegistration(userId: string): Promise<IUserRegistration | null> {
@@ -78,9 +76,7 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.users.create(user);
   }
 
-  public async createNewUserRegistration(
-    registration: DeepPartial<IUserRegistration>
-  ): Promise<IUserRegistration | null> {
+  public async createNewUserRegistration(registration: DeepPartial<IUserRegistration>): Promise<IUserRegistration | null> {
     return this.data.userRegistrations.create(registration);
   }
   //#endregion
@@ -93,11 +89,7 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.logins.createOrUpdate(login);
   }
 
-  public async updateLogin(
-    loginId: string,
-    login: DeepPartial<ILogin>,
-    shouldHashSecret = false
-  ): Promise<boolean | null> {
+  public async updateLogin(loginId: string, login: DeepPartial<ILogin>, shouldHashSecret = false): Promise<boolean | null> {
     if (login.secret && shouldHashSecret) {
       login.secret = await createHashAsync(login.secret);
     }
@@ -158,13 +150,7 @@ export class UserDomainService extends BaseDomainServices {
     const expiration = this.config.getOrThrow<number>('JWT_REFRESH_EXP');
     const exp = getUnixTime(addSeconds(new Date(Date.now()), expiration)); // 7 days expiration in Unix Epoch time
     const iat = Math.floor(Date.now() / 1000); // Current dateTime in Unix Epoch time
-    const payload: IRefreshTokenPayload = {
-      iss: 'https://auth.zirtue.com',
-      sub: userId,
-      aud: 'api-zirtue.com',
-      exp: exp,
-      iat: iat,
-    };
+    const payload: IRefreshTokenPayload = { iss: 'https://auth.zirtue.com', sub: userId, aud: 'api-zirtue.com', exp: exp, iat: iat };
 
     return payload;
   }
@@ -184,11 +170,7 @@ export class UserDomainService extends BaseDomainServices {
     return this.generateToken(payload, expiration, secret);
   }
 
-  private async generateToken(
-    payload: IJwtPayload | IRefreshTokenPayload,
-    expiresIn: number,
-    secret: string
-  ): Promise<string> {
+  private async generateToken(payload: IJwtPayload | IRefreshTokenPayload, expiresIn: number, secret: string): Promise<string> {
     if (!payload.exp) {
       payload.exp = getUnixTime(addSeconds(new Date(Date.now()), expiresIn));
     }

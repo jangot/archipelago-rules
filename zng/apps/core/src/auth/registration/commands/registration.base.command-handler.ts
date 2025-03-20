@@ -22,9 +22,7 @@ export interface RegistrationExecuteParams {
 }
 
 @Injectable()
-export abstract class RegistrationBaseCommandHandler<
-  TCommand extends RegistrationBaseCommand = RegistrationBaseCommand,
-> {
+export abstract class RegistrationBaseCommandHandler<TCommand extends RegistrationBaseCommand = RegistrationBaseCommand> {
   protected readonly domainServices: IDomainServices;
   protected readonly logger: Logger;
   protected readonly commandBus: CommandBus;
@@ -45,7 +43,11 @@ export abstract class RegistrationBaseCommandHandler<
    * @param isSuccessful - Whether the transition was successful.
    * @param message - The transition message.
    * @param userId - The user ID.
+   * @param loginId - The login ID.
    * @param code - The verification code.
+   * @param accessToken - The access token.
+   * @param refreshToken - The refresh token.
+   
    * @returns A RegistrationTransitionResultDto.
    */
   protected createTransitionResult(
@@ -53,15 +55,12 @@ export abstract class RegistrationBaseCommandHandler<
     isSuccessful: boolean,
     message: RegistrationTransitionMessage | null,
     userId?: string,
-    code?: string
+    loginId?: string,
+    code?: string,
+    accessToken?: string,
+    refreshToken?: string
   ): RegistrationTransitionResult {
-    return {
-      state,
-      isSuccessful,
-      message,
-      userId,
-      code,
-    };
+    return { state, isSuccessful, message, userId, loginId, code, accessToken, refreshToken };
   }
 
   protected sendEvent(user: IApplicationUser | null, event: VerificationEvent | null): void {

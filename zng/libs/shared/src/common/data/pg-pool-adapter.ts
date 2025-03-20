@@ -14,9 +14,6 @@ export class PgPoolAdapter implements IDatabaseConnection {
 
   async query<T = any>(text: string, params?: any[]): Promise<{ rows: T[]; rowCount: number }> {
     const result = await this.pool.query(text, params);
-    return {
-      rows: result.rows,
-      rowCount: result.rowCount === null ? 0 : result.rowCount,
-    };
+    return { rows: result.rows, rowCount: result.rowCount === null ? 0 : result.rowCount };
   }
 }

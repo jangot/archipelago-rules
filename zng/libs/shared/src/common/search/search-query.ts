@@ -66,6 +66,4 @@ export interface BetweenSearchCondition<T extends number | Date> extends BaseSea
  * @see BaseSearchCondition
  * @see BetweenSearchCondition
  */
-export type SearchCondition<T extends FilterableFieldType> =
-  | BaseSearchCondition<T>
-  | BetweenSearchCondition<Extract<T, number | Date>>;
+export type SearchCondition<T extends FilterableFieldType> = BaseSearchCondition<T> | BetweenSearchCondition<Extract<T, number | Date>>;
