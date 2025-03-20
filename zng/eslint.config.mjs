@@ -27,7 +27,11 @@ export default [
       'scripts/**/*',
     ],
   },
-  ...compat.extends('plugin:@typescript-eslint/recommended', 'plugin:prettier/recommended'),
+  ...compat.extends(
+    'plugin:@typescript-eslint/recommended',
+    'plugin:prettier/recommended',
+    'plugin:promise/recommended'
+  ),
   {
     plugins: {
       '@typescript-eslint': typescriptEslintEslintPlugin,

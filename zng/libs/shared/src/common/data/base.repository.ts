@@ -48,6 +48,13 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     this.repository = repo;
   }
 
+  public async getById(id: Entity['id']): Promise<Entity | null> {
+    const whereCondition = this.normalizedIdWhereCondition(id);
+    const result = await this.findOneBy(whereCondition);
+
+    return result;
+  }
+
   public async getAll(): Promise<Entity[]> {
     return await this.repository.find();
   }

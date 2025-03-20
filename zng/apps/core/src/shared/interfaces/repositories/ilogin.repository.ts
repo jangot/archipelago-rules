@@ -47,6 +47,14 @@ export interface ILoginRepository extends IRepositoryBase<ILogin> {
    * @returns A promise that resolves to the current user login.
    */
   getCurrentUserLogin(userId: string): Promise<ILogin | null>;
+
+  /**
+   * Retrieves a user login for a specific secret.
+   * @param userId The user ID.
+   * @param secret The secret (currently refreshToken hash).
+   * @returns A promise that resolves to the user login if found, or null if not found.
+   */
+  getUserLoginForSecret(userId: string, secret: string): Promise<ILogin | null>;
 }
 
 export const ILoginRepository = Symbol('ILoginRepository');

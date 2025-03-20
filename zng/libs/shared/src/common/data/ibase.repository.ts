@@ -22,6 +22,14 @@ export type AllowedCriteriaTypes = string | string[] | number | number[] | Date 
  */
 export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | CompositeIdEntityType>> {
   /**
+   * Retrieves an entity by its ID.
+   *
+   * @return {Promise<Entity> | null}
+   * @memberof IRepositoryBase
+   */
+  getById(id: Entity['id']): Promise<Entity | null>;
+
+  /**
    * Returns All Entities
    *
    * @return {Promise<Entity[]>} A Promise resolving to an array of Entities, could be empty.

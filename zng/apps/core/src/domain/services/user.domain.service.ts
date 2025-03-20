@@ -105,12 +105,22 @@ export class UserDomainService extends BaseDomainServices {
   }
 
   // #region Login related fetches
+  public async getUserLoginById(loginId: string): Promise<ILogin | null> {
+    return this.data.logins.getById(loginId);
+  }
+
   public async getUserLoginByType(userId: string, loginType: LoginType): Promise<ILogin | null> {
     return this.data.logins.getUserLoginByType(userId, loginType);
   }
 
   public async getCurrentUserLogin(userId: string): Promise<ILogin | null> {
     return this.data.logins.getCurrentUserLogin(userId);
+  }
+
+  public async getUserLoginForRefreshToken(userId: string, refreshToken: string): Promise<ILogin | null> {
+    const refreshTokenHash = await createHashAsync(refreshToken);
+
+    return this.data.logins.getUserLoginForSecret(userId, refreshTokenHash);
   }
   //#endregion
 

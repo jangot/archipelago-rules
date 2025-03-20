@@ -11,6 +11,7 @@ import { RegistrationService } from './registration.service';
 import { CqrsModule } from '@nestjs/cqrs';
 import { RegistrationCommandHandlers } from './registration/commands';
 import { DomainModule } from '../domain/domain.module';
+import { LoginCommandHandlers } from './login/commands';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { DomainModule } from '../domain/domain.module';
     ...CustomAuthStrategies,
     ...CustomAuthGuards,
     ...RegistrationCommandHandlers,
+    ...LoginCommandHandlers,
   ],
 })
 export class AuthModule {}
