@@ -71,19 +71,19 @@ export class AuthController {
     }
 
     const userId = req.user['user_id'];
-    const loginId = req.user['id'];
     const refreshToken = req.user['secret'];
 
-    if (!userId || !refreshToken || !loginId) {
+    if (!userId || !refreshToken) {
       throw new HttpException('Invalid Refresh Token.', HttpStatus.UNAUTHORIZED);
     }
-    return this.authService.refreshTokens(userId, loginId);
+    return this.authService.refreshTokens(userId, refreshToken);
   }
 
   @Post('register')
   @ApiOperation({
     description: 'Initiates User Registration or re-initiates User Registration',
-    summary: 'Initiates User Registration or renew existing registration if Email and Phone Number were not verified yet',
+    summary:
+      'Initiates User Registration or renew existing registration if Email and Phone Number were not verified yet',
   })
   @ApiExtraModels(RegistrationRequestDto)
   @ApiBody({ schema: { $ref: getSchemaPath(RegistrationRequestDto) } })

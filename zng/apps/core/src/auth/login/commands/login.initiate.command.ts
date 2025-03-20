@@ -50,11 +50,10 @@ export class LoginInitiateCommandHandler
 
     const { code, expiresAt } = this.domainServices.userServices.generateCode();
 
-    // This code is wrong (code and expiresAt should be set in the user entity as secret and secretExpiresAt)
-    login.code = code;
-    login.expiresAt = expiresAt;
+    user.secret = code;
+    user.secretExpiresAt = expiresAt;
 
-    await this.domainServices.userServices.updateLogin(login.id, login, true);
+    await this.domainServices.userServices.updateUser(user);
 
     // TODO: Send the code to the user
     //this.sendEvent()

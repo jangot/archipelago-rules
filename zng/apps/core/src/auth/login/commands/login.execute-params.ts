@@ -8,5 +8,5 @@ export interface LoginExecuteParams {
 }
 
 export interface RefreshTokenParams extends LoginExecuteParams {
-  loginId: string;
+  refreshToken: string;
 }

@@ -147,7 +147,8 @@ export class VerifyContactCommandHandler
     );
 
     // Checking the possibility to complete registration
-    // This looks the same as loginType above? Am I missing something?
+    // We take the second login type and login itself to check if it is already verified
+    // If so - we can complete the registration as both contacts are verified
     const secondLoginType =
       newRegistrationStatus === RegistrationStatus.EmailVerified
         ? LoginType.OneTimeCodeEmail

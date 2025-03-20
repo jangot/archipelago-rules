@@ -40,9 +40,9 @@ export class AuthService {
     this.logger.debug(`User ${userId} logged out successfully`);
   }
 
-  public async refreshTokens(userId: string, loginId: string): Promise<UserLoginPayloadDto> {
+  public async refreshTokens(userId: string, refreshToken: string): Promise<UserLoginPayloadDto> {
     this.logger.debug(`refreshTokens: Refreshing tokens for user: ${userId}`);
-    const result = await this.commandBus.execute(new RefreshTokenCommand({ userId, loginId }));
+    const result = await this.commandBus.execute(new RefreshTokenCommand({ userId, refreshToken }));
 
     return result;
   }
