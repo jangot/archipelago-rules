@@ -4,7 +4,7 @@ import { AuthController } from './auth.controller';
 import { CustomAuthStrategies } from './strategies';
 import { CustomAuthGuards } from './guards';
 import { UsersModule } from '../users';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { DataModule } from '../data';
 import { JwtModule } from '@nestjs/jwt';
 import { RegistrationService } from './registration.service';
@@ -14,21 +14,7 @@ import { DomainModule } from '../domain/domain.module';
 import { LoginCommandHandlers } from './login/commands';
 
 @Module({
-  imports: [
-    CqrsModule,
-    UsersModule,
-    ConfigModule,
-    DataModule,
-    DomainModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_ACCESS_SECRET'),
-        signOptions: { expiresIn: configService.getOrThrow<number>('JWT_ACCESS_EXP') },
-      }),
-      inject: [ConfigService],
-    }),
-  ],
+  imports: [CqrsModule, UsersModule, ConfigModule, DataModule, DomainModule, JwtModule],
   controllers: [AuthController],
   providers: [
     Logger,

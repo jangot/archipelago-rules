@@ -185,7 +185,10 @@ export class UserDomainService extends BaseDomainServices {
     expiresIn: number,
     secret: string
   ): Promise<string> {
-    return this.jwtService.signAsync(payload, { secret, expiresIn });
+    if (!payload.exp) {
+      payload.exp = getUnixTime(addSeconds(new Date(Date.now()), expiresIn));
+    }
+    return this.jwtService.signAsync(payload, { secret });
   }
   //#endregion
 }
