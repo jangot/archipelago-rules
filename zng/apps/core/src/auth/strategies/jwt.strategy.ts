@@ -1,16 +1,16 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { UsersService } from '../../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { UserResponseDto } from '../../dto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
+import { IApplicationUser } from '@library/entity/interface';
+import { IDomainServices } from '../../domain/idomain.services';
 
 // Interface to avoid using 'any' as a type in 'validate' method
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-    private readonly usersService: UsersService,
+    private readonly domainServices: IDomainServices,
     // Make it 'protected' not 'private' to be able to access it in the super() call
     protected readonly config: ConfigService
   ) {
@@ -28,13 +28,18 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   // Need to consider caching scenarios here, as performing a DB lookup on every request
   // will incur performance costs
   // Also, do we need to store the entire User Entity here?
-  async validate(payload: IJwtPayload): Promise<UserResponseDto> {
+  async validate(payload: IJwtPayload): Promise<IApplicationUser> {
+    if (!payload || !payload.sub) {
+      throw new UnauthorizedException('Invalid JWT payload');
+    }
+
     const id = payload.sub;
-    const user = await this.usersService.getUserById(id);
+    const user = await this.domainServices.userServices.getUserById(id);
     // Possible fallback for case where token not expired but user not found (e.g. deleted)
     if (!user) {
       throw new UnauthorizedException();
     }
+
     return user;
   }
 }

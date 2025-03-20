@@ -1,4 +1,4 @@
-import { Body, Controller, HttpException, HttpStatus, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import {
@@ -14,6 +14,7 @@ import { RegistrationService } from './registration.service';
 import { JwtAuthGuard } from './guards';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 import { LoginRequestDto } from '../dto/request/login.request.dto';
+import { RefreshTokenAuthGuard } from './guards/jwt-refresh.guard';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -52,6 +53,23 @@ export class AuthController {
     }
 
     return this.authService.logout(userId);
+  }
+
+  @Get('refresh')
+  @UseGuards(RefreshTokenAuthGuard)
+  refreshTokens(@Req() req: Request) {
+    if (!req.user) {
+      throw new HttpException('Invalid Refresh Token.', HttpStatus.UNAUTHORIZED);
+    }
+
+    const userId = req.user['user_id'];
+    const loginId = req.user['id'];
+    const refreshToken = req.user['secret'];
+
+    if (!userId || !refreshToken || !loginId) {
+      throw new HttpException('Invalid Refresh Token.', HttpStatus.UNAUTHORIZED);
+    }
+    return this.authService.refreshTokens(userId, loginId);
   }
 
   @Post('register')

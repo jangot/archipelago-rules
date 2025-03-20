@@ -4,7 +4,7 @@ import { ContactType } from '@library/entity/enum';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 import { LoginRequestDto } from '../dto/request/login.request.dto';
 import { CommandBus } from '@nestjs/cqrs';
-import { LoginInitiateCommand, LoginVerifyCommand, LogoutCommand } from './login/commands';
+import { LoginInitiateCommand, LoginVerifyCommand, LogoutCommand, RefreshTokenCommand } from './login/commands';
 
 @Injectable()
 export class AuthService {
@@ -38,6 +38,13 @@ export class AuthService {
     // Invalidate the JWT token by removing it from the database or marking it as invalid
     await this.commandBus.execute(new LogoutCommand({ userId }));
     this.logger.debug(`User ${userId} logged out successfully`);
+  }
+
+  public async refreshTokens(userId: string, loginId: string): Promise<UserLoginPayloadDto> {
+    this.logger.debug(`refreshTokens: Refreshing tokens for user: ${userId}`);
+    const result = await this.commandBus.execute(new RefreshTokenCommand({ userId, loginId }));
+
+    return result;
   }
 
   private extractContactInfo(loginInfo: LoginRequestDto): { contact: string; contactType: ContactType } {

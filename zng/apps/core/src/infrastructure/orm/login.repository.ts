@@ -50,4 +50,8 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
   public async getCurrentUserLogin(userId: string): Promise<ILogin | null> {
     return null;
   }
+
+  public async getUserLoginForSecret(userId: string, secret: string): Promise<ILogin | null> {
+    return await this.repository.findOneBy({ userId, secret });
+  }
 }

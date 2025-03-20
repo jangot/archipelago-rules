@@ -4,9 +4,9 @@ import { LoginType } from '../enum';
 export interface ILogin extends EntityId<string> {
   id: string;
   userId: string;
-  loginType: LoginType;
+  loginType?: LoginType;
   secret: string | null;
   secretExpiresAt: Date | null;
-  createdAt: Date | null;
+  createdAt?: Date | null;
   updatedAt: Date | null;
 }

@@ -6,3 +6,7 @@ export interface LoginExecuteParams {
   contactType?: ContactType;
   verificationCode?: string;
 }
+
+export interface RefreshTokenParams extends LoginExecuteParams {
+  loginId: string;
+}
