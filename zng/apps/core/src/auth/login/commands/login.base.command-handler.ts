@@ -1,12 +1,13 @@
 import { LoginCommand } from './login.commands';
 import { JwtService } from '@nestjs/jwt';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dto';
 import { ContactType, LoginType } from '@library/entity/enum';
 import { IDomainServices } from '../../../domain/idomain.services';
 import { ConfigService } from '@nestjs/config';
 
+@Injectable()
 export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = LoginCommand> {
   protected readonly domainServices: IDomainServices;
   protected readonly jwtService: JwtService;

@@ -74,13 +74,13 @@ export class RegistrationService {
       const emailUpdateResult = await this.commandBus.execute(
         new InitiateEmailVerificationCommand({ id: userId, input })
       );
-      return this.handleRegistrationResult(emailUpdateResult, userId);
+      return this.handleRegistrationResult(emailUpdateResult, email);
     }
     if (phoneNumber) {
       const phoneUpdateResult = await this.commandBus.execute(
         new InitiatePhoneNumberVerificationCommand({ id: userId, input })
       );
-      return this.handleRegistrationResult(phoneUpdateResult, userId);
+      return this.handleRegistrationResult(phoneUpdateResult, null, phoneNumber);
     }
     return null;
   }

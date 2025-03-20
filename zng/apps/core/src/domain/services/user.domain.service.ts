@@ -104,6 +104,10 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.logins.update(loginId, login);
   }
 
+  public async updateUser(user: IApplicationUser): Promise<boolean | null> {
+    return this.data.users.update(user.id, user);
+  }
+
   // #region Login related fetches
   public async getUserLoginById(loginId: string): Promise<ILogin | null> {
     return this.data.logins.getById(loginId);
@@ -185,7 +189,10 @@ export class UserDomainService extends BaseDomainServices {
     expiresIn: number,
     secret: string
   ): Promise<string> {
-    return this.jwtService.signAsync(payload, { secret, expiresIn });
+    if (!payload.exp) {
+      payload.exp = getUnixTime(addSeconds(new Date(Date.now()), expiresIn));
+    }
+    return this.jwtService.signAsync(payload, { secret });
   }
   //#endregion
 }

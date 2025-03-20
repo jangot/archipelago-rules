@@ -34,7 +34,11 @@ export class AuthController {
     return this.authService.initiateLoginSession(body);
   }
 
-  @Post('verify') // --> for login
+  @Post('verify')
+  @ApiOperation({
+    description: 'User Login Verification',
+    summary: 'Completes user login with Phone number or Email by using verification code provided',
+  })
   public async verify(@Body() body: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
     return this.authService.verifyLoginSession(body);
   }
@@ -56,6 +60,10 @@ export class AuthController {
   }
 
   @Get('refresh')
+  @ApiOperation({
+    description: 'Refresh JWT AccessToken and RefreshToken',
+    summary: 'Refresh JWT AccessToken and RefreshToken using RefreshToken provided',
+  })
   @UseGuards(RefreshTokenAuthGuard)
   refreshTokens(@Req() req: Request) {
     if (!req.user) {
@@ -63,16 +71,20 @@ export class AuthController {
     }
 
     const userId = req.user['user_id'];
-    const loginId = req.user['id'];
     const refreshToken = req.user['secret'];
 
-    if (!userId || !refreshToken || !loginId) {
+    if (!userId || !refreshToken) {
       throw new HttpException('Invalid Refresh Token.', HttpStatus.UNAUTHORIZED);
     }
-    return this.authService.refreshTokens(userId, loginId);
+    return this.authService.refreshTokens(userId, refreshToken);
   }
 
   @Post('register')
+  @ApiOperation({
+    description: 'Initiates User Registration or re-initiates User Registration',
+    summary:
+      'Initiates User Registration or renew existing registration if Email and Phone Number were not verified yet',
+  })
   @ApiExtraModels(RegistrationRequestDto)
   @ApiBody({ schema: { $ref: getSchemaPath(RegistrationRequestDto) } })
   public async register(@Body() body: RegistrationDto): Promise<UserRegisterResponseDto> {
@@ -98,7 +110,11 @@ export class AuthController {
   // Calling /register/verify again after sending initial code
   // will trigger the generation of a new code and a resend (no need for retry)
   // Making this an unAuthenticated endpoint in all cases... Not worth making it 1/2 and 1/2
-  @Post('register/verify') // registration verification
+  @Post('register/verify')
+  @ApiOperation({
+    description: 'Verify Email or Phone Number User Registration',
+    summary: 'Verify Email or Phone Number User Registration with provided code',
+  })
   @ApiExtraModels(RegistrationVerifyRequestDto, UserLoginPayloadDto)
   @ApiBody({
     type: RegistrationVerifyRequestDto,

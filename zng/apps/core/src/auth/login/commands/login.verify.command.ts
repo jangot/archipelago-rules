@@ -3,6 +3,7 @@ import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { LoginVerifyCommand } from './login.commands';
 import { UserLoginPayloadDto } from 'apps/core/src/dto/response/user-login-payload.dto';
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
+import { createHashAsync } from '@library/shared/common/helpers';
 
 @CommandHandler(LoginVerifyCommand)
 export class LoginVerifyCommandHandler
@@ -50,7 +51,7 @@ export class LoginVerifyCommandHandler
       throw new Error('No login found');
     }
 
-    const { secret, secretExpiresAt } = login;
+    const { secret, secretExpiresAt } = user;
 
     if (!secret) {
       this.logger.warn('LoginInitiateCommand: No secret found');
@@ -67,12 +68,20 @@ export class LoginVerifyCommandHandler
       throw new Error('Verification code mismatch');
     }
 
-    const result = this.generateLoginPayload(user.id, user.onboardStatus || '');
+    const result = await this.generateLoginPayload(user.id, user.onboardStatus || '');
 
-    login.secret = null;
-    login.secretExpiresAt = null;
+    user.secret = null;
+    user.secretExpiresAt = null;
 
-    // TODO: Add JWT secret updates when Refresh token is implemented
+    const { refreshToken, refreshTokenExpiresIn } = result;
+    if (!refreshToken || !refreshTokenExpiresIn) {
+      this.logger.error(`LoginVerifyCommand: Refresh token or its expiration time is not generated for user ${userId}`);
+      throw new Error('Refresh token or its expiration time is not generated');
+    }
+    login.secret = await createHashAsync(refreshToken);
+    login.secretExpiresAt = refreshTokenExpiresIn;
+
+    await this.domainServices.userServices.updateEntities([user, login]);
 
     // TODO: publish event
     // this.eventBus.publish()

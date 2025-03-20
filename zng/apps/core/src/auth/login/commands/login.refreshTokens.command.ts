@@ -9,11 +9,11 @@ export class RefreshTokenCommandHandler
   implements ICommandHandler<RefreshTokenCommand>
 {
   public async execute(command: RefreshTokenCommand): Promise<UserLoginPayloadDto> {
-    const { userId, loginId } = command.payload;
+    const { userId, refreshToken } = command.payload;
 
-    if (!userId || !loginId) {
-      this.logger.error('RefreshTokenCommand: No userId or loginId provided');
-      throw new Error('No userId or loginId provided');
+    if (!userId || !refreshToken) {
+      this.logger.error('RefreshTokenCommand: No userId or refreshToken provided');
+      throw new Error('No userId or refreshToken provided');
     }
 
     const user = await this.domainServices.userServices.getUserById(userId);
@@ -21,7 +21,7 @@ export class RefreshTokenCommandHandler
       this.logger.error('RefreshTokenCommand: No user found');
       throw new Error('No user found');
     }
-    const login = await this.domainServices.userServices.getUserLoginById(loginId);
+    const login = await this.domainServices.userServices.getUserLoginForRefreshToken(userId, refreshToken);
     if (!login) {
       this.logger.error('RefreshTokenCommand: No login found');
       throw new Error('No login found');
@@ -29,11 +29,19 @@ export class RefreshTokenCommandHandler
 
     const result = await this.generateLoginPayload(userId, user.onboardStatus || '');
 
-    login.updatedAt = new Date();
-    login.secret = result.refreshToken!;
-    login.secretExpiresAt = result.refreshTokenExpiresIn!;
+    const { refreshToken: newRefreshToken, refreshTokenExpiresIn } = result;
+    if (!newRefreshToken || !refreshTokenExpiresIn) {
+      this.logger.error(
+        `RefreshTokenCommand: Refresh token or its expiration time is not generated for user ${userId}`
+      );
+      throw new Error('Refresh token or its expiration time is not generated');
+    }
 
-    const updateResult = await this.domainServices.userServices.updateLogin(loginId, login, true);
+    login.updatedAt = new Date();
+    login.secret = newRefreshToken;
+    login.secretExpiresAt = refreshTokenExpiresIn;
+
+    const updateResult = await this.domainServices.userServices.updateLogin(login.id, login, true);
     if (!updateResult) {
       this.logger.error('RefreshTokenCommand: Could not update login');
       throw new Error('Could not update login');

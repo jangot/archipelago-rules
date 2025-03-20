@@ -4,6 +4,7 @@ import { VerifyContactCommand } from './registration.commands';
 import { LoginType, RegistrationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
+import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
 
 const pendingStates: RegistrationStatus[] = [
   RegistrationStatus.EmailVerifying,
@@ -16,6 +17,14 @@ export class VerifyContactCommandHandler
   implements ICommandHandler<VerifyContactCommand>
 {
   public async execute(command: VerifyContactCommand): Promise<RegistrationTransitionResult> {
+    if (!command || !command.payload || !command.payload.input) {
+      this.logger.warn(`VerifyContact: Invalid command payload`, { command });
+      return this.createTransitionResult(
+        RegistrationStatus.NotRegistered,
+        false,
+        RegistrationTransitionMessage.WrongInput
+      );
+    }
     const {
       payload: { id: userId, input },
     } = command;
@@ -23,14 +32,12 @@ export class VerifyContactCommandHandler
     if (!userId) {
       throw new Error('User id cannot be null when verifying contact.');
     }
-    if (!input) {
-      throw new Error('input cannot be null when verifying contact.');
-    }
     // #endregion
 
     // #region Registration state validation
     const registration = await this.domainServices.userServices.getUserRegistration(userId);
     if (!registration) {
+      this.logger.debug(`No registration found for user ${userId}`);
       return this.createTransitionResult(
         RegistrationStatus.NotRegistered,
         false,
@@ -39,6 +46,7 @@ export class VerifyContactCommandHandler
     }
     const { status: existedRegistrationStatus } = registration;
     if (!pendingStates.includes(registration.status)) {
+      this.logger.debug(`User ${userId} is not awaiting for code verification`);
       return this.createTransitionResult(
         existedRegistrationStatus,
         false,
@@ -50,15 +58,18 @@ export class VerifyContactCommandHandler
     // #region Secret validation
     const { secret, secretExpiresAt } = registration;
     if (!secret) {
+      this.logger.debug(`No secret found for user ${userId}`);
       return this.createTransitionResult(registration.status, false, RegistrationTransitionMessage.NoSecretFound);
     }
 
     if (secretExpiresAt && secretExpiresAt < new Date()) {
+      this.logger.debug(`Secret expired for user ${userId}`);
       return this.createTransitionResult(registration.status, false, RegistrationTransitionMessage.SecretExpired);
     }
 
     const { code } = input;
     if (secret !== code) {
+      this.logger.debug(`Verification code mismatch for user ${userId}`);
       return this.createTransitionResult(
         registration.status,
         false,
@@ -71,6 +82,7 @@ export class VerifyContactCommandHandler
     // As further we will need User entity to update anyway - we first do validations for that
     const user = await this.domainServices.userServices.getUserById(userId);
     if (!user) {
+      this.logger.debug(`No user found by ${userId}`);
       return this.createTransitionResult(registration.status, false, RegistrationTransitionMessage.WrongInput);
     }
     // #endregion
@@ -97,9 +109,9 @@ export class VerifyContactCommandHandler
     };
 
     this.logger.debug(`About to update registration, user and add login during verifying contact for user ${user.id}`, {
-      user,
-      registration: { ...registration, secret: '***' },
-      login: newLogin || 'null',
+      user: logSafeUser(user),
+      registration: logSafeRegistration(registration),
+      login: newLogin,
     });
 
     // Registration
@@ -118,9 +130,9 @@ export class VerifyContactCommandHandler
     }
 
     this.logger.debug(`Updated registration, user and add login data before apply`, {
-      user,
-      registration: { ...registration, secret: '***' },
-      login: newLogin || 'null',
+      user: logSafeUser(user),
+      registration: logSafeRegistration(registration),
+      login: newLogin,
     });
 
     await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
@@ -135,7 +147,8 @@ export class VerifyContactCommandHandler
     );
 
     // Checking the possibility to complete registration
-    // This looks the same as loginType above? Am I missing something?
+    // We take the second login type and login itself to check if it is already verified
+    // If so - we can complete the registration as both contacts are verified
     const secondLoginType =
       newRegistrationStatus === RegistrationStatus.EmailVerified
         ? LoginType.OneTimeCodeEmail
@@ -143,6 +156,7 @@ export class VerifyContactCommandHandler
 
     const isSecondContactVerified = await this.isSecondContactVerified(userId, secondLoginType);
     if (isSecondContactVerified) {
+      this.logger.debug(`Second contact is already verified for user ${userId}`);
       return this.createTransitionResult(RegistrationStatus.Registered, true, null);
     }
 

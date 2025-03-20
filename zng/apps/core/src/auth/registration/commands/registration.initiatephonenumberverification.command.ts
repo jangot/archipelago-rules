@@ -13,6 +13,7 @@ import { RegistrationBaseCommandHandler } from './registration.base.command-hand
 import { InitiatePhoneNumberVerificationCommand } from './registration.commands';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
+import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
 
 @CommandHandler(InitiatePhoneNumberVerificationCommand)
 export class InitiatePhoneNumberVerificationCommandHandler
@@ -20,6 +21,14 @@ export class InitiatePhoneNumberVerificationCommandHandler
   implements ICommandHandler<InitiatePhoneNumberVerificationCommand>
 {
   public async execute(command: InitiatePhoneNumberVerificationCommand): Promise<RegistrationTransitionResult> {
+    if (!command || !command.payload || !command.payload.input) {
+      this.logger.warn(`initiatePhoneNumberVerification: Invalid command payload`, { command });
+      return this.createTransitionResult(
+        RegistrationStatus.NotRegistered,
+        false,
+        RegistrationTransitionMessage.WrongInput
+      );
+    }
     const {
       payload: { id: userId, input },
     } = command;
@@ -31,6 +40,9 @@ export class InitiatePhoneNumberVerificationCommandHandler
     const registration = await this.domainServices.userServices.getUserRegistration(userId);
 
     if (!registration || registration.status !== RegistrationStatus.EmailVerified) {
+      this.logger.debug(`No registration found for user ${userId} or registration is in a wrong state`, {
+        registration: logSafeRegistration(registration),
+      });
       return this.createTransitionResult(
         registration?.status ?? RegistrationStatus.NotRegistered,
         false,
@@ -38,9 +50,10 @@ export class InitiatePhoneNumberVerificationCommandHandler
       );
     }
 
-    const { phoneNumber } = input!;
+    const { phoneNumber } = input;
 
     if (!phoneNumber) {
+      this.logger.warn(`No phone number provided for phone number verification`, { input });
       return this.createTransitionResult(
         RegistrationStatus.EmailVerified,
         false,
@@ -52,12 +65,14 @@ export class InitiatePhoneNumberVerificationCommandHandler
 
     if (userByPhone) {
       if (userByPhone.id === userId) {
+        this.logger.debug(`User ${userId} already has the phone number ${phoneNumber}`);
         return this.createTransitionResult(
           RegistrationStatus.PhoneNumberVerified,
           false,
           RegistrationTransitionMessage.AlreadyVerified
         );
       }
+      this.logger.debug(`Phone number already taken: ${phoneNumber} by ${userByPhone.id}`, { input });
       return this.createTransitionResult(
         RegistrationStatus.PhoneNumberVerifying,
         false,
@@ -74,24 +89,23 @@ export class InitiatePhoneNumberVerificationCommandHandler
       );
     }
 
-    const { code: verificationCode, expiresAt: verificationCodeExpiresAt } =
-      this.domainServices.userServices.generateCode();
+    const { code, expiresAt } = this.domainServices.userServices.generateCode();
 
     this.logger.debug(`About to update registration during adding phone number for user ${userId}`, {
-      user,
-      registration: { ...registration, secret: '***' },
+      user: logSafeUser(user),
+      registration: logSafeRegistration(registration),
     });
 
-    registration.secret = verificationCode;
-    registration.secretExpiresAt = verificationCodeExpiresAt;
+    registration.secret = code;
+    registration.secretExpiresAt = expiresAt;
     registration.status = RegistrationStatus.PhoneNumberVerifying;
 
     user.pendingPhoneNumber = transformPhoneNumber(phoneNumber);
     user.registrationStatus = RegistrationStatus.PhoneNumberVerifying;
 
     this.logger.debug(`Updated registration and user data before apply`, {
-      user,
-      registration: { ...registration, secret: '***' },
+      user: logSafeUser(user),
+      registration: logSafeRegistration(registration),
     });
 
     await this.domainServices.userServices.updateUserRegistration(registration, user);
@@ -100,6 +114,6 @@ export class InitiatePhoneNumberVerificationCommandHandler
 
     this.sendEvent(user, VerificationEvent.PhoneNumberVerifying);
 
-    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, userId, verificationCode);
+    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, userId, code);
   }
 }
