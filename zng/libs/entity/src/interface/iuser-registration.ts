@@ -8,4 +8,5 @@ export interface IUserRegistration extends EntityId<string> {
   createdAt: Date;
   secret: string | null;
   secretExpiresAt: Date | null;
+  userLoginId: string | null;
 }

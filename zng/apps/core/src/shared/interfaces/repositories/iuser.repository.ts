@@ -4,7 +4,6 @@ import { IApplicationUser } from '@library/entity/interface';
 import { IGetUserDetailByIdResult } from 'apps/core/src/infrastructure/sql_generated/get-user-detail.queries';
 
 export interface IUserRepository extends IRepositoryBase<IApplicationUser> {
-  getUserById(id: string): Promise<IApplicationUser | null>;
   getUserByContact(contact: string, type: ContactType): Promise<IApplicationUser | null>;
 
   // pgtyped test method

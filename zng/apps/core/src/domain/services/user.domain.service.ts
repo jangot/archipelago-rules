@@ -12,13 +12,14 @@ import { Transactional } from 'typeorm-transactional';
 import { DeepPartial } from 'typeorm';
 import { ContactType, LoginType } from '@library/entity/enum';
 import { BaseDomainServices } from './domain.service.base';
-import { generateSecureCode, createHashAsync } from '@library/shared/common/helpers';
+import { generateSecureCode } from '@library/shared/common/helpers';
 import { JwtService } from '@nestjs/jwt';
 import { IDataService } from '../../data/idata.service';
 import { IJwtPayload } from '../interfaces/ijwt-payload';
 import { IRefreshTokenPayload } from '../interfaces/irefresh-token-payload';
 import { ConfigService } from '@nestjs/config';
 import { addSeconds, getUnixTime } from 'date-fns';
+import { generateCRC32String } from '@library/shared/common/helpers/crc32.helpers';
 
 @Injectable()
 export class UserDomainService extends BaseDomainServices {
@@ -48,11 +49,18 @@ export class UserDomainService extends BaseDomainServices {
   ): Promise<ILogin | null> {
     this.logger.debug(`Creating login ${login?.loginType || '{already logged in - skipping}'} for user ${user.id}`);
 
-    const [, , loginResult] = await Promise.all([
-      this.data.userRegistrations.update(registration.id, registration),
-      this.data.users.update(user.id, user),
-      login ? this.data.logins.createOrUpdate(login) : Promise.resolve(null),
-    ]);
+    let loginResult: ILogin | null = null;
+
+    // Need to handle the Login creation here as we need to update the user registration with the loginId
+    // If the login is null, it means the user is already logged in and we need to get the loginId from the registration
+    if (login) {
+      loginResult = await this.data.logins.createOrUpdate(login);
+      registration.userLoginId = loginResult?.id || null;
+    } else if (registration.userLoginId) {
+      loginResult = await this.data.logins.getById(registration.userLoginId);
+    }
+
+    await Promise.all([this.data.userRegistrations.update(registration.id, registration), this.data.users.update(user.id, user)]);
 
     return loginResult;
   }
@@ -62,7 +70,7 @@ export class UserDomainService extends BaseDomainServices {
   }
 
   public async getUserById(userId: string): Promise<IApplicationUser | null> {
-    return this.data.users.getUserById(userId);
+    return this.data.users.getById(userId);
   }
 
   public async getUserByContact(contact: string, contactType: ContactType): Promise<IApplicationUser | null> {
@@ -84,21 +92,21 @@ export class UserDomainService extends BaseDomainServices {
   //#region User Related Login Methods
   public async createLogin(login: DeepPartial<ILogin>, shouldHashSecret = false): Promise<ILogin | null> {
     if (login.secret && shouldHashSecret) {
-      login.secret = await createHashAsync(login.secret);
+      login.secret = generateCRC32String(login.secret);
     }
     return this.data.logins.create(login);
   }
 
   public async createOrUpdateLogin(login: DeepPartial<ILogin>, shouldHashSecret = false): Promise<ILogin | null> {
     if (login.secret && shouldHashSecret) {
-      login.secret = await createHashAsync(login.secret);
+      login.secret = generateCRC32String(login.secret);
     }
     return this.data.logins.createOrUpdate(login);
   }
 
   public async updateLogin(loginId: string, login: DeepPartial<ILogin>, shouldHashSecret = false): Promise<boolean | null> {
     if (login.secret && shouldHashSecret) {
-      login.secret = await createHashAsync(login.secret);
+      login.secret = generateCRC32String(login.secret);
     }
     return this.data.logins.update(loginId, login);
   }
@@ -121,7 +129,7 @@ export class UserDomainService extends BaseDomainServices {
   }
 
   public async getUserLoginForRefreshToken(userId: string, refreshToken: string): Promise<ILogin | null> {
-    const refreshTokenHash = await createHashAsync(refreshToken);
+    const refreshTokenHash = generateCRC32String(refreshToken);
 
     return this.data.logins.getUserLoginForSecret(userId, refreshTokenHash);
   }

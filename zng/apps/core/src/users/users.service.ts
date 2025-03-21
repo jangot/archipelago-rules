@@ -39,7 +39,7 @@ export class UsersService {
   public async getUserById(id: string): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserById: Getting User by Id: ${id}`);
 
-    const result = await this.dataService.users.getUserById(id);
+    const result = await this.dataService.users.getById(id);
 
     // Tell the Typescript compiler to trust us here, the @MapToDto() decorator is doing the DtoMapper.toDto() work automatically
     return result as unknown as UserResponseDto | null;

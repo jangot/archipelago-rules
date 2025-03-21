@@ -19,11 +19,6 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
     super(repository, ApplicationUser);
   }
 
-  public async getUserById(id: string): Promise<IApplicationUser | null> {
-    this.logger.debug(`getUserById: Getting User by Id: ${id}`);
-    return await this.repository.findOneBy({ id });
-  }
-
   public async getUserByContact(contact: string, type: ContactType): Promise<IApplicationUser | null> {
     this.logger.debug(`getUserByContact: Getting User by ${type} Contact: ${contact}`);
 
