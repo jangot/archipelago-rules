@@ -15,6 +15,7 @@ import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { LoginOnContactVerifiedCommand } from './login/commands';
 
+const COMPLETE_VERIFICATION_ON_STATUS = RegistrationStatus.PhoneNumberVerified;
 @Injectable()
 export class RegistrationService {
   private readonly logger: Logger = new Logger(RegistrationService.name);
@@ -128,7 +129,7 @@ export class RegistrationService {
     } else {
       // It is possible that after contact verification registration might be called completed
       // If so - execute completion command
-      if (result.state === RegistrationStatus.Registered) {
+      if (result.state === COMPLETE_VERIFICATION_ON_STATUS) {
         await this.commandBus.execute(new VerificationCompleteCommand({ id: userId, input: { userId } }));
       }
       const contactType = result.state === RegistrationStatus.EmailVerified ? ContactType.EMAIL : ContactType.PHONE_NUMBER;

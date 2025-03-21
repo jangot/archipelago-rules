@@ -25,4 +25,5 @@ export enum RegistrationTransitionMessage {
   CouldNotCreateUser = 'could_not_create_user',
   NotAwaitingForCode = 'not_awaiting_for_code',
   AlreadyVerified = 'already_verified',
+  FailedToCreateLogin = 'failed_to_create_login',
 }

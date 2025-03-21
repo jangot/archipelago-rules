@@ -41,12 +41,6 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
     }
 
     const loginType = this.getLoginTypeByContactType(contactType || ContactType.EMAIL);
-    const login = await this.domainServices.userServices.getUserLoginByType(user.id, loginType!);
-
-    if (!login) {
-      this.logger.warn('LoginInitiateCommand: No login found');
-      throw new Error('No login found');
-    }
 
     const { secret, secretExpiresAt } = user;
 
@@ -75,10 +69,14 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
       this.logger.error(`LoginVerifyCommand: Refresh token or its expiration time is not generated for user ${userId}`);
       throw new Error('Refresh token or its expiration time is not generated');
     }
-    login.secret = await createHashAsync(refreshToken);
-    login.secretExpiresAt = refreshTokenExpiresIn;
+    const hashedSecret = await createHashAsync(refreshToken);
+    const newLogin = { loginType: loginType!, userId: user.id, updatedAt: new Date(), secret: hashedSecret, secretExpiresAt: refreshTokenExpiresIn };
 
-    await this.domainServices.userServices.updateEntities([user, login]);
+    await this.domainServices.userServices.updateEntities([
+      this.domainServices.userServices.updateUser(user),
+      // IF we do not want create new Login on each verified login session - we should use 'createOrUpdateLogin' instead
+      this.domainServices.userServices.createLogin(newLogin, false),
+    ]);
 
     // TODO: publish event
     // this.eventBus.publish()
