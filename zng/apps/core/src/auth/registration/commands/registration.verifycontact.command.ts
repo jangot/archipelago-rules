@@ -113,6 +113,7 @@ export class VerifyContactCommandHandler
       login: newLogin,
     });
 
+    // TODO: Should create a Login only once at fisrt contact verified
     const userLogin = await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
     if (!userLogin) {
       this.logger.error(`Failed to create login for user ${user.id}`);
@@ -126,23 +127,6 @@ export class VerifyContactCommandHandler
       existedRegistrationStatus === RegistrationStatus.EmailVerifying ? VerificationEvent.EmailVerified : VerificationEvent.PhoneNumberVerified
     );
 
-    // Checking the possibility to complete registration
-    // We take the second login type and login itself to check if it is already verified
-    // If so - we can complete the registration as both contacts are verified
-    const secondLoginType =
-      newRegistrationStatus === RegistrationStatus.EmailVerified ? LoginType.OneTimeCodePhoneNumber : LoginType.OneTimeCodeEmail;
-
-    const isSecondContactVerified = await this.isSecondContactVerified(userId, secondLoginType);
-    if (isSecondContactVerified) {
-      this.logger.debug(`Second contact is already verified for user ${userId}`);
-      return this.createTransitionResult(RegistrationStatus.Registered, true, null, user.id, userLogin.id);
-    }
-
     return this.createTransitionResult(newRegistrationStatus, true, null, user.id, userLogin.id);
-  }
-
-  private async isSecondContactVerified(userId: string, loginType: LoginType): Promise<boolean> {
-    const login = await this.domainServices.userServices.getUserLoginByType(userId, loginType);
-    return !!login;
   }
 }

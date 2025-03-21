@@ -1,10 +1,11 @@
 import { ILogin } from '@library/entity/interface';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
 import { LoginType } from '@library/entity/enum';
 
 @Entity('user_logins', { schema: 'core' })
-@Unique('logins_user_id_per_login_type_unique', ['userId', 'loginType'])
+// Uncomment this constraint back we we want keep userId+loginType unique check
+//@Unique('logins_user_id_per_login_type_unique', ['userId', 'loginType'])
 export class Login implements ILogin {
   @PrimaryGeneratedColumn('uuid')
   id: string;

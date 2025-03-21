@@ -30,13 +30,14 @@ export class AuthController {
     description: 'User Login Verification',
     summary: 'Completes user login with Phone number or Email by using verification code provided',
   })
+  @ApiExtraModels(LoginVerifyRequestDto, LoginRequestDto)
   public async verify(@Body() body: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
     return this.authService.verifyLoginSession(body);
   }
 
   @Post('logout')
   @ApiOperation({ description: 'User Logout', summary: 'Ends user session and invalidates JWT token' })
-  @ApiBearerAuth()
+  @ApiBearerAuth('jwt')
   @UseGuards(JwtAuthGuard)
   public async logout(@Req() request: Request): Promise<unknown> {
     const userId = request.user?.id;
@@ -53,17 +54,18 @@ export class AuthController {
     description: 'Refresh JWT AccessToken and RefreshToken',
     summary: 'Refresh JWT AccessToken and RefreshToken using RefreshToken provided',
   })
+  @ApiBearerAuth('jwt')
   @UseGuards(RefreshTokenAuthGuard)
   refreshTokens(@Req() req: Request) {
     if (!req.user) {
-      throw new HttpException('Invalid Refresh Token.', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Invalid Refresh Token. Did not pass verification', HttpStatus.UNAUTHORIZED);
     }
 
     const userId = req.user['user_id'];
     const refreshToken = req.user['secret'];
 
     if (!userId || !refreshToken) {
-      throw new HttpException('Invalid Refresh Token.', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Invalid Refresh Token. Not all data provided', HttpStatus.UNAUTHORIZED);
     }
 
     return this.authService.refreshTokens(userId, refreshToken);

@@ -52,6 +52,7 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
   }
 
   public async getUserLoginForSecret(userId: string, secret: string): Promise<ILogin | null> {
+    this.logger.debug(`Looking by userId: ${userId} and secret: ${secret}`);
     return await this.repository.findOneBy({ userId, secret });
   }
 }

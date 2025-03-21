@@ -5,6 +5,7 @@ import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 import { LoginRequestDto } from '../dto/request/login.request.dto';
 import { CommandBus } from '@nestjs/cqrs';
 import { LoginInitiateCommand, LoginVerifyCommand, LogoutCommand, RefreshTokenCommand } from './login/commands';
+import { safeTrim } from '@library/shared/common/helpers';
 
 @Injectable()
 export class AuthService {
@@ -42,8 +43,9 @@ export class AuthService {
   }
 
   private extractContactInfo(loginInfo: LoginRequestDto): { contact: string; contactType: ContactType } {
-    const email = (loginInfo.email || '').trim();
-    const phoneNumber = (loginInfo.phoneNumber || '').trim();
+    const { email: emailRaw, phoneNumber: phoneNumberRaw } = loginInfo;
+    const email = safeTrim(emailRaw);
+    const phoneNumber = safeTrim(phoneNumberRaw);
 
     if (email && phoneNumber) {
       throw new Error('A valid email or phone number must be provided to login.');
