@@ -12,14 +12,7 @@ describe('UserService', () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let dataService: IDataService;
 
-  const mockDataService = {
-    users: {
-      findOneBy: jest.fn(),
-      getUserByContact: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-  };
+  const mockDataService = { users: { findOneBy: jest.fn(), getUserByContact: jest.fn(), create: jest.fn(), update: jest.fn() } };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -87,12 +80,7 @@ describe('UserService', () => {
 
   describe('createUser', () => {
     it('should create a new user', async () => {
-      const createUserDto: UserCreateRequestDto = {
-        email: 'test@test.com',
-        phoneNumber: '1234567890',
-        firstName: 'Test',
-        lastName: 'User',
-      };
+      const createUserDto: UserCreateRequestDto = { email: 'test@test.com', phoneNumber: '1234567890', firstName: 'Test', lastName: 'User' };
       const user = { id: v4(), ...createUserDto } as ApplicationUser;
       mockDataService.users.create.mockResolvedValue(user);
 

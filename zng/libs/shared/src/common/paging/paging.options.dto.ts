@@ -9,12 +9,7 @@
 import { ApiPropertyOptional, ApiSchema } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
-import {
-  DEFAULT_PAGING_LIMIT,
-  DEFAULT_PAGING_ORDER,
-  DEFAULT_PAGING_ORDER_BY,
-  PagingOrder,
-} from './paging.order.constants';
+import { DEFAULT_PAGING_LIMIT, DEFAULT_PAGING_ORDER, DEFAULT_PAGING_ORDER_BY, PagingOrder } from './paging.order.constants';
 import { IPagingOptions } from './paging.options.interface';
 
 @ApiSchema({ name: 'pagingOptions' })

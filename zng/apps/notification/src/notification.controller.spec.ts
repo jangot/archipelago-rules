@@ -6,10 +6,7 @@ describe('NotificationController', () => {
   let notificationController: NotificationController;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [NotificationController],
-      providers: [NotificationService],
-    }).compile();
+    const app: TestingModule = await Test.createTestingModule({ controllers: [NotificationController], providers: [NotificationService] }).compile();
 
     // eslint-disable-next-line prettier/prettier
     

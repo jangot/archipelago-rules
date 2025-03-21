@@ -9,59 +9,26 @@ import { FlatCompat } from '@eslint/eslintrc';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
+const compat = new FlatCompat({ baseDirectory: __dirname, recommendedConfig: js.configs.recommended, allConfig: js.configs.all });
 
 export default [
+  { ignores: ['**/.eslintrc.js', 'documentation/**/*', 'dist/**/*', 'node_modules/**/*', '.notes/**/*', 'logs/**/*', 'scripts/**/*'] },
+  ...compat.extends('plugin:@typescript-eslint/recommended', 'plugin:prettier/recommended', 'plugin:promise/recommended'),
   {
-    ignores: [
-      '**/.eslintrc.js',
-      'documentation/**/*',
-      'dist/**/*',
-      'node_modules/**/*',
-      '.notes/**/*',
-      'logs/**/*',
-      'scripts/**/*',
-    ],
-  },
-  ...compat.extends(
-    'plugin:@typescript-eslint/recommended',
-    'plugin:prettier/recommended',
-    'plugin:promise/recommended'
-  ),
-  {
-    plugins: {
-      '@typescript-eslint': typescriptEslintEslintPlugin,
-      promise,
-    },
+    plugins: { '@typescript-eslint': typescriptEslintEslintPlugin, promise },
 
     languageOptions: {
-      globals: {
-        ...globals.node,
-        ...globals.jest,
-      },
+      globals: { ...globals.node, ...globals.jest },
 
       parser: tsParser,
       ecmaVersion: 5,
       sourceType: 'commonjs',
 
-      parserOptions: {
-        project: 'tsconfig.json',
-        tsconfigRootDir: __dirname,
-      },
+      parserOptions: { project: 'tsconfig.json', tsconfigRootDir: __dirname },
     },
 
     rules: {
-      'lines-between-class-members': [
-        'warn',
-        'always',
-        {
-          exceptAfterSingleLine: true,
-        },
-      ],
+      'lines-between-class-members': ['warn', 'always', { exceptAfterSingleLine: true }],
 
       'max-params': ['warn', 8],
       '@typescript-eslint/interface-name-prefix': 'off',
@@ -75,7 +42,7 @@ export default [
       'prettier/prettier': [
         'warn',
         {
-          printWidth: 120,
+          printWidth: 150,
           singleQuote: true,
           trailingComma: 'es5',
           tabWidth: 2,
@@ -83,22 +50,13 @@ export default [
           usePrettierrc: false,
           endOfLine: 'auto',
           trailingComma: 'es5',
-          objectWrap: 'preserve',
+          objectWrap: 'collapse',
           parser: 'typescript',
           singleAttributePerLine: false,
         },
       ],
 
-      'max-len': [
-        'warn',
-        {
-          code: 120,
-          tabWidth: 2,
-          ignoreComments: true,
-          ignoreStrings: true,
-          ignoreTemplateLiterals: true,
-        },
-      ],
+      'max-len': ['warn', { code: 150, tabWidth: 2, ignoreComments: true, ignoreStrings: true, ignoreTemplateLiterals: true }],
     },
   },
 ];

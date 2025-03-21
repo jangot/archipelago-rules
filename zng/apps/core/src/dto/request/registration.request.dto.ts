@@ -49,13 +49,7 @@ export class RegistrationDto {
   @MapTo({ transform: transformPhoneNumber })
   phoneNumber?: string;
 
-  @ApiProperty({
-    description: 'Registration step verification code',
-    type: String,
-    required: false,
-    maxLength: 100,
-    example: '123456',
-  })
+  @ApiProperty({ description: 'Registration step verification code', type: String, required: false, maxLength: 100, example: '123456' })
   @IsNotEmpty()
   @MaxLength(32)
   @IsString()
@@ -67,13 +61,7 @@ export class RegistrationDto {
 export class RegistrationRequestDto extends OmitType(RegistrationDto, ['userId', 'phoneNumber', 'code'] as const) {}
 
 @ApiSchema({ name: 'registrationVerifyRequest' })
-export class RegistrationVerifyRequestDto extends OmitType(RegistrationDto, [
-  'code',
-  'firstName',
-  'lastName',
-  'email',
-  'phoneNumber',
-] as const) {
+export class RegistrationVerifyRequestDto extends OmitType(RegistrationDto, ['code', 'firstName', 'lastName', 'email', 'phoneNumber'] as const) {
   @ApiProperty({
     description: 'Registration step verification code',
     type: String,
@@ -88,8 +76,4 @@ export class RegistrationVerifyRequestDto extends OmitType(RegistrationDto, [
 }
 
 @ApiSchema({ name: 'registrationUpdateRequest' })
-export class RegistrationUpdateRequestDto extends OmitType(RegistrationDto, [
-  'firstName',
-  'lastName',
-  'code',
-] as const) {}
+export class RegistrationUpdateRequestDto extends OmitType(RegistrationDto, ['firstName', 'lastName', 'code'] as const) {}

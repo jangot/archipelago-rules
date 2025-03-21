@@ -23,11 +23,7 @@ export class VerificationCompleteCommandHandler
   public async execute(command: VerificationCompleteCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
       this.logger.warn(`completeVerification: Invalid command payload`, { command });
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.WrongInput
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
     const {
       payload: { id },
@@ -45,20 +41,13 @@ export class VerificationCompleteCommandHandler
 
     if (!user || !registration) {
       this.logger.error(`No user or registration found for user ${id}`);
-      return this.createTransitionResult(
-        RegistrationStatus.PhoneNumberVerified,
-        false,
-        RegistrationTransitionMessage.WrongInput
-      );
+      return this.createTransitionResult(RegistrationStatus.PhoneNumberVerified, false, RegistrationTransitionMessage.WrongInput);
     }
 
     const { registrationStatus } = user;
     const { status } = registration;
 
-    if (
-      registrationStatus !== RegistrationStatus.PhoneNumberVerified ||
-      status !== RegistrationStatus.PhoneNumberVerified
-    ) {
+    if (registrationStatus !== RegistrationStatus.PhoneNumberVerified || status !== RegistrationStatus.PhoneNumberVerified) {
       this.logger.warn(`User ${id} is not in a state to complete verification`, {
         user: logSafeUser(user),
         registration: logSafeRegistration(registration),

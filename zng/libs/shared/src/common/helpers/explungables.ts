@@ -61,10 +61,7 @@ export const logSafeRegistration = (
  * @param {Array<keyof ILogin>} fields - An array of keys to be omitted from the login object. Defaults to `['secret']`.
  * @returns {Partial<ILogin> | null} - A partial login object with the specified fields omitted, or null if the login object is null or undefined.
  */
-export const logSafeLogin = (
-  login: ILogin | null | undefined,
-  fields: Array<keyof ILogin> = ['secret']
-): Partial<ILogin> | null => {
+export const logSafeLogin = (login: ILogin | null | undefined, fields: Array<keyof ILogin> = ['secret']): Partial<ILogin> | null => {
   if (!login) return null;
   const explungable = new ExplungableObject<ILogin>();
   return explungable.omit(login, fields);

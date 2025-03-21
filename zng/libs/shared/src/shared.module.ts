@@ -28,9 +28,7 @@ export class SharedModule {
                 autoLogging: false,
                 level: logLevel || 'debug',
                 genReqId: (request) => request.headers['x-correlation-id'] || uuidv4(),
-                transport: {
-                  targets: getPinoTransports(configService),
-                },
+                transport: { targets: getPinoTransports(configService) },
               },
               forRoutes: ['*path', ...additionalRoutes], // Allow additional routes
             };

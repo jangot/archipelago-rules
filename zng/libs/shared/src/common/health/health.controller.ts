@@ -21,9 +21,6 @@ export class HealthController {
   @Get()
   @HealthCheck()
   check() {
-    return this.health.check([
-      () => this.http.pingCheck('dns', 'https://1.1.1.1'),
-      () => this.db.pingCheck('database'),
-    ]);
+    return this.health.check([() => this.http.pingCheck('dns', 'https://1.1.1.1'), () => this.db.pingCheck('database')]);
   }
 }

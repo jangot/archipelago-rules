@@ -4,10 +4,7 @@ import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { RefreshTokenCommand } from './login.commands';
 
 @CommandHandler(RefreshTokenCommand)
-export class RefreshTokenCommandHandler
-  extends LoginBaseCommandHandler<RefreshTokenCommand>
-  implements ICommandHandler<RefreshTokenCommand>
-{
+export class RefreshTokenCommandHandler extends LoginBaseCommandHandler<RefreshTokenCommand> implements ICommandHandler<RefreshTokenCommand> {
   public async execute(command: RefreshTokenCommand): Promise<UserLoginPayloadDto> {
     const { userId, refreshToken } = command.payload;
 
@@ -31,9 +28,7 @@ export class RefreshTokenCommandHandler
 
     const { refreshToken: newRefreshToken, refreshTokenExpiresIn } = result;
     if (!newRefreshToken || !refreshTokenExpiresIn) {
-      this.logger.error(
-        `RefreshTokenCommand: Refresh token or its expiration time is not generated for user ${userId}`
-      );
+      this.logger.error(`RefreshTokenCommand: Refresh token or its expiration time is not generated for user ${userId}`);
       throw new Error('Refresh token or its expiration time is not generated');
     }
 

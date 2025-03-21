@@ -23,11 +23,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
   public async execute(command: InitiatePhoneNumberVerificationCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
       this.logger.warn(`initiatePhoneNumberVerification: Invalid command payload`, { command });
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.WrongInput
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
     const {
       payload: { id: userId, input },
@@ -54,11 +50,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
 
     if (!phoneNumber) {
       this.logger.warn(`No phone number provided for phone number verification`, { input });
-      return this.createTransitionResult(
-        RegistrationStatus.EmailVerified,
-        false,
-        RegistrationTransitionMessage.NoContactProvided
-      );
+      return this.createTransitionResult(RegistrationStatus.EmailVerified, false, RegistrationTransitionMessage.NoContactProvided);
     }
 
     const userByPhone = await this.domainServices.userServices.getUserByContact(phoneNumber, ContactType.PHONE_NUMBER);
@@ -66,27 +58,15 @@ export class InitiatePhoneNumberVerificationCommandHandler
     if (userByPhone) {
       if (userByPhone.id === userId) {
         this.logger.debug(`User ${userId} already has the phone number ${phoneNumber}`);
-        return this.createTransitionResult(
-          RegistrationStatus.PhoneNumberVerified,
-          false,
-          RegistrationTransitionMessage.AlreadyVerified
-        );
+        return this.createTransitionResult(RegistrationStatus.PhoneNumberVerified, false, RegistrationTransitionMessage.AlreadyVerified);
       }
       this.logger.debug(`Phone number already taken: ${phoneNumber} by ${userByPhone.id}`, { input });
-      return this.createTransitionResult(
-        RegistrationStatus.PhoneNumberVerifying,
-        false,
-        RegistrationTransitionMessage.ContactTaken
-      );
+      return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, false, RegistrationTransitionMessage.ContactTaken);
     }
 
     const user = await this.domainServices.userServices.getUserById(registration.userId);
     if (!user) {
-      return this.createTransitionResult(
-        RegistrationStatus.PhoneNumberVerifying,
-        false,
-        RegistrationTransitionMessage.WrongInput
-      );
+      return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, false, RegistrationTransitionMessage.WrongInput);
     }
 
     const { code, expiresAt } = this.domainServices.userServices.generateCode();
@@ -114,6 +94,6 @@ export class InitiatePhoneNumberVerificationCommandHandler
 
     this.sendEvent(user, VerificationEvent.PhoneNumberVerifying);
 
-    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, userId, code);
+    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, userId, undefined, code);
   }
 }

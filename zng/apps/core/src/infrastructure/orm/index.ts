@@ -1,9 +1,4 @@
-import {
-  IUserRepository,
-  ILoanRepository,
-  ILoginRepository,
-  IUserRegistrationRepository,
-} from '../../shared/interfaces/repositories';
+import { IUserRepository, ILoanRepository, ILoginRepository, IUserRegistrationRepository } from '../../shared/interfaces/repositories';
 import { LoanRepository } from './loan.repository';
 import { LoginRepository } from './login.repository';
 import { UserRegistrationRepository } from './user.registration.repository';

@@ -6,7 +6,7 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { ContactType, RegistrationStatus } from '@library/entity/enum';
+import { ContactType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 import { RegistrationDto } from '../../../dto';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
@@ -24,11 +24,7 @@ export class RegistrationInitiatedCommandHandler
   public async execute(command: RegistrationInitiatedCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
       this.logger.warn(`initiateRegistration: Invalid command payload`, { command });
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.WrongInput
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
 
     const {
@@ -38,22 +34,14 @@ export class RegistrationInitiatedCommandHandler
 
     if (!email) {
       this.logger.warn(`initiateRegistration: No email provided`, { input });
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.NoContactProvided
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.NoContactProvided);
     }
 
     // Check if provided email is already taken by a registered user
     const userByEmail = await this.domainServices.userServices.getUserByContact(email, ContactType.EMAIL);
     if (userByEmail) {
       this.logger.debug(`initiateRegistration: Email already taken: ${email} by ${userByEmail.id}`, { input });
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.ContactTaken
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.ContactTaken);
     }
 
     // Check if the user already exists but only has a pending email
@@ -71,25 +59,18 @@ export class RegistrationInitiatedCommandHandler
       lastName: safeTrim(lastName),
       pendingEmail: email,
       registrationStatus: RegistrationStatus.EmailVerifying,
+      verificationStatus: VerificationStatus.Verifying,
+      onboardStatus: 'registration',
     };
 
     // Create the barebones User here
     const user = await this.domainServices.userServices.createNewUser(newUser);
     if (!user) {
       this.logger.error(`initiateRegistration: Failed to create user: ${email}`, { newUser });
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.CouldNotCreateUser
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.CouldNotCreateUser);
     }
     const { id: userId } = user;
-    const newUserRegistration = {
-      userId,
-      status: RegistrationStatus.EmailVerifying,
-      secret: code,
-      secretExpiresAt: expiresAt,
-    };
+    const newUserRegistration = { userId, status: RegistrationStatus.EmailVerifying, secret: code, secretExpiresAt: expiresAt };
 
     // Create User Registration and store verification code with expiration date
     const userRegistration = await this.domainServices.userServices.createNewUserRegistration(newUserRegistration);
@@ -100,35 +81,25 @@ export class RegistrationInitiatedCommandHandler
 
     this.sendEvent(user, VerificationEvent.EmailVerifying);
 
-    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, userId, code);
+    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, userId, undefined, code);
   }
 
-  private async reInitiateEmailVerification(
-    user: IApplicationUser,
-    input: RegistrationDto
-  ): Promise<RegistrationTransitionResult> {
+  private async reInitiateEmailVerification(user: IApplicationUser, input: RegistrationDto): Promise<RegistrationTransitionResult> {
     const { firstName, lastName, email } = input;
 
     // This case is unexpected as we re-initiate email verification only by not empty email
     // Do this validation to tell TS that this field is 100% not empty
     if (!email) {
-      this.logger.error(`Email is missing during re-initiation of email verification for user ${user.id}`, {
-        user: logSafeUser(user),
-      });
+      this.logger.error(`Email is missing during re-initiation of email verification for user ${user.id}`, { user: logSafeUser(user) });
       throw new Error('Email is missing during re-initiation of email verification');
     }
 
     const registration = await this.domainServices.userServices.getUserRegistration(user.id);
     if (!registration) {
-      this.logger.warn(
-        `reInitiateEmailVerification: No registration found for user ${user.id} while ${email} is found as pending`,
-        { user: logSafeUser(user) }
-      );
-      return this.createTransitionResult(
-        RegistrationStatus.EmailVerifying,
-        false,
-        RegistrationTransitionMessage.NoRegistrationStatusFound
-      );
+      this.logger.warn(`reInitiateEmailVerification: No registration found for user ${user.id} while ${email} is found as pending`, {
+        user: logSafeUser(user),
+      });
+      return this.createTransitionResult(RegistrationStatus.EmailVerifying, false, RegistrationTransitionMessage.NoRegistrationStatusFound);
     }
 
     const { code, expiresAt } = this.domainServices.userServices.generateCode();
@@ -158,6 +129,6 @@ export class RegistrationInitiatedCommandHandler
 
     this.sendEvent(user, VerificationEvent.EmailCodeResent);
 
-    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, user.id, code);
+    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, user.id, undefined, code);
   }
 }

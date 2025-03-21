@@ -13,11 +13,7 @@ export class MetadataCache {
 
   private static extractMetadata<T extends object>(classType: new () => T): MetadataInfo {
     const instance = new classType();
-    const metadata: MetadataInfo = {
-      mappings: new Map(),
-      excludedFields: new Set(),
-      types: new Map(),
-    };
+    const metadata: MetadataInfo = { mappings: new Map(), excludedFields: new Set(), types: new Map() };
 
     for (const key of Object.keys(instance)) {
       // Check for @MapTo()

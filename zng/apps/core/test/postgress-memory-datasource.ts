@@ -46,18 +46,9 @@ export const memoryDataSourceForTests = async (): Promise<{ dataSource: DataSour
 
 // Workaround for missing functions in pg-mem implementation
 function registerMemoryDatabaseFunctions(schema: ISchema) {
-  schema.registerFunction({
-    implementation: () => 'test',
-    name: 'current_database',
-  });
+  schema.registerFunction({ implementation: () => 'test', name: 'current_database' });
 
-  schema.registerFunction({
-    implementation: () => '1',
-    name: 'version',
-  });
+  schema.registerFunction({ implementation: () => '1', name: 'version' });
 
-  schema.registerFunction({
-    implementation: () => v4(),
-    name: 'uuid_generate_v4',
-  });
+  schema.registerFunction({ implementation: () => v4(), name: 'uuid_generate_v4' });
 }
