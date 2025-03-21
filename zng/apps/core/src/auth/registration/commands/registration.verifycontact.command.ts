@@ -114,6 +114,10 @@ export class VerifyContactCommandHandler
     });
 
     const userLogin = await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
+    if (!userLogin) {
+      this.logger.error(`Failed to create login for user ${user.id}`);
+      return this.createTransitionResult(registration.status, false, RegistrationTransitionMessage.FailedToCreateLogin);
+    }
 
     // #endregion
 
@@ -122,23 +126,19 @@ export class VerifyContactCommandHandler
       existedRegistrationStatus === RegistrationStatus.EmailVerifying ? VerificationEvent.EmailVerified : VerificationEvent.PhoneNumberVerified
     );
 
-    // TODO: THIS IS ALL WRONG, this is being triggered on the 1st contact verification
-    // We should not be sending the event here, as we are not completing the registration yet
-    // Not sure what the logic should be here... Alex K - check this out
-
     // Checking the possibility to complete registration
     // We take the second login type and login itself to check if it is already verified
     // If so - we can complete the registration as both contacts are verified
     const secondLoginType =
-      newRegistrationStatus === RegistrationStatus.EmailVerified ? LoginType.OneTimeCodeEmail : LoginType.OneTimeCodePhoneNumber;
+      newRegistrationStatus === RegistrationStatus.EmailVerified ? LoginType.OneTimeCodePhoneNumber : LoginType.OneTimeCodeEmail;
 
     const isSecondContactVerified = await this.isSecondContactVerified(userId, secondLoginType);
     if (isSecondContactVerified) {
       this.logger.debug(`Second contact is already verified for user ${userId}`);
-      return this.createTransitionResult(RegistrationStatus.Registered, true, null, user.id, userLogin?.id);
+      return this.createTransitionResult(RegistrationStatus.Registered, true, null, user.id, userLogin.id);
     }
 
-    return this.createTransitionResult(newRegistrationStatus, true, null, user.id, userLogin?.id);
+    return this.createTransitionResult(newRegistrationStatus, true, null, user.id, userLogin.id);
   }
 
   private async isSecondContactVerified(userId: string, loginType: LoginType): Promise<boolean> {

@@ -118,6 +118,10 @@ export class UserDomainService extends BaseDomainServices {
 
     return this.data.logins.getUserLoginForSecret(userId, refreshTokenHash);
   }
+
+  public async getUserLogins(userId: string): Promise<ILogin[] | null> {
+    return this.data.logins.getUserLogins(userId);
+  }
   //#endregion
 
   //#region Miscellaneous stuff for now
