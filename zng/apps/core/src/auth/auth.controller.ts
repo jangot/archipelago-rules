@@ -1,13 +1,7 @@
 import { Body, Controller, Get, HttpException, HttpStatus, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
-import {
-  RegistrationRequestDto,
-  RegistrationVerifyRequestDto,
-  RegistrationDto,
-  RegistrationUpdateRequestDto,
-  LoginVerifyRequestDto,
-} from '../dto';
+import { RegistrationRequestDto, RegistrationVerifyRequestDto, RegistrationDto, RegistrationUpdateRequestDto, LoginVerifyRequestDto } from '../dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiOperation, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { RegistrationService } from './registration.service';
@@ -25,10 +19,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  @ApiOperation({
-    description: 'User Login',
-    summary: 'Begins user login with Phone number or Email, pending successful code verification',
-  })
+  @ApiOperation({ description: 'User Login', summary: 'Begins user login with Phone number or Email, pending successful code verification' })
   @ApiBody({ type: LoginRequestDto, schema: { $ref: getSchemaPath(LoginRequestDto) } })
   async login(@Body() body: LoginRequestDto): Promise<UserLoginPayloadDto> {
     return this.authService.initiateLoginSession(body);
@@ -44,14 +35,12 @@ export class AuthController {
   }
 
   @Post('logout')
-  @ApiOperation({
-    description: 'User Logout',
-    summary: 'Ends user session and invalidates JWT token',
-  })
+  @ApiOperation({ description: 'User Logout', summary: 'Ends user session and invalidates JWT token' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   public async logout(@Req() request: Request): Promise<unknown> {
     const userId = request.user?.id;
+    // Technically, this should never happen, but just in case
     if (!userId) {
       throw new HttpException('User is not logged in.', HttpStatus.UNAUTHORIZED);
     }
@@ -76,14 +65,14 @@ export class AuthController {
     if (!userId || !refreshToken) {
       throw new HttpException('Invalid Refresh Token.', HttpStatus.UNAUTHORIZED);
     }
+
     return this.authService.refreshTokens(userId, refreshToken);
   }
 
   @Post('register')
   @ApiOperation({
     description: 'Initiates User Registration or re-initiates User Registration',
-    summary:
-      'Initiates User Registration or renew existing registration if Email and Phone Number were not verified yet',
+    summary: 'Initiates User Registration or renew existing registration if Email and Phone Number were not verified yet',
   })
   @ApiExtraModels(RegistrationRequestDto)
   @ApiBody({ schema: { $ref: getSchemaPath(RegistrationRequestDto) } })
@@ -92,17 +81,11 @@ export class AuthController {
   }
 
   @Put('register')
-  @ApiOperation({
-    description: 'Update Email or Phone number',
-    summary: 'Update Email or Phone number during user registration',
-  })
+  @ApiOperation({ description: 'Update Email or Phone number', summary: 'Update Email or Phone number during user registration' })
   @ApiBearerAuth('jwt')
   @ApiBody({ type: RegistrationUpdateRequestDto, schema: { $ref: getSchemaPath(RegistrationUpdateRequestDto) } })
   @UseGuards(JwtAuthGuard)
-  public async updateVerificationField(
-    @Body() body: RegistrationUpdateRequestDto,
-    @Req() request: Request
-  ): Promise<UserRegisterResponseDto | null> {
+  public async updateVerificationField(@Body() body: RegistrationUpdateRequestDto, @Req() request: Request): Promise<UserRegisterResponseDto | null> {
     const userId = request.user?.id;
     return await this.registrationService.updateRegistrationContact(body, userId);
   }
@@ -116,10 +99,7 @@ export class AuthController {
     summary: 'Verify Email or Phone Number User Registration with provided code',
   })
   @ApiExtraModels(RegistrationVerifyRequestDto, UserLoginPayloadDto)
-  @ApiBody({
-    type: RegistrationVerifyRequestDto,
-    schema: { $ref: getSchemaPath(RegistrationVerifyRequestDto) },
-  })
+  @ApiBody({ type: RegistrationVerifyRequestDto, schema: { $ref: getSchemaPath(RegistrationVerifyRequestDto) } })
   public async verifyRegistration(@Body() body: RegistrationVerifyRequestDto): Promise<UserLoginPayloadDto | null> {
     return await this.registrationService.verifyRegistration(body);
   }

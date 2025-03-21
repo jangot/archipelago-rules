@@ -36,9 +36,7 @@ import camelcaseKeys from 'camelcase-keys';
  * @implements {IRepositoryBase<Entity>}
  * @template Entity - must support Primary keys (either singular and named id, or composite)
  */
-export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | CompositeIdEntityType>>
-  implements IRepositoryBase<Entity>
-{
+export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | CompositeIdEntityType>> implements IRepositoryBase<Entity> {
   protected readonly repository: Repository<Entity>;
 
   constructor(
@@ -119,32 +117,18 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
       orderDirection = order[orderKey];
     }
     // Apply default Paging only if it is not already set
-    const searchPaging = buildPagingQuery<Entity>({
-      limit: options?.take,
-      offset: options?.skip,
-      order: orderDirection,
-      orderBy: orderKey,
-    });
+    const searchPaging = buildPagingQuery<Entity>({ limit: options?.take, offset: options?.skip, order: orderDirection, orderBy: orderKey });
     const { skip, take } = searchPaging;
     options = { ...options, ...searchPaging };
     const result = await this.repository.findAndCount(options);
-    return {
-      data: result[0],
-      meta: { offset: skip, limit: take, totalCount: result[1] },
-    };
+    return { data: result[0], meta: { offset: skip, limit: take, totalCount: result[1] } };
   }
 
-  public async findBy(
-    where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
-    paging?: IPagingOptions
-  ): Promise<IPaging<Entity>> {
+  public async findBy(where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[], paging?: IPagingOptions): Promise<IPaging<Entity>> {
     const searchPaging = buildPagingQuery<Entity>(paging);
     const { skip, take } = searchPaging;
     const result = await this.repository.findAndCount({ where, ...searchPaging });
-    return {
-      data: result[0],
-      meta: { offset: skip, limit: take, totalCount: result[1] },
-    };
+    return { data: result[0], meta: { offset: skip, limit: take, totalCount: result[1] } };
   }
 
   public async delete(
@@ -191,10 +175,7 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     const searchPaging = buildPagingQuery<Entity>(paging);
     const { skip, take } = searchPaging;
     const result = await this.repository.findAndCount({ where: searchQuery, ...searchPaging });
-    return {
-      data: result[0],
-      meta: { offset: skip, limit: take, totalCount: result[1] },
-    };
+    return { data: result[0], meta: { offset: skip, limit: take, totalCount: result[1] } };
   }
 
   public async searchAll(filters: ISearchFilter[]): Promise<Entity[]> {

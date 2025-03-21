@@ -6,10 +6,7 @@ import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { createHashAsync } from '@library/shared/common/helpers';
 
 @CommandHandler(LoginVerifyCommand)
-export class LoginVerifyCommandHandler
-  extends LoginBaseCommandHandler<LoginVerifyCommand>
-  implements ICommandHandler<LoginVerifyCommand>
-{
+export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVerifyCommand> implements ICommandHandler<LoginVerifyCommand> {
   public async execute(command: LoginVerifyCommand): Promise<UserLoginPayloadDto> {
     const {
       payload: { userId, contact, contactType, verificationCode },

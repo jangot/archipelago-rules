@@ -52,10 +52,7 @@ export class RegistrationService {
     return this.handleVerificationResult(verificationResult, userId);
   }
 
-  public async updateRegistrationContact(
-    input: RegistrationDto,
-    authUserId?: string
-  ): Promise<UserRegisterResponseDto | null> {
+  public async updateRegistrationContact(input: RegistrationDto, authUserId?: string): Promise<UserRegisterResponseDto | null> {
     const { userId, email, phoneNumber } = input;
     if (!userId) {
       throw new HttpException('User ID is required for verification', HttpStatus.BAD_REQUEST);
@@ -71,15 +68,11 @@ export class RegistrationService {
     // - if email provided - update email and start email verification
     // - if email not provided but phone number - update phone number and start phone number verification
     if (email) {
-      const emailUpdateResult = await this.commandBus.execute(
-        new InitiateEmailVerificationCommand({ id: userId, input })
-      );
+      const emailUpdateResult = await this.commandBus.execute(new InitiateEmailVerificationCommand({ id: userId, input }));
       return this.handleRegistrationResult(emailUpdateResult, email);
     }
     if (phoneNumber) {
-      const phoneUpdateResult = await this.commandBus.execute(
-        new InitiatePhoneNumberVerificationCommand({ id: userId, input })
-      );
+      const phoneUpdateResult = await this.commandBus.execute(new InitiatePhoneNumberVerificationCommand({ id: userId, input }));
       return this.handleRegistrationResult(phoneUpdateResult, null, phoneNumber);
     }
     return null;
@@ -111,13 +104,7 @@ export class RegistrationService {
       const exception = RegistrationExceptionFactory.translate(message, state);
       throw exception;
     } else {
-      return {
-        id: userId!,
-        email: email ?? null,
-        phoneNumber: phoneNumber ?? null,
-        verificationState: state!,
-        verificationCode: code!,
-      };
+      return { id: userId!, email: email ?? null, phoneNumber: phoneNumber ?? null, verificationState: state!, verificationCode: code! };
     }
   }
 
@@ -127,16 +114,13 @@ export class RegistrationService {
    * @param userId - The ID of the user.
    * @returns A promise that resolves to a JwtResponseDto or null.
    */
-  private async handleVerificationResult(
-    result: RegistrationTransitionResult | null,
-    userId: string
-  ): Promise<UserLoginPayloadDto | null> {
+  private async handleVerificationResult(result: RegistrationTransitionResult | null, userId: string): Promise<UserLoginPayloadDto | null> {
     if (!result) {
       this.logger.warn('handleVerificationResult: Registration Verification failed');
       throw new HttpException('Registration Verification failed', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    const { state, isSuccessful, message } = result;
+    const { state, isSuccessful, message, loginId } = result;
 
     if (!isSuccessful) {
       const exception = RegistrationExceptionFactory.translate(message, state);
@@ -147,9 +131,8 @@ export class RegistrationService {
       if (result.state === RegistrationStatus.Registered) {
         await this.commandBus.execute(new VerificationCompleteCommand({ id: userId, input: { userId } }));
       }
-      const contactType =
-        result.state === RegistrationStatus.EmailVerified ? ContactType.EMAIL : ContactType.PHONE_NUMBER;
-      return await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType }));
+      const contactType = result.state === RegistrationStatus.EmailVerified ? ContactType.EMAIL : ContactType.PHONE_NUMBER;
+      return await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType, loginId }));
     }
   }
 }

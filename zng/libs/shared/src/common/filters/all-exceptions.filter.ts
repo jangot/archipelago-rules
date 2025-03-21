@@ -27,19 +27,9 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
 
     const stack = !isProduction && !isHttpException && this.isExceptionObject(exception) ? exception.stack : undefined;
 
-    const message = isBadRequest
-      ? this.getBadRequestMessage(exception)
-      : isHttpException
-        ? exception.message
-        : 'Internal Server Error';
+    const message = isBadRequest ? this.getBadRequestMessage(exception) : isHttpException ? exception.message : 'Internal Server Error';
 
-    const responseBody = {
-      statusCode: httpStatus,
-      message: message,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      stack: stack,
-    };
+    const responseBody = { statusCode: httpStatus, message: message, timestamp: new Date().toISOString(), path: request.url, stack: stack };
 
     if (isHttpException) {
       this.logger.log(`statusCode: ${httpStatus}, url: ${request.url}, message: ${responseBody.message}`);

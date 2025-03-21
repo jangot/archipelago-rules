@@ -25,24 +25,12 @@ export class CoreService {
 
     try {
       const lender = await this.dataService.users.insert(
-        {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: email1,
-          id: lenderId,
-          phoneNumber: '123',
-        },
+        { firstName: 'John', lastName: 'Doe', email: email1, id: lenderId, phoneNumber: '123' },
         true
       );
 
       const borrower = await this.dataService.users.insert(
-        {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: email2,
-          id: borrowerId,
-          phoneNumber: '123',
-        },
+        { firstName: 'John', lastName: 'Doe', email: email2, id: borrowerId, phoneNumber: '123' },
         true
       );
 

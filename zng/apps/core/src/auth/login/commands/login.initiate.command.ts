@@ -5,10 +5,7 @@ import { UserLoginPayloadDto } from 'apps/core/src/dto/response/user-login-paylo
 import { ContactType, LoginType, RegistrationStatus } from '@library/entity/enum';
 
 @CommandHandler(LoginInitiateCommand)
-export class LoginInitiateCommandHandler
-  extends LoginBaseCommandHandler<LoginInitiateCommand>
-  implements ICommandHandler<LoginInitiateCommand>
-{
+export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginInitiateCommand> implements ICommandHandler<LoginInitiateCommand> {
   public async execute(command: LoginInitiateCommand): Promise<UserLoginPayloadDto> {
     const {
       payload: { userId, contact, contactType },

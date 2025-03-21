@@ -21,8 +21,7 @@ export function buildPagingQuery<Entity extends ObjectLiteral>(paging?: IPagingO
     const { offset, limit, order, orderBy } = paging;
     if (offset) pagingQuery.skip = offset;
     if (limit) pagingQuery.take = limit;
-    if (order && orderBy && typeof paging.orderBy === 'string')
-      pagingQuery.order = { [orderBy]: order } as FindOptionsOrder<Entity>;
+    if (order && orderBy && typeof paging.orderBy === 'string') pagingQuery.order = { [orderBy]: order } as FindOptionsOrder<Entity>;
   }
   return pagingQuery;
 }

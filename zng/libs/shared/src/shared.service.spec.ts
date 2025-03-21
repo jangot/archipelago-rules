@@ -5,9 +5,7 @@ describe('SharedService', () => {
   let service: SharedService;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [SharedService],
-    }).compile();
+    const module: TestingModule = await Test.createTestingModule({ providers: [SharedService] }).compile();
 
     service = module.get<SharedService>(SharedService);
   });

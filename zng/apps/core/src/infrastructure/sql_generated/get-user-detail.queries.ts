@@ -34,6 +34,4 @@ const getUserDetailByIdIR: any = {
  * SELECT * FROM core.users WHERE id = :userId! Limit 1
  * ```
  */
-export const getUserDetailById = new PreparedQuery<IGetUserDetailByIdParams, IGetUserDetailByIdResult>(
-  getUserDetailByIdIR
-);
+export const getUserDetailById = new PreparedQuery<IGetUserDetailByIdParams, IGetUserDetailByIdResult>(getUserDetailByIdIR);

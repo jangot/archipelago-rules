@@ -1,15 +1,12 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { VerifyContactCommand } from './registration.commands';
-import { LoginType, RegistrationStatus } from '@library/entity/enum';
+import { LoginType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
 
-const pendingStates: RegistrationStatus[] = [
-  RegistrationStatus.EmailVerifying,
-  RegistrationStatus.PhoneNumberVerifying,
-];
+const pendingStates: RegistrationStatus[] = [RegistrationStatus.EmailVerifying, RegistrationStatus.PhoneNumberVerifying];
 
 @CommandHandler(VerifyContactCommand)
 export class VerifyContactCommandHandler
@@ -19,11 +16,7 @@ export class VerifyContactCommandHandler
   public async execute(command: VerifyContactCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
       this.logger.warn(`VerifyContact: Invalid command payload`, { command });
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.WrongInput
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
     const {
       payload: { id: userId, input },
@@ -38,20 +31,12 @@ export class VerifyContactCommandHandler
     const registration = await this.domainServices.userServices.getUserRegistration(userId);
     if (!registration) {
       this.logger.debug(`No registration found for user ${userId}`);
-      return this.createTransitionResult(
-        RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.NoRegistrationStatusFound
-      );
+      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.NoRegistrationStatusFound);
     }
     const { status: existedRegistrationStatus } = registration;
     if (!pendingStates.includes(registration.status)) {
       this.logger.debug(`User ${userId} is not awaiting for code verification`);
-      return this.createTransitionResult(
-        existedRegistrationStatus,
-        false,
-        RegistrationTransitionMessage.NotAwaitingForCode
-      );
+      return this.createTransitionResult(existedRegistrationStatus, false, RegistrationTransitionMessage.NotAwaitingForCode);
     }
     // #endregion
 
@@ -70,11 +55,7 @@ export class VerifyContactCommandHandler
     const { code } = input;
     if (secret !== code) {
       this.logger.debug(`Verification code mismatch for user ${userId}`);
-      return this.createTransitionResult(
-        registration.status,
-        false,
-        RegistrationTransitionMessage.VerificationCodeMismatch
-      );
+      return this.createTransitionResult(registration.status, false, RegistrationTransitionMessage.VerificationCodeMismatch);
     }
     // #endregion
 
@@ -91,22 +72,13 @@ export class VerifyContactCommandHandler
 
     // As we already validated that there are only two possible states (EmailVerifying, PhoneNumberVerifying) - we free to do simple ternary operator
     const newRegistrationStatus =
-      existedRegistrationStatus === RegistrationStatus.EmailVerifying
-        ? RegistrationStatus.EmailVerified
-        : RegistrationStatus.PhoneNumberVerified;
+      existedRegistrationStatus === RegistrationStatus.EmailVerifying ? RegistrationStatus.EmailVerified : RegistrationStatus.PhoneNumberVerified;
 
-    const loginType =
-      newRegistrationStatus === RegistrationStatus.EmailVerified
-        ? LoginType.OneTimeCodeEmail
-        : LoginType.OneTimeCodePhoneNumber;
+    const loginType = newRegistrationStatus === RegistrationStatus.EmailVerified ? LoginType.OneTimeCodeEmail : LoginType.OneTimeCodePhoneNumber;
 
     // We should ONLY create a Login for the 1st contact verification (which is currently Email)
     // Login
-    const newLogin = {
-      loginType: loginType,
-      userId: user.id,
-      updatedAt: new Date(),
-    };
+    const newLogin = { loginType: loginType, userId: user.id, updatedAt: new Date() };
 
     this.logger.debug(`About to update registration, user and add login during verifying contact for user ${user.id}`, {
       user: logSafeUser(user),
@@ -124,9 +96,15 @@ export class VerifyContactCommandHandler
     if (newRegistrationStatus === RegistrationStatus.EmailVerified) {
       user.email = user.pendingEmail;
       user.pendingEmail = null;
+      user.onboardStatus = 'emailVerified';
     } else {
       user.phoneNumber = user.pendingPhoneNumber;
       user.pendingPhoneNumber = null;
+      user.onboardStatus = 'phoneNumberVerified';
+    }
+
+    if (user.verificationStatus === VerificationStatus.Verifying) {
+      user.verificationStatus = VerificationStatus.Verified;
     }
 
     this.logger.debug(`Updated registration, user and add login data before apply`, {
@@ -135,32 +113,32 @@ export class VerifyContactCommandHandler
       login: newLogin,
     });
 
-    await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
+    const userLogin = await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
 
     // #endregion
 
     this.sendEvent(
       user,
-      existedRegistrationStatus === RegistrationStatus.EmailVerifying
-        ? VerificationEvent.EmailVerified
-        : VerificationEvent.PhoneNumberVerified
+      existedRegistrationStatus === RegistrationStatus.EmailVerifying ? VerificationEvent.EmailVerified : VerificationEvent.PhoneNumberVerified
     );
+
+    // TODO: THIS IS ALL WRONG, this is being triggered on the 1st contact verification
+    // We should not be sending the event here, as we are not completing the registration yet
+    // Not sure what the logic should be here... Alex K - check this out
 
     // Checking the possibility to complete registration
     // We take the second login type and login itself to check if it is already verified
     // If so - we can complete the registration as both contacts are verified
     const secondLoginType =
-      newRegistrationStatus === RegistrationStatus.EmailVerified
-        ? LoginType.OneTimeCodeEmail
-        : LoginType.OneTimeCodePhoneNumber;
+      newRegistrationStatus === RegistrationStatus.EmailVerified ? LoginType.OneTimeCodeEmail : LoginType.OneTimeCodePhoneNumber;
 
     const isSecondContactVerified = await this.isSecondContactVerified(userId, secondLoginType);
     if (isSecondContactVerified) {
       this.logger.debug(`Second contact is already verified for user ${userId}`);
-      return this.createTransitionResult(RegistrationStatus.Registered, true, null);
+      return this.createTransitionResult(RegistrationStatus.Registered, true, null, user.id, userLogin?.id);
     }
 
-    return this.createTransitionResult(newRegistrationStatus, true, null, undefined, undefined);
+    return this.createTransitionResult(newRegistrationStatus, true, null, user.id, userLogin?.id);
   }
 
   private async isSecondContactVerified(userId: string, loginType: LoginType): Promise<boolean> {

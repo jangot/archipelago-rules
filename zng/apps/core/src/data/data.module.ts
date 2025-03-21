@@ -15,8 +15,7 @@ import { CustomCoreRepositories } from '../infrastructure/orm';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) =>
-        DbConfiguration({ configService, entities: CoreEntities, schema: 'core' }),
+      useFactory: (configService: ConfigService) => DbConfiguration({ configService, entities: CoreEntities, schema: 'core' }),
       // TypeORM Transactional DataSource initialization
       async dataSourceFactory(options) {
         if (!options) {
@@ -27,11 +26,7 @@ import { CustomCoreRepositories } from '../infrastructure/orm';
       },
     }),
   ],
-  providers: [
-    { provide: IDataService, useClass: DataService },
-    ...registerCustomRepositoryProviders(CoreEntities),
-    ...CustomCoreRepositories,
-  ],
+  providers: [{ provide: IDataService, useClass: DataService }, ...registerCustomRepositoryProviders(CoreEntities), ...CustomCoreRepositories],
   exports: [IDataService],
 })
 export class DataModule {}

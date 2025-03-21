@@ -4,10 +4,7 @@ import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dto';
 
 @CommandHandler(LogoutCommand)
-export class LogoutCommandHandler
-  extends LoginBaseCommandHandler<LogoutCommand>
-  implements ICommandHandler<LogoutCommand>
-{
+export class LogoutCommandHandler extends LoginBaseCommandHandler<LogoutCommand> implements ICommandHandler<LogoutCommand> {
   public async execute(command: LogoutCommand): Promise<UserLoginPayloadDto> {
     const {
       payload: { userId },

@@ -5,13 +5,7 @@
  *
  * Copyright (c) 2025 Zirtue, Inc.
  */
-import {
-  registerDecorator,
-  ValidationOptions,
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-  ValidationArguments,
-} from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
 import phone from 'phone';
 
 /**
