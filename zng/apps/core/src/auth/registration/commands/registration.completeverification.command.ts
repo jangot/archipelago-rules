@@ -66,7 +66,7 @@ export class VerificationCompleteCommandHandler
 
     user.registrationStatus = RegistrationStatus.Registered;
     registration.status = RegistrationStatus.Registered;
-
+    registration.userLoginId = null;
     this.logger.debug(`Updated registration and user data before apply`, {
       user: logSafeUser(user),
       registration: logSafeRegistration(registration),

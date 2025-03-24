@@ -1,6 +1,6 @@
 import { RegistrationStatus } from '@library/entity/enum/registration.status';
 import { IUserRegistration } from '@library/entity/interface';
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, OneToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
 
 @Entity('user_registrations', { schema: 'core' })
@@ -9,6 +9,7 @@ export class UserRegistration implements IUserRegistration {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index('user_registrations_user_id_idx')
   @Column('uuid')
   userId: string;
 
@@ -27,4 +28,8 @@ export class UserRegistration implements IUserRegistration {
 
   @Column('timestamp with time zone', { nullable: true })
   secretExpiresAt: Date | null;
+
+  @Index('user_registrations_user_login_id_idx')
+  @Column('uuid', { nullable: true })
+  userLoginId: string | null;
 }

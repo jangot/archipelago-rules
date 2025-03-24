@@ -1,12 +1,16 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { VerifyContactCommand } from './registration.commands';
-import { LoginType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
+import { RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
-
-const pendingStates: RegistrationStatus[] = [RegistrationStatus.EmailVerifying, RegistrationStatus.PhoneNumberVerifying];
+import {
+  calculateNewRegistrationStatus,
+  getLoginTypeForRegistrationStatus,
+  isPendingRegistrationState,
+  shouldCreateUserLogin,
+} from '../registration.config';
 
 @CommandHandler(VerifyContactCommand)
 export class VerifyContactCommandHandler
@@ -34,7 +38,7 @@ export class VerifyContactCommandHandler
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.NoRegistrationStatusFound);
     }
     const { status: existedRegistrationStatus } = registration;
-    if (!pendingStates.includes(registration.status)) {
+    if (!isPendingRegistrationState(registration.status)) {
       this.logger.debug(`User ${userId} is not awaiting for code verification`);
       return this.createTransitionResult(existedRegistrationStatus, false, RegistrationTransitionMessage.NotAwaitingForCode);
     }
@@ -71,14 +75,12 @@ export class VerifyContactCommandHandler
     // #region Update registration, User and create Login
 
     // As we already validated that there are only two possible states (EmailVerifying, PhoneNumberVerifying) - we free to do simple ternary operator
-    const newRegistrationStatus =
-      existedRegistrationStatus === RegistrationStatus.EmailVerifying ? RegistrationStatus.EmailVerified : RegistrationStatus.PhoneNumberVerified;
-
-    const loginType = newRegistrationStatus === RegistrationStatus.EmailVerified ? LoginType.OneTimeCodeEmail : LoginType.OneTimeCodePhoneNumber;
-
+    const newRegistrationStatus = calculateNewRegistrationStatus(existedRegistrationStatus);
+    const loginType = getLoginTypeForRegistrationStatus(newRegistrationStatus);
+    const shouldCreateLogin = shouldCreateUserLogin(newRegistrationStatus);
     // We should ONLY create a Login for the 1st contact verification (which is currently Email)
     // Login
-    const newLogin = { loginType: loginType, userId: user.id, updatedAt: new Date() };
+    const newLogin = shouldCreateLogin ? { loginType: loginType, userId: user.id, updatedAt: new Date() } : null;
 
     this.logger.debug(`About to update registration, user and add login during verifying contact for user ${user.id}`, {
       user: logSafeUser(user),
@@ -103,9 +105,7 @@ export class VerifyContactCommandHandler
       user.onboardStatus = 'phoneNumberVerified';
     }
 
-    if (user.verificationStatus === VerificationStatus.Verifying) {
-      user.verificationStatus = VerificationStatus.Verified;
-    }
+    user.verificationStatus = user.verificationStatus === VerificationStatus.Verifying ? VerificationStatus.Verified : user.verificationStatus;
 
     this.logger.debug(`Updated registration, user and add login data before apply`, {
       user: logSafeUser(user),
@@ -113,13 +113,12 @@ export class VerifyContactCommandHandler
       login: newLogin,
     });
 
-    // TODO: Should create a Login only once at fisrt contact verified
+    // TODO: Should create a Login only once at first contact verified
     const userLogin = await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
     if (!userLogin) {
       this.logger.error(`Failed to create login for user ${user.id}`);
       return this.createTransitionResult(registration.status, false, RegistrationTransitionMessage.FailedToCreateLogin);
     }
-
     // #endregion
 
     this.sendEvent(
