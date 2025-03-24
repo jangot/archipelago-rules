@@ -21,6 +21,8 @@ import { ConfigService } from '@nestjs/config';
 import { addSeconds, getUnixTime } from 'date-fns';
 import { generateCRC32String } from '@library/shared/common/helpers/crc32.helpers';
 
+const DEFAULT_LOGOUT_TYPES: LoginType[] = [LoginType.OneTimeCodeEmail, LoginType.OneTimeCodePhoneNumber];
+
 @Injectable()
 export class UserDomainService extends BaseDomainServices {
   protected readonly logger = new Logger(UserDomainService.name);
@@ -77,6 +79,10 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.users.getUserByContact(contact, contactType);
   }
 
+  public async logoutUser(userId: string, loginTypes: LoginType[] = DEFAULT_LOGOUT_TYPES): Promise<void> {
+    return this.data.logins.deleteUserLoginsByTypes(userId, loginTypes);
+  }
+
   //#endregion
 
   //#region User Related Creation Methods
@@ -128,14 +134,16 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.logins.getCurrentUserLogin(userId);
   }
 
-  public async getUserLoginForRefreshToken(userId: string, refreshToken: string): Promise<ILogin | null> {
-    const refreshTokenHash = generateCRC32String(refreshToken);
+  public async getUserLoginForRefreshToken(userId: string, refreshToken: string, isTokenSecure = false): Promise<ILogin | null> {
+    if (!isTokenSecure) {
+      refreshToken = generateCRC32String(refreshToken);
+    }
 
-    return this.data.logins.getUserLoginForSecret(userId, refreshTokenHash);
+    return this.data.logins.getUserLoginForSecret(userId, refreshToken);
   }
 
   public async getUserLogins(userId: string): Promise<ILogin[] | null> {
-    return this.data.logins.getUserLogins(userId);
+    return this.data.logins.getAllUserLogins(userId);
   }
   //#endregion
 

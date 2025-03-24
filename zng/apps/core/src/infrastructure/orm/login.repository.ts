@@ -1,7 +1,7 @@
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { DeepPartial, In, Repository } from 'typeorm';
 import { LoginType } from '@library/entity/enum';
 import { Login } from '../../domain/entities';
 import { ILoginRepository } from '../../shared/interfaces/repositories';
@@ -42,7 +42,7 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
     return this.insert(login, true);
   }
 
-  public async getUserLogins(userId: string): Promise<ILogin[]> {
+  public async getAllUserLogins(userId: string): Promise<ILogin[]> {
     return await this.repository.find({ where: { userId } });
   }
 
@@ -54,5 +54,9 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
   public async getUserLoginForSecret(userId: string, secret: string): Promise<ILogin | null> {
     this.logger.debug(`Looking by userId: ${userId} and secret: ${secret}`);
     return await this.repository.findOneBy({ userId, secret });
+  }
+
+  public async deleteUserLoginsByTypes(userId: string, types: LoginType[]): Promise<void> {
+    await this.repository.delete({ userId, loginType: In(types) });
   }
 }

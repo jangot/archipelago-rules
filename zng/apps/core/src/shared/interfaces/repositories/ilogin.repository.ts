@@ -39,7 +39,7 @@ export interface ILoginRepository extends IRepositoryBase<ILogin> {
    * @param userId The user ID.
    * @returns A promise that resolves to an array of user logins.
    */
-  getUserLogins(userId: string): Promise<ILogin[]>;
+  getAllUserLogins(userId: string): Promise<ILogin[]>;
 
   /**
    * Retrieves the current user login by user ID.
@@ -55,6 +55,14 @@ export interface ILoginRepository extends IRepositoryBase<ILogin> {
    * @returns A promise that resolves to the user login if found, or null if not found.
    */
   getUserLoginForSecret(userId: string, secret: string): Promise<ILogin | null>;
+
+  /**
+   * Deletes user logins by types.
+   * @param userId The user ID.
+   * @param types The types of logins to delete.
+   * @returns A promise that resolves when the operation is complete.
+   */
+  deleteUserLoginsByTypes(userId: string, types: LoginType[]): Promise<void>;
 }
 
 export const ILoginRepository = Symbol('ILoginRepository');
