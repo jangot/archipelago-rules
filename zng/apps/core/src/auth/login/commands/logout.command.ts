@@ -15,19 +15,8 @@ export class LogoutCommandHandler extends LoginBaseCommandHandler<LogoutCommand>
       throw new Error('No userId provided');
     }
 
-    const login = await this.domainServices.userServices.getCurrentUserLogin(userId);
-
-    if (!login) {
-      this.logger.error('LogoutCommand: No login found');
-      throw new Error('No login found');
-    }
-
     this.logger.debug(`logout: Logging out user: ${userId}`);
-    // TODO: Invalidate the JWT token by removing it from the database or marking it as invalid
-
-    login.secret = null;
-
-    await this.domainServices.userServices.updateLogin(login.id, login);
+    await this.domainServices.userServices.logoutUser(userId);
 
     return { userId };
   }

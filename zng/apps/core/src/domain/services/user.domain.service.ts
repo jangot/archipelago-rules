@@ -21,6 +21,8 @@ import { ConfigService } from '@nestjs/config';
 import { addSeconds, getUnixTime } from 'date-fns';
 import { generateCRC32String } from '@library/shared/common/helpers/crc32.helpers';
 
+const DEFAULT_LOGOUT_TYPES: LoginType[] = [LoginType.OneTimeCodeEmail, LoginType.OneTimeCodePhoneNumber];
+
 @Injectable()
 export class UserDomainService extends BaseDomainServices {
   protected readonly logger = new Logger(UserDomainService.name);
@@ -75,6 +77,10 @@ export class UserDomainService extends BaseDomainServices {
 
   public async getUserByContact(contact: string, contactType: ContactType): Promise<IApplicationUser | null> {
     return this.data.users.getUserByContact(contact, contactType);
+  }
+
+  public async logoutUser(userId: string, loginTypes: LoginType[] = DEFAULT_LOGOUT_TYPES): Promise<void> {
+    return this.data.logins.deleteUserLoginsByTypes(userId, loginTypes);
   }
 
   //#endregion
@@ -137,7 +143,7 @@ export class UserDomainService extends BaseDomainServices {
   }
 
   public async getUserLogins(userId: string): Promise<ILogin[] | null> {
-    return this.data.logins.getUserLogins(userId);
+    return this.data.logins.getAllUserLogins(userId);
   }
   //#endregion
 
