@@ -18,7 +18,8 @@ export class RefreshTokenCommandHandler extends LoginBaseCommandHandler<RefreshT
       this.logger.error('RefreshTokenCommand: No user found');
       throw new Error('No user found');
     }
-    const login = await this.domainServices.userServices.getUserLoginForRefreshToken(userId, refreshToken);
+    // Here we already have secured refresh token from the request guard and strategy, so passing 3rd param 'isTokenSecure' as true to not re-calculate hash
+    const login = await this.domainServices.userServices.getUserLoginForRefreshToken(userId, refreshToken, true);
     if (!login) {
       this.logger.error('RefreshTokenCommand: No login found');
       throw new Error('No login found');

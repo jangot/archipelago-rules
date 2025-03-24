@@ -128,10 +128,12 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.logins.getCurrentUserLogin(userId);
   }
 
-  public async getUserLoginForRefreshToken(userId: string, refreshToken: string): Promise<ILogin | null> {
-    const refreshTokenHash = generateCRC32String(refreshToken);
+  public async getUserLoginForRefreshToken(userId: string, refreshToken: string, isTokenSecure = false): Promise<ILogin | null> {
+    if (!isTokenSecure) {
+      refreshToken = generateCRC32String(refreshToken);
+    }
 
-    return this.data.logins.getUserLoginForSecret(userId, refreshTokenHash);
+    return this.data.logins.getUserLoginForSecret(userId, refreshToken);
   }
 
   public async getUserLogins(userId: string): Promise<ILogin[] | null> {
