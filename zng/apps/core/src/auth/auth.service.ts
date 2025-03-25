@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { LoginVerifyRequestDto } from '../dto';
 import { ContactType } from '@library/entity/enum';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
@@ -6,6 +6,7 @@ import { LoginRequestDto } from '../dto/request/login.request.dto';
 import { CommandBus } from '@nestjs/cqrs';
 import { LoginInitiateCommand, LoginVerifyCommand, LogoutCommand, RefreshTokenCommand } from './login/commands';
 import { safeTrim } from '@library/shared/common/helpers';
+import { UserLoginResponseDTO } from '../dto/response/user-login-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,17 +15,25 @@ export class AuthService {
 
   constructor(private readonly commandBus: CommandBus) {}
 
-  public async initiateLoginSession(request: LoginRequestDto): Promise<UserLoginPayloadDto> {
+  public async initiateLoginSession(request: LoginRequestDto): Promise<UserLoginResponseDTO> {
     const contactInfo = this.extractContactInfo(request);
 
-    return await this.commandBus.execute(new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType }));
+    try {
+      return await this.commandBus.execute(
+        new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType })
+      );
+    } catch (error) {
+      this.logger.error(`Error initiating login session: ${error.message}`);
+      throw new UnauthorizedException(error.message);
+    }
   }
 
   public async verifyLoginSession(request: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
     const contactInfo = this.extractContactInfo(request);
 
     return await this.commandBus.execute(
-      new LoginVerifyCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType, verificationCode: request.code })
+      new LoginVerifyCommand({ userId: request.userId ?? undefined, contact: contactInfo.contact, 
+      contactType: contactInfo.contactType, verificationCode: request.code })
     );
   }
 
@@ -48,7 +57,7 @@ export class AuthService {
     const phoneNumber = safeTrim(phoneNumberRaw);
 
     if (email && phoneNumber) {
-      throw new Error('A valid email or phone number must be provided to login.');
+      throw new BadRequestException('A valid email or phone number must be provided to login.');
     }
 
     if (email) {
@@ -57,6 +66,6 @@ export class AuthService {
       return { contact: phoneNumber, contactType: ContactType.PHONE_NUMBER };
     }
 
-    throw new Error('A valid email or phone number must be provided to login.');
+    throw new BadRequestException('A valid email or phone number must be provided to login.');
   }
 }
