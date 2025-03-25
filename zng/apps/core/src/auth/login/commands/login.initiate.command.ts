@@ -1,27 +1,24 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LoginInitiateCommand } from './login.commands';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
-import { UserLoginPayloadDto } from 'apps/core/src/dto/response/user-login-payload.dto';
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
+import { UserLoginResponseDTO } from 'apps/core/src/dto/response/user-login-response.dto';
+import { LoginLogic } from '../login.logic';
 
 @CommandHandler(LoginInitiateCommand)
 export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginInitiateCommand> implements ICommandHandler<LoginInitiateCommand> {
-  public async execute(command: LoginInitiateCommand): Promise<UserLoginPayloadDto> {
+  public async execute(command: LoginInitiateCommand): Promise<UserLoginResponseDTO> {
     const {
-      payload: { userId, contact, contactType },
+      payload: { contact, contactType },
     } = command;
 
     // Either userId or contact must be provided as well as Command execution should be provided with contact type by caller
-    if (!userId && !contact) {
-      this.logger.error('LoginInitiateCommand: No userId or contact provided');
-      throw new Error('No userId or contact provided');
+    if (!contact || !contactType) {
+      this.logger.error('LoginInitiateCommand: No contact or contact type provided');
+      throw new Error('No contact or contact type provided');
     }
 
-    const user = userId
-      ? await this.domainServices.userServices.getUserById(userId)
-      : contact && contactType
-        ? await this.domainServices.userServices.getUserByContact(contact, contactType)
-        : null;
+    const user = await this.domainServices.userServices.getUserByContact(contact, contactType);
 
     if (!user) {
       this.logger.warn('LoginInitiateCommand: No user found');
@@ -29,10 +26,7 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
     }
 
     const { registrationStatus } = user;
-    if (
-      (contactType !== ContactType.EMAIL || registrationStatus !== RegistrationStatus.EmailVerified) &&
-      registrationStatus !== RegistrationStatus.Registered
-    ) {
+    if (!LoginLogic.isUserRegistered(contactType, registrationStatus)) {
       this.logger.warn('LoginInitiateCommand: User is not registered to Log In');
       throw new Error('User is not registered to log in');
     }
@@ -47,6 +41,6 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
     // TODO: Send the code to the user
     //this.sendEvent()
 
-    return { userId: user.id, verificationCode: code, accessToken: '', onboardingStatus: '' };
+    return { userId: user.id, verificationCode: code };
   }
 }

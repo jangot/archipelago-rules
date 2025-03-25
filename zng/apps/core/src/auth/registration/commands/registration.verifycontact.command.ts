@@ -5,13 +5,7 @@ import { RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
-import {
-  calculateNewRegistrationStatus,
-  getLoginTypeForRegistrationStatus,
-  isPendingRegistrationState,
-  shouldCreateUserLogin,
-} from '../registration.config';
-
+import { RegistrationLogic } from '../registration.logic';
 @CommandHandler(VerifyContactCommand)
 export class VerifyContactCommandHandler
   extends RegistrationBaseCommandHandler<VerifyContactCommand>
@@ -38,7 +32,7 @@ export class VerifyContactCommandHandler
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.NoRegistrationStatusFound);
     }
     const { status: existedRegistrationStatus } = registration;
-    if (!isPendingRegistrationState(registration.status)) {
+    if (!RegistrationLogic.isPendingRegistrationState(registration.status)) {
       this.logger.debug(`User ${userId} is not awaiting for code verification`);
       return this.createTransitionResult(existedRegistrationStatus, false, RegistrationTransitionMessage.NotAwaitingForCode);
     }
@@ -75,9 +69,9 @@ export class VerifyContactCommandHandler
     // #region Update registration, User and create Login
 
     // As we already validated that there are only two possible states (EmailVerifying, PhoneNumberVerifying) - we free to do simple ternary operator
-    const newRegistrationStatus = calculateNewRegistrationStatus(existedRegistrationStatus);
-    const loginType = getLoginTypeForRegistrationStatus(newRegistrationStatus);
-    const shouldCreateLogin = shouldCreateUserLogin(newRegistrationStatus);
+    const newRegistrationStatus = RegistrationLogic.calculateNewRegistrationStatus(existedRegistrationStatus);
+    const loginType = RegistrationLogic.getLoginTypeForRegistrationStatus(newRegistrationStatus);
+    const shouldCreateLogin = RegistrationLogic.shouldCreateUserLogin(newRegistrationStatus);
     // We should ONLY create a Login for the 1st contact verification (which is currently Email)
     // Login
     const newLogin = shouldCreateLogin ? { loginType: loginType, userId: user.id, updatedAt: new Date() } : null;
@@ -105,7 +99,7 @@ export class VerifyContactCommandHandler
       user.onboardStatus = 'phoneNumberVerified';
     }
 
-    user.verificationStatus = user.verificationStatus === VerificationStatus.Verifying ? VerificationStatus.Verified : user.verificationStatus;
+    user.verificationStatus = RegistrationLogic.calculateNewVerificationStatus(user.verificationStatus);
 
     this.logger.debug(`Updated registration, user and add login data before apply`, {
       user: logSafeUser(user),

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpException, HttpStatus, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { RegistrationRequestDto, RegistrationVerifyRequestDto, RegistrationDto, RegistrationUpdateRequestDto, LoginVerifyRequestDto } from '../dto';
@@ -22,6 +22,10 @@ export class AuthController {
   @ApiOperation({ description: 'User Login', summary: 'Begins user login with Phone number or Email, pending successful code verification' })
   @ApiBody({ type: LoginRequestDto, schema: { $ref: getSchemaPath(LoginRequestDto) } })
   async login(@Body() body: LoginRequestDto): Promise<UserLoginPayloadDto> {
+    if ((!body.email && !body.phoneNumber) || (body.email && body.phoneNumber)) {
+      throw new BadRequestException('A valid email or phone number must be provided to login.');
+    }
+
     return this.authService.initiateLoginSession(body);
   }
 
@@ -32,6 +36,10 @@ export class AuthController {
   })
   @ApiExtraModels(LoginVerifyRequestDto, LoginRequestDto)
   public async verify(@Body() body: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
+    if ((!body.email && !body.phoneNumber) || (body.email && body.phoneNumber)) {
+      throw new BadRequestException('A valid email or phone number must be provided to login.');
+    }
+
     return this.authService.verifyLoginSession(body);
   }
 
