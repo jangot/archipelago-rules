@@ -10,7 +10,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IApplicationUser, ILogin, IUserRegistration } from '@library/entity/interface';
 import { Transactional } from 'typeorm-transactional';
 import { DeepPartial } from 'typeorm';
-import { ContactType, LoginType } from '@library/entity/enum';
+import { ContactType } from '@library/entity/enum';
 import { BaseDomainServices } from './domain.service.base';
 import { generateSecureCode } from '@library/shared/common/helpers';
 import { JwtService } from '@nestjs/jwt';
@@ -99,11 +99,6 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.logins.create(login);
   }
 
-  public async createOrUpdateLogin(login: DeepPartial<ILogin>, shouldHashSecrets = false): Promise<ILogin | null> {
-    login = this.applyRequiredHashes(login, shouldHashSecrets);
-    return this.data.logins.createOrUpdate(login);
-  }
-
   public async updateLogin(loginId: string, login: DeepPartial<ILogin>, shouldHashSecrets = false): Promise<boolean | null> {
     login = this.applyRequiredHashes(login, shouldHashSecrets);
     return this.data.logins.update(loginId, login);
@@ -114,18 +109,6 @@ export class UserDomainService extends BaseDomainServices {
   }
 
   // #region Login related fetches
-  public async getUserLoginById(loginId: string): Promise<ILogin | null> {
-    return this.data.logins.getById(loginId);
-  }
-
-  public async getUserLoginByType(userId: string, loginType: LoginType): Promise<ILogin | null> {
-    return this.data.logins.getUserLoginByType(userId, loginType);
-  }
-
-  public async getCurrentUserLogin(userId: string): Promise<ILogin | null> {
-    return this.data.logins.getCurrentUserLogin(userId);
-  }
-
   public async getUserLoginByToken(userId: string, token: string, isTokenSecure = false, isAccessToken = false): Promise<ILogin | null> {
     if (!isTokenSecure) {
       token = generateCRC32String(token);

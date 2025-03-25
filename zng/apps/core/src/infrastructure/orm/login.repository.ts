@@ -2,7 +2,6 @@ import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
-import { LoginType } from '@library/entity/enum';
 import { Login } from '../../domain/entities';
 import { ILoginRepository } from '../../shared/interfaces/repositories';
 import { ILogin } from '@library/entity/interface';
@@ -18,21 +17,6 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
     super(repository, Login);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async getFirstUnfinished(_userId: string, _types: LoginType[]): Promise<ILogin | null> {
-    return null;
-    // return await this.repository.findOne({
-    //   where: { userId, type: In(types), stage: Not(In(RegistrationCompletedStates)) },
-    //   order: { updatedAt: `ASC` },
-    // });
-  }
-
-  public async getUserLoginByType(userId: string, loginType: LoginType): Promise<ILogin | null> {
-    this.logger.debug(`getUserSecretByType: Getting secret for user: ${userId} and type: ${loginType}`);
-
-    return await this.repository.findOneBy({ userId, loginType });
-  }
-
   public async createOrUpdate(login: DeepPartial<Login>): Promise<ILogin | null> {
     const existing = await this.findOneBy({ userId: login.userId, loginType: login.loginType });
     if (existing) {
@@ -44,11 +28,6 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
 
   public async getAllUserLogins(userId: string): Promise<ILogin[]> {
     return await this.repository.find({ where: { userId } });
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async getCurrentUserLogin(userId: string): Promise<ILogin | null> {
-    return null;
   }
 
   public async getUserLoginForSecret(userId: string, secret: string, isAccessToken = false): Promise<ILogin | null> {
