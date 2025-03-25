@@ -5,7 +5,7 @@ import { RegistrationRequestDto, RegistrationVerifyRequestDto, RegistrationDto, 
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiOperation, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { RegistrationService } from './registration.service';
-import { JwtAuthGuard } from './guards';
+import { JwtAuthGuard, LogoutAuthGuard } from './guards';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 import { LoginRequestDto } from '../dto/request/login.request.dto';
 import { RefreshTokenAuthGuard } from './guards/jwt-refresh.guard';
@@ -46,15 +46,20 @@ export class AuthController {
   @Post('logout')
   @ApiOperation({ description: 'User Logout', summary: 'Ends user session and invalidates JWT token' })
   @ApiBearerAuth('jwt')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(LogoutAuthGuard)
   public async logout(@Req() request: Request): Promise<unknown> {
-    const userId = request.user?.id;
-    // Technically, this should never happen, but just in case
-    if (!userId) {
-      throw new HttpException('User is not logged in.', HttpStatus.UNAUTHORIZED);
+    if (!request.user) {
+      throw new HttpException('Invalid Access Token. Did not pass verification', HttpStatus.UNAUTHORIZED);
     }
 
-    return this.authService.logout(userId);
+    const userId = request.user['userId'];
+    const accessToken = request.user['extraSecret'];
+
+    if (!userId || !accessToken) {
+      throw new HttpException('Invalid Access Token. Not all data provided', HttpStatus.UNAUTHORIZED);
+    }
+
+    return this.authService.logout(userId, accessToken);
   }
 
   @Get('refresh')
@@ -69,7 +74,7 @@ export class AuthController {
       throw new HttpException('Invalid Refresh Token. Did not pass verification', HttpStatus.UNAUTHORIZED);
     }
 
-    const userId = req.user['user_id'];
+    const userId = req.user['userId'];
     const refreshToken = req.user['secret'];
 
     if (!userId || !refreshToken) {

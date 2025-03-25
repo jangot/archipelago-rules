@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { LoginVerifyCommand } from './login.commands';
 import { UserLoginPayloadDto } from 'apps/core/src/dto/response/user-login-payload.dto';
-import { ContactType, RegistrationStatus } from '@library/entity/enum';
+import { ContactType } from '@library/entity/enum';
 import { generateCRC32String } from '@library/shared/common/helpers/crc32.helpers';
 import { LoginLogic } from '../login.logic';
 
@@ -33,7 +33,7 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
     }
 
     const { registrationStatus } = user;
-      if (!LoginLogic.isUserRegistered(user.contactType, registrationStatus)) {
+    if (!LoginLogic.isUserRegistered(user.contactType, registrationStatus)) {
       this.logger.warn('LoginInitiateCommand: User is not registered to Log In');
       throw new Error('User is not registered to log in');
     }
@@ -62,13 +62,21 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
     user.secret = null;
     user.secretExpiresAt = null;
 
-    const { refreshToken, refreshTokenExpiresIn } = result;
-    if (!refreshToken || !refreshTokenExpiresIn) {
-      this.logger.error(`LoginVerifyCommand: Refresh token or its expiration time is not generated for user ${userId}`);
-      throw new Error('Refresh token or its expiration time is not generated');
+    const { accessToken, refreshToken, refreshTokenExpiresIn } = result;
+    if (!accessToken || !refreshToken || !refreshTokenExpiresIn) {
+      this.logger.error(`LoginVerifyCommand: Access token, Refresh token or its expiration time is not generated for user ${userId}`);
+      throw new Error('Access token, Refresh token or its expiration time is not generated');
     }
     const hashedSecret = generateCRC32String(refreshToken);
-    const newLogin = { loginType: loginType!, userId: user.id, updatedAt: new Date(), secret: hashedSecret, secretExpiresAt: refreshTokenExpiresIn };
+    const hashedExtraSecret = generateCRC32String(accessToken);
+    const newLogin = {
+      loginType: loginType!,
+      userId: user.id,
+      updatedAt: new Date(),
+      secret: hashedSecret,
+      secretExpiresAt: refreshTokenExpiresIn,
+      extraSecret: hashedExtraSecret,
+    };
 
     await this.domainServices.userServices.updateEntities([
       this.domainServices.userServices.updateUser(user),

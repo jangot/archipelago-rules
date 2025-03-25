@@ -1,7 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LoginInitiateCommand } from './login.commands';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
-import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { UserLoginResponseDTO } from 'apps/core/src/dto/response/user-login-response.dto';
 import { LoginLogic } from '../login.logic';
 

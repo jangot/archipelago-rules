@@ -7,16 +7,16 @@ import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dt
 export class LogoutCommandHandler extends LoginBaseCommandHandler<LogoutCommand> implements ICommandHandler<LogoutCommand> {
   public async execute(command: LogoutCommand): Promise<UserLoginPayloadDto> {
     const {
-      payload: { userId },
+      payload: { userId, accessToken },
     } = command;
 
-    if (!userId) {
-      this.logger.error('LogoutCommand: No userId provided');
-      throw new Error('No userId provided');
+    if (!userId || !accessToken) {
+      this.logger.error('LogoutCommand: No userId or accessToken provided');
+      throw new Error('No userId or accessToken provided');
     }
 
     this.logger.debug(`logout: Logging out user: ${userId}`);
-    await this.domainServices.userServices.logoutUser(userId);
+    await this.domainServices.userServices.logoutUser(userId, accessToken);
 
     return { userId };
   }

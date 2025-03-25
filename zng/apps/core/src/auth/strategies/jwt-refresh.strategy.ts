@@ -36,7 +36,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     }
 
     const userId = payload.sub;
-    const userLogin = await this.domainServices.userServices.getUserLoginForRefreshToken(userId, refreshToken);
+    const userLogin = await this.domainServices.userServices.getUserLoginByToken(userId, refreshToken);
 
     if (!userLogin) {
       throw new UnauthorizedException('JwtRefreshStrategy: Invalid refresh token');

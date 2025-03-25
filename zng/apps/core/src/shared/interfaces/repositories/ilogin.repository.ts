@@ -1,5 +1,4 @@
 import { IRepositoryBase } from '@library/shared/common/data';
-import { LoginType } from '@library/entity/enum';
 import { DeepPartial } from 'typeorm';
 import { ILogin } from '@library/entity/interface';
 
@@ -10,24 +9,6 @@ import { ILogin } from '@library/entity/interface';
  * @extends IRepositoryBase<Login>
  */
 export interface ILoginRepository extends IRepositoryBase<ILogin> {
-  /**
-   * Retrieves a user's authentication secret by the specified type.
-   *
-   * @param userId - The unique identifier of the user.
-   * @param type - The type of authentication secret to retrieve.
-   * @returns A promise that resolves to the authentication secret if found, or null if not found.
-   */
-  getUserLoginByType(userId: string, type: LoginType): Promise<ILogin | null>;
-
-  /**
-   * Retrieves the first unfinished authentication secret of the specified type for the user.
-   *
-   * @param userId - The unique identifier of the user.
-   * @param types - The types of authentication secrets to search for.
-   * @returns A promise that resolves to the first unfinished authentication secret if found, or null if not found.
-   * */
-  getFirstUnfinished(userId: string, types: LoginType[]): Promise<ILogin | null>;
-
   /**
    * Creates Login if not existed yet, otherwise updates it. Default TypeORM createOrUpdate do not work properly with constrains.
    * @param login Login to create or update
@@ -42,19 +23,13 @@ export interface ILoginRepository extends IRepositoryBase<ILogin> {
   getAllUserLogins(userId: string): Promise<ILogin[]>;
 
   /**
-   * Retrieves the current user login by user ID.
-   * @param userId The user ID.
-   * @returns A promise that resolves to the current user login.
-   */
-  getCurrentUserLogin(userId: string): Promise<ILogin | null>;
-
-  /**
    * Retrieves a user login for a specific secret.
    * @param userId The user ID.
    * @param secret The secret (currently refreshToken hash).
+   * @param isAccessToken Indicates whether the secret is an access token.
    * @returns A promise that resolves to the user login if found, or null if not found.
    */
-  getUserLoginForSecret(userId: string, secret: string): Promise<ILogin | null>;
+  getUserLoginForSecret(userId: string, secret: string, isAccessToken?: boolean): Promise<ILogin | null>;
 
   /**
    * Deletes user logins by types.
@@ -62,7 +37,7 @@ export interface ILoginRepository extends IRepositoryBase<ILogin> {
    * @param types The types of logins to delete.
    * @returns A promise that resolves when the operation is complete.
    */
-  deleteUserLoginsByTypes(userId: string, types: LoginType[]): Promise<void>;
+  deleteUserLoginsByAccessToken(userId: string, accessToken: string): Promise<void>;
 }
 
 export const ILoginRepository = Symbol('ILoginRepository');

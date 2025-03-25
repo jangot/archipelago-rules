@@ -26,6 +26,9 @@ export class Login implements ILogin {
   @Column('timestamp with time zone', { nullable: true })
   secretExpiresAt: Date | null;
 
+  @Column('text', { nullable: true })
+  extraSecret: string | null;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 
