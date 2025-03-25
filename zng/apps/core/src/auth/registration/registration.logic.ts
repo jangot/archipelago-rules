@@ -1,10 +1,7 @@
 import { LoginType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 
 export class RegistrationLogic {
-  private static PendingRegistrationStates: RegistrationStatus[] = [
-    RegistrationStatus.EmailVerifying, 
-    RegistrationStatus.PhoneNumberVerifying
-  ];
+  private static PendingRegistrationStates: RegistrationStatus[] = [RegistrationStatus.EmailVerifying, RegistrationStatus.PhoneNumberVerifying];
 
   public static isPendingRegistrationState(state: RegistrationStatus): boolean {
     return this.PendingRegistrationStates.includes(state);

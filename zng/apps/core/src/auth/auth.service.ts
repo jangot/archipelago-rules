@@ -19,9 +19,7 @@ export class AuthService {
     const contactInfo = this.extractContactInfo(request);
 
     try {
-      return await this.commandBus.execute(
-        new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType })
-      );
+      return await this.commandBus.execute(new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType }));
     } catch (error) {
       this.logger.error(`Error initiating login session: ${error.message}`);
       throw new UnauthorizedException(error.message);
@@ -32,8 +30,12 @@ export class AuthService {
     const contactInfo = this.extractContactInfo(request);
 
     return await this.commandBus.execute(
-      new LoginVerifyCommand({ userId: request.userId ?? undefined, contact: contactInfo.contact, 
-      contactType: contactInfo.contactType, verificationCode: request.code })
+      new LoginVerifyCommand({
+        userId: request.userId ?? undefined,
+        contact: contactInfo.contact,
+        contactType: contactInfo.contactType,
+        verificationCode: request.code,
+      })
     );
   }
 

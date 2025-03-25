@@ -10,7 +10,7 @@ export class LoginVerifyRequestDto extends LoginRequestDto {
   @IsString()
   @IsUUID()
   userId: string; // User id - uuid
-    
+
   @ApiProperty({ description: 'Verification code', type: String, required: true, maxLength: 6, example: '123456' })
   @Expose()
   @IsNotEmpty()

@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { VerifyContactCommand } from './registration.commands';
-import { RegistrationStatus, VerificationStatus } from '@library/entity/enum';
+import { RegistrationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
