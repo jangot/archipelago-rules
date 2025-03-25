@@ -1,7 +1,7 @@
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, In, Repository } from 'typeorm';
+import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
 import { LoginType } from '@library/entity/enum';
 import { Login } from '../../domain/entities';
 import { ILoginRepository } from '../../shared/interfaces/repositories';
@@ -51,12 +51,13 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
     return null;
   }
 
-  public async getUserLoginForSecret(userId: string, secret: string): Promise<ILogin | null> {
+  public async getUserLoginForSecret(userId: string, secret: string, isAccessToken = false): Promise<ILogin | null> {
     this.logger.debug(`Looking by userId: ${userId} and secret: ${secret}`);
-    return await this.repository.findOneBy({ userId, secret });
+    const searchQuery: FindOptionsWhere<Login> = isAccessToken ? { userId, extraSecret: secret } : { userId, secret };
+    return await this.repository.findOneBy(searchQuery);
   }
 
-  public async deleteUserLoginsByTypes(userId: string, types: LoginType[]): Promise<void> {
-    await this.repository.delete({ userId, loginType: In(types) });
+  public async deleteUserLoginsByAccessToken(userId: string, accessToken: string): Promise<void> {
+    await this.repository.delete({ userId, extraSecret: accessToken });
   }
 }

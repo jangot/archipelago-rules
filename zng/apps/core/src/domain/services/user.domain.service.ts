@@ -21,8 +21,6 @@ import { ConfigService } from '@nestjs/config';
 import { addSeconds, getUnixTime } from 'date-fns';
 import { generateCRC32String } from '@library/shared/common/helpers/crc32.helpers';
 
-const DEFAULT_LOGOUT_TYPES: LoginType[] = [LoginType.OneTimeCodeEmail, LoginType.OneTimeCodePhoneNumber];
-
 @Injectable()
 export class UserDomainService extends BaseDomainServices {
   protected readonly logger = new Logger(UserDomainService.name);
@@ -79,8 +77,8 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.users.getUserByContact(contact, contactType);
   }
 
-  public async logoutUser(userId: string, loginTypes: LoginType[] = DEFAULT_LOGOUT_TYPES): Promise<void> {
-    return this.data.logins.deleteUserLoginsByTypes(userId, loginTypes);
+  public async logoutUser(userId: string, accessToken: string): Promise<void> {
+    return this.data.logins.deleteUserLoginsByAccessToken(userId, accessToken);
   }
 
   //#endregion
@@ -96,24 +94,18 @@ export class UserDomainService extends BaseDomainServices {
   //#endregion
 
   //#region User Related Login Methods
-  public async createLogin(login: DeepPartial<ILogin>, shouldHashSecret = false): Promise<ILogin | null> {
-    if (login.secret && shouldHashSecret) {
-      login.secret = generateCRC32String(login.secret);
-    }
+  public async createLogin(login: DeepPartial<ILogin>, shouldHashSecrets = false): Promise<ILogin | null> {
+    login = this.applyRequiredHashes(login, shouldHashSecrets);
     return this.data.logins.create(login);
   }
 
-  public async createOrUpdateLogin(login: DeepPartial<ILogin>, shouldHashSecret = false): Promise<ILogin | null> {
-    if (login.secret && shouldHashSecret) {
-      login.secret = generateCRC32String(login.secret);
-    }
+  public async createOrUpdateLogin(login: DeepPartial<ILogin>, shouldHashSecrets = false): Promise<ILogin | null> {
+    login = this.applyRequiredHashes(login, shouldHashSecrets);
     return this.data.logins.createOrUpdate(login);
   }
 
-  public async updateLogin(loginId: string, login: DeepPartial<ILogin>, shouldHashSecret = false): Promise<boolean | null> {
-    if (login.secret && shouldHashSecret) {
-      login.secret = generateCRC32String(login.secret);
-    }
+  public async updateLogin(loginId: string, login: DeepPartial<ILogin>, shouldHashSecrets = false): Promise<boolean | null> {
+    login = this.applyRequiredHashes(login, shouldHashSecrets);
     return this.data.logins.update(loginId, login);
   }
 
@@ -134,12 +126,12 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.logins.getCurrentUserLogin(userId);
   }
 
-  public async getUserLoginForRefreshToken(userId: string, refreshToken: string, isTokenSecure = false): Promise<ILogin | null> {
+  public async getUserLoginByToken(userId: string, token: string, isTokenSecure = false, isAccessToken = false): Promise<ILogin | null> {
     if (!isTokenSecure) {
-      refreshToken = generateCRC32String(refreshToken);
+      token = generateCRC32String(token);
     }
 
-    return this.data.logins.getUserLoginForSecret(userId, refreshToken);
+    return this.data.logins.getUserLoginForSecret(userId, token, isAccessToken);
   }
 
   public async getUserLogins(userId: string): Promise<ILogin[] | null> {
@@ -203,5 +195,15 @@ export class UserDomainService extends BaseDomainServices {
     }
     return this.jwtService.signAsync(payload, { secret });
   }
+
+  private applyRequiredHashes(login: DeepPartial<ILogin>, shouldHashSecrets = false): DeepPartial<ILogin> {
+    const { secret, extraSecret } = login;
+    return {
+      ...login,
+      secret: shouldHashSecrets && secret ? generateCRC32String(secret) : secret,
+      extraSecret: shouldHashSecrets && extraSecret ? generateCRC32String(extraSecret) : extraSecret,
+    };
+  }
+
   //#endregion
 }

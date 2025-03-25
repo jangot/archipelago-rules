@@ -52,9 +52,10 @@ export interface ILoginRepository extends IRepositoryBase<ILogin> {
    * Retrieves a user login for a specific secret.
    * @param userId The user ID.
    * @param secret The secret (currently refreshToken hash).
+   * @param isAccessToken Indicates whether the secret is an access token.
    * @returns A promise that resolves to the user login if found, or null if not found.
    */
-  getUserLoginForSecret(userId: string, secret: string): Promise<ILogin | null>;
+  getUserLoginForSecret(userId: string, secret: string, isAccessToken?: boolean): Promise<ILogin | null>;
 
   /**
    * Deletes user logins by types.
@@ -62,7 +63,7 @@ export interface ILoginRepository extends IRepositoryBase<ILogin> {
    * @param types The types of logins to delete.
    * @returns A promise that resolves when the operation is complete.
    */
-  deleteUserLoginsByTypes(userId: string, types: LoginType[]): Promise<void>;
+  deleteUserLoginsByAccessToken(userId: string, accessToken: string): Promise<void>;
 }
 
 export const ILoginRepository = Symbol('ILoginRepository');

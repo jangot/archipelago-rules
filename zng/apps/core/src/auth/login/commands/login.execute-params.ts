@@ -11,3 +11,7 @@ export interface LoginExecuteParams {
 export interface RefreshTokenParams extends LoginExecuteParams {
   refreshToken: string;
 }
+
+export interface LogoutExecuteParams extends LoginExecuteParams {
+  accessToken: string;
+}

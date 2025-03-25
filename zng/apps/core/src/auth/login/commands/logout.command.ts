@@ -7,7 +7,7 @@ import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dt
 export class LogoutCommandHandler extends LoginBaseCommandHandler<LogoutCommand> implements ICommandHandler<LogoutCommand> {
   public async execute(command: LogoutCommand): Promise<UserLoginPayloadDto> {
     const {
-      payload: { userId },
+      payload: { userId, accessToken },
     } = command;
 
     if (!userId) {
@@ -16,7 +16,7 @@ export class LogoutCommandHandler extends LoginBaseCommandHandler<LogoutCommand>
     }
 
     this.logger.debug(`logout: Logging out user: ${userId}`);
-    await this.domainServices.userServices.logoutUser(userId);
+    await this.domainServices.userServices.logoutUser(userId, accessToken);
 
     return { userId };
   }
