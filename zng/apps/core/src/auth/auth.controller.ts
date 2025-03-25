@@ -52,7 +52,7 @@ export class AuthController {
       throw new HttpException('Invalid Access Token. Did not pass verification', HttpStatus.UNAUTHORIZED);
     }
 
-    const userId = request.user['user_id'];
+    const userId = request.user['userId'];
     const accessToken = request.user['secret'];
 
     if (!userId || !accessToken) {
@@ -74,7 +74,7 @@ export class AuthController {
       throw new HttpException('Invalid Refresh Token. Did not pass verification', HttpStatus.UNAUTHORIZED);
     }
 
-    const userId = req.user['user_id'];
+    const userId = req.user['userId'];
     const refreshToken = req.user['secret'];
 
     if (!userId || !refreshToken) {
