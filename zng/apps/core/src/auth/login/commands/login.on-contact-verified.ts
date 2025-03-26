@@ -2,6 +2,7 @@ import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { LoginOnContactVerifiedCommand } from './login.commands';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dto';
+import { MissingInputException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(LoginOnContactVerifiedCommand)
 export class LoginOnContactVerifiedCommandHandler
@@ -14,7 +15,7 @@ export class LoginOnContactVerifiedCommandHandler
 
     if (!userId) {
       this.logger.error('LoginOnContactVerifiedCommand: No userId provided');
-      throw new Error('No userId provided');
+      throw new MissingInputException('No userId provided');
     }
 
     const result = await this.generateLoginPayload(userId, contactType || '', undefined);
