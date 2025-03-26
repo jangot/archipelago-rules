@@ -68,14 +68,14 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
       throw new Error('Access token, Refresh token or its expiration time is not generated');
     }
     const hashedSecret = generateCRC32String(refreshToken);
-    const hashedExtraSecret = generateCRC32String(accessToken);
+    const hashedSessionId = generateCRC32String(accessToken);
     const newLogin = {
       loginType: loginType!,
       userId: user.id,
       updatedAt: new Date(),
       secret: hashedSecret,
       secretExpiresAt: refreshTokenExpiresIn,
-      extraSecret: hashedExtraSecret,
+      sessionId: hashedSessionId,
     };
 
     await this.domainServices.userServices.updateEntities([

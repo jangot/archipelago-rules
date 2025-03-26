@@ -53,7 +53,7 @@ export class AuthController {
     }
 
     const userId = request.user['userId'];
-    const accessToken = request.user['extraSecret'];
+    const accessToken = request.user['sessionId'];
 
     if (!userId || !accessToken) {
       throw new HttpException('Invalid Access Token. Not all data provided', HttpStatus.UNAUTHORIZED);

@@ -180,11 +180,11 @@ export class UserDomainService extends BaseDomainServices {
   }
 
   private applyRequiredHashes(login: DeepPartial<ILogin>, shouldHashSecrets = false): DeepPartial<ILogin> {
-    const { secret, extraSecret } = login;
+    const { secret, sessionId } = login;
     return {
       ...login,
       secret: shouldHashSecrets && secret ? generateCRC32String(secret) : secret,
-      extraSecret: shouldHashSecrets && extraSecret ? generateCRC32String(extraSecret) : extraSecret,
+      sessionId: shouldHashSecrets && sessionId ? generateCRC32String(sessionId) : sessionId,
     };
   }
 

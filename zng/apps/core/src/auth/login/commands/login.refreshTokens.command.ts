@@ -36,7 +36,7 @@ export class RefreshTokenCommandHandler extends LoginBaseCommandHandler<RefreshT
     login.updatedAt = new Date();
     login.secret = newRefreshToken;
     login.secretExpiresAt = refreshTokenExpiresIn;
-    login.extraSecret = newAccessToken;
+    login.sessionId = newAccessToken;
 
     const updateResult = await this.domainServices.userServices.updateLogin(login.id, login, true);
     if (!updateResult) {
