@@ -28,7 +28,7 @@ export class RegistrationService {
    * @returns A promise that resolves to a UserRegisterResponseDto.
    */
   public async register(input: RegistrationDto): Promise<UserRegisterResponseDto> {
-    this.logger.debug(`register: Registering user`, { input });
+    this.logger.debug('register: Registering user', { input });
 
     const newResult = await this.commandBus.execute(new RegistrationInitiatedCommand({ id: null, input }));
 

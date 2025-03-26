@@ -19,11 +19,10 @@ import { logSafeRegistration, logSafeUser, safeTrim } from '@library/shared/comm
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler
   extends RegistrationBaseCommandHandler<RegistrationInitiatedCommand>
-  implements ICommandHandler<RegistrationInitiatedCommand>
-{
+  implements ICommandHandler<RegistrationInitiatedCommand> {
   public async execute(command: RegistrationInitiatedCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
-      this.logger.warn(`initiateRegistration: Invalid command payload`, { command });
+      this.logger.warn('initiateRegistration: Invalid command payload', { command });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
 
@@ -33,7 +32,7 @@ export class RegistrationInitiatedCommandHandler
     const { firstName, lastName, email } = input;
 
     if (!email) {
-      this.logger.warn(`initiateRegistration: No email provided`, { input });
+      this.logger.warn('initiateRegistration: No email provided', { input });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.NoContactProvided);
     }
 
@@ -119,7 +118,7 @@ export class RegistrationInitiatedCommandHandler
     user.lastName = safeTrim(lastName) || user.lastName;
     user.registrationStatus = RegistrationStatus.EmailVerifying;
 
-    this.logger.debug(`Updated registration and user data before apply`, {
+    this.logger.debug('Updated registration and user data before apply', {
       user: logSafeUser(user),
       registration: logSafeRegistration(registration),
     });
