@@ -21,6 +21,5 @@ export function supportsSoftDelete<Entity>(target: EntityTarget<Entity>): boolea
 }
 
 export function isSoftDeleteEntity(instance: any): instance is ISoftDeleteEntity {
-  // eslint-disable-next-line prettier/prettier
   return instance && ('deletedAt' in instance);
 }

@@ -35,17 +35,15 @@ export class SharedModule {
           },
         }),
       ],
-      // eslint-disable-next-line prettier/prettier
       providers: [
         EventBus,
         Logger,        
-        SharedService
+        SharedService,
       ],
-      // eslint-disable-next-line prettier/prettier
       exports: [
         EventBus,
         LoggerModule,
-        SharedService
+        SharedService,
       ],
     };
   }

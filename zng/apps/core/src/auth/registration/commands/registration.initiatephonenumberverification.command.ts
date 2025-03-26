@@ -18,11 +18,10 @@ import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers
 @CommandHandler(InitiatePhoneNumberVerificationCommand)
 export class InitiatePhoneNumberVerificationCommandHandler
   extends RegistrationBaseCommandHandler<InitiatePhoneNumberVerificationCommand>
-  implements ICommandHandler<InitiatePhoneNumberVerificationCommand>
-{
+  implements ICommandHandler<InitiatePhoneNumberVerificationCommand> {
   public async execute(command: InitiatePhoneNumberVerificationCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
-      this.logger.warn(`initiatePhoneNumberVerification: Invalid command payload`, { command });
+      this.logger.warn('initiatePhoneNumberVerification: Invalid command payload', { command });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
     const {
@@ -49,7 +48,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
     const { phoneNumber } = input;
 
     if (!phoneNumber) {
-      this.logger.warn(`No phone number provided for phone number verification`, { input });
+      this.logger.warn('No phone number provided for phone number verification', { input });
       return this.createTransitionResult(RegistrationStatus.EmailVerified, false, RegistrationTransitionMessage.NoContactProvided);
     }
 
@@ -83,7 +82,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
     user.pendingPhoneNumber = transformPhoneNumber(phoneNumber);
     user.registrationStatus = RegistrationStatus.PhoneNumberVerifying;
 
-    this.logger.debug(`Updated registration and user data before apply`, {
+    this.logger.debug('Updated registration and user data before apply', {
       user: logSafeUser(user),
       registration: logSafeRegistration(registration),
     });

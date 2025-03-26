@@ -9,11 +9,10 @@ import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers
 @CommandHandler(InitiateEmailVerificationCommand)
 export class InitiateEmailVerificationCommandHandler
   extends RegistrationBaseCommandHandler<InitiateEmailVerificationCommand>
-  implements ICommandHandler<InitiateEmailVerificationCommand>
-{
+  implements ICommandHandler<InitiateEmailVerificationCommand> {
   public async execute(command: InitiateEmailVerificationCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
-      this.logger.warn(`initiateEmailVerification: Invalid command payload`, { command });
+      this.logger.warn('initiateEmailVerification: Invalid command payload', { command });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
     const {
@@ -33,7 +32,7 @@ export class InitiateEmailVerificationCommandHandler
 
     const { email } = input;
     if (!email) {
-      this.logger.warn(`No email provided for email verification`, { input });
+      this.logger.warn('No email provided for email verification', { input });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.NoContactProvided);
     }
 
@@ -72,7 +71,7 @@ export class InitiateEmailVerificationCommandHandler
     user.email = null;
     user.registrationStatus = RegistrationStatus.EmailVerifying;
 
-    this.logger.debug(`Updated registration and user data before apply`, {
+    this.logger.debug('Updated registration and user data before apply', {
       user: logSafeUser(user),
       registration: logSafeRegistration(registration),
     });
