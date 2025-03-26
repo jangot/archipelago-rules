@@ -9,11 +9,10 @@ import { RegistrationLogic } from '../registration.logic';
 @CommandHandler(VerifyContactCommand)
 export class VerifyContactCommandHandler
   extends RegistrationBaseCommandHandler<VerifyContactCommand>
-  implements ICommandHandler<VerifyContactCommand>
-{
+  implements ICommandHandler<VerifyContactCommand> {
   public async execute(command: VerifyContactCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
-      this.logger.warn(`VerifyContact: Invalid command payload`, { command });
+      this.logger.warn('VerifyContact: Invalid command payload', { command });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
     const {
@@ -101,7 +100,7 @@ export class VerifyContactCommandHandler
 
     user.verificationStatus = RegistrationLogic.calculateNewVerificationStatus(user.verificationStatus);
 
-    this.logger.debug(`Updated registration, user and add login data before apply`, {
+    this.logger.debug('Updated registration, user and add login data before apply', {
       user: logSafeUser(user),
       registration: logSafeRegistration(registration),
       login: newLogin,

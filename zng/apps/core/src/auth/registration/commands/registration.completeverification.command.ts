@@ -18,11 +18,10 @@ import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers
 @CommandHandler(VerificationCompleteCommand)
 export class VerificationCompleteCommandHandler
   extends RegistrationBaseCommandHandler<VerificationCompleteCommand>
-  implements ICommandHandler<VerificationCompleteCommand>
-{
+  implements ICommandHandler<VerificationCompleteCommand> {
   public async execute(command: VerificationCompleteCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
-      this.logger.warn(`completeVerification: Invalid command payload`, { command });
+      this.logger.warn('completeVerification: Invalid command payload', { command });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
     const {
@@ -67,7 +66,7 @@ export class VerificationCompleteCommandHandler
     user.registrationStatus = RegistrationStatus.Registered;
     registration.status = RegistrationStatus.Registered;
     registration.userLoginId = null;
-    this.logger.debug(`Updated registration and user data before apply`, {
+    this.logger.debug('Updated registration and user data before apply', {
       user: logSafeUser(user),
       registration: logSafeRegistration(registration),
     });

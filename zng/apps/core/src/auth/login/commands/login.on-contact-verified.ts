@@ -6,8 +6,7 @@ import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dt
 @CommandHandler(LoginOnContactVerifiedCommand)
 export class LoginOnContactVerifiedCommandHandler
   extends LoginBaseCommandHandler<LoginOnContactVerifiedCommand>
-  implements ICommandHandler<LoginOnContactVerifiedCommand>
-{
+  implements ICommandHandler<LoginOnContactVerifiedCommand> {
   public async execute(command: LoginOnContactVerifiedCommand): Promise<UserLoginPayloadDto> {
     const {
       payload: { userId, loginId, contactType },
