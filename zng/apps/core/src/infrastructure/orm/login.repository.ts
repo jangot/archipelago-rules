@@ -32,11 +32,11 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
 
   public async getUserLoginForSecret(userId: string, secret: string, isAccessToken = false): Promise<ILogin | null> {
     this.logger.debug(`Looking by userId: ${userId} and secret: ${secret}`);
-    const searchQuery: FindOptionsWhere<Login> = isAccessToken ? { userId, extraSecret: secret } : { userId, secret };
+    const searchQuery: FindOptionsWhere<Login> = isAccessToken ? { userId, sessionId: secret } : { userId, secret };
     return await this.repository.findOneBy(searchQuery);
   }
 
   public async deleteUserLoginsByAccessToken(userId: string, accessToken: string): Promise<void> {
-    await this.repository.delete({ userId, extraSecret: accessToken });
+    await this.repository.delete({ userId, sessionId: accessToken });
   }
 }

@@ -7,7 +7,7 @@ export interface ILogin extends EntityId<string> {
   loginType?: LoginType;
   secret: string | null;
   secretExpiresAt: Date | null;
-  extraSecret: string | null;
+  sessionId: string | null;
   createdAt?: Date | null;
   updatedAt: Date | null;
 }

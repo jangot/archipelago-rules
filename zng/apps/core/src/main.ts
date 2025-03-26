@@ -8,13 +8,13 @@
 
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { CoreModule } from './core.module';
-import { AllExceptionsFilter } from '@library/shared/common/filters/all-exceptions.filter';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/swagger';
 import { setupGracefulShutdown } from 'nestjs-graceful-shutdown';
 import { ConfigService } from '@nestjs/config';
 import { initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
+import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filters';
 
 async function bootstrap() {
   // It is required to initialize the  TypeORM Transactional Context before application creation and initialization
@@ -26,7 +26,7 @@ async function bootstrap() {
   const port = configService.get<number>('PORT', 3000);
 
   const { httpAdapter } = app.get(HttpAdapterHost);
-  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter), new DomainExceptionsFilter(httpAdapter));
 
   app.useLogger(app.get(Logger));
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
