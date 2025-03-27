@@ -9,9 +9,7 @@ export class LoginOnContactVerifiedCommandHandler
   extends LoginBaseCommandHandler<LoginOnContactVerifiedCommand>
   implements ICommandHandler<LoginOnContactVerifiedCommand> {
   public async execute(command: LoginOnContactVerifiedCommand): Promise<UserLoginPayloadDto> {
-    const {
-      payload: { userId, loginId, contactType },
-    } = command;
+    const { payload: { userId, loginId, contactType } } = command;
 
     if (!userId) {
       this.logger.error('LoginOnContactVerifiedCommand: No userId provided');
@@ -20,8 +18,9 @@ export class LoginOnContactVerifiedCommandHandler
 
     const result = await this.generateLoginPayload(userId, contactType || '', undefined);
     if (loginId) {
-      const updatedLogin = { id: loginId, updatedAt: new Date(), secret: result.refreshToken, secretExpiresAt: result.refreshTokenExpiresIn };
-      // Update userLogin secret and secretExpiresAt
+      const updatedLogin = { id: loginId, updatedAt: new Date(), secret: result.refreshToken, secretExpiresAt: 
+      result.refreshTokenExpiresIn, sessionId: result.accessToken };
+      // Update userLogin secret, secretExpiresAt, and sessionId
       await this.domainServices.userServices.updateLogin(loginId, updatedLogin, true);
     }
 

@@ -31,7 +31,7 @@ export class JwtLogoutStrategy extends PassportStrategy(Strategy, 'jwt-logout') 
     const userLogin = await this.domainServices.userServices.getUserLoginByToken(userId, token, false, true);
 
     if (!userLogin) {
-      throw new UnauthorizedException('JwtRefreshStrategy: Invalid refresh token');
+      throw new UnauthorizedException('JwtLogoutStrategy: Invalid access token');
     }
 
     // Return the payload (or a transformed user object) which will be attached to req.user.
