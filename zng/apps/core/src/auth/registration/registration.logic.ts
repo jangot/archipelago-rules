@@ -1,4 +1,5 @@
 import { LoginType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
+import { UnexpectedRegistrationStatusException } from '@library/shared/common/exceptions/domain';
 
 export class RegistrationLogic {
   private static PendingRegistrationStates: RegistrationStatus[] = [RegistrationStatus.EmailVerifying, RegistrationStatus.PhoneNumberVerifying];
@@ -9,7 +10,7 @@ export class RegistrationLogic {
 
   public static calculateNewRegistrationStatus(existingRegistrationStatus: RegistrationStatus): RegistrationStatus {
     if (!this.isPendingRegistrationState(existingRegistrationStatus)) {
-      throw new Error(`Invalid registration status: ${existingRegistrationStatus}`);
+      throw new UnexpectedRegistrationStatusException(`Invalid registration status: ${existingRegistrationStatus}`);
     }
 
     switch (existingRegistrationStatus) {
@@ -18,7 +19,7 @@ export class RegistrationLogic {
       case RegistrationStatus.PhoneNumberVerifying:
         return RegistrationStatus.PhoneNumberVerified;
       default:
-        throw new Error(`Unexpected registration status: ${existingRegistrationStatus}`);
+        throw new UnexpectedRegistrationStatusException(`Unexpected registration status: ${existingRegistrationStatus}`);
     }
   }
 
@@ -29,7 +30,7 @@ export class RegistrationLogic {
       case RegistrationStatus.PhoneNumberVerified:
         return LoginType.OneTimeCodePhoneNumber;
       default:
-        throw new Error(`Invalid registration status: ${newStatus}`);
+        throw new UnexpectedRegistrationStatusException(`Invalid registration status: ${newStatus}`);
     }
   }
 

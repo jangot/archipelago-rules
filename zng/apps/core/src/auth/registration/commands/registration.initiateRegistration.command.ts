@@ -15,6 +15,7 @@ import { VerificationEvent } from '../../verification';
 import { IApplicationUser } from '@library/entity/interface';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser, safeTrim } from '@library/shared/common/helpers';
+import { MissingInputException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler
@@ -90,7 +91,7 @@ export class RegistrationInitiatedCommandHandler
     // Do this validation to tell TS that this field is 100% not empty
     if (!email) {
       this.logger.error(`Email is missing during re-initiation of email verification for user ${user.id}`, { user: logSafeUser(user) });
-      throw new Error('Email is missing during re-initiation of email verification');
+      throw new MissingInputException('Email is missing during re-initiation of email verification');
     }
 
     const registration = await this.domainServices.userServices.getUserRegistration(user.id);

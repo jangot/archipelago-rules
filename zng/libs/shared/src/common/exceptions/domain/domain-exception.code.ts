@@ -7,5 +7,7 @@ export enum DomainExceptionCode {
   LoginSessionNotInitiated = 'login_session_not_initiated',
   LoginSessionExpired = 'login_session_expired',
   VerificationCodeMismatch = 'verification_code_mismatch',
-  UnableToGenerateLoginPayload = 'unable_to_generate_login_payload',    
+  UnableToGenerateLoginPayload = 'unable_to_generate_login_payload',
+  UnexpectedRegistrationStatus = 'unexpected_registration_status',
+  ConfigurationVariableNotFound = 'configuration_variable_not_found',    
 }

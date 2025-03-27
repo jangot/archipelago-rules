@@ -6,6 +6,7 @@ import { Request } from 'express';
 import { ILogin } from '@library/entity/interface';
 import { IDomainServices } from '../../domain/idomain.services';
 import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
+import { ConfigurationVariableNotFoundException } from '@library/shared/common/exceptions/domain';
 
 @Injectable()
 export class JwtLogoutStrategy extends PassportStrategy(Strategy, 'jwt-logout') {
@@ -15,7 +16,7 @@ export class JwtLogoutStrategy extends PassportStrategy(Strategy, 'jwt-logout') 
   ) {
     const jwtSecret = configService.get<string>('JWT_ACCESS_SECRET');
     if (!jwtSecret) {
-      throw new Error('JWT_ACCESS_SECRET is not defined');
+      throw new ConfigurationVariableNotFoundException('JWT_ACCESS_SECRET is not defined');
     }
 
     super({ jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), ignoreExpiration: false, secretOrKey: jwtSecret, passReqToCallback: true });

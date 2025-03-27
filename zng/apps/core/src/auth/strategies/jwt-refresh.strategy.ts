@@ -6,6 +6,7 @@ import { Request } from 'express';
 import { IRefreshTokenPayload } from '../../domain/interfaces/irefresh-token-payload';
 import { ILogin } from '@library/entity/interface';
 import { IDomainServices } from '../../domain/idomain.services';
+import { ConfigurationVariableNotFoundException } from '@library/shared/common/exceptions/domain';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
@@ -15,7 +16,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
   ) {
     const jwtRefreshSecret = configService.get<string>('JWT_REFRESH_SECRET');
     if (!jwtRefreshSecret) {
-      throw new Error('JWT_REFRESH_SECRET is not defined');
+      throw new ConfigurationVariableNotFoundException('JWT_REFRESH_SECRET is not defined');
     }
 
     super({

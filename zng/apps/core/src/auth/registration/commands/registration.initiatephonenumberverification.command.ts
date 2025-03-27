@@ -14,6 +14,7 @@ import { InitiatePhoneNumberVerificationCommand } from './registration.commands'
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
+import { MissingInputException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(InitiatePhoneNumberVerificationCommand)
 export class InitiatePhoneNumberVerificationCommandHandler
@@ -29,7 +30,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
     } = command;
 
     if (!userId) {
-      throw new Error('User id cannot be null when initiating verification of Phone number.');
+      throw new MissingInputException('User id cannot be null when initiating verification of Phone number.');
     }
 
     const registration = await this.domainServices.userServices.getUserRegistration(userId);

@@ -5,6 +5,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
 import { IApplicationUser } from '@library/entity/interface';
 import { IDomainServices } from '../../domain/idomain.services';
+import { ConfigurationVariableNotFoundException } from '@library/shared/common/exceptions/domain';
 
 // Interface to avoid using 'any' as a type in 'validate' method
 @Injectable()
@@ -16,7 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   ) {
     const jwtSecret = config.get<string>('JWT_ACCESS_SECRET');
     if (!jwtSecret) {
-      throw new Error('JWT_ACCESS_SECRET is not defined');
+      throw new ConfigurationVariableNotFoundException('JWT_ACCESS_SECRET is not defined');
     }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

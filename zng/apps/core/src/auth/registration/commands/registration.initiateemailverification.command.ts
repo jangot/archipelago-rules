@@ -5,6 +5,7 @@ import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
+import { MissingInputException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(InitiateEmailVerificationCommand)
 export class InitiateEmailVerificationCommandHandler
@@ -21,7 +22,7 @@ export class InitiateEmailVerificationCommandHandler
 
     // #region Input and User validation
     if (!userId) {
-      throw new Error('User id cannot be null when requesting email verification.');
+      throw new MissingInputException('User id cannot be null when requesting email verification.');
     }
 
     const user = await this.domainServices.userServices.getUserById(userId);

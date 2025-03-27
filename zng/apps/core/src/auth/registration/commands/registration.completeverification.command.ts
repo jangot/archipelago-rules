@@ -14,6 +14,7 @@ import { VerificationCompleteCommand } from './registration.commands';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
+import { MissingInputException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(VerificationCompleteCommand)
 export class VerificationCompleteCommandHandler
@@ -28,7 +29,7 @@ export class VerificationCompleteCommandHandler
       payload: { id },
     } = command;
     if (!id) {
-      throw new Error('User id cannot be null when completing verification.');
+      throw new MissingInputException('User id cannot be null when completing verification.');
     }
     return await this.completeVerification(id);
   }

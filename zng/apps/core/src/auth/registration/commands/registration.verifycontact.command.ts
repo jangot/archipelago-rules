@@ -6,6 +6,7 @@ import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
 import { RegistrationLogic } from '../registration.logic';
+import { MissingInputException } from '@library/shared/common/exceptions/domain';
 @CommandHandler(VerifyContactCommand)
 export class VerifyContactCommandHandler
   extends RegistrationBaseCommandHandler<VerifyContactCommand>
@@ -20,7 +21,7 @@ export class VerifyContactCommandHandler
     } = command;
     // #region Input validation
     if (!userId) {
-      throw new Error('User id cannot be null when verifying contact.');
+      throw new MissingInputException('User id cannot be null when verifying contact.');
     }
     // #endregion
 
