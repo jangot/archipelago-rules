@@ -5,6 +5,27 @@
   "markdown.styles": [
     "https://use.fontawesome.com/releases/v5.15.4/css/all.css"
   ],
-  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-  "eslint.validate": ["javascript", "typescript"]
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  "eslint.validate": ["javascript", "typescript"],
+  "eslint.rules.customizations": [
+    {
+      "rule": "@stylistic/*",
+      "fixable": true,
+      "severity": "info"
+    }
+  ],
+  "eslint.quiet": false,
 }
