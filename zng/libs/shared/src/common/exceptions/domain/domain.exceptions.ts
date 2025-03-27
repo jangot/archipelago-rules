@@ -65,4 +65,18 @@ export class UnableToGenerateLoginPayloadException extends DomainServiceExceptio
   }
 }
 
+export class UnexpectedRegistrationStatusException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.UnexpectedRegistrationStatus);
+    this.name = 'UnexpectedRegistrationStatusException';
+  }
+}
+
+export class ConfigurationVariableNotFoundException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.ConfigurationVariableNotFound);
+    this.name = 'ConfigurationVariableNotFoundException';
+  }
+}
+
 // #endregion

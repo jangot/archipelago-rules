@@ -18,6 +18,8 @@ export class DomainExceptionsFilter extends BaseExceptionFilter {
     [DomainExceptionCode.LoginSessionExpired]: HttpStatus.FORBIDDEN,
     [DomainExceptionCode.VerificationCodeMismatch]: HttpStatus.BAD_REQUEST,
     [DomainExceptionCode.UnableToGenerateLoginPayload]: HttpStatus.INTERNAL_SERVER_ERROR,
+    [DomainExceptionCode.UnexpectedRegistrationStatus]: HttpStatus.INTERNAL_SERVER_ERROR,
+    [DomainExceptionCode.ConfigurationVariableNotFound]: HttpStatus.INTERNAL_SERVER_ERROR,
   };
 
   public catch(exception: DomainServiceException, host: ArgumentsHost) {
