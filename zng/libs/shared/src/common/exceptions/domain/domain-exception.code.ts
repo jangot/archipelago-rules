@@ -1,6 +1,7 @@
 export enum DomainExceptionCode {
+  Undefined = 'undefined',
   EntityNotFound = 'entity_not_found',
-  UnathorizedRequest = 'unauthorized_request',
+  UnauthorizedRequest = 'unauthorized_request',
   MissingInput = 'missing_input',
   UserNotRegistered = 'user_not_registered',
   LoginSessionNotInitiated = 'login_session_not_initiated',

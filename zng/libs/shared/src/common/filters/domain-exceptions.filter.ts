@@ -7,6 +7,19 @@ import { Response, Request } from 'express';
 export class DomainExceptionsFilter extends BaseExceptionFilter {
   private readonly logger = new Logger(DomainExceptionsFilter.name);
 
+  // Static mapping of domain exception codes to HTTP status codes
+  private static readonly HTTP_STATUS_MAP: Record<DomainExceptionCode, HttpStatus> = {
+    [DomainExceptionCode.Undefined]: HttpStatus.BAD_REQUEST,
+    [DomainExceptionCode.EntityNotFound]: HttpStatus.NOT_FOUND,
+    [DomainExceptionCode.UnauthorizedRequest]: HttpStatus.UNAUTHORIZED,
+    [DomainExceptionCode.MissingInput]: HttpStatus.BAD_REQUEST,
+    [DomainExceptionCode.UserNotRegistered]: HttpStatus.NOT_FOUND,
+    [DomainExceptionCode.LoginSessionNotInitiated]: HttpStatus.FORBIDDEN,
+    [DomainExceptionCode.LoginSessionExpired]: HttpStatus.FORBIDDEN,
+    [DomainExceptionCode.VerificationCodeMismatch]: HttpStatus.BAD_REQUEST,
+    [DomainExceptionCode.UnableToGenerateLoginPayload]: HttpStatus.INTERNAL_SERVER_ERROR,
+  };
+
   public catch(exception: DomainServiceException, host: ArgumentsHost) {
     const isProduction = process.env.NODE_ENV === 'production';
     const ctx = host.switchToHttp();
@@ -17,7 +30,7 @@ export class DomainExceptionsFilter extends BaseExceptionFilter {
 
     const stack = !isProduction && this.isExceptionObject(exception) ? exception.stack : undefined;
     const message = exception.message || 'Bad Request';
-    const httpStatus = this.mapToHttpStatusCode(exception.errorCode);
+    const httpStatus = this.mapToHttpStatusCode(errorCode || DomainExceptionCode.Undefined);
 
     const responseBody = {
       statusCode: httpStatus,
@@ -35,26 +48,7 @@ export class DomainExceptionsFilter extends BaseExceptionFilter {
     response.status(httpStatus).json(responseBody);
   }
 
-  private mapToHttpStatusCode(errorCode?: DomainExceptionCode): number {
-    switch (errorCode) {
-      case DomainExceptionCode.EntityNotFound:
-        return HttpStatus.NOT_FOUND;
-      case DomainExceptionCode.UnathorizedRequest:
-        return HttpStatus.UNAUTHORIZED;
-      case DomainExceptionCode.MissingInput:
-        return HttpStatus.BAD_REQUEST;
-      case DomainExceptionCode.UserNotRegistered:
-        return HttpStatus.NOT_FOUND;
-      case DomainExceptionCode.LoginSessionNotInitiated:
-        return HttpStatus.FORBIDDEN;
-      case DomainExceptionCode.LoginSessionExpired:
-        return HttpStatus.FORBIDDEN;
-      case DomainExceptionCode.VerificationCodeMismatch:
-        return HttpStatus.BAD_REQUEST;
-      case DomainExceptionCode.UnableToGenerateLoginPayload:
-        return HttpStatus.INTERNAL_SERVER_ERROR; // Should we also have 500s here?
-      default:
-        return HttpStatus.BAD_REQUEST;
-    }
+  private mapToHttpStatusCode(errorCode: DomainExceptionCode): number {
+    return DomainExceptionsFilter.HTTP_STATUS_MAP[errorCode] || HttpStatus.BAD_REQUEST;
   }
 }

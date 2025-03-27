@@ -121,18 +121,22 @@ export class RegistrationService {
       throw new HttpException('Registration Verification failed', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    const { state, isSuccessful, message, loginId } = result;
+    const { state, isSuccessful, message } = result;
 
     if (!isSuccessful) {
-      const exception = RegistrationExceptionFactory.translate(message, state);
+      const exception = RegistrationExceptionFactory.translate(message, state);   
       throw exception;
     } else {
       // It is possible that after contact verification registration might be called completed
       // If so - execute completion command
       if (result.state === COMPLETE_VERIFICATION_ON_STATUS) {
-        await this.commandBus.execute(new VerificationCompleteCommand({ id: userId, input: { userId } }));
+        await this.commandBus.execute(new VerificationCompleteCommand({ id: userId, input: { userId } }));      
       }
       const contactType = result.state === RegistrationStatus.EmailVerified ? ContactType.EMAIL : ContactType.PHONE_NUMBER;
+      const loginId = result.state === COMPLETE_VERIFICATION_ON_STATUS ? undefined : result.loginId;
+
+      // We cannot pass in the loginId if the registration is complete. This will cause us to regenerate and save a new JWT token, and 
+      // we will save it in the database.
       return await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType, loginId }));
     }
   }
