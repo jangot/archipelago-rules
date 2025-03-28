@@ -34,7 +34,7 @@
   "dependencies": {
     "@nestjs/axios": "^4.0.0",
     "@nestjs/common": "^11.0.12",
-    "@nestjs/config": "^4.0.1",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.12",
     "@nestjs/cqrs": "^11.0.3",
     "@nestjs/jwt": "^11.0.0",
@@ -80,7 +80,7 @@
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.14",
     "@types/lodash": "^4.17.16",
-    "@types/node": "^22.13.13",
+    "@types/node": "^22.13.14",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/pg": "^8.11.11",
