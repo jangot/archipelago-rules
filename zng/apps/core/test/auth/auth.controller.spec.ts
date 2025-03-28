@@ -6,12 +6,16 @@ import { RegistrationService } from '../../src/auth/registration.service';
 import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
-import { JwtModule } from '@nestjs/jwt';
 import { IBackup } from 'pg-mem';
 import { memoryDataSourceForTests } from '../postgress-memory-datasource';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { AuthModule } from '../../src/auth/auth.module';
+
+// Jest can not 'understand' camelcase-keys ESM properly. Mock it to avoid errors.
+jest.mock('camelcase-keys', () => ({
+  camelcaseKeys: jest.fn(),
+}));
 
 describe('AuthController - Negative Test Cases', () => {
   let app: INestApplication;
@@ -23,7 +27,7 @@ describe('AuthController - Negative Test Cases', () => {
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
     
     const module: TestingModule = await Test.createTestingModule({
-      imports: [CqrsModule, ConfigModule, JwtModule, AuthModule],
+      imports: [CqrsModule, ConfigModule.forRoot(), AuthModule],
       controllers: [AuthController],
       providers: [
         AuthService,
