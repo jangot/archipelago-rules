@@ -7,6 +7,7 @@ import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
 import { RegistrationLogic } from '../registration.logic';
 import { EntityNotFoundException, MissingInputException, RegistrationSecretExpiredException, RegistrationSecretNotFoundException, RegistrationSessionNotInitiatedException, RegistrationSessionNotWaingForVerificationException, UnableToCreateLoginOnRegistrationException, VerificationCodeMismatchException } from '@library/shared/common/exceptions/domain';
+import { ILogin } from '@library/entity/interface';
 @CommandHandler(VerifyContactCommand)
 export class VerifyContactCommandHandler
   extends RegistrationBaseCommandHandler<VerifyContactCommand>
@@ -105,11 +106,17 @@ export class VerifyContactCommandHandler
       login: newLogin,
     });
 
-    // TODO: Should create a Login only once at first contact verified
-    const userLogin = await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
-    if (!userLogin) {
-      this.logger.error(`Failed to create login for user ${user.id}`);
-      throw new UnableToCreateLoginOnRegistrationException(`Failed to create login for user ${user.id}`);
+    let userLogin: ILogin | null = null;
+
+    if (shouldCreateLogin) {
+      userLogin = await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);
+      if (!userLogin) {
+        this.logger.error(`Failed to create login for user ${user.id}`);
+        throw new UnableToCreateLoginOnRegistrationException(`Failed to create login for user ${user.id}`);
+      }    
+    } else {
+      this.logger.debug('Updating User and Registration as contact was verified');
+      await this.domainServices.userServices.updateUserRegistration(registration, user);
     }
     // #endregion
 
@@ -118,6 +125,6 @@ export class VerifyContactCommandHandler
       existedRegistrationStatus === RegistrationStatus.EmailVerifying ? VerificationEvent.EmailVerified : VerificationEvent.PhoneNumberVerified
     );
 
-    return this.createTransitionResult(newRegistrationStatus, true, user.id, userLogin.id);
+    return this.createTransitionResult(newRegistrationStatus, true, user.id, userLogin?.id);
   }
 }
