@@ -14,7 +14,7 @@ import { CommandBus, EventBus } from '@nestjs/cqrs';
 import { IApplicationUser } from '@library/entity/interface';
 import { VerificationEvent, VerificationEventFactory } from '../../verification';
 import { IDomainServices } from '../../../domain/idomain.services';
-import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
+import { RegistrationTransitionResult } from '@library/shared/types';
 
 export interface RegistrationExecuteParams {
   id: string | null;
@@ -53,14 +53,13 @@ export abstract class RegistrationBaseCommandHandler<TCommand extends Registrati
   protected createTransitionResult(
     state: RegistrationStatus,
     isSuccessful: boolean,
-    message: RegistrationTransitionMessage | null,
     userId?: string,
     loginId?: string,
     code?: string,
     accessToken?: string,
     refreshToken?: string
   ): RegistrationTransitionResult {
-    return { state, isSuccessful, message, userId, loginId, code, accessToken, refreshToken };
+    return { state, isSuccessful, userId, loginId, code, accessToken, refreshToken };
   }
 
   protected sendEvent(user: IApplicationUser | null, event: VerificationEvent | null): void {

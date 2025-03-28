@@ -7,7 +7,7 @@ export class DomainServiceException extends Error {
   }
 }
 
-// #region Custom Expections implementations
+// #region Custom Exceptions implementations
 
 export class EntityNotFoundException extends DomainServiceException {
   constructor(message: string) {
@@ -76,6 +76,69 @@ export class ConfigurationVariableNotFoundException extends DomainServiceExcepti
   constructor(message: string) {
     super(message, DomainExceptionCode.ConfigurationVariableNotFound);
     this.name = 'ConfigurationVariableNotFoundException';
+  }
+}
+
+export class RegistrationSessionNotInitiatedException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.RegistrationSessionNotInitiated);
+    this.name = 'RegistrationSessionNotInitiatedException';
+  }
+}
+
+export class RegistrationSessionNotWaingForVerificationException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.RegistrationSessionNotWaingForVerification);
+    this.name = 'RegistrationSessionNotWaingForVerificationException';
+  }
+}
+
+export class RegistrationSecretNotFoundException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.RegistrationSecretNotFound);
+    this.name = 'RegistrationSecretNotFoundException';
+  }
+}
+
+export class RegistrationSecretExpiredException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.RegistrationSecretExpired);
+    this.name = 'RegistrationSecretExpiredException';
+  }
+}
+
+export class UnableToCreateLoginOnRegistrationException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.UnableToCreateLoginOnRegistration);
+    this.name = 'UnableToCreateLoginOnRegistrationException';
+  }
+}
+
+export class ContactTakenException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.ContactTaken);
+    this.name = 'ContactTakenException';
+  }
+}
+
+export class UnableToCreateUserException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.UnableToCreateUser);
+    this.name = 'UnableToCreateUserException';
+  }
+}
+
+export class RegistrationNotFoundException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.RegistrationNotFound);
+    this.name = 'RegistrationNotFoundException';
+  }
+}
+
+export class RegistrationProcessingFailedException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.RegistrationProcessingFailed);
+    this.name = 'RegistrationProcessingFailedException';
   }
 }
 

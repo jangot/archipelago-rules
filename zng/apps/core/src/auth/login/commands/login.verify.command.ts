@@ -50,6 +50,9 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
     }
 
     if (secret !== verificationCode) {
+      // TODO: Add attempts support here
+      // TODO: Add attempts count and expiry here or level higher
+
       this.logger.warn(`LoginVerifyCommand: Verification code mismatch for user ${user.id}`);
       throw new VerificationCodeMismatchException('Verification code mismatch');
     }
