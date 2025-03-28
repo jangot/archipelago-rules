@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { LoginVerifyRequestDto } from '../dto';
 import { ContactType } from '@library/entity/enum';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
@@ -18,12 +18,7 @@ export class AuthService {
   public async initiateLoginSession(request: LoginRequestDto): Promise<UserLoginResponseDTO> {
     const contactInfo = this.extractContactInfo(request);
 
-    try {
-      return await this.commandBus.execute(new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType }));
-    } catch (error) {
-      this.logger.error(`Error initiating login session: ${error.message}`);
-      throw new UnauthorizedException(error.message);
-    }
+    return await this.commandBus.execute(new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType }));
   }
 
   public async verifyLoginSession(request: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
@@ -59,7 +54,7 @@ export class AuthService {
     const phoneNumber = safeTrim(phoneNumberRaw);
 
     if (email && phoneNumber) {
-      throw new BadRequestException('A valid email or phone number must be provided to login.');
+      throw new BadRequestException('A valid email or phone number (but not both) must be provided to login.');
     }
 
     if (email) {
@@ -68,6 +63,6 @@ export class AuthService {
       return { contact: phoneNumber, contactType: ContactType.PHONE_NUMBER };
     }
 
-    throw new BadRequestException('A valid email or phone number must be provided to login.');
+    throw new BadRequestException('A valid email or phone number (but not both) must be provided to login.');
   }
 }

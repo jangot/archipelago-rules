@@ -20,14 +20,13 @@ import { MissingInputException } from '@library/shared/common/exceptions/domain'
 export class VerificationCompleteCommandHandler
   extends RegistrationBaseCommandHandler<VerificationCompleteCommand>
   implements ICommandHandler<VerificationCompleteCommand> {
+
   public async execute(command: VerificationCompleteCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
       this.logger.warn('completeVerification: Invalid command payload', { command });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
-    const {
-      payload: { id },
-    } = command;
+    const { payload: { id } } = command;
     if (!id) {
       throw new MissingInputException('User id cannot be null when completing verification.');
     }

@@ -10,13 +10,11 @@ import { EntityNotFoundException, LoginSessionExpiredException, LoginSessionNotI
 @CommandHandler(LoginVerifyCommand)
 export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVerifyCommand> implements ICommandHandler<LoginVerifyCommand> {
   public async execute(command: LoginVerifyCommand): Promise<UserLoginPayloadDto> {
-    const {
-      payload: { userId, contact, contactType, verificationCode },
-    } = command;
+    const { payload: { userId, contact, contactType, verificationCode } } = command;
 
     // Either userId or contact must be provided as well as Command execution should be provided with contact type by caller
     if (!userId && !contact) {
-      this.logger.error('LoginInitiateCommand: No userId or contact provided');
+      this.logger.error(`LoginVerifyCommand: No userId or contact provided for ${contactType}: ${contact}`);
       throw new MissingInputException('No userId or contact provided');
     }
 
@@ -27,32 +25,32 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
         : null;
 
     if (!user) {
-      this.logger.warn('LoginInitiateCommand: No user found');
+      this.logger.warn(`LoginVerifyCommand: No user found for ${contactType}: ${contact}`);
       throw new EntityNotFoundException('No user found');
     }
 
     const { registrationStatus } = user;
-    if (!LoginLogic.isUserRegistered(user.contactType, registrationStatus)) {
-      this.logger.warn('LoginInitiateCommand: User is not registered to Log In');
+    if (!LoginLogic.isUserRegistered(contactType || ContactType.UNDEFINED, registrationStatus)) {
+      this.logger.warn(`LoginVerifyCommand: User ${user.id} is not registered to Log In`);
       throw new UserNotRegisteredException('User is not registered to log in');
     }
 
-    const loginType = this.getLoginTypeByContactType(contactType || ContactType.EMAIL);
+    const loginType = this.getLoginTypeByContactType(contactType || ContactType.UNDEFINED);
 
     const { secret, secretExpiresAt } = user;
 
     if (!secret) {
-      this.logger.warn('LoginInitiateCommand: No secret found');
+      this.logger.warn(`LoginVerifyCommand: No secret found for user ${user.id}`);
       throw new LoginSessionNotInitiatedException('Login session is not initiated');
     }
 
     if (secretExpiresAt && secretExpiresAt < new Date()) {
-      this.logger.warn('LoginInitiateCommand: Secret expired');
+      this.logger.warn(`LoginVerifyCommand: Secret expired for user ${user.id}`);
       throw new LoginSessionExpiredException('Login session is expired');
     }
 
     if (secret !== verificationCode) {
-      this.logger.warn('LoginInitiateCommand: Verification code mismatch');
+      this.logger.warn(`LoginVerifyCommand: Verification code mismatch for user ${user.id}`);
       throw new VerificationCodeMismatchException('Verification code mismatch');
     }
 
@@ -63,7 +61,7 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
 
     const { accessToken, refreshToken, refreshTokenExpiresIn } = result;
     if (!accessToken || !refreshToken || !refreshTokenExpiresIn) {
-      this.logger.error(`LoginVerifyCommand: Access token, Refresh token or its expiration time is not generated for user ${userId}`);
+      this.logger.error(`LoginVerifyCommand: Access token, Refresh token or its expiration time is not generated for user ${user.id}`);
       throw new UnableToGenerateLoginPayloadException('Access token, Refresh token or its expiration time is not generated');
     }
     const hashedSecret = generateCRC32String(refreshToken);

@@ -3,9 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
-import { IApplicationUser } from '@library/entity/interface';
 import { IDomainServices } from '../../domain/idomain.services';
 import { ConfigurationVariableNotFoundException } from '@library/shared/common/exceptions/domain';
+import { IExpressRequestUser } from '@library/shared/types';
 
 // Interface to avoid using 'any' as a type in 'validate' method
 @Injectable()
@@ -29,7 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   // Need to consider caching scenarios here, as performing a DB lookup on every request
   // will incur performance costs
   // Also, do we need to store the entire User Entity here?
-  async validate(payload: IJwtPayload): Promise<IApplicationUser> {
+  async validate(payload: IJwtPayload): Promise<IExpressRequestUser> {
     if (!payload || !payload.sub) {
       throw new UnauthorizedException('Invalid JWT payload');
     }
@@ -41,6 +41,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException();
     }
 
-    return user;
+    return { id: user.id, firstName: user.firstName ?? undefined, lastName: user.lastName ?? undefined, email: user.email ?? undefined, 
+      phoneNumber: user.phoneNumber ?? undefined, isAdmin: false };
   }
 }
