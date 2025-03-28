@@ -16,14 +16,14 @@ export class RefreshTokenCommandHandler extends LoginBaseCommandHandler<RefreshT
 
     const user = await this.domainServices.userServices.getUserById(userId);
     if (!user) {
-      this.logger.error('RefreshTokenCommand: No user found');
-      throw new EntityNotFoundException('No user found');
+      this.logger.error(`RefreshTokenCommand: No user found for user ${userId}`);
+      throw new EntityNotFoundException('No matching user found');
     }
     // Here we already have secured refresh token from the request guard and strategy, so passing 3rd param 'isTokenSecure' as true to not re-calculate hash
     const login = await this.domainServices.userServices.getUserLoginByToken(userId, refreshToken, true);
     if (!login) {
-      this.logger.error('RefreshTokenCommand: No login found');
-      throw new EntityNotFoundException('No login found');
+      this.logger.error(`RefreshTokenCommand: No login found for user ${userId}`);
+      throw new EntityNotFoundException('No matching login found');
     }
 
     const result = await this.generateLoginPayload(userId, user.onboardStatus || '');
@@ -41,7 +41,7 @@ export class RefreshTokenCommandHandler extends LoginBaseCommandHandler<RefreshT
 
     const updateResult = await this.domainServices.userServices.updateLogin(login.id, login, true);
     if (!updateResult) {
-      this.logger.error('RefreshTokenCommand: Could not update login');
+      this.logger.error(`RefreshTokenCommand: Could not update login for user ${userId}`);
       throw new UnableToGenerateLoginPayloadException('Could not update login');
     }
 

@@ -1,5 +1,4 @@
 import { BadRequestException, Body, Controller, Get, HttpException, HttpStatus, Post, Put, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { RegistrationRequestDto, RegistrationVerifyRequestDto, RegistrationDto, RegistrationUpdateRequestDto, LoginVerifyRequestDto } from '../dto';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
@@ -9,6 +8,8 @@ import { JwtAuthGuard, LogoutAuthGuard } from './guards';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 import { LoginRequestDto } from '../dto/request/login.request.dto';
 import { RefreshTokenAuthGuard } from './guards/jwt-refresh.guard';
+import { ILogoutRequest, IRefreshTokenRequest, IRequest } from '@library/shared/types';
+import { ApiStatusResponseDto } from '@library/shared/common/dtos/response/api.status.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -23,7 +24,7 @@ export class AuthController {
   @ApiBody({ type: LoginRequestDto, schema: { $ref: getSchemaPath(LoginRequestDto) } })
   async login(@Body() body: LoginRequestDto): Promise<UserLoginPayloadDto> {
     if ((!body.email && !body.phoneNumber) || (body.email && body.phoneNumber)) {
-      throw new BadRequestException('A valid email or phone number must be provided to login.');
+      throw new BadRequestException('A valid email or phone number (but not both) must be provided to login.');
     }
 
     return this.authService.initiateLoginSession(body);
@@ -37,7 +38,7 @@ export class AuthController {
   @ApiExtraModels(LoginVerifyRequestDto, LoginRequestDto)
   public async verify(@Body() body: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
     if ((!body.email && !body.phoneNumber) || (body.email && body.phoneNumber)) {
-      throw new BadRequestException('A valid email or phone number must be provided to login.');
+      throw new BadRequestException('A valid email or phone number (but not both) must be provided to login.');
     }
 
     return this.authService.verifyLoginSession(body);
@@ -47,13 +48,13 @@ export class AuthController {
   @ApiOperation({ description: 'User Logout', summary: 'Ends user session and invalidates JWT token' })
   @ApiBearerAuth('jwt')
   @UseGuards(LogoutAuthGuard)
-  public async logout(@Req() request: Request): Promise<unknown> {
+  public async logout(@Req() request: ILogoutRequest): Promise<unknown> {
     if (!request.user) {
       throw new HttpException('Invalid Access Token. Did not pass verification', HttpStatus.UNAUTHORIZED);
     }
 
-    const userId = request.user['userId'];
-    const accessToken = request.user['sessionId'];
+    const userId = request.user.userId;
+    const accessToken = request.user.sessionId;
 
     if (!userId || !accessToken) {
       throw new HttpException('Invalid Access Token. Not all data provided', HttpStatus.UNAUTHORIZED);
@@ -69,13 +70,12 @@ export class AuthController {
   })
   @ApiBearerAuth('jwt')
   @UseGuards(RefreshTokenAuthGuard)
-  refreshTokens(@Req() req: Request) {
+  refreshTokens(@Req() req: IRefreshTokenRequest) {
     if (!req.user) {
       throw new HttpException('Invalid Refresh Token. Did not pass verification', HttpStatus.UNAUTHORIZED);
     }
-
-    const userId = req.user['userId'];
-    const refreshToken = req.user['secret'];
+    const userId = req.user.userId;
+    const refreshToken = req.user.secret;
 
     if (!userId || !refreshToken) {
       throw new HttpException('Invalid Refresh Token. Not all data provided', HttpStatus.UNAUTHORIZED);
@@ -100,7 +100,8 @@ export class AuthController {
   @ApiBearerAuth('jwt')
   @ApiBody({ type: RegistrationUpdateRequestDto, schema: { $ref: getSchemaPath(RegistrationUpdateRequestDto) } })
   @UseGuards(JwtAuthGuard)
-  public async updateVerificationField(@Body() body: RegistrationUpdateRequestDto, @Req() request: Request): Promise<UserRegisterResponseDto | null> {
+  public async updateVerificationField(@Body() body: RegistrationUpdateRequestDto, 
+    @Req() request: IRequest): Promise<UserRegisterResponseDto | null> {
     const userId = request.user?.id;
     return await this.registrationService.updateRegistrationContact(body, userId);
   }
@@ -115,7 +116,7 @@ export class AuthController {
   })
   @ApiExtraModels(RegistrationVerifyRequestDto, UserLoginPayloadDto)
   @ApiBody({ type: RegistrationVerifyRequestDto, schema: { $ref: getSchemaPath(RegistrationVerifyRequestDto) } })
-  public async verifyRegistration(@Body() body: RegistrationVerifyRequestDto): Promise<UserLoginPayloadDto | null> {
+  public async verifyRegistration(@Body() body: RegistrationVerifyRequestDto): Promise<UserLoginPayloadDto | ApiStatusResponseDto | null> {
     return await this.registrationService.verifyRegistration(body);
   }
 }

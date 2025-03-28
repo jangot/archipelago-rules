@@ -13,7 +13,7 @@ export class DomainExceptionsFilter extends BaseExceptionFilter {
     [DomainExceptionCode.EntityNotFound]: HttpStatus.NOT_FOUND,
     [DomainExceptionCode.UnauthorizedRequest]: HttpStatus.UNAUTHORIZED,
     [DomainExceptionCode.MissingInput]: HttpStatus.BAD_REQUEST,
-    [DomainExceptionCode.UserNotRegistered]: HttpStatus.NOT_FOUND,
+    [DomainExceptionCode.UserNotRegistered]: HttpStatus.ACCEPTED, // Returns 202 = Accepted
     [DomainExceptionCode.LoginSessionNotInitiated]: HttpStatus.FORBIDDEN,
     [DomainExceptionCode.LoginSessionExpired]: HttpStatus.FORBIDDEN,
     [DomainExceptionCode.VerificationCodeMismatch]: HttpStatus.BAD_REQUEST,

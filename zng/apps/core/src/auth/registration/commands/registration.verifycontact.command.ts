@@ -16,9 +16,7 @@ export class VerifyContactCommandHandler
       this.logger.warn('VerifyContact: Invalid command payload', { command });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
-    const {
-      payload: { id: userId, input },
-    } = command;
+    const { payload: { id: userId, input } } = command;
     // #region Input validation
     if (!userId) {
       throw new MissingInputException('User id cannot be null when verifying contact.');
@@ -92,11 +90,11 @@ export class VerifyContactCommandHandler
     if (newRegistrationStatus === RegistrationStatus.EmailVerified) {
       user.email = user.pendingEmail;
       user.pendingEmail = null;
-      user.onboardStatus = 'emailVerified';
+      user.onboardStatus = RegistrationStatus.EmailVerified;
     } else {
       user.phoneNumber = user.pendingPhoneNumber;
       user.pendingPhoneNumber = null;
-      user.onboardStatus = 'phoneNumberVerified';
+      user.onboardStatus = RegistrationStatus.PhoneNumberVerified;
     }
 
     user.verificationStatus = RegistrationLogic.calculateNewVerificationStatus(user.verificationStatus);

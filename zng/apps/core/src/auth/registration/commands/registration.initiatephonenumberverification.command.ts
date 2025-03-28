@@ -25,9 +25,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
       this.logger.warn('initiatePhoneNumberVerification: Invalid command payload', { command });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
-    const {
-      payload: { id: userId, input },
-    } = command;
+    const { payload: { id: userId, input } } = command;
 
     if (!userId) {
       throw new MissingInputException('User id cannot be null when initiating verification of Phone number.');

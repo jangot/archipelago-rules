@@ -7,10 +7,9 @@ import { EntityNotFoundException, MissingInputException, UserNotRegisteredExcept
 
 @CommandHandler(LoginInitiateCommand)
 export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginInitiateCommand> implements ICommandHandler<LoginInitiateCommand> {
+
   public async execute(command: LoginInitiateCommand): Promise<UserLoginResponseDTO> {
-    const {
-      payload: { contact, contactType },
-    } = command;
+    const { payload: { contact, contactType } } = command;
 
     // Either userId or contact must be provided as well as Command execution should be provided with contact type by caller
     if (!contact || !contactType) {
@@ -21,14 +20,14 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
     const user = await this.domainServices.userServices.getUserByContact(contact, contactType);
 
     if (!user) {
-      this.logger.warn('LoginInitiateCommand: No user found');
-      throw new EntityNotFoundException('No user found');
+      this.logger.warn(`LoginInitiateCommand: No user found for ${contactType}: ${contact}`);
+      throw new EntityNotFoundException('No matching user found');
     }
 
     const { registrationStatus } = user;
     if (!LoginLogic.isUserRegistered(contactType, registrationStatus)) {
-      this.logger.warn('LoginInitiateCommand: User is not registered to Log In');
-      throw new UserNotRegisteredException('User is not registered to log in');
+      this.logger.warn(`LoginInitiateCommand: User: ${user.id} is not registered to Login`);
+      throw new UserNotRegisteredException('User is not registered to Login');
     }
 
     const { code, expiresAt } = this.domainServices.userServices.generateCode();

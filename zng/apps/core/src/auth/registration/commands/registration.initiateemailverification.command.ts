@@ -16,9 +16,7 @@ export class InitiateEmailVerificationCommandHandler
       this.logger.warn('initiateEmailVerification: Invalid command payload', { command });
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
-    const {
-      payload: { id: userId, input },
-    } = command;
+    const { payload: { id: userId, input } } = command;
 
     // #region Input and User validation
     if (!userId) {

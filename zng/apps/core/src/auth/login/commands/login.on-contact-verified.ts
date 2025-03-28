@@ -3,6 +3,7 @@ import { LoginOnContactVerifiedCommand } from './login.commands';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dto';
 import { MissingInputException } from '@library/shared/common/exceptions/domain';
+import { ContactType, RegistrationStatus } from '@library/entity/enum';
 
 @CommandHandler(LoginOnContactVerifiedCommand)
 export class LoginOnContactVerifiedCommandHandler
@@ -12,11 +13,12 @@ export class LoginOnContactVerifiedCommandHandler
     const { payload: { userId, loginId, contactType } } = command;
 
     if (!userId) {
-      this.logger.error('LoginOnContactVerifiedCommand: No userId provided');
+      this.logger.error(`LoginOnContactVerifiedCommand: No userId provided for ${contactType}`);
       throw new MissingInputException('No userId provided');
     }
 
-    const result = await this.generateLoginPayload(userId, contactType || '', undefined);
+    const onboardingStatus = contactType === ContactType.EMAIL ? RegistrationStatus.EmailVerified : RegistrationStatus.PhoneNumberVerified;
+    const result = await this.generateLoginPayload(userId, onboardingStatus, undefined);
     if (loginId) {
       const updatedLogin = { id: loginId, updatedAt: new Date(), secret: result.refreshToken, secretExpiresAt: 
       result.refreshTokenExpiresIn, sessionId: result.accessToken };
