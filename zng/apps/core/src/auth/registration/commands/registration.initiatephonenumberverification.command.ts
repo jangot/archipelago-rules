@@ -12,9 +12,9 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { InitiatePhoneNumberVerificationCommand } from './registration.commands';
 import { VerificationEvent } from '../../verification';
-import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
+import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
-import { MissingInputException } from '@library/shared/common/exceptions/domain';
+import { ContactTakenException, EntityNotFoundException, MissingInputException, RegistrationNotFoundException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(InitiatePhoneNumberVerificationCommand)
 export class InitiatePhoneNumberVerificationCommandHandler
@@ -23,7 +23,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
   public async execute(command: InitiatePhoneNumberVerificationCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
       this.logger.warn('initiatePhoneNumberVerification: Invalid command payload', { command });
-      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
+      throw new MissingInputException('Invalid command payload');
     }
     const { payload: { id: userId, input } } = command;
 
@@ -37,18 +37,14 @@ export class InitiatePhoneNumberVerificationCommandHandler
       this.logger.debug(`No registration found for user ${userId} or registration is in a wrong state`, {
         registration: logSafeRegistration(registration),
       });
-      return this.createTransitionResult(
-        registration?.status ?? RegistrationStatus.NotRegistered,
-        false,
-        RegistrationTransitionMessage.NoRegistrationStatusFound
-      );
+      throw new RegistrationNotFoundException('No registration found for user');
     }
 
     const { phoneNumber } = input;
 
     if (!phoneNumber) {
       this.logger.warn('No phone number provided for phone number verification', { input });
-      return this.createTransitionResult(RegistrationStatus.EmailVerified, false, RegistrationTransitionMessage.NoContactProvided);
+      throw new MissingInputException('Phone number is missing during phone number verification');
     }
 
     const userByPhone = await this.domainServices.userServices.getUserByContact(phoneNumber, ContactType.PHONE_NUMBER);
@@ -56,15 +52,15 @@ export class InitiatePhoneNumberVerificationCommandHandler
     if (userByPhone) {
       if (userByPhone.id === userId) {
         this.logger.debug(`User ${userId} already has the phone number ${phoneNumber}`);
-        return this.createTransitionResult(RegistrationStatus.PhoneNumberVerified, false, RegistrationTransitionMessage.AlreadyVerified);
+        throw new ContactTakenException('Phone number already taken by user');
       }
       this.logger.debug(`Phone number already taken: ${phoneNumber} by ${userByPhone.id}`, { input });
-      return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, false, RegistrationTransitionMessage.ContactTaken);
+      throw new ContactTakenException('Phone number already taken');
     }
 
     const user = await this.domainServices.userServices.getUserById(registration.userId);
     if (!user) {
-      return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, false, RegistrationTransitionMessage.WrongInput);
+      throw new EntityNotFoundException('User not found');
     }
 
     const { code, expiresAt } = this.domainServices.userServices.generateCode();
@@ -92,6 +88,6 @@ export class InitiatePhoneNumberVerificationCommandHandler
 
     this.sendEvent(user, VerificationEvent.PhoneNumberVerifying);
 
-    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, null, userId, undefined, code);
+    return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, userId, undefined, code);
   }
 }

@@ -1,8 +1,8 @@
 import { ZngNamingStrategy } from '@library/extensions/typeorm';
 import { DataSource } from 'typeorm';
-import { CoreEntities } from '../src/data/entity';
 import { IMemoryDb, ISchema, newDb } from 'pg-mem';
 import { v4 } from 'uuid';
+import { CoreEntities } from '../src/domain/entities';
 
 // Initiate newDb - in-memory PG database and create connection for TypeORM
 export const memoryDataSource = async (): Promise<DataSource> => {

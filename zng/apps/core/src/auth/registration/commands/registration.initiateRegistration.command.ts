@@ -13,9 +13,9 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationInitiatedCommand } from './registration.commands';
 import { VerificationEvent } from '../../verification';
 import { IApplicationUser } from '@library/entity/interface';
-import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
+import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser, safeTrim } from '@library/shared/common/helpers';
-import { MissingInputException } from '@library/shared/common/exceptions/domain';
+import { ContactTakenException, EntityNotFoundException, MissingInputException, UnableToCreateUserException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler
@@ -24,7 +24,7 @@ export class RegistrationInitiatedCommandHandler
   public async execute(command: RegistrationInitiatedCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
       this.logger.warn('initiateRegistration: Invalid command payload', { command });
-      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
+      throw new MissingInputException('Invalid command payload');
     }
 
     const { payload: { input } } = command;
@@ -32,14 +32,14 @@ export class RegistrationInitiatedCommandHandler
 
     if (!email) {
       this.logger.warn('initiateRegistration: No email provided', { input });
-      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.NoContactProvided);
+      throw new MissingInputException('Email is missing during registration initiation');
     }
 
     // Check if provided email is already taken by a registered user
     const userByEmail = await this.domainServices.userServices.getUserByContact(email, ContactType.EMAIL);
     if (userByEmail) {
       this.logger.debug(`initiateRegistration: Email already taken: ${email} by ${userByEmail.id}`, { input });
-      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.ContactTaken);
+      throw new ContactTakenException(`Email already taken: ${email}`);
     }
 
     // Check if the user already exists but only has a pending email
@@ -65,7 +65,7 @@ export class RegistrationInitiatedCommandHandler
     const user = await this.domainServices.userServices.createNewUser(newUser);
     if (!user) {
       this.logger.error(`initiateRegistration: Failed to create user: ${email}`, { newUser });
-      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.CouldNotCreateUser);
+      throw new UnableToCreateUserException(`Failed to create user: ${email}`);
     }
     const { id: userId } = user;
     const newUserRegistration = { userId, status: RegistrationStatus.EmailVerifying, secret: code, secretExpiresAt: expiresAt };
@@ -79,7 +79,7 @@ export class RegistrationInitiatedCommandHandler
 
     this.sendEvent(user, VerificationEvent.EmailVerifying);
 
-    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, userId, undefined, code);
+    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, userId, undefined, code);
   }
 
   private async reInitiateEmailVerification(user: IApplicationUser, input: RegistrationDto): Promise<RegistrationTransitionResult> {
@@ -97,7 +97,7 @@ export class RegistrationInitiatedCommandHandler
       this.logger.warn(`reInitiateEmailVerification: No registration found for user ${user.id} while ${email} is found as pending`, {
         user: logSafeUser(user),
       });
-      return this.createTransitionResult(RegistrationStatus.EmailVerifying, false, RegistrationTransitionMessage.NoRegistrationStatusFound);
+      throw new EntityNotFoundException('No registration found for user');
     }
 
     const { code, expiresAt } = this.domainServices.userServices.generateCode();
@@ -127,6 +127,6 @@ export class RegistrationInitiatedCommandHandler
 
     this.sendEvent(user, VerificationEvent.EmailCodeResent);
 
-    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, null, user.id, undefined, code);
+    return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, user.id, undefined, code);
   }
 }

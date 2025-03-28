@@ -2,7 +2,6 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { UserRegisterResponseDto } from '../dto/response/user-register-response.dto';
 import { RegistrationDto } from '../dto';
-import { RegistrationExceptionFactory } from './registration/registration-exception.factory';
 import { UserLoginPayloadDto } from '../dto/response/user-login-payload.dto';
 import {
   InitiateEmailVerificationCommand,
@@ -15,6 +14,7 @@ import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { LoginOnContactVerifiedCommand } from './login/commands';
 import { ApiStatusResponseDto } from '@library/shared/common/dtos/response/api.status.dto';
+import { RegistrationProcessingFailedException } from '@library/shared/common/exceptions/domain';
 
 const COMPLETE_VERIFICATION_ON_STATUS = RegistrationStatus.PhoneNumberVerified;
 @Injectable()
@@ -92,22 +92,16 @@ export class RegistrationService {
     email: string | null,
     phoneNumber: string | null = null
   ): Promise<UserRegisterResponseDto> {
-    if (!result) {
-      this.logger.warn('handleRegistrationResult: Registration failed');
-      // TODO: Should NOT return a 500 StatusCode here
-      // Why would we log a warning here?
-      // Did we throw an Exception previously and we caught it and Logged it?
-      // Not sure what a Registration failure here means? What can the User do to resolve this issue?
-      throw new HttpException('Registration failed', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (!result || !result.isSuccessful) {
+      // This section is expected to be unreachable as any registration failure should be handled by the command handler
+      // But for the case when handling missed - we take care about this here
+      this.logger.warn('handleRegistrationResult: Registration failed', { result, email, phoneNumber });
+      throw new RegistrationProcessingFailedException('Registration failed');
     }
-    const { state, isSuccessful, userId, message, code } = result;
+    const { state, userId, code } = result;
 
-    if (!isSuccessful) {
-      const exception = RegistrationExceptionFactory.translate(message, state);
-      throw exception;
-    } else {
-      return { id: userId!, email: email ?? null, phoneNumber: phoneNumber ?? null, verificationState: state!, verificationCode: code! };
-    }
+    return { id: userId!, email: email ?? null, phoneNumber: phoneNumber ?? null, verificationState: state!, verificationCode: code! };
+    
   }
 
   /**
@@ -118,28 +112,27 @@ export class RegistrationService {
    */
   private async handleVerificationResult(result: RegistrationTransitionResult | null, userId: string)
     : Promise<UserLoginPayloadDto | ApiStatusResponseDto | null> {
-    if (!result) {
-      this.logger.warn('handleVerificationResult: Registration Verification failed');
-      throw new HttpException('Registration Verification failed', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (!result || !result.isSuccessful) {
+      // This section is expected to be unreachable as any registration verification failure should be handled by the command handler
+      // But for the case when handling missed - we take care about this here
+      this.logger.warn('handleVerificationResult: Registration Verification failed', { result });
+      throw new RegistrationProcessingFailedException('Registration Verification failed');
     }
 
-    const { state, isSuccessful, message } = result;
+    const { state, loginId: resultLoginId } = result;
 
-    if (!isSuccessful) {
-      const exception = RegistrationExceptionFactory.translate(message, state);   
-      throw exception;
-    } else {
-      // It is possible that after contact verification registration might be called completed
-      // If so - execute completion command
-      if (result.state === COMPLETE_VERIFICATION_ON_STATUS) {
-        await this.commandBus.execute(new VerificationCompleteCommand({ id: userId, input: { userId } }));      
-      }
-      const contactType = result.state === RegistrationStatus.EmailVerified ? ContactType.EMAIL : ContactType.PHONE_NUMBER;
-      const loginId = result.state === COMPLETE_VERIFICATION_ON_STATUS ? undefined : result.loginId;
 
-      // We cannot pass in the loginId if the registration is complete. This will cause us to regenerate and save a new JWT token, and 
-      // we will save it in the database.
-      return loginId ? await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType, loginId })) : new ApiStatusResponseDto('Success', 'Registration completed');
+    // It is possible that after contact verification registration might be called completed
+    // If so - execute completion command
+    if (state === COMPLETE_VERIFICATION_ON_STATUS) {
+      await this.commandBus.execute(new VerificationCompleteCommand({ id: userId, input: { userId } }));      
     }
+    const contactType = state === RegistrationStatus.EmailVerified ? ContactType.EMAIL : ContactType.PHONE_NUMBER;
+    const loginId = state === COMPLETE_VERIFICATION_ON_STATUS ? undefined : resultLoginId;
+
+    // We cannot pass in the loginId if the registration is complete. This will cause us to regenerate and save a new JWT token, and 
+    // we will save it in the database.
+    return loginId ? await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType, loginId })) : new ApiStatusResponseDto('Success', 'Registration completed');
+    
   }
 }

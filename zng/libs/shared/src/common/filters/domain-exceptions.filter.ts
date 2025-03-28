@@ -20,6 +20,15 @@ export class DomainExceptionsFilter extends BaseExceptionFilter {
     [DomainExceptionCode.UnableToGenerateLoginPayload]: HttpStatus.INTERNAL_SERVER_ERROR,
     [DomainExceptionCode.UnexpectedRegistrationStatus]: HttpStatus.INTERNAL_SERVER_ERROR,
     [DomainExceptionCode.ConfigurationVariableNotFound]: HttpStatus.INTERNAL_SERVER_ERROR,
+    [DomainExceptionCode.RegistrationSessionNotInitiated]: HttpStatus.BAD_REQUEST,
+    [DomainExceptionCode.RegistrationSessionNotWaingForVerification]: HttpStatus.BAD_REQUEST,
+    [DomainExceptionCode.RegistrationSecretNotFound]: HttpStatus.NOT_FOUND,
+    [DomainExceptionCode.RegistrationSecretExpired]: HttpStatus.BAD_REQUEST,
+    [DomainExceptionCode.UnableToCreateLoginOnRegistration]: HttpStatus.INTERNAL_SERVER_ERROR,
+    [DomainExceptionCode.ContactTaken]: HttpStatus.BAD_REQUEST,
+    [DomainExceptionCode.UnableToCreateUser]: HttpStatus.INTERNAL_SERVER_ERROR,
+    [DomainExceptionCode.RegistrationNotFound]: HttpStatus.NOT_FOUND,
+    [DomainExceptionCode.RegistrationProcessingFailed]: HttpStatus.INTERNAL_SERVER_ERROR,
   };
 
   public catch(exception: DomainServiceException, host: ArgumentsHost) {

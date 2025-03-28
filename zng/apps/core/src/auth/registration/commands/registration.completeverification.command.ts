@@ -12,9 +12,9 @@ import { RegistrationBaseCommandHandler } from './registration.base.command-hand
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerificationCompleteCommand } from './registration.commands';
 import { VerificationEvent } from '../../verification';
-import { RegistrationTransitionMessage, RegistrationTransitionResult } from '@library/shared/types';
+import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
-import { MissingInputException } from '@library/shared/common/exceptions/domain';
+import { EntityNotFoundException, MissingInputException, UnexpectedRegistrationStatusException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(VerificationCompleteCommand)
 export class VerificationCompleteCommandHandler
@@ -24,7 +24,7 @@ export class VerificationCompleteCommandHandler
   public async execute(command: VerificationCompleteCommand): Promise<RegistrationTransitionResult> {
     if (!command || !command.payload || !command.payload.input) {
       this.logger.warn('completeVerification: Invalid command payload', { command });
-      return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
+      throw new MissingInputException('Invalid command payload');
     }
     const { payload: { id } } = command;
     if (!id) {
@@ -40,7 +40,7 @@ export class VerificationCompleteCommandHandler
 
     if (!user || !registration) {
       this.logger.error(`No user or registration found for user ${id}`);
-      return this.createTransitionResult(RegistrationStatus.PhoneNumberVerified, false, RegistrationTransitionMessage.WrongInput);
+      throw new EntityNotFoundException('No user or registration found');
     }
 
     const { registrationStatus } = user;
@@ -51,11 +51,7 @@ export class VerificationCompleteCommandHandler
         user: logSafeUser(user),
         registration: logSafeRegistration(registration),
       });
-      return this.createTransitionResult(
-        RegistrationStatus.PhoneNumberVerified,
-        false,
-        RegistrationTransitionMessage.VerificationCouldNotBeCompleted
-      );
+      throw new UnexpectedRegistrationStatusException('User is not in a state to complete verification');
     }
 
     this.logger.debug(`About to update registration and user during registration completion for user ${user.id}`, {
@@ -77,6 +73,6 @@ export class VerificationCompleteCommandHandler
 
     this.sendEvent(user, VerificationEvent.Verified);
 
-    return this.createTransitionResult(RegistrationStatus.Registered, true, null);
+    return this.createTransitionResult(RegistrationStatus.Registered, true);
   }
 }
