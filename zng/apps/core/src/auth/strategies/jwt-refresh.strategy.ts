@@ -4,9 +4,9 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { IRefreshTokenPayload } from '../../domain/interfaces/irefresh-token-payload';
-import { ILogin } from '@library/entity/interface';
 import { IDomainServices } from '../../domain/idomain.services';
 import { ConfigurationVariableNotFoundException } from '@library/shared/common/exceptions/domain';
+import { IRefreshTokenUser } from '@library/shared/types';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
@@ -30,7 +30,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     });
   }
 
-  async validate(req: Request, payload: IRefreshTokenPayload): Promise<ILogin> {
+  async validate(req: Request, payload: IRefreshTokenPayload): Promise<IRefreshTokenUser> {
     const refreshToken = req.get('Authorization')?.replace('Bearer', '').trim();
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token not provided');
@@ -39,11 +39,14 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     const userId = payload.sub;
     const userLogin = await this.domainServices.userServices.getUserLoginByToken(userId, refreshToken);
 
-    if (!userLogin) {
+    if (!userLogin || !userLogin.secret) {
       throw new UnauthorizedException('JwtRefreshStrategy: Invalid refresh token');
     }
 
     // Return the payload (or a transformed user object) which will be attached to req.user.
-    return userLogin;
+    return {
+      userId: userLogin.userId,
+      secret: userLogin.secret,
+    };
   }
 }

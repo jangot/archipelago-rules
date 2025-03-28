@@ -14,6 +14,7 @@ import {
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { LoginOnContactVerifiedCommand } from './login/commands';
+import { ApiStatusResponseDto } from '@library/shared/common/dtos/response/api.status.dto';
 
 const COMPLETE_VERIFICATION_ON_STATUS = RegistrationStatus.PhoneNumberVerified;
 @Injectable()
@@ -40,7 +41,7 @@ export class RegistrationService {
    * @param input - The registration data transfer object.
    * @returns A promise that resolves to a JwtResponseDto or null.
    */
-  public async verifyRegistration(input: RegistrationDto): Promise<UserLoginPayloadDto | null> {
+  public async verifyRegistration(input: RegistrationDto): Promise<UserLoginPayloadDto | ApiStatusResponseDto | null> {
     const { userId } = input;
     if (!userId) {
       throw new HttpException('User ID is required for verification', HttpStatus.BAD_REQUEST);
@@ -115,7 +116,8 @@ export class RegistrationService {
    * @param userId - The ID of the user.
    * @returns A promise that resolves to a JwtResponseDto or null.
    */
-  private async handleVerificationResult(result: RegistrationTransitionResult | null, userId: string): Promise<UserLoginPayloadDto | null> {
+  private async handleVerificationResult(result: RegistrationTransitionResult | null, userId: string)
+    : Promise<UserLoginPayloadDto | ApiStatusResponseDto | null> {
     if (!result) {
       this.logger.warn('handleVerificationResult: Registration Verification failed');
       throw new HttpException('Registration Verification failed', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -137,7 +139,7 @@ export class RegistrationService {
 
       // We cannot pass in the loginId if the registration is complete. This will cause us to regenerate and save a new JWT token, and 
       // we will save it in the database.
-      return await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType, loginId }));
+      return loginId ? await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType, loginId })) : new ApiStatusResponseDto('Success', 'Registration completed');
     }
   }
 }

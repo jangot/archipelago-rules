@@ -27,9 +27,7 @@ export class RegistrationInitiatedCommandHandler
       return this.createTransitionResult(RegistrationStatus.NotRegistered, false, RegistrationTransitionMessage.WrongInput);
     }
 
-    const {
-      payload: { input },
-    } = command;
+    const { payload: { input } } = command;
     const { firstName, lastName, email } = input;
 
     if (!email) {
