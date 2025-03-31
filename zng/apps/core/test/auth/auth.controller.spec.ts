@@ -22,6 +22,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filters';
 import { LoginInitiateCommandHandler } from '../../src/auth/login/commands/login.initiate.command';
 import { DomainExceptionCode } from '@library/shared/common/exceptions/domain';
+import { REGISTERED_USER_DUMP_1 } from './data-dump';
 
 // Jest can not 'understand' camelcase-keys ESM properly. Mock it to avoid errors.
 jest.mock('camelcase-keys', () => ({
@@ -69,6 +70,9 @@ describe('AuthController - Negative Test Cases', () => {
     authService = module.get<AuthService>(AuthService);
     commandBus = module.get<CommandBus>(CommandBus);
     loginInitiateHandler = module.get<LoginInitiateCommandHandler>(LoginInitiateCommandHandler);
+
+    // Initiate data in database before backup
+    database.getSchema('core').none(REGISTERED_USER_DUMP_1);
 
     databaseBackup = database.backup();
     app = module.createNestApplication();
@@ -161,7 +165,6 @@ describe('AuthController - Negative Test Cases', () => {
       expect(loginInitiateHandlerSpy).toHaveBeenCalledWith({ 'payload': { 'contact': 'abc', 'contactType': 'phoneNumber' } });
     });
 
-    
   });
 
   describe('verifyLogin', () => {
@@ -179,12 +182,70 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(400);
     });
 
-    it('should throw UnauthorizedException if code is incorrect', async () => {
-      await request(app.getHttpServer())
+    it('should throw Login session is not initiated (403) as User not initiated email login', async () => {
+      const response = await request(app.getHttpServer())
         .post('/auth/verify')
-        .send({ userId: 'valid-uuid', code: 'wrong-code' })
-        .expect(401);
+        .send({ userId: '2bacf5cb-9fa9-47c9-b560-9ea3766cc201', email: 'registration-verify-test1@email.com', code: 'wrong-code' })
+        .expect(403);
+
+      expect(response.body).toEqual(expect.objectContaining({
+        statusCode: 403,
+        errorCode: DomainExceptionCode.LoginSessionNotInitiated,
+        message: 'Login session is not initiated',
+      }));
     });
+
+    it('should fail as verification code is wrong (400)', async () => {
+      // Correctly initiate login session first
+      const loginIntitateResponse = await request(app.getHttpServer()).post('/auth/login')
+        .send({ email: 'registration-verify-test1@email.com', phoneNumber: '' })
+        .expect(201);
+
+      expect(loginIntitateResponse.body).toEqual({
+        userId: '2bacf5cb-9fa9-47c9-b560-9ea3766cc201',
+        verificationCode: expect.any(String),
+      });
+
+      const verifyResponse = await request(app.getHttpServer())
+        .post('/auth/verify')
+        .send({ userId: '2bacf5cb-9fa9-47c9-b560-9ea3766cc201', email: 'registration-verify-test1@email.com', code: 'wrong-code' })
+        .expect(400);
+
+      expect(verifyResponse.body).toEqual(expect.objectContaining({
+        statusCode: 400,
+        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        message: 'Verification code mismatch',
+      }));
+    });
+
+    // TODO: we are allowing to log in by any contact here by same code!!!
+    // Is it expected?
+    it('should fail as session was initiated for other contact (400)', async () => {
+      // Correctly initiate login session first
+      const loginIntitateResponse = await request(app.getHttpServer()).post('/auth/login')
+        .send({ email: '', phoneNumber: '+12124567993' })
+        .expect(201);
+
+      const correctVerificationCode = loginIntitateResponse.body.verificationCode;
+      expect(loginIntitateResponse.body).toEqual({
+        userId: '2bacf5cb-9fa9-47c9-b560-9ea3766cc201',
+        verificationCode: expect.any(String),
+      });
+
+      // Here we place email instead of phone number (for which we assigned secret)
+      // Is it correct expectance that here error should be thrown?
+      const verifyResponse = await request(app.getHttpServer())
+        .post('/auth/verify')
+        .send({ userId: '2bacf5cb-9fa9-47c9-b560-9ea3766cc201', email: 'registration-verify-test1@email.com', code: correctVerificationCode })
+        .expect(400);
+
+      expect(verifyResponse.body).toEqual(expect.objectContaining({
+        statusCode: 400,
+        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        message: 'Verification code mismatch',
+      }));
+    });
+
   });
 
   describe('refreshToken', () => {
