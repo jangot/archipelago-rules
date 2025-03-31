@@ -1,0 +1,4 @@
+/**
+ * User completely registered: registration-verify-test1@email.com | +12124567993
+ */
+export const REGISTERED_USER_DUMP_1 = 'INSERT INTO core.users (id, first_name, last_name, email, phone_number, deleted_at, pending_email, pending_phone_number, created_at, registration_status, onboard_status, secret, secret_expires_at, verification_status, verification_attempts) VALUES (\'2bacf5cb-9fa9-47c9-b560-9ea3766cc201\', \'John\', \'Doe\', \'registration-verify-test1@email.com\', \'+12124567993\', NULL, NULL, NULL, \'2025-03-28 18:06:17.428+05\', \'registered\', \'phoneNumberVerified\', NULL, NULL, \'verified\', 0); INSERT INTO core.user_registrations (id, user_id, status, created_at, secret, secret_expires_at, user_login_id) VALUES (\'6298e7b7-d6b6-46c5-9a02-eca59e317fd9\', \'2bacf5cb-9fa9-47c9-b560-9ea3766cc201\', \'registered\', \'2025-03-28 18:06:17.44+05\', NULL, NULL, NULL);';
