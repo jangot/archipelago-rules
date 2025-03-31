@@ -16,7 +16,7 @@ import { DataModule } from '../../src/data';
 import { DomainModule } from '../../src/domain/domain.module';
 import { JwtModule } from '@nestjs/jwt';
 import { CustomAuthStrategies } from '../../src/auth/strategies';
-import { CustomAuthGuards } from '../../src/auth/guards';
+import { CustomAuthGuards, JwtAuthGuard, LogoutAuthGuard, RefreshTokenAuthGuard } from '../../src/auth/guards';
 import { RegistrationCommandHandlers } from '../../src/auth/registration/commands';
 import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filters';
@@ -28,6 +28,7 @@ import { REGISTERED_USER_DUMP_1 } from './data-dump';
 jest.mock('camelcase-keys', () => ({
   camelcaseKeys: jest.fn(),
 }));
+// TODO: investigate why .env variable do not make an effect
 jest.setTimeout(300000);
 
 describe('AuthController - Negative Test Cases', () => {
@@ -249,33 +250,51 @@ describe('AuthController - Negative Test Cases', () => {
   });
 
   describe('refreshToken', () => {
-    it('should throw UnauthorizedException if refreshToken is missing', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/refresh-tokens')
-        .send({ user: { secret: '', userId: '' } })
-        .expect(401);
+    it('ensures that /refresh is protected by proper guard', async () => {
+      const refreshGuards = Reflect.getMetadata('__guards__', AuthController.prototype.refreshTokens);
+      const guard = new (refreshGuards[0]);
+
+      expect(guard).toBeInstanceOf(RefreshTokenAuthGuard);
     });
 
-    it('should throw UnauthorizedException if refreshToken is invalid', async () => {
+    it('should 401 if authorization header is empty', async () => {
       await request(app.getHttpServer())
-        .post('/auth/refresh-tokens')
-        .send({ refreshToken: 'invalid-token' })
+        .get('/auth/refresh')
+        //.set({ 'authorization': '' })
+        .send({})
+        .expect(401);
+
+    });
+
+    it('should 401 if authorization header is invalid', async () => {
+      await request(app.getHttpServer())
+        .get('/auth/refresh')
+        .set({ 'authorization': 'invalid-token' })
+        .send({})
         .expect(401);
     });
   });
 
   describe('logout', () => {
+    it('ensures that /logout is protected by proper guard', async () => {
+      const logoutGuards = Reflect.getMetadata('__guards__', AuthController.prototype.logout);
+      const guard = new (logoutGuards[0]);
+
+      expect(guard).toBeInstanceOf(LogoutAuthGuard);
+    });
     it('should throw UnauthorizedException if accessToken is missing', async () => {
       await request(app.getHttpServer())
         .post('/auth/logout')
-        .send({ accessToken: '' })
+        //.set({ 'authorization': '' })
+        .send({})
         .expect(401);
     });
 
     it('should throw UnauthorizedException if accessToken is invalid', async () => {
       await request(app.getHttpServer())
         .post('/auth/logout')
-        .send({ accessToken: 'invalid-token' })
+        .set({ 'authorization': 'invalid-token' })
+        .send({})
         .expect(401);
     });
   });
@@ -290,6 +309,12 @@ describe('AuthController - Negative Test Cases', () => {
   });
 
   describe('verifyRegistration', () => {
+    it('ensures that PUT /register is protected by proper guard', async () => {
+      const registerGuards = Reflect.getMetadata('__guards__', AuthController.prototype.updateVerificationField);
+      const guard = new (registerGuards[0]);
+
+      expect(guard).toBeInstanceOf(JwtAuthGuard);
+    });
     it('should throw BadRequestException if userId is missing', async () => {
       await request(app.getHttpServer())
         .post('/auth/verify-registration')
