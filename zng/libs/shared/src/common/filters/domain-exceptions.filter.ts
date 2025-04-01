@@ -1,36 +1,14 @@
 import { BaseExceptionFilter } from '@nestjs/core';
-import { DomainExceptionCode, DomainServiceException } from '../exceptions/domain';
-import { ArgumentsHost, Catch, HttpStatus, Logger } from '@nestjs/common';
+import { DomainServiceException } from '../exceptions/domain';
+import { ArgumentsHost, Catch, Logger } from '@nestjs/common';
 import { Response, Request } from 'express';
 
 @Catch(DomainServiceException)
 export class DomainExceptionsFilter extends BaseExceptionFilter {
   private readonly logger = new Logger(DomainExceptionsFilter.name);
 
-  // Static mapping of domain exception codes to HTTP status codes
-  private static readonly HTTP_STATUS_MAP: Record<DomainExceptionCode, HttpStatus> = {
-    [DomainExceptionCode.Undefined]: HttpStatus.BAD_REQUEST,
-    [DomainExceptionCode.EntityNotFound]: HttpStatus.NOT_FOUND,
-    [DomainExceptionCode.UnauthorizedRequest]: HttpStatus.UNAUTHORIZED,
-    [DomainExceptionCode.MissingInput]: HttpStatus.BAD_REQUEST,
-    [DomainExceptionCode.UserNotRegistered]: HttpStatus.ACCEPTED, // Returns 202 = Accepted
-    [DomainExceptionCode.LoginSessionNotInitiated]: HttpStatus.FORBIDDEN,
-    [DomainExceptionCode.LoginSessionExpired]: HttpStatus.FORBIDDEN,
-    [DomainExceptionCode.VerificationCodeMismatch]: HttpStatus.BAD_REQUEST,
-    [DomainExceptionCode.UnableToGenerateLoginPayload]: HttpStatus.INTERNAL_SERVER_ERROR,
-    [DomainExceptionCode.UnexpectedRegistrationStatus]: HttpStatus.INTERNAL_SERVER_ERROR,
-    [DomainExceptionCode.ConfigurationVariableNotFound]: HttpStatus.INTERNAL_SERVER_ERROR,
-    [DomainExceptionCode.RegistrationSessionNotInitiated]: HttpStatus.BAD_REQUEST,
-    [DomainExceptionCode.RegistrationSessionNotWaingForVerification]: HttpStatus.BAD_REQUEST,
-    [DomainExceptionCode.RegistrationSecretNotFound]: HttpStatus.NOT_FOUND,
-    [DomainExceptionCode.RegistrationSecretExpired]: HttpStatus.BAD_REQUEST,
-    [DomainExceptionCode.UnableToCreateLoginOnRegistration]: HttpStatus.INTERNAL_SERVER_ERROR,
-    [DomainExceptionCode.ContactTaken]: HttpStatus.BAD_REQUEST,
-    [DomainExceptionCode.UnableToCreateUser]: HttpStatus.INTERNAL_SERVER_ERROR,
-    [DomainExceptionCode.RegistrationNotFound]: HttpStatus.NOT_FOUND,
-    [DomainExceptionCode.RegistrationProcessingFailed]: HttpStatus.INTERNAL_SERVER_ERROR,
-  };
-
+  // Moved Mapping into the Actual Exception itself. That made way more sense and made it easier to change
+  // and keep track of.
   public catch(exception: DomainServiceException, host: ArgumentsHost) {
     const isProduction = process.env.NODE_ENV === 'production';
     const ctx = host.switchToHttp();
@@ -41,7 +19,7 @@ export class DomainExceptionsFilter extends BaseExceptionFilter {
 
     const stack = !isProduction && this.isExceptionObject(exception) ? exception.stack : undefined;
     const message = exception.message || 'Bad Request';
-    const httpStatus = this.mapToHttpStatusCode(errorCode || DomainExceptionCode.Undefined);
+    const httpStatus = exception.httpStatus;
 
     const responseBody = {
       statusCode: httpStatus,
@@ -57,9 +35,5 @@ export class DomainExceptionsFilter extends BaseExceptionFilter {
     this.logger.warn({ stack, errorCode }, `statusCode: ${httpStatus}, url: ${request.url}, message: ${responseBody.message}`);
 
     response.status(httpStatus).json(responseBody);
-  }
-
-  private mapToHttpStatusCode(errorCode: DomainExceptionCode): number {
-    return DomainExceptionsFilter.HTTP_STATUS_MAP[errorCode] || HttpStatus.BAD_REQUEST;
   }
 }

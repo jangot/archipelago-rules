@@ -27,6 +27,7 @@ import { IDatabaseConnection, PreparedQuery } from '@pgtyped/runtime';
 import { Pool } from 'pg';
 import { PgPoolAdapter } from './pg-pool-adapter';
 import camelcaseKeys from 'camelcase-keys';
+import { PGFunctionParam, executePGFunction } from '@library/extensions/typeorm/typeorm.extensions';
 
 /**
  * RepositoryBase class
@@ -227,6 +228,25 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
 
     const rawResult = await query.runWithCounts(params, databaseConnection);
     const result = camelcaseKeys(rawResult, { deep: true }) as { result: Array<TResultType>; rowCount: number };
+
+    return result;
+  }
+  //#endregion
+
+  //#region Stored Procedure Helpers
+  protected async execSqlFunction<TResultType>(functionName: string, params: PGFunctionParam[]): Promise<TResultType[]> {
+    const queryRunner = this.repository.manager.connection.createQueryRunner();
+    try {
+      const result = await executePGFunction<TResultType>(queryRunner, functionName, params);
+      return result;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  protected async execSqlFunctionSingle<TResultType>(functionName: string, params: PGFunctionParam[]): Promise<TResultType | null> {
+    const results = await this.execSqlFunction<TResultType>(functionName, params);
+    const result = results && results.length > 0 ? results[0] : null;
 
     return result;
   }

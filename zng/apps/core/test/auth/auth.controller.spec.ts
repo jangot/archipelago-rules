@@ -25,7 +25,7 @@ import { DomainExceptionCode } from '@library/shared/common/exceptions/domain';
 import { REGISTERED_USER_DUMP_1 } from './data-dump';
 import { UserDomainService } from '../../src/domain/services/user.domain.service';
 import { RegistrationStatus } from '@library/entity/enum';
-import { generateWrongCode } from '@library/shared/common/helpers';
+import { generateWrongCode } from './test.helper';
 
 // Jest can not 'understand' camelcase-keys ESM properly. Mock it to avoid errors.
 jest.mock('camelcase-keys', () => ({
