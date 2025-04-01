@@ -23,6 +23,9 @@ import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/com
 import { LoginInitiateCommandHandler } from '../../src/auth/login/commands/login.initiate.command';
 import { DomainExceptionCode } from '@library/shared/common/exceptions/domain';
 import { REGISTERED_USER_DUMP_1 } from './data-dump';
+import { UserDomainService } from '../../src/domain/services/user.domain.service';
+import { RegistrationStatus } from '@library/entity/enum';
+import { generateWrongCode } from '@library/shared/common/helpers';
 
 // Jest can not 'understand' camelcase-keys ESM properly. Mock it to avoid errors.
 jest.mock('camelcase-keys', () => ({
@@ -37,6 +40,8 @@ describe('AuthController - Negative Test Cases', () => {
 
   let authService: AuthService;
   let authServiceLoginInitiateSpy: jest.SpyInstance;
+
+  let userDomainService: UserDomainService;
 
   let commandBus: CommandBus;
   let commandBusSpy: jest.SpyInstance;
@@ -69,6 +74,7 @@ describe('AuthController - Negative Test Cases', () => {
 
 
     authService = module.get<AuthService>(AuthService);
+    userDomainService = module.get<UserDomainService>(UserDomainService);
     commandBus = module.get<CommandBus>(CommandBus);
     loginInitiateHandler = module.get<LoginInitiateCommandHandler>(LoginInitiateCommandHandler);
 
@@ -300,11 +306,78 @@ describe('AuthController - Negative Test Cases', () => {
   });
 
   describe('register', () => {
-    it('should throw BadRequestException if email and phoneNumber are missing', async () => {
+    
+    it('should throw BadRequestException if email is missing', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: '' })
+        .expect(400);
+
+      expect(response.body).toEqual(expect.objectContaining({
+        statusCode: 400,
+        message: 'Email is missing during registration initiation',
+        errorCode: DomainExceptionCode.MissingInput,
+      }));
+    });
+
+    // existing email
+    it('should return 400 if email is already registered', async () => {
+      const takenEmail = 'registration-verify-test1@email.com';
+      const response = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: takenEmail })
+        .expect(400);
+
+      expect(response.body).toEqual(expect.objectContaining({
+        statusCode: 400,
+        message: `Email already taken: ${takenEmail}`,
+        errorCode: DomainExceptionCode.ContactTaken,
+      }));
+    });
+
+    // pending email
+    it('should allow to continue registration if it was dropped on pending email', async () => {
+      const registrationEmail = 'registration-verify-test2@email.com';
+      // first attempt
       await request(app.getHttpServer())
         .post('/auth/register')
-        .send({ email: '', phoneNumber: '' })
-        .expect(400);
+        .send({ email: registrationEmail })
+        .expect(201);
+
+      // Here we assume that registration was dropped and some time passed
+
+      // These spies should be visited
+      const getUserByContactSpy = jest.spyOn(userDomainService, 'getUserByContact');
+      const getUserRegistrationSpy = jest.spyOn(userDomainService, 'getUserRegistration');
+      const codeGenSpy = jest.spyOn(userDomainService, 'generateCode');
+      const updateRegistrationSpy = jest.spyOn(userDomainService, 'updateUserRegistration');
+      // Spies below should not be visited (as it is for first registration attempt)
+      const createNewUserSpy = jest.spyOn(userDomainService, 'createNewUser');
+      const createNewUserRegistrationSpy = jest.spyOn(userDomainService, 'createNewUserRegistration');
+        
+      const secondAttempt = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: registrationEmail })
+        .expect(201);
+
+      expect(secondAttempt.body).toEqual(expect.objectContaining({
+        email: registrationEmail,
+        verificationCode: expect.any(String),
+        id: expect.any(String),
+        phoneNumber: null,
+        verificationState: RegistrationStatus.EmailVerifying,
+      }));
+
+      // Search for user - 2 calls, one for registered, second for pending
+      expect(getUserByContactSpy).toHaveBeenCalledTimes(2);
+      // Here code fall into 'reInitiateEmailVerification'
+      expect(getUserRegistrationSpy).toHaveBeenCalledTimes(1);
+      expect(codeGenSpy).toHaveBeenCalledTimes(1);
+      expect(updateRegistrationSpy).toHaveBeenCalledTimes(1);
+      // These should not be called
+      expect(createNewUserSpy).not.toHaveBeenCalled();
+      expect(createNewUserRegistrationSpy).not.toHaveBeenCalled();
+
     });
   });
 
@@ -315,34 +388,159 @@ describe('AuthController - Negative Test Cases', () => {
 
       expect(guard).toBeInstanceOf(JwtAuthGuard);
     });
-    it('should throw BadRequestException if userId is missing', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/verify-registration')
+    // Stage 1 (email) checks
+    it('should return 400 if userId is missing', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/register/verify')
         .send({ userId: '', code: '123456' })
         .expect(400);
+
+      expect(response.body).toEqual(expect.objectContaining({
+        statusCode: 400,
+        message: 'User ID is required for verification',
+      }));
     });
 
-    it('should throw BadRequestException if code is missing', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/verify-registration')
-        .send({ userId: 'valid-uuid', code: '' })
+    it('should return 400 for code missmatch if code is empty', async () => {
+      const registrationEmail = 'registration-verify-test2@email.com';
+
+      const registrationInit = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: registrationEmail })
+        .expect(201);
+
+      const { id } = registrationInit.body;
+      const verifyResponse = await request(app.getHttpServer())
+        .post('/auth/register/verify')
+        .send({ userId: id, code: '' })
         .expect(400);
+
+      expect(verifyResponse.body).toEqual(expect.objectContaining({
+        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        message: `Verification code mismatch for user ${id}`,
+        statusCode: 400,
+      }));
+
     });
 
-    it('should throw UnauthorizedException if code is incorrect', async () => {
+    it('should return 400 for code missmatch if code is incorrect', async () => {
+      const registrationEmail = 'registration-verify-test3@email.com';
+
+      const registrationInit = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: registrationEmail })
+        .expect(201);
+
+      const { id, verificationCode } = registrationInit.body;
+
+      const wrongCode = generateWrongCode(verificationCode);
+      const verifyResponse = await request(app.getHttpServer())
+        .post('/auth/register/verify')
+        .send({ userId: id, code: wrongCode })
+        .expect(400);
+
+      expect(verifyResponse.body).toEqual(expect.objectContaining({
+        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        message: `Verification code mismatch for user ${id}`,
+        statusCode: 400,
+      }));
+    });
+
+    // Stage 2 (phoneNumber) checks
+    it('should return 401 if auth header is empty on stage 2', async () => {
+      const registrationEmail = 'registration-verify-test5@email.com';
+      const registrationPhoneNumber = '+12124567995';
+
+      const registrationInit = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: registrationEmail })
+        .expect(201);
+
+      const { id, verificationCode } = registrationInit.body;
       await request(app.getHttpServer())
-        .post('/auth/verify-registration')
-        .send({ userId: 'valid-uuid', code: 'wrong-code' })
+        .post('/auth/register/verify')
+        .send({ userId: id, code: verificationCode })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .put('/auth/register')
+        .send({ userId: id, phoneNumber: registrationPhoneNumber })
         .expect(401);
     });
-  });
+    it('should return 400 for code missmatch if code is empty on stage 2', async () => {
+      const registrationEmail = 'registration-verify-test5@email.com';
+      const registrationPhoneNumber = '+12124567995';
 
-  describe('updateRegistration', () => {
-    it('should throw BadRequestException if userId is missing', async () => {
+      const registrationInit = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: registrationEmail })
+        .expect(201);
+
+      const { id, verificationCode } = registrationInit.body;
+      const verifyResponse = await request(app.getHttpServer())
+        .post('/auth/register/verify')
+        .send({ userId: id, code: verificationCode })
+        .expect(201);
+
+      const { accessToken } = verifyResponse.body;
+
       await request(app.getHttpServer())
-        .put('/auth/update-registration')
-        .send({ userId: '', email: 'test@email.com' })
+        .put('/auth/register')
+        .set({ 'authorization': `Bearer ${accessToken}` })
+        .send({ userId: id, phoneNumber: registrationPhoneNumber })
+        .expect(200);
+
+
+      const secondVerifyResponse = await request(app.getHttpServer())
+        .post('/auth/register/verify')
+        .set({ 'authorization': `Bearer ${accessToken}` })
+        .send({ userId: id, code: '' })
         .expect(400);
+
+      expect(secondVerifyResponse.body).toEqual(expect.objectContaining({
+        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        message: `Verification code mismatch for user ${id}`,
+        statusCode: 400,
+      }));
+
     });
+
+    it('should return 400 for code missmatch if code is incorrect on stage 2', async () => {
+      const registrationEmail = 'registration-verify-test6@email.com';
+      const registrationPhoneNumber = '+12124567996';
+
+      const registrationInit = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: registrationEmail })
+        .expect(201);
+
+      const { id, verificationCode } = registrationInit.body;
+      const verifyResponse = await request(app.getHttpServer())
+        .post('/auth/register/verify')
+        .send({ userId: id, code: verificationCode })
+        .expect(201);
+
+      const { accessToken } = verifyResponse.body;
+
+      const phoneNumberResult = await request(app.getHttpServer())
+        .put('/auth/register')
+        .set({ 'authorization': `Bearer ${accessToken}` })
+        .send({ userId: id, phoneNumber: registrationPhoneNumber })
+        .expect(200);
+      const { verificationCode: phoneCode } = phoneNumberResult.body;
+      const wrongCode = generateWrongCode(phoneCode);
+      const secondVerifyResponse = await request(app.getHttpServer())
+        .post('/auth/register/verify')
+        .set({ 'authorization': `Bearer ${accessToken}` })
+        .send({ userId: id, code: wrongCode })
+        .expect(400);
+
+      expect(secondVerifyResponse.body).toEqual(expect.objectContaining({
+        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        message: `Verification code mismatch for user ${id}`,
+        statusCode: 400,
+      }));
+    });
+
   });
 });
