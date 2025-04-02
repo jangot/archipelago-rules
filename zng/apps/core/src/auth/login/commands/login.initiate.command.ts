@@ -3,8 +3,7 @@ import { LoginInitiateCommand } from './login.commands';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { UserLoginResponseDTO } from 'apps/core/src/dto/response/user-login-response.dto';
 import { LoginLogic } from '../login.logic';
-import { EntityNotFoundException, MissingInputException, UserNotRegisteredException } from '@library/shared/common/exceptions/domain';
-import { VerificationStatus } from '@library/entity/enum';
+import { EntityNotFoundException, LoginTemporaryLockedException, MissingInputException, UserNotRegisteredException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(LoginInitiateCommand)
 export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginInitiateCommand> implements ICommandHandler<LoginInitiateCommand> {
@@ -25,10 +24,15 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
       throw new EntityNotFoundException('No matching user found');
     }
 
-    const { registrationStatus } = user;
+    const { registrationStatus, verificationLockedUntil } = user;
     if (!LoginLogic.isUserRegistered(contactType, registrationStatus)) {
       this.logger.warn(`LoginInitiateCommand: User: ${user.id} is not registered to Login`);
       throw new UserNotRegisteredException('User is not registered to Login');
+    }
+
+    if (LoginLogic.isLoginLocked(verificationLockedUntil)) {
+      this.logger.debug(`LoginInitiateCommand: User: ${user.id} is locked out of verification`);
+      throw new LoginTemporaryLockedException('User is temporary locked out of verification');
     }
 
     const { code, expiresAt } = this.domainServices.userServices.generateCode();
@@ -38,6 +42,7 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
     user.secretExpiresAt = expiresAt;
     user.verificationType = verificationType;
     user.verificationAttempts = 0;
+    user.verificationLockedUntil = null;
 
     await this.domainServices.userServices.updateUser(user);
 

@@ -27,4 +27,5 @@ export interface IApplicationUser extends EntityId<string>, ISoftDeleteEntity {
   secretExpiresAt: Date | null; // For storing the expiration date of the secret
   verificationStatus: VerificationStatus; // For storing the verification state of the user
   verificationAttempts: number; // For tracking the number of verification attempts
+  verificationLockedUntil: Date | null; // For storing the date until the user is locked out of verification
 }

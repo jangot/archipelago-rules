@@ -248,8 +248,8 @@ describe('AuthController - Negative Test Cases', () => {
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
         statusCode: 400,
-        errorCode: DomainExceptionCode.VerificationCodeMismatch,
-        message: 'Verification code mismatch',
+        errorCode: DomainExceptionCode.WrongVerificationType,
+        message: 'User has a different verification type',
       }));
     });
 
@@ -542,5 +542,79 @@ describe('AuthController - Negative Test Cases', () => {
       }));
     });
 
+  });
+
+  describe('login attempts', () => {
+    it('should allow to try to log in for 5 times, then block for 15 minutes', async () => {
+      const userEmail = 'registration-verify-test1@email.com';
+      const loginIntitateResponse = await request(app.getHttpServer()).post('/auth/login')
+        .send({ email: userEmail, phoneNumber: '' })
+        .expect(201);
+
+      expect(loginIntitateResponse.body).toEqual({
+        userId: '2bacf5cb-9fa9-47c9-b560-9ea3766cc201',
+        verificationCode: expect.any(String),
+      });
+
+      const { userId, verificationCode } = loginIntitateResponse.body;
+      const wrongCode = generateWrongCode(verificationCode);
+
+      // First fail attempt
+      await request(app.getHttpServer())
+        .post('/auth/verify')
+        .send({ userId, code: wrongCode, email: userEmail })
+        .expect(400);
+      
+      const fail1User = await userDomainService.getUserById(userId);
+      expect(fail1User?.verificationAttempts).toBe(1);
+
+      // Second fail attempt
+      await request(app.getHttpServer())
+        .post('/auth/verify')
+        .send({ userId, code: wrongCode, email: userEmail })
+        .expect(400);
+      
+      const fail2User = await userDomainService.getUserById(userId);
+      expect(fail2User?.verificationAttempts).toBe(2);
+
+      // Third fail attempt
+      await request(app.getHttpServer())
+        .post('/auth/verify')
+        .send({ userId, code: wrongCode, email: userEmail })
+        .expect(400);
+      
+      const fail3User = await userDomainService.getUserById(userId);
+      expect(fail3User?.verificationAttempts).toBe(3);
+
+      // Fourth fail attempt
+      await request(app.getHttpServer())
+        .post('/auth/verify')
+        .send({ userId, code: wrongCode, email: userEmail })
+        .expect(400);
+      
+      const fail4User = await userDomainService.getUserById(userId);
+      expect(fail4User?.verificationAttempts).toBe(4);
+
+      // Fifth fail attempt
+      const executionDateTime = new Date(Date.now());
+      await request(app.getHttpServer())
+        .post('/auth/verify')
+        .send({ userId, code: wrongCode, email: userEmail })
+        .expect(400);
+      
+      const fail5User = await userDomainService.getUserById(userId);
+      expect(fail5User?.verificationAttempts).toBe(5);
+      expect(fail5User?.verificationLockedUntil?.getTime()).toBeCloseTo(new Date(executionDateTime.getTime() + 15 * 60 * 1000).getTime(), -100);
+
+      const lockedLoginIntitateResponse = await request(app.getHttpServer()).post('/auth/login')
+        .send({ email: userEmail, phoneNumber: '' })
+        .expect(403);
+
+      expect(lockedLoginIntitateResponse.body).toEqual(expect.objectContaining({
+        errorCode: DomainExceptionCode.LoginTemporaryLocked,
+        message: 'User is temporary locked out of verification',
+        statusCode: 403,
+      }));
+    });
   });
 });

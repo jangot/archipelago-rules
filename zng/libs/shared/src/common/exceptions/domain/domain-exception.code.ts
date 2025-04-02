@@ -20,4 +20,5 @@ export enum DomainExceptionCode {
   RegistrationNotFound = 'registration_not_found',
   RegistrationProcessingFailed = 'registration_processing_failed',
   WrongVerificationType = 'wrong_verification_type',
+  LoginTemporaryLocked = 'login_temporary_locked',
 }

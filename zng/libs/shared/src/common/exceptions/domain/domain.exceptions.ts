@@ -312,4 +312,19 @@ export class RegistrationProcessingFailedException extends DomainServiceExceptio
     this.name = 'RegistrationProcessingFailedException';
   }
 }
+
+/**
+ * HTTP Forbidden(403) Exception thrown when a User is temporarily locked out of the system due to too many failed login attempts.
+ * 
+ * @extends DomainServiceException
+ * @see {@link https://docs.nestjs.com/exception-filters#built-in-http-exceptions}
+ * @see {@link DomainServiceException}
+ * 
+ */
+export class LoginTemporaryLockedException extends DomainServiceException {
+  constructor(message: string) {
+    super(message, DomainExceptionCode.LoginTemporaryLocked, HttpStatus.FORBIDDEN);
+    this.name = 'LoginTemporaryLockedException';
+  }
+}
 // #endregion

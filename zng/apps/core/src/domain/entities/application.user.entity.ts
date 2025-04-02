@@ -61,4 +61,7 @@ export class ApplicationUser implements IApplicationUser {
 
   @Column('int', { default: 0 })
   verificationAttempts: number; // For tracking the number of verification attempts
+
+  @Column('timestamp with time zone', { nullable: true })
+  verificationLockedUntil: Date | null; // For storing the date until the user is locked out of verification
 }
