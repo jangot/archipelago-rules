@@ -1,5 +1,6 @@
 import { RegistrationStatus } from '@library/entity/enum/registration.status';
 import { VerificationStatus } from '@library/entity/enum/verification.status';
+import { VerificationType } from '@library/entity/enum/verification.type';
 import { IApplicationUser } from '@library/entity/interface';
 import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, CreateDateColumn } from 'typeorm';
 
@@ -46,6 +47,9 @@ export class ApplicationUser implements IApplicationUser {
   onboardStatus: string | null;
 
   // New fields related to login verification
+  @Column('text', { nullable: true })
+  verificationType: VerificationType | null;
+
   @Column('text', { nullable: true })
   secret: string | null;
 
