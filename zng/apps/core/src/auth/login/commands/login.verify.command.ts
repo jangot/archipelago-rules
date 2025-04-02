@@ -5,7 +5,9 @@ import { UserLoginPayloadDto } from 'apps/core/src/dto/response/user-login-paylo
 import { ContactType } from '@library/entity/enum';
 import { generateCRC32String } from '@library/shared/common/helpers/crc32.helpers';
 import { LoginLogic } from '../login.logic';
-import { EntityNotFoundException, LoginSessionExpiredException, LoginSessionNotInitiatedException, MissingInputException, UnableToGenerateLoginPayloadException, UserNotRegisteredException, VerificationCodeMismatchException } from '@library/shared/common/exceptions/domain';
+import { EntityNotFoundException, LoginSessionExpiredException, LoginSessionNotInitiatedException, MissingInputException, 
+  UnableToGenerateLoginPayloadException, UserNotRegisteredException, VerificationCodeMismatchException, 
+  WrongVerificationTypeException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(LoginVerifyCommand)
 export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVerifyCommand> implements ICommandHandler<LoginVerifyCommand> {
@@ -29,15 +31,20 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
       throw new EntityNotFoundException('No user found');
     }
 
-    const { registrationStatus } = user;
+    const { registrationStatus, secret, secretExpiresAt, verificationType } = user;
+    const expectedVerificationType = LoginLogic.getVerificationTypeByContactType(contactType || ContactType.UNDEFINED);
+
+    if (verificationType !== expectedVerificationType) {
+      this.logger.warn(`LoginVerifyCommand: User ${user.id} has a different verification type`);
+      throw new WrongVerificationTypeException('User has a different verification type');
+    }
+
     if (!LoginLogic.isUserRegistered(contactType || ContactType.UNDEFINED, registrationStatus)) {
       this.logger.warn(`LoginVerifyCommand: User ${user.id} is not registered to Log In`);
       throw new UserNotRegisteredException('User is not registered to log in');
     }
 
     const loginType = this.getLoginTypeByContactType(contactType || ContactType.UNDEFINED);
-
-    const { secret, secretExpiresAt } = user;
 
     if (!secret) {
       this.logger.warn(`LoginVerifyCommand: No secret found for user ${user.id}`);
@@ -61,6 +68,8 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
 
     user.secret = null;
     user.secretExpiresAt = null;
+    user.verificationType = null;
+    user.verificationAttempts = 0;
 
     const { accessToken, refreshToken, refreshTokenExpiresIn } = result;
     if (!accessToken || !refreshToken || !refreshTokenExpiresIn) {

@@ -34,11 +34,13 @@ export class AuthService {
     );
   }
 
-  public async logout(userId: string, accessToken: string): Promise<void> {
+  public async logout(userId: string, accessToken: string): Promise<UserLoginPayloadDto> {
     this.logger.debug(`logout: Logging out user: ${userId}`);
     // Invalidate the JWT token by removing it from the database or marking it as invalid
-    await this.commandBus.execute(new LogoutCommand({ userId, accessToken }));
+    const result = await this.commandBus.execute(new LogoutCommand({ userId, accessToken }));
     this.logger.debug(`User ${userId} logged out successfully`);
+
+    return result;
   }
 
   public async refreshTokens(userId: string, refreshToken: string): Promise<UserLoginPayloadDto> {
