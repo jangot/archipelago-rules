@@ -32,6 +32,12 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
     }
 
     const { registrationStatus, secret, secretExpiresAt, verificationType } = user;
+
+    if (!secret || !verificationType) {
+      this.logger.warn(`LoginVerifyCommand: No intiated login found for user ${user.id}`);
+      throw new LoginSessionNotInitiatedException('Login session is not initiated');
+    }
+
     const expectedVerificationType = LoginLogic.getVerificationTypeByContactType(contactType || ContactType.UNDEFINED);
 
     if (verificationType !== expectedVerificationType) {
@@ -46,20 +52,13 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
 
     const loginType = this.getLoginTypeByContactType(contactType || ContactType.UNDEFINED);
 
-    if (!secret) {
-      this.logger.warn(`LoginVerifyCommand: No secret found for user ${user.id}`);
-      throw new LoginSessionNotInitiatedException('Login session is not initiated');
-    }
-
     if (secretExpiresAt && secretExpiresAt < new Date()) {
       this.logger.warn(`LoginVerifyCommand: Secret expired for user ${user.id}`);
       throw new LoginSessionExpiredException('Login session is expired');
     }
 
     if (secret !== verificationCode) {
-      // TODO: Add attempts support here
-      // TODO: Add attempts count and expiry here or level higher
-
+      await this.domainServices.userServices.applyFailedLoginAttempt(user);
       this.logger.warn(`LoginVerifyCommand: Verification code mismatch for user ${user.id}`);
       throw new VerificationCodeMismatchException('Verification code mismatch');
     }

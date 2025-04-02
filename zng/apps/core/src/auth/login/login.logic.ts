@@ -19,4 +19,8 @@ export class LoginLogic {
         return null;
     }
   }
+
+  public static isLoginLocked(verificationLockedUntil: Date | null): boolean {
+    return verificationLockedUntil !== null && verificationLockedUntil > new Date(Date.now());
+  }
 }

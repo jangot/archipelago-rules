@@ -120,6 +120,16 @@ export class UserDomainService extends BaseDomainServices {
   public async getUserLogins(userId: string): Promise<ILogin[] | null> {
     return this.data.logins.getAllUserLogins(userId);
   }
+
+  public async applyFailedLoginAttempt(user: IApplicationUser): Promise<boolean | null> {
+    user.verificationAttempts = user.verificationAttempts + 1;
+    const maxAttempts = this.config.getOrThrow<number>('MAX_LOGIN_ATTEMPTS');
+    const lockoutDuration = this.config.getOrThrow<number>('LOGIN_LOCKOUT_DURATION');
+    if (user.verificationAttempts >= maxAttempts) {
+      user.verificationLockedUntil = addSeconds(new Date(Date.now()), lockoutDuration);
+    }
+    return this.data.users.update(user.id, user);
+  }
   //#endregion
 
   //#region Miscellaneous stuff for now
