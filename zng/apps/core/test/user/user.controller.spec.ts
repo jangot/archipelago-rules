@@ -1,23 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersController } from '../../src/users/users.controller';
-import { UsersService } from '../../src/users/users.service';
+import { UsersManagementController } from '../../src/users-management/users-management.controller';
+import { UsersManagementService } from '../../src/users-management/users-management.service';
 import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from 'apps/core/src/dto';
 import { ContactType } from '@library/entity/enum';
 
 describe('UserController', () => {
-  let controller: UsersController;
-  let service: UsersService;
+  let controller: UsersManagementController;
+  let service: UsersManagementService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [UsersController],
+      controllers: [UsersManagementController],
       providers: [
-        { provide: UsersService, useValue: { getUserById: jest.fn(), getUserByContact: jest.fn(), createUser: jest.fn(), updateUser: jest.fn() } },
+        { provide: UsersManagementService, useValue: { getUserById: jest.fn(), getUserByContact: jest.fn(), createUser: jest.fn(), updateUser: jest.fn() } },
       ],
     }).compile();
 
-    controller = module.get<UsersController>(UsersController);
-    service = module.get<UsersService>(UsersService);
+    controller = module.get<UsersManagementController>(UsersManagementController);
+    service = module.get<UsersManagementService>(UsersManagementService);
   });
 
   it('should be defined', () => {

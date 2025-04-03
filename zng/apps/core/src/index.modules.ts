@@ -8,8 +8,16 @@
 
 import { DynamicModule, ForwardReference, Type } from '@nestjs/common';
 import { DataModule } from './data';
-import { UsersModule } from './users/users.module';
+import { UsersManagementModule } from './users-management/users-management.module';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 // Add Core specific modules to be Imported into the Core Module here
-export const CoreModules: Array<Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference> = [DataModule, UsersModule, AuthModule];
+export const CoreModules: Array<
+  Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference
+> = [
+  DataModule,
+  UsersManagementModule,
+  AuthModule,
+  UsersModule,
+];

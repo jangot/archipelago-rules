@@ -4,15 +4,15 @@ import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { memoryDataSourceForTests } from '../postgress-memory-datasource';
 import { UserCreateRequestDto, UserUpdateRequestDto } from '../../src/dto';
-import { UsersModule } from '../../src/users/users.module';
-import { UsersService } from '../../src/users/users.service';
+import { UsersManagementModule } from '../../src/users-management/users-management.module';
+import { UsersManagementService } from '../../src/users-management/users-management.service';
 import { IBackup } from 'pg-mem';
 import { ValueOperator } from '@library/shared/common/search';
 import { ContactType } from '@library/entity/enum';
 
 describe('UsersService Integration Tests', () => {
   let module: TestingModule;
-  let service: UsersService;
+  let service: UsersManagementService;
   let databaseBackup: IBackup;
 
   beforeAll(async () => {
@@ -20,12 +20,12 @@ describe('UsersService Integration Tests', () => {
     const { dataSource, database } = memoryDBinstance;
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
 
-    module = await Test.createTestingModule({ imports: [UsersModule] })
+    module = await Test.createTestingModule({ imports: [UsersManagementModule] })
       .overrideProvider(DataSource)
       .useValue(addTransactionalDataSource(dataSource))
       .compile();
 
-    service = module.get<UsersService>(UsersService);
+    service = module.get<UsersManagementService>(UsersManagementService);
     databaseBackup = database.backup();
   });
 
