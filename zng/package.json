@@ -71,9 +71,9 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.23.0",
+    "@eslint/js": "^9.24.0",
     "@nestjs/cli": "^11.0.6",
-    "@nestjs/schematics": "^11.0.3",
+    "@nestjs/schematics": "^11.0.4",
     "@nestjs/testing": "^11.0.13",
     "@pgtyped/cli": "^2.4.3",
     "@stylistic/eslint-plugin": "^4.2.0",
@@ -87,7 +87,7 @@
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
-    "eslint": "^9.23.0",
+    "eslint": "^9.24.0",
     "eslint-plugin-promise": "^7.2.1",
     "glob": "^11.0.1",
     "globals": "^16.0.0",
@@ -101,6 +101,6 @@
     "ts-node": "^10.9.2",
     "ts-prune": "^0.10.3",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   }
 }
