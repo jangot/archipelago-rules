@@ -9,3 +9,4 @@ export * from './registration.request.dto';
 export * from './login.request.dto';
 export * from './login.verify.request.dto';
 //
+export * from './user-detail-update-request.dto';

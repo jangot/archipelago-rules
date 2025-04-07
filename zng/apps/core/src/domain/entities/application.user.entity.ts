@@ -49,6 +49,22 @@ export class ApplicationUser implements IApplicationUser {
   @Column('text', { nullable: true })
   onboardStatus: string | null;
 
+  // Address fields
+  @Column('text', { nullable: true })
+  addressLine1: string | null;
+
+  @Column('text', { nullable: true })
+  addressLine2: string | null;
+
+  @Column('text', { nullable: true })
+  city: string | null;
+
+  @Column('text', { nullable: true })
+  state: string | null;
+
+  @Column('text', { nullable: true })
+  zipCode: string | null;
+
   // New fields related to login verification
   @Column('text', { nullable: true })
   verificationType: VerificationType | null;
