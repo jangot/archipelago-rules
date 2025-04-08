@@ -327,19 +327,4 @@ export class LoginTemporaryLockedException extends DomainServiceException {
     this.name = 'LoginTemporaryLockedException';
   }
 }
-
-/**
- * HTTP InternalServer(500) Exception thrown when an entity failed to be updated.
- *
- * @extends DomainServiceException
- * @see {@link https://docs.nestjs.com/exception-filters#built-in-http-exceptions}
- * @see {@link DomainServiceException}
- * 
- */
-export class EntityFailedToBeUpdatedException extends DomainServiceException {
-  constructor(message: string) {
-    super(message, DomainExceptionCode.EntityFailedToBeUpdated, HttpStatus.INTERNAL_SERVER_ERROR);
-    this.name = 'EntityFailedToBeUpdatedException';
-  }
-}
 // #endregion
