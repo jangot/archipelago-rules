@@ -5,7 +5,8 @@ import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
-import { ContactTakenException, EntityNotFoundException, MissingInputException, RegistrationNotFoundException } from '@library/shared/common/exceptions/domain';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
+import { ContactTakenException, RegistrationNotFoundException } from '../../../domain/exceptions';
 
 @CommandHandler(InitiateEmailVerificationCommand)
 export class InitiateEmailVerificationCommandHandler

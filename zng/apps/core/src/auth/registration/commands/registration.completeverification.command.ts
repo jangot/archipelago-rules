@@ -14,7 +14,8 @@ import { VerificationCompleteCommand } from './registration.commands';
 import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
-import { EntityNotFoundException, MissingInputException, UnexpectedRegistrationStatusException } from '@library/shared/common/exceptions/domain';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
+import { UnexpectedRegistrationStatusException } from '../../../domain/exceptions';
 
 @CommandHandler(VerificationCompleteCommand)
 export class VerificationCompleteCommandHandler

@@ -1,21 +1,21 @@
 import { BaseExceptionFilter } from '@nestjs/core';
-import { DomainServiceException } from '../exceptions/domain';
+import { BaseDomainException } from '../exceptions/domain';
 import { ArgumentsHost, Catch, Logger } from '@nestjs/common';
 import { Response, Request } from 'express';
 
-@Catch(DomainServiceException)
+@Catch(BaseDomainException)
 export class DomainExceptionsFilter extends BaseExceptionFilter {
   private readonly logger = new Logger(DomainExceptionsFilter.name);
 
   // Moved Mapping into the Actual Exception itself. That made way more sense and made it easier to change
   // and keep track of.
-  public catch(exception: DomainServiceException, host: ArgumentsHost) {
+  public catch(exception: BaseDomainException, host: ArgumentsHost) {
     const isProduction = process.env.NODE_ENV === 'production';
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const { errorCode } = exception;
+    const errorCode = exception.code;
 
     const stack = !isProduction && this.isExceptionObject(exception) ? exception.stack : undefined;
     const message = exception.message || 'Bad Request';

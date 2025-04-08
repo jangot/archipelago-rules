@@ -21,7 +21,7 @@ import { RegistrationCommandHandlers } from '../../src/auth/registration/command
 import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filters';
 import { LoginInitiateCommandHandler } from '../../src/auth/login/commands/login.initiate.command';
-import { DomainExceptionCode } from '@library/shared/common/exceptions/domain';
+import { DomainServiceExceptionCode } from '@library/shared/common/exceptions/domain';
 import { REGISTERED_USER_DUMP_1 } from './data-dump';
 import { UserDomainService } from '../../src/domain/services/user.domain.service';
 import { RegistrationStatus } from '@library/entity/enum';
@@ -131,7 +131,7 @@ describe('AuthController - Negative Test Cases', () => {
 
       expect(response.body).toEqual(expect.objectContaining({
         statusCode: 404,
-        errorCode: DomainExceptionCode.EntityNotFound,
+        errorCode: DomainServiceExceptionCode.EntityNotFound,
         message: 'No matching user found',
       }));
 
@@ -157,7 +157,7 @@ describe('AuthController - Negative Test Cases', () => {
 
       expect(response.body).toEqual(expect.objectContaining({
         statusCode: 404,
-        errorCode: DomainExceptionCode.EntityNotFound,
+        errorCode: DomainServiceExceptionCode.EntityNotFound,
         message: 'No matching user found',
       }));
 
@@ -197,7 +197,7 @@ describe('AuthController - Negative Test Cases', () => {
 
       expect(response.body).toEqual(expect.objectContaining({
         statusCode: 403,
-        errorCode: DomainExceptionCode.LoginSessionNotInitiated,
+        errorCode: DomainServiceExceptionCode.LoginSessionNotInitiated,
         message: 'Login session is not initiated',
       }));
     });
@@ -220,7 +220,7 @@ describe('AuthController - Negative Test Cases', () => {
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
         statusCode: 400,
-        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        errorCode: DomainServiceExceptionCode.VerificationCodeMismatch,
         message: 'Verification code mismatch',
       }));
     });
@@ -248,7 +248,7 @@ describe('AuthController - Negative Test Cases', () => {
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
         statusCode: 400,
-        errorCode: DomainExceptionCode.WrongVerificationType,
+        errorCode: DomainServiceExceptionCode.WrongVerificationType,
         message: 'User has a different verification type',
       }));
     });
@@ -316,7 +316,7 @@ describe('AuthController - Negative Test Cases', () => {
       expect(response.body).toEqual(expect.objectContaining({
         statusCode: 400,
         message: 'Email is missing during registration initiation',
-        errorCode: DomainExceptionCode.MissingInput,
+        errorCode: DomainServiceExceptionCode.MissingInput,
       }));
     });
 
@@ -331,7 +331,7 @@ describe('AuthController - Negative Test Cases', () => {
       expect(response.body).toEqual(expect.objectContaining({
         statusCode: 400,
         message: `Email already taken: ${takenEmail}`,
-        errorCode: DomainExceptionCode.ContactTaken,
+        errorCode: DomainServiceExceptionCode.ContactTaken,
       }));
     });
 
@@ -416,7 +416,7 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(400);
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
-        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        errorCode: DomainServiceExceptionCode.VerificationCodeMismatch,
         message: `Verification code mismatch for user ${id}`,
         statusCode: 400,
       }));
@@ -440,7 +440,7 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(400);
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
-        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        errorCode: DomainServiceExceptionCode.VerificationCodeMismatch,
         message: `Verification code mismatch for user ${id}`,
         statusCode: 400,
       }));
@@ -498,7 +498,7 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(400);
 
       expect(secondVerifyResponse.body).toEqual(expect.objectContaining({
-        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        errorCode: DomainServiceExceptionCode.VerificationCodeMismatch,
         message: `Verification code mismatch for user ${id}`,
         statusCode: 400,
       }));
@@ -536,7 +536,7 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(400);
 
       expect(secondVerifyResponse.body).toEqual(expect.objectContaining({
-        errorCode: DomainExceptionCode.VerificationCodeMismatch,
+        errorCode: DomainServiceExceptionCode.VerificationCodeMismatch,
         message: `Verification code mismatch for user ${id}`,
         statusCode: 400,
       }));
@@ -611,7 +611,7 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(403);
 
       expect(lockedLoginIntitateResponse.body).toEqual(expect.objectContaining({
-        errorCode: DomainExceptionCode.LoginTemporaryLocked,
+        errorCode: DomainServiceExceptionCode.LoginTemporaryLocked,
         message: 'User is temporary locked out of verification',
         statusCode: 403,
       }));

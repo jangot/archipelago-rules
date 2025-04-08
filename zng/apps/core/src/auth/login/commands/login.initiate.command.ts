@@ -3,7 +3,8 @@ import { LoginInitiateCommand } from './login.commands';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { UserLoginResponseDTO } from 'apps/core/src/dto/response/user-login-response.dto';
 import { LoginLogic } from '../login.logic';
-import { EntityNotFoundException, LoginTemporaryLockedException, MissingInputException, UserNotRegisteredException } from '@library/shared/common/exceptions/domain';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
+import { LoginTemporaryLockedException, UserNotRegisteredException } from '../../../domain/exceptions/core-domain.exceptions';
 
 @CommandHandler(LoginInitiateCommand)
 export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginInitiateCommand> implements ICommandHandler<LoginInitiateCommand> {

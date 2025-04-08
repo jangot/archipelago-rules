@@ -1,5 +1,6 @@
 import { LoginType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
-import { UnexpectedRegistrationStatusException } from '@library/shared/common/exceptions/domain';
+import { UnexpectedRegistrationStatusException } from '../../domain/exceptions';
+
 
 export class RegistrationLogic {
   private static PendingRegistrationStates: RegistrationStatus[] = [RegistrationStatus.EmailVerifying, RegistrationStatus.PhoneNumberVerifying];
