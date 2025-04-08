@@ -33,6 +33,54 @@ export class UsersController {
 
   constructor(private readonly userService: UsersService) {}
 
+  
+  //#region Self methods
+  // Endpoints order in NestJS controller matters! 
+  // If you put the @Get('/self') after the @Get(':id') it will never be called as the :id will always match
+  @Get('/self') 
+  @ApiBearerAuth('jwt') 
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ description: 'Get User Details', summary: 'Get User Details' }) 
+  @ApiOkResponse({ description: 'User Details', type: UserDetailResponseDto, isArray: false }) 
+  @ApiBadRequestResponse({ description: 'User not registered', isArray: false }) 
+  @ApiNotFoundResponse({ description: 'User not found', isArray: false }) 
+  public async getSelf(@Req() request: IRequest): Promise<UserDetailResponseDto> { 
+    if (!request.user || !request.user.id) { 
+      throw new UserNotRegisteredException('User not registered'); 
+    } 
+    const userId = request.user.id; 
+    const user = await this.userService.getUserDetailById(userId); 
+    if (!user) {
+      throw new EntityNotFoundException('User not found');
+    }
+    return user;
+  } 
+
+  @Patch('/self')
+  @ApiBearerAuth('jwt') 
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ description: 'Update User Details', summary: 'Update User Details' }) 
+  @ApiOkResponse({ description: 'User Details Updated', type: UserDetailsUpdateResponseDto, isArray: false }) 
+  @ApiBadRequestResponse({ description: 'User not registered', isArray: false }) 
+  @ApiBadRequestResponse({ description: 'Updates can not be empty', isArray: false }) 
+  @ApiNotFoundResponse({ description: 'User not found', isArray: false }) 
+  @ApiInternalServerErrorResponse({ description: 'Could not apply updates', isArray: false }) 
+  public async updateDetails(@Req() request: IRequest, @Body() body: UserDetailsUpdateRequestDto): Promise<UserDetailsUpdateResponseDto> { 
+    if (!request.user || !request.user.id) { 
+      throw new UserNotRegisteredException('User not registered'); 
+    } 
+    if (!body) { 
+      throw new MissingInputException('Updates can not be empty'); 
+    } 
+    const userId = request.user.id; 
+    const updatedUser = await this.userService.updateUserDetails(userId, body); 
+    if (!updatedUser) { 
+      throw new EntityNotFoundException('User not found'); 
+    }
+    return updatedUser;
+  } 
+  //#endregion
+
   @Get(':id')
   @ApiParam({ name: 'id', required: true, description: 'User id' })
   @ApiOkResponse({ description: 'Get User by Id', type: UserResponseDto, isArray: false })
@@ -168,48 +216,4 @@ export class UsersController {
     return result;
   }
 
-  //#region Self methods
-  @Get('/self') 
-  @ApiBearerAuth('jwt') 
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ description: 'Get User Details', summary: 'Get User Details' }) 
-  @ApiOkResponse({ description: 'User Details', type: UserDetailResponseDto, isArray: false }) 
-  @ApiBadRequestResponse({ description: 'User not registered', isArray: false }) 
-  @ApiNotFoundResponse({ description: 'User not found', isArray: false }) 
-  public async getSelf(@Req() request: IRequest): Promise<UserDetailResponseDto> { 
-    if (!request.user || !request.user.id) { 
-      throw new UserNotRegisteredException('User not registered'); 
-    } 
-    const userId = request.user.id; 
-    const user = await this.userService.getUserDetailById(userId); 
-    if (!user) {
-      throw new EntityNotFoundException('User not found');
-    }
-    return user;
-  } 
-
-  @Patch('/self')
-  @ApiBearerAuth('jwt') 
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ description: 'Update User Details', summary: 'Update User Details' }) 
-  @ApiOkResponse({ description: 'User Details Updated', type: UserDetailsUpdateResponseDto, isArray: false }) 
-  @ApiBadRequestResponse({ description: 'User not registered', isArray: false }) 
-  @ApiBadRequestResponse({ description: 'Updates can not be empty', isArray: false }) 
-  @ApiNotFoundResponse({ description: 'User not found', isArray: false }) 
-  @ApiInternalServerErrorResponse({ description: 'Could not apply updates', isArray: false }) 
-  public async updateDetails(@Req() request: IRequest, @Body() body: UserDetailsUpdateRequestDto): Promise<UserDetailsUpdateResponseDto> { 
-    if (!request.user || !request.user.id) { 
-      throw new UserNotRegisteredException('User not registered'); 
-    } 
-    if (!body) { 
-      throw new MissingInputException('Updates can not be empty'); 
-    } 
-    const userId = request.user.id; 
-    const updatedUser = await this.userService.updateUserDetails(userId, body); 
-    if (!updatedUser) { 
-      throw new EntityNotFoundException('User not found'); 
-    }
-    return updatedUser;
-  } 
-  //#endregion
 }

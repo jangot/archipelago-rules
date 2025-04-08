@@ -2,6 +2,7 @@ import { RegistrationStatus } from '@library/entity/enum/registration.status';
 import { VerificationStatus } from '@library/entity/enum/verification.status';
 import { VerificationType } from '@library/entity/enum/verification.type';
 import { IApplicationUser } from '@library/entity/interface';
+import { DateTransformer } from '@library/extensions/typeorm/typeorm.date.transformer';
 import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, CreateDateColumn } from 'typeorm';
 
 // Thoughts to consider
@@ -22,7 +23,7 @@ export class ApplicationUser implements IApplicationUser {
   @Column('text', { nullable: true })
   lastName: string | null;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'date', nullable: true, transformer: DateTransformer })
   dateOfBirth: string | null;
 
   @Column('text', { nullable: true, unique: false })

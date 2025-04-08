@@ -1,6 +1,7 @@
+import { IsValidDateString } from '@library/shared/common/validators/date-string.validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsDateString, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UserDetailsUpdateRequestDto {
   @ApiProperty({ description: 'User First Name', type: String, required: false, maxLength: 100 })
@@ -17,11 +18,11 @@ export class UserDetailsUpdateRequestDto {
   @MaxLength(100)
   lastName: string | null;
 
-  @ApiProperty({ description: 'User Date of Birth in ISO 8601 format YYYY-MM-DD', type: String, required: false, maxLength: 10 })
+  @ApiProperty({ description: 'User Date of Birth in the format MM/dd/yyyy', type: String, required: false, maxLength: 10 })
   @Expose()
   @IsString()
   @IsOptional()
-  @IsDateString({ strict: true }, { message: 'Date of Birth must be in YYYY-MM-DD format' })
+  @IsValidDateString()
   @MaxLength(10)
   dateOfBirth: string | null;
     
