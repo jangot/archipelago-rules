@@ -1,31 +1,32 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IDataService } from '../data/idata.service';
-import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
+import { UserCreateRequestDto, UserDetailResponseDto, UserDetailsUpdateRequestDto, UserDetailsUpdateResponseDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { SearchQueryDto } from '@library/shared/common/search';
 import { createPaginationWrapper, PagingDto } from '@library/shared/common/paging';
 import { ContactType } from '@library/entity/enum';
-import { UserDetailResponseDTO } from '../dto/response/user-detail-response.dto';
 import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
 import { ApplicationUser } from '../domain/entities';
+import { IDomainServices } from '@core/domain/idomain.services';
+import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exceptions/domain';
 
 @Injectable()
 export class UsersService {
   // Creating a Logger like this sets the Context, which will log the class name with the Log entries
   private readonly logger: Logger = new Logger(UsersService.name);
 
-  constructor(private readonly dataService: IDataService) {}
+  constructor(private readonly dataService: IDataService, private readonly domainServices: IDomainServices) {}
 
-  @MapToDto(UserDetailResponseDTO)
-  public async getUserDetailById(userId: string): Promise<UserDetailResponseDTO | null> {
+  @MapToDto(UserDetailResponseDto)
+  public async getUserDetailById(userId: string): Promise<UserDetailResponseDto | null> {
     const result = await this.dataService.users.getUserDetailById(userId);
 
     // Custom decorator will do this work automatically.
     //const dtoResult = DtoMapper.toDto(result, UserDetailResponseDTO);
 
     // Tell the Typescript compiler to trust us here, the @MapToDto() decorator is doing the DtoMapper.toDto() work automatically
-    return result as unknown as UserDetailResponseDTO | null;
+    return result as unknown as UserDetailResponseDto | null;
   }
 
   // I don't want the Service classes to throw Exceptions if a User isn't found.
@@ -86,6 +87,34 @@ export class UsersService {
     const result = await this.dataService.users.update(user.id, user);
     return result;
   }
+
+  /**
+   * Updates User details by merging the existing user data with the provided updates.
+   * This method is similar to {@link updateUser}, but it allows updating only details information 
+   * without modifying critical fields like email or phone number.
+   * @param userId Existing User ID to update
+   * @param updates Updates to apply to the User
+   * @returns Updated User details
+   */
+  @MapToDto(UserDetailsUpdateResponseDto) 
+  public async updateUserDetails(userId: string, updates: UserDetailsUpdateRequestDto): Promise<UserDetailsUpdateResponseDto> { 
+    const user = await this.domainServices.userServices.getUserById(userId); 
+    if (!user) { 
+      this.logger.error(`updateDetails: User not found for ID: ${userId}`); 
+      throw new EntityNotFoundException('User not found'); 
+    } 
+    const updatePayload = { ...user, ...updates }; 
+ 
+    const updateResult = await this.domainServices.userServices.updateUser(updatePayload); 
+ 
+    if (!updateResult) { 
+      this.logger.error(`updateDetails: Could not apply updates for ID: ${userId}`, updatePayload); 
+      throw new EntityFailedToUpdateException('Could not update the User'); 
+    } 
+ 
+    const updatedUser = await this.domainServices.userServices.getUserById(userId); 
+    return updatedUser as unknown as UserDetailsUpdateResponseDto; 
+  } 
 
   public async deleteUser(id: string): Promise<boolean> {
     this.logger.debug(`deleteUser: Soft-Deleting User: ${id}`);

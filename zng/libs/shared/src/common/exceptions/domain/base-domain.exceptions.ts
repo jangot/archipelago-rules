@@ -47,3 +47,15 @@ export class ConfigurationVariableNotFoundException extends BaseDomainException<
     super(BaseDomainExceptionCodes.ConfigurationVariableNotFound, 'base', HttpStatus.INTERNAL_SERVER_ERROR, message);
   }
 } 
+
+/**
+ * HTTP InternalServer(500) Exception thrown when an entity fails to update.
+ *
+ * @extends BaseDomainException
+ * @see {@link https://docs.nestjs.com/exception-filters#built-in-http-exceptions}
+ */
+export class EntityFailedToUpdateException extends BaseDomainException<BaseDomainExceptionCode> {
+  constructor(message?: string) {
+    super(BaseDomainExceptionCodes.EntityFailedToUpdate, 'base', HttpStatus.INTERNAL_SERVER_ERROR, message);
+  }
+}

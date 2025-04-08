@@ -1,24 +1,30 @@
-import { Controller, Delete, HttpException, HttpStatus, Logger, Patch, Query } from '@nestjs/common';
+import { Controller, Delete, HttpException, HttpStatus, Logger, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { Get, Post, Put, Param, Body } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiBody,
   ApiExtraModels,
   ApiInternalServerErrorResponse,
   ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { ValidateOptionalQueryParamsPipe } from '@library/shared/common/pipes/optional.params.pipe';
-import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../dto';
 import { SearchFilterDto, SearchQueryDto } from '@library/shared/common/search';
 import { PagingDto, PagingOptionsDto } from '@library/shared/common/paging';
 import { ContactType } from '@library/entity/enum';
 import { UUIDParam } from '@library/shared/common/pipes/uuidparam';
-import { UserDetailResponseDTO } from '../dto/response/user-detail-response.dto';
+import { IRequest } from '@library/shared/types';
+import { UserNotRegisteredException } from '@core/domain/exceptions';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
+import { JwtAuthGuard } from '@core/auth/guards';
+import { UserCreateRequestDto, UserDetailResponseDto, UserDetailsUpdateRequestDto, UserDetailsUpdateResponseDto, UserResponseDto, UserUpdateRequestDto } from '@core/dto';
 
 @Controller('users')
 @ApiTags('users')
@@ -46,11 +52,11 @@ export class UsersController {
   // Using this to test out pgtyped stuff
   @Get('/test/:id')
   @ApiParam({ name: 'id', required: true, description: 'User id' })
-  @ApiOkResponse({ description: 'Get User by Id', type: UserDetailResponseDTO, isArray: false })
+  @ApiOkResponse({ description: 'Get User by Id', type: UserDetailResponseDto, isArray: false })
   @ApiNoContentResponse({ description: 'User not found', isArray: false })
   @ApiBadRequestResponse({ description: 'Invalid Id', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  public async getUserDetailById(@UUIDParam('id') id: string): Promise<UserDetailResponseDTO> {
+  public async getUserDetailById(@UUIDParam('id') id: string): Promise<UserDetailResponseDto> {
     const result = await this.userService.getUserDetailById(id);
 
     if (!result) {
@@ -157,4 +163,49 @@ export class UsersController {
 
     return result;
   }
+
+  //#region Self methods
+  @Get('/self') 
+  @ApiBearerAuth('jwt') 
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ description: 'Get User Details', summary: 'Get User Details' }) 
+  @ApiOkResponse({ description: 'User Details', type: UserDetailResponseDto, isArray: false }) 
+  @ApiBadRequestResponse({ description: 'User not registered', isArray: false }) 
+  @ApiNotFoundResponse({ description: 'User not found', isArray: false }) 
+  public async getSelf(@Req() request: IRequest): Promise<UserDetailResponseDto> { 
+    if (!request.user || !request.user.id) { 
+      throw new UserNotRegisteredException('User not registered'); 
+    } 
+    const userId = request.user.id; 
+    const user = await this.userService.getUserDetailById(userId); 
+    if (!user) {
+      throw new EntityNotFoundException('User not found');
+    }
+    return user;
+  } 
+
+  @Patch('/self')
+  @ApiBearerAuth('jwt') 
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ description: 'Update User Details', summary: 'Update User Details' }) 
+  @ApiOkResponse({ description: 'User Details Updated', type: UserDetailsUpdateResponseDto, isArray: false }) 
+  @ApiBadRequestResponse({ description: 'User not registered', isArray: false }) 
+  @ApiBadRequestResponse({ description: 'Updates can not be empty', isArray: false }) 
+  @ApiNotFoundResponse({ description: 'User not found', isArray: false }) 
+  @ApiInternalServerErrorResponse({ description: 'Could not apply updates', isArray: false }) 
+  public async updateDetails(@Req() request: IRequest, @Body() body: UserDetailsUpdateRequestDto): Promise<UserDetailsUpdateResponseDto> { 
+    if (!request.user || !request.user.id) { 
+      throw new UserNotRegisteredException('User not registered'); 
+    } 
+    if (!body) { 
+      throw new MissingInputException('Updates can not be empty'); 
+    } 
+    const userId = request.user.id; 
+    const updatedUser = await this.userService.updateUserDetails(userId, body); 
+    if (!updatedUser) { 
+      throw new EntityNotFoundException('User not found'); 
+    }
+    return updatedUser;
+  } 
+  //#endregion
 }
