@@ -22,7 +22,7 @@ import { ContactType } from '@library/entity/enum';
 import { UUIDParam } from '@library/shared/common/pipes/uuidparam';
 import { IRequest } from '@library/shared/types';
 import { UserNotRegisteredException } from '@core/domain/exceptions';
-import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
+import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
 import { JwtAuthGuard } from '@core/auth/guards';
 import { UserCreateRequestDto, UserDetailResponseDto, UserDetailsUpdateRequestDto, UserDetailsUpdateResponseDto, UserResponseDto, UserUpdateRequestDto } from '@core/dto';
 
@@ -114,7 +114,11 @@ export class UsersController {
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
   @Patch()
   public async updateUser(@Body() user: UserUpdateRequestDto): Promise<boolean> {
-    return await this.userService.updateUser(user);
+    const updateResult =  await this.userService.updateUser(user);
+    if (!updateResult) {
+      throw new EntityFailedToUpdateException('Failed to update User');
+    }
+    return updateResult;
   }
 
   @ApiParam({ name: 'id', required: true, description: 'User id' })
