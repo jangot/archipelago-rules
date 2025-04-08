@@ -24,13 +24,6 @@ export class UserResponseDto {
   @MaxLength(100)
   lastName: string;
 
-  @ApiProperty({ description: 'User Date of Birth', type: String, required: true, maxLength: 10 })
-  @Expose()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(10)
-  dateOfBirth: string;
-
   @ApiProperty({ description: 'User email', type: String, required: true, maxLength: 320 })
   @Expose()
   @IsEmail()

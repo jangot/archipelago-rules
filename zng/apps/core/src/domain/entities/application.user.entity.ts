@@ -22,9 +22,6 @@ export class ApplicationUser implements IApplicationUser {
   @Column('text', { nullable: true })
   lastName: string | null;
 
-  @Column({ type: 'date', nullable: true })
-  dateOfBirth: string | null;
-
   @Column('text', { nullable: true, unique: false })
   pendingEmail: string | null;
 

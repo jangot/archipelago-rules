@@ -8,7 +8,6 @@ export interface IApplicationUser extends EntityId<string>, ISoftDeleteEntity {
 
   firstName: string | null;
   lastName: string | null;
-  dateOfBirth: string | null;
 
   pendingEmail: string | null;
   email: string | null;

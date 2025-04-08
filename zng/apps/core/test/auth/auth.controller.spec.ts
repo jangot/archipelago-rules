@@ -11,7 +11,7 @@ import { memoryDataSourceForTests } from '../postgress-memory-datasource';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { LoginCommandHandlers } from '../../src/auth/login/commands';
-import { UsersManagementModule } from '../../src/users-management';
+import { UsersModule } from '../../src/users';
 import { DataModule } from '../../src/data';
 import { DomainModule } from '../../src/domain/domain.module';
 import { JwtModule } from '@nestjs/jwt';
@@ -55,7 +55,7 @@ describe('AuthController - Negative Test Cases', () => {
     
     // Build the complete copy of AuthModule
     const module: TestingModule = await Test.createTestingModule({
-      imports: [CqrsModule, UsersManagementModule, ConfigModule.forRoot(), DataModule, DomainModule, JwtModule],
+      imports: [CqrsModule, UsersModule, ConfigModule.forRoot(), DataModule, DomainModule, JwtModule],
       controllers: [AuthController],
       providers: [
         Logger,

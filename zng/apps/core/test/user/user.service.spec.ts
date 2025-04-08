@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersManagementService } from '../../src/users-management/users-management.service';
+import { UsersService } from '../../src/users/users.service';
 import { IDataService } from '../../src/data/idata.service';
 import { HttpException } from '@nestjs/common';
 import { ApplicationUser } from '../../src/data/entity';
@@ -8,7 +8,7 @@ import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from '../
 import { ContactType } from '@library/entity/enum';
 
 describe('UserService', () => {
-  let service: UsersManagementService;
+  let service: UsersService;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let dataService: IDataService;
 
@@ -16,10 +16,10 @@ describe('UserService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersManagementService, { provide: IDataService, useValue: mockDataService }],
+      providers: [UsersService, { provide: IDataService, useValue: mockDataService }],
     }).compile();
 
-    service = module.get<UsersManagementService>(UsersManagementService);
+    service = module.get<UsersService>(UsersService);
     dataService = module.get<IDataService>(IDataService);
   });
 
