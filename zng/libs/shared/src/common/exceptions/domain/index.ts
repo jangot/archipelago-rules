@@ -1,2 +1,2 @@
-export * from './domain.exceptions';
-export * from './domain-exception.code';
+export * from './base-domain-exception.code';
+export * from './base-domain.exceptions';

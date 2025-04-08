@@ -14,7 +14,7 @@ import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { LoginOnContactVerifiedCommand } from './login/commands';
 import { ApiStatusResponseDto } from '@library/shared/common/dtos/response/api.status.dto';
-import { RegistrationProcessingFailedException } from '@library/shared/common/exceptions/domain';
+import { RegistrationProcessingFailedException } from '../domain/exceptions';
 
 const COMPLETE_VERIFICATION_ON_STATUS = RegistrationStatus.PhoneNumberVerified;
 @Injectable()

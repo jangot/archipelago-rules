@@ -15,7 +15,8 @@ import { VerificationEvent } from '../../verification';
 import { IApplicationUser } from '@library/entity/interface';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser, safeTrim } from '@library/shared/common/helpers';
-import { ContactTakenException, EntityNotFoundException, MissingInputException, UnableToCreateUserException } from '@library/shared/common/exceptions/domain';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
+import { ContactTakenException, UnableToCreateUserException } from '../../../domain/exceptions';
 
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler

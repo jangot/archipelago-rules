@@ -6,8 +6,9 @@ import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
 import { RegistrationLogic } from '../registration.logic';
-import { EntityNotFoundException, MissingInputException, RegistrationSecretExpiredException, RegistrationSecretNotFoundException, RegistrationSessionNotInitiatedException, RegistrationSessionNotWaingForVerificationException, UnableToCreateLoginOnRegistrationException, VerificationCodeMismatchException } from '@library/shared/common/exceptions/domain';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
 import { ILogin } from '@library/entity/interface';
+import { RegistrationSecretExpiredException, RegistrationSecretNotFoundException, RegistrationSessionNotInitiatedException, RegistrationSessionNotWaitingForVerificationException, UnableToCreateLoginOnRegistrationException, VerificationCodeMismatchException } from '../../../domain/exceptions';
 @CommandHandler(VerifyContactCommand)
 export class VerifyContactCommandHandler
   extends RegistrationBaseCommandHandler<VerifyContactCommand>
@@ -33,7 +34,7 @@ export class VerifyContactCommandHandler
     const { status: existedRegistrationStatus } = registration;
     if (!RegistrationLogic.isPendingRegistrationState(registration.status)) {
       this.logger.debug(`User ${userId} is not awaiting for code verification`);
-      throw new RegistrationSessionNotWaingForVerificationException(`User ${userId} is not waiting for code verification`);
+      throw new RegistrationSessionNotWaitingForVerificationException(`User ${userId} is not waiting for code verification`);
     }
     // #endregion
 

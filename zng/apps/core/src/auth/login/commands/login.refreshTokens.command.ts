@@ -1,8 +1,11 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserLoginPayloadDto } from 'apps/core/src/dto/response/user-login-payload.dto';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { RefreshTokenCommand } from './login.commands';
-import { EntityNotFoundException, MissingInputException, UnableToGenerateLoginPayloadException } from '@library/shared/common/exceptions/domain';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
+import { UserLoginPayloadDto } from '../../../dto';
+import { UnableToGenerateLoginPayloadException } from '../../../domain/exceptions';
+
+
 
 @CommandHandler(RefreshTokenCommand)
 export class RefreshTokenCommandHandler extends LoginBaseCommandHandler<RefreshTokenCommand> implements ICommandHandler<RefreshTokenCommand> {
