@@ -20,6 +20,8 @@ import { IRefreshTokenPayload } from '../interfaces/irefresh-token-payload';
 import { ConfigService } from '@nestjs/config';
 import { addSeconds, getUnixTime } from 'date-fns';
 import { generateCRC32String } from '@library/shared/common/helpers/crc32.helpers';
+import { IPaging, PagingOptionsDto } from '@library/shared/common/paging';
+import { SearchFilterDto } from '@library/shared/common/search';
 
 @Injectable()
 export class UserDomainService extends BaseDomainServices {
@@ -85,7 +87,7 @@ export class UserDomainService extends BaseDomainServices {
 
   //#region User Related Creation Methods
   public async createNewUser(user: DeepPartial<IApplicationUser>): Promise<IApplicationUser | null> {
-    return this.data.users.create(user);
+    return this.data.users.insert(user, true);
   }
 
   public async createNewUserRegistration(registration: DeepPartial<IUserRegistration>): Promise<IUserRegistration | null> {
@@ -129,6 +131,18 @@ export class UserDomainService extends BaseDomainServices {
       user.verificationLockedUntil = addSeconds(new Date(Date.now()), lockoutDuration);
     }
     return this.data.users.update(user.id, user);
+  }
+
+  public async softDeleteUser(userId: string): Promise<boolean> {
+    return this.data.users.softDelete({ id: userId });
+  }
+
+  public async restoreUser(userId: string): Promise<boolean> {
+    return this.data.users.restore({ id: userId });
+  }
+
+  public async searchUsers(filters?: SearchFilterDto[], paging?: PagingOptionsDto): Promise<IPaging<IApplicationUser>> {
+    return this.data.users.search(filters, paging);
   }
   //#endregion
 

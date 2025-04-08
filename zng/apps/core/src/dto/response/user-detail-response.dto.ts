@@ -1,9 +1,9 @@
-import { ApiProperty, ApiSchema } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema, OmitType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsDate, IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, IsUUID, MaxLength } from 'class-validator';
 
 @ApiSchema({ name: 'userDetailResponse' })
-export class UserDetailResponseDTO {
+export class UserDetailResponseDto {
   @ApiProperty({ description: 'Date Delete at', type: Date, required: false })
   @IsDate()
   deletedAt: Date | null;
@@ -42,4 +42,38 @@ export class UserDetailResponseDTO {
   @IsPhoneNumber()
   @IsOptional()
   phoneNumber: string;
+
+  @ApiProperty({ description: 'User Date of Birth', type: String, required: true, maxLength: 10 })
+  @Expose()
+  @IsString()
+  @MaxLength(10)
+  dateOfBirth: string;
+
+  @ApiProperty({ description: 'User address line 1', type: String, required: true })
+  @Expose()
+  @IsString()
+  addressLine1: string;
+
+  @ApiProperty({ description: 'User address line 2', type: String, required: false })
+  @Expose()
+  @IsOptional()
+  @IsString()
+  addressLine2: string | null;
+
+  @ApiProperty({ description: 'User city', type: String, required: true })
+  @Expose()
+  @IsString()
+  city: string;
+
+  @ApiProperty({ description: 'User state', type: String, required: true })
+  @Expose()
+  @IsString()
+  state: string;
+
+  @ApiProperty({ description: 'User zip code', type: String, required: true })
+  @Expose()
+  @IsString()
+  zipCode: string;
 }
+
+export class UserDetailsUpdateResponseDto extends OmitType(UserDetailResponseDto, ['deletedAt'] as const) {}

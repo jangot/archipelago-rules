@@ -8,6 +8,7 @@ export interface IApplicationUser extends EntityId<string>, ISoftDeleteEntity {
 
   firstName: string | null;
   lastName: string | null;
+  dateOfBirth: string | null;
 
   pendingEmail: string | null;
   email: string | null;
@@ -20,6 +21,13 @@ export interface IApplicationUser extends EntityId<string>, ISoftDeleteEntity {
 
   registrationStatus: RegistrationStatus;
   onboardStatus: string | null;
+
+  // Address fields
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  zipCode: string | null;
 
   // New fields related to login verification (not used during registration)
   verificationType: VerificationType | null; // For storing the type of login being attempted (e.g., email, phone)

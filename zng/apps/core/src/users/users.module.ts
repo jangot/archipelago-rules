@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { DataModule } from '../data';
-import { UserDomainService } from '../domain/services/user.domain.service';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
+import { DomainModule } from '@core/domain/domain.module';
 
 @Module({
-  imports: [DataModule, JwtModule, ConfigModule],
+  imports: [JwtModule, ConfigModule, DomainModule],
   controllers: [UsersController],
-  providers: [UsersService, UserDomainService],
-  exports: [UsersService, UserDomainService],
+  providers: [UsersService],
 })
 export class UsersModule {}

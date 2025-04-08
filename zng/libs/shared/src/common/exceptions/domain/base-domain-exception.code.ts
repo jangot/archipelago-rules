@@ -6,6 +6,7 @@ export const BaseDomainExceptionCodes = {
   UnauthorizedRequest: 'unauthorized_request',
   MissingInput: 'missing_input',
   ConfigurationVariableNotFound: 'configuration_variable_not_found',
+  EntityFailedToUpdate: 'entity_failed_to_update',
 } as const;
 
 // Type for the base exception codes
