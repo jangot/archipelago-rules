@@ -1,13 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IDataService } from './data/idata.service';
 import { v4 } from 'uuid';
 import { Transactional } from 'typeorm-transactional';
 import { random } from 'lodash';
-
+import { CoreDataService } from './data/data.service';
 @Injectable()
 export class CoreService {
   private readonly logger: Logger = new Logger(CoreService.name);
-  constructor(private readonly dataService: IDataService) {}
+  constructor(private readonly dataService: CoreDataService) {}
 
   // For TypeORM Transactional testing purposes
   // On first call it will create a lender, borrower and a loan. Plus logs on transaction commit and complete

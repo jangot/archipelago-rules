@@ -1,6 +1,6 @@
 import { Transactional } from 'typeorm-transactional';
-import { IDataService } from '../../data/idata.service';
 import { Injectable } from '@nestjs/common';
+import { IDataService } from '../data/idata.service';
 
 @Injectable()
 export class BaseDomainServices {
