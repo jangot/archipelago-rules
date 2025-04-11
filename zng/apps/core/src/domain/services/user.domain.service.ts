@@ -11,10 +11,9 @@ import { IApplicationUser, ILogin, IUserRegistration } from '@library/entity/int
 import { Transactional } from 'typeorm-transactional';
 import { DeepPartial } from 'typeorm';
 import { ContactType } from '@library/entity/enum';
-import { BaseDomainServices } from './domain.service.base';
+
 import { generateSecureCode } from '@library/shared/common/helpers';
 import { JwtService } from '@nestjs/jwt';
-import { IDataService } from '../../data/idata.service';
 import { IJwtPayload } from '../interfaces/ijwt-payload';
 import { IRefreshTokenPayload } from '../interfaces/irefresh-token-payload';
 import { ConfigService } from '@nestjs/config';
@@ -22,13 +21,14 @@ import { addSeconds, getUnixTime } from 'date-fns';
 import { generateCRC32String } from '@library/shared/common/helpers/crc32.helpers';
 import { IPaging, PagingOptionsDto } from '@library/shared/common/paging';
 import { SearchFilterDto } from '@library/shared/common/search';
-
+import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
+import { CoreDataService } from '../../data/data.service';
 @Injectable()
 export class UserDomainService extends BaseDomainServices {
   protected readonly logger = new Logger(UserDomainService.name);
 
   constructor(
-    protected readonly data: IDataService,
+    protected readonly data: CoreDataService,
     protected readonly jwtService: JwtService,
     protected readonly config: ConfigService
   ) {

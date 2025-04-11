@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
-import { DataService } from './data.service';
-import { IDataService } from './idata.service';
+import { CoreDataService } from './data.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { addTransactionalDataSource } from 'typeorm-transactional';
@@ -26,7 +25,7 @@ import { CustomCoreRepositories } from '../infrastructure/orm';
       },
     }),
   ],
-  providers: [{ provide: IDataService, useClass: DataService }, ...registerCustomRepositoryProviders(CoreEntities), ...CustomCoreRepositories],
-  exports: [IDataService],
+  providers: [CoreDataService, ...registerCustomRepositoryProviders(CoreEntities), ...CustomCoreRepositories],
+  exports: [CoreDataService],
 })
 export class DataModule {}
