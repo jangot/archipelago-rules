@@ -22,6 +22,25 @@
       "sourceMaps": true,
       "stopOnEntry": false,
       "console": "integratedTerminal"
+    },
+      {      
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Notification API",
+      "cwd": "${workspaceFolder}/zng",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "nest",
+        "start",
+        "--debug",
+        "--watch",
+        "notification"
+      ],
+      "autoAttachChildProcesses": true,
+      "restart": true,
+      "sourceMaps": true,
+      "stopOnEntry": false,
+      "console": "integratedTerminal"
     }
   ]
 }

@@ -7,8 +7,8 @@ import { registerCustomRepositoryProviders } from '@library/shared/common/data/r
 import { DbConfiguration } from '@library/shared/common/data/dbcommon.config';
 import { NotificationDataService } from './data.service';
 import { NotificationDefinition } from '../domain/entities/notification.definition.entity';
-import { NotificationDefinitionRepository } from '../infrastructure/repositories/notification.definition.repository';
-import { INotificationDefinitionRepository } from '../shared/interfaces/repositories/inotification.definition.repository';
+import { NotificationEntities } from '../domain/entities';
+import { CustomNotificationRepositories } from '../infrastructure/repositories';
 
 /**
  * Data module for the Notification service
@@ -23,7 +23,7 @@ import { INotificationDefinitionRepository } from '../shared/interfaces/reposito
         DbConfiguration({ 
           configService, 
           entities: [NotificationDefinition], 
-          schema: 'notification', 
+          schema: 'notifications', 
         }),
       // TypeORM Transactional DataSource initialization
       async dataSourceFactory(options) {
@@ -37,11 +37,7 @@ import { INotificationDefinitionRepository } from '../shared/interfaces/reposito
   ],
   providers: [
     NotificationDataService, 
-    ...registerCustomRepositoryProviders([NotificationDefinition]),
-    {
-      provide: INotificationDefinitionRepository,
-      useClass: NotificationDefinitionRepository,
-    },
+    ...registerCustomRepositoryProviders(NotificationEntities), ...CustomNotificationRepositories,
   ],
   exports: [NotificationDataService],
 })

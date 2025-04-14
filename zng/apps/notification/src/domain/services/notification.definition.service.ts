@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { NotificationDefinition } from '../entities/notification.definition.entity';
-import { INotificationDefinitionRepository } from '../interfaces/inotification.definition.repository';
-import { CreateNotificationDefinitionRequestDto } from '../../dto/request/create-notification-definition.request.dto';
-import { UpdateNotificationDefinitionRequestDto } from '../../dto/request/update-notification-definition.request.dto';
-import { NotificationDefinitionResponseDto } from '../../dto/response/notification-definition.response.dto';
+import { Injectable, Logger } from '@nestjs/common';
+import { INotificationDefinition } from '@library/entity/interface';
+import { NotificationDataService } from '../../data';
+import { ConfigService } from '@nestjs/config';
+import { DeepPartial } from 'typeorm';
+import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
 
 /**
  * Service for managing notification definitions
@@ -11,24 +11,14 @@ import { NotificationDefinitionResponseDto } from '../../dto/response/notificati
  * @description Handles business logic for notification definitions
  */
 @Injectable()
-export class NotificationDefinitionService {
-  constructor(
-    private readonly notificationDefinitionRepository: INotificationDefinitionRepository,
-  ) {}
+export class NotificationDomainService extends BaseDomainServices {
+  private readonly logger = new Logger(NotificationDomainService.name);
 
-  /**
-   * Maps a NotificationDefinition entity to a NotificationDefinitionResponseDto DTO
-   * 
-   * @param definition - The NotificationDefinition entity to map
-   * @returns A NotificationDefinitionResponseDto DTO
-   */
-  private mapToResponse(definition: NotificationDefinition): NotificationDefinitionResponseDto {
-    const response = new NotificationDefinitionResponseDto();
-    response.id = definition.id;
-    response.name = definition.name;
-    response.createdAt = definition.createdAt;
-    response.updatedAt = definition.updatedAt;
-    return response;
+  constructor(
+    protected readonly data: NotificationDataService,
+    protected readonly config: ConfigService
+  ) {
+    super(data);
   }
 
   /**
@@ -36,9 +26,8 @@ export class NotificationDefinitionService {
    * 
    * @returns Array of NotificationDefinitionResponseDto DTOs
    */
-  async getAllDefinitions(): Promise<NotificationDefinitionResponseDto[]> {
-    const definitions = await this.notificationDefinitionRepository.findAll();
-    return definitions.map(definition => this.mapToResponse(definition));
+  async getAllDefinitions(): Promise<INotificationDefinition[]> {
+    return await this.data.notificationDefinitions.getAll();
   }
 
   /**
@@ -48,48 +37,30 @@ export class NotificationDefinitionService {
    * @returns A NotificationDefinitionResponseDto DTO
    * @throws NotFoundException if no definition is found with the provided ID
    */
-  async getDefinitionById(id: string): Promise<NotificationDefinitionResponseDto> {
-    const definition = await this.notificationDefinitionRepository.findById(id);
-    
-    if (!definition) {
-      throw new NotFoundException(`Notification definition with ID ${id} not found`);
-    }
-    
-    return this.mapToResponse(definition);
+  async getDefinitionById(id: string): Promise<INotificationDefinition | null> {
+    return await this.data.notificationDefinitions.getById(id);
   }
 
   /**
    * Create a new notification definition
    * 
-   * @param createDto - The DTO containing the data for the new definition
+   * @param notificationDefinition - The DTO containing the data for the new definition
    * @returns A NotificationDefinitionResponseDto DTO for the created definition
    */
-  async createDefinition(createDto: CreateNotificationDefinitionRequestDto): Promise<NotificationDefinitionResponseDto> {
-    const newDefinition = await this.notificationDefinitionRepository.create({
-      name: createDto.name,
-    });
-    
-    return this.mapToResponse(newDefinition);
+  async createDefinition(notificationDefinition: DeepPartial<INotificationDefinition>): Promise<INotificationDefinition | null> {
+    return await this.data.notificationDefinitions.insert(notificationDefinition, true);
   }
 
   /**
    * Update an existing notification definition
    * 
    * @param id - The ID of the notification definition to update
-   * @param updateDto - The DTO containing the update data
+   * @param notificationDefinition - The DTO containing the update data
    * @returns A NotificationDefinitionResponseDto DTO for the updated definition
    * @throws NotFoundException if no definition is found with the provided ID
    */
-  async updateDefinition(id: string, updateDto: UpdateNotificationDefinitionRequestDto): Promise<NotificationDefinitionResponseDto> {
-    try {
-      const updatedDefinition = await this.notificationDefinitionRepository.update(id, updateDto);
-      return this.mapToResponse(updatedDefinition);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new Error(`Failed to update notification definition: ${error.message}`);
-    }
+  async updateDefinition(id: string, notificationDefinition: DeepPartial<INotificationDefinition>): Promise<boolean | null> {
+    return this.data.notificationDefinitions.update(id, notificationDefinition);
   }
 
   /**
@@ -100,12 +71,6 @@ export class NotificationDefinitionService {
    * @throws NotFoundException if no definition is found with the provided ID
    */
   async deleteDefinition(id: string): Promise<boolean> {
-    const definition = await this.notificationDefinitionRepository.findById(id);
-    
-    if (!definition) {
-      throw new NotFoundException(`Notification definition with ID ${id} not found`);
-    }
-    
-    return await this.notificationDefinitionRepository.delete(id);
+    return this.data.notificationDefinitions.delete(id);
   }
 }

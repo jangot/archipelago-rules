@@ -6,7 +6,7 @@ import { INotificationDefinition } from '@library/entity/interface';
  * 
  * @description This entity stores notification definitions used by the notification system
  */
-@Entity('notification_definitions', { schema: 'notification' })
+@Entity('notification_definitions', { schema: 'notifications' })
 export class NotificationDefinition implements INotificationDefinition {
   /**
    * Unique identifier for the notification definition

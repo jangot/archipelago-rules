@@ -1,11 +1,11 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { Logger, Module } from '@nestjs/common';
 import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
-import { NotificationDefinitionService } from './domain/services/notification.definition.service';
-import { NotificationDefinition } from './domain/entities/notification.definition.entity';
-import { NotificationDefinitionRepository } from './infrastructure/repositories/notification.definition.repository';
-import { INotificationDefinitionRepository } from './shared/interfaces/repositories/inotification.definition.repository';
+import { ConfigModule } from '@nestjs/config';
+import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
+import { SharedModule } from '@library/shared';
+import { HealthModule } from '@library/shared/common/health/health.module';
+import { NotificationModules } from './index.modules';
 
 /**
  * Main notification module that provides endpoints for notification management
@@ -13,17 +13,17 @@ import { INotificationDefinitionRepository } from './shared/interfaces/repositor
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NotificationDefinition]),
+    ConfigModule.forRoot({ isGlobal: true }),
+    GracefulShutdownModule.forRoot(),
+    SharedModule.forRoot([NotificationController]),
+    HealthModule,
+    ...NotificationModules,
   ],
   controllers: [NotificationController],
   providers: [
     NotificationService,
-    NotificationDefinitionService,
-    {
-      provide: INotificationDefinitionRepository,
-      useClass: NotificationDefinitionRepository,
-    },
+    Logger,
   ],
-  exports: [NotificationDefinitionService],
+  exports: [NotificationService],
 })
 export class NotificationModule {}
