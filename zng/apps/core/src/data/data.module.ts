@@ -7,7 +7,7 @@ import { DataSource } from 'typeorm';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
 import { DbConfiguration } from '@library/shared/common/data/dbcommon.config';
 import { CoreEntities } from '../domain/entities';
-import { CustomCoreRepositories } from '../infrastructure/orm';
+import { CustomCoreRepositories } from '../infrastructure/repositories';
 
 @Module({
   imports: [
