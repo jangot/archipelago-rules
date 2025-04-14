@@ -1,7 +1,9 @@
-import { ZngNamingStrategy } from '@library/extensions/typeorm';
+import { DataType, IMemoryDb, ISchema, newDb } from 'pg-mem';
 import { DataSource } from 'typeorm';
-import { IMemoryDb, ISchema, newDb } from 'pg-mem';
 import { v4 } from 'uuid';
+
+import { ZngNamingStrategy } from '@library/extensions/typeorm';
+
 import { CoreEntities } from '../src/domain/entities';
 
 // Initiate newDb - in-memory PG database and create connection for TypeORM
@@ -50,5 +52,5 @@ function registerMemoryDatabaseFunctions(schema: ISchema) {
 
   schema.registerFunction({ implementation: () => '1', name: 'version' });
 
-  schema.registerFunction({ implementation: () => v4(), name: 'uuid_generate_v4' });
+  schema.registerFunction({ implementation: v4, name: 'uuid_generate_v4', returns: DataType.uuid, impure: true });
 }
