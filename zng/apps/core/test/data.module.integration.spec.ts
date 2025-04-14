@@ -2,16 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource, DeepPartial } from 'typeorm';
 import { DataModule } from '../src/data';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
-import { IDataService } from '../src/data/idata.service';
 import { memoryDataSource } from './postgress-memory-datasource';
-import { ILoanRepository, IUserRepository } from '../src/data/repository/interfaces';
 import { v4 } from 'uuid';
 import { withTransactionHandler } from '@library/shared/common/data/withtransaction.handler';
-import { ApplicationUser, Loan } from '../src/data/entity';
+import { ILoanRepository, IUserRepository } from '../src/shared/interfaces/repositories';
+import { CoreDataService } from '../src/data/data.service';
+import { ApplicationUser, Loan } from '../src/domain/entities';
 
 describe('DataModule Integration Tests', () => {
   let module: TestingModule;
-  let dataService: IDataService;
+  let dataService: CoreDataService;
   let loanRepository: ILoanRepository;
   let userRepository: IUserRepository;
 
@@ -24,7 +24,7 @@ describe('DataModule Integration Tests', () => {
       .useValue(addTransactionalDataSource(memoryDB))
       .compile();
 
-    dataService = module.get<IDataService>(IDataService);
+    dataService = module.get<CoreDataService>(CoreDataService);
     loanRepository = module.get<ILoanRepository>(ILoanRepository);
     userRepository = module.get<IUserRepository>(IUserRepository);
   });
