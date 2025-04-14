@@ -5,7 +5,6 @@ import { NotificationDefinitionResponseDto } from './dto/response/notification-d
 import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { CreateNotificationDefinitionRequestDto } from './dto/request/create-notification-definition.request.dto';
-import { Entity } from 'typeorm';
 import { NotificationDefinition } from './domain/entities';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { UpdateNotificationDefinitionRequestDto } from './dto/request/update-notification-definition.request.dto';
