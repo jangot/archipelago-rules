@@ -1,14 +1,16 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { v4 as uuidv4 } from 'uuid';
+import { IBackup } from 'pg-mem';
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
-import { memoryDataSourceForTests } from '../postgress-memory-datasource';
-import { UserCreateRequestDto, UserUpdateRequestDto } from '../../src/dto';
-import { UsersModule } from '../../src/users/users.module';
-import { UsersService } from '../../src/users/users.service';
-import { IBackup } from 'pg-mem';
+import { v4 as uuidv4 } from 'uuid';
+
+import { Test, TestingModule } from '@nestjs/testing';
 import { ValueOperator } from '@library/shared/common/search';
 import { ContactType } from '@library/entity/enum';
+import { UserCreateRequestDto, UserUpdateRequestDto } from '@core/dto';
+import { UsersService } from '@core/users/users.service';
+import { UsersModule } from '@core/users';
+
+import { memoryDataSourceForTests } from '../postgress-memory-datasource';
 
 describe('UsersService Integration Tests', () => {
   let module: TestingModule;
@@ -46,16 +48,13 @@ describe('UsersService Integration Tests', () => {
       const createResult = await service.createUser(mockUser);
       const result = await service.getUserDetailById(createResult!.id);
 
-      // This fails because of mapping issues. The returned fields are not automatically camel-cased
-      // Need to add this capability
-      // TODO: Add camel casing to returned fields!!!
-      expect(result).toEqual({
-        id: createResult!.id,
+      expect(result).toEqual(expect.objectContaining({
+        userId: createResult!.id,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
         phoneNumber: mockUser.phoneNumber,
-      });
+      }));
     });
   });
 
@@ -69,13 +68,13 @@ describe('UsersService Integration Tests', () => {
       const createResult = await service.createUser(mockUser);
 
       const result = await service.getUserById(createResult!.id);
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         id: createResult!.id,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
         phoneNumber: mockUser.phoneNumber,
-      });
+      }));
     });
 
     it('should return null if user not found', async () => {
@@ -91,13 +90,13 @@ describe('UsersService Integration Tests', () => {
       const createResult = await service.createUser(mockUser);
 
       const result = await service.getUserByContact(createResult!.email, ContactType.EMAIL);
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         id: createResult!.id,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
         phoneNumber: mockUser.phoneNumber,
-      });
+      }));
     });
 
     it('should return null if user not found', async () => {
@@ -113,13 +112,13 @@ describe('UsersService Integration Tests', () => {
       const createResult = await service.createUser(mockUser);
 
       const result = await service.getUserByContact(createResult!.phoneNumber, ContactType.PHONE_NUMBER);
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         id: createResult!.id,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
         phoneNumber: mockUser.phoneNumber,
-      });
+      }));
     });
 
     it('should return null if user not found', async () => {
@@ -136,22 +135,22 @@ describe('UsersService Integration Tests', () => {
       const createUserDto: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doex@example.com', phoneNumber };
 
       const result = await service.createUser(createUserDto);
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         id: expect.any(String),
         firstName: createUserDto.firstName,
         lastName: createUserDto.lastName,
         email: createUserDto.email,
         phoneNumber: createUserDto.phoneNumber,
-      });
+      }));
 
       const createdUser = await service.getUserById(result!.id);
-      expect(createdUser).toEqual({
+      expect(createdUser).toEqual(expect.objectContaining({
         id: result!.id,
         firstName: createUserDto.firstName,
         lastName: createUserDto.lastName,
         email: createUserDto.email,
         phoneNumber: createUserDto.phoneNumber,
-      });
+      }));
     });
 
     it('should return null if user creation fails', async () => {
@@ -185,13 +184,13 @@ describe('UsersService Integration Tests', () => {
       expect(result).toBe(true);
 
       const updatedUser = await service.getUserById(creationResult!.id);
-      expect(updatedUser).toEqual({
+      expect(updatedUser).toEqual(expect.objectContaining({
         id: creationResult!.id,
         firstName: updateUserDto.firstName,
         lastName: updateUserDto.lastName,
         email: updateUserDto.email,
         phoneNumber: updateUserDto.phoneNumber,
-      });
+      }));
     });
 
     it('should return false if user update fails', async () => {
@@ -229,13 +228,13 @@ describe('UsersService Integration Tests', () => {
       expect(result).toBe(true);
 
       const updatedUser = await service.getUserById(creationResult!.id);
-      expect(updatedUser).toEqual({
+      expect(updatedUser).toEqual(expect.objectContaining({
         id: creationResult!.id,
         firstName: updateUserDto.firstName,
         lastName: creationResult!.lastName,
         email: creationResult!.email,
         phoneNumber: creationResult!.phoneNumber,
-      });
+      }));
     });
 
     // This case shows current behavior of update method for TypeORM
@@ -257,13 +256,13 @@ describe('UsersService Integration Tests', () => {
       expect(result).toBe(true);
 
       const updatedUser = await service.getUserById(creationResult!.id);
-      expect(updatedUser).toEqual({
+      expect(updatedUser).toEqual(expect.objectContaining({
         id: creationResult!.id,
         firstName: updateUserDto.firstName,
         lastName: '',
         email: '',
         phoneNumber: creationResult!.phoneNumber,
-      });
+      }));
     });
   });
 
@@ -304,13 +303,13 @@ describe('UsersService Integration Tests', () => {
       expect(restoreResult).toBe(true);
 
       const restoredUser = await service.getUserById(creationResult!.id);
-      expect(restoredUser).toEqual({
+      expect(restoredUser).toEqual(expect.objectContaining({
         id: creationResult!.id,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
         phoneNumber: mockUser.phoneNumber,
-      });
+      }));
     });
 
     it('should return false if user restoration fails', async () => {

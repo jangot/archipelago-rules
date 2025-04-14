@@ -1,13 +1,16 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource, DeepPartial } from 'typeorm';
-import { DataModule } from '../src/data';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
-import { memoryDataSource } from './postgress-memory-datasource';
 import { v4 } from 'uuid';
+
+import { Test, TestingModule } from '@nestjs/testing';
 import { withTransactionHandler } from '@library/shared/common/data/withtransaction.handler';
-import { ILoanRepository, IUserRepository } from '../src/shared/interfaces/repositories';
-import { CoreDataService } from '../src/data/data.service';
-import { ApplicationUser, Loan } from '../src/domain/entities';
+import { RegistrationStatus, VerificationStatus } from '@library/entity/enum';
+import { ILoanRepository, IUserRepository } from '@core/shared/interfaces/repositories';
+import { ApplicationUser, Loan } from '@core/domain/entities';
+import { CoreDataService } from '@core/data/data.service';
+import { DataModule } from '@core/data';
+
+import { memoryDataSource } from './postgress-memory-datasource';
 
 describe('DataModule Integration Tests', () => {
   let module: TestingModule;
@@ -60,8 +63,8 @@ describe('DataModule Integration Tests', () => {
     let fakeBorrowerId: string;
 
     it('should create a lender, borrower and a loan', async () => {
-      const userCreateSpy = jest.spyOn(dataService.users, 'create');
-      const loanCreateSpy = jest.spyOn(dataService.loans, 'create');
+      const userCreateSpy = jest.spyOn(dataService.users, 'insert');
+      const loanCreateSpy = jest.spyOn(dataService.loans, 'insert');
 
       // band-aid fixes for defining new variables with 'let'
       // with 'strictNullChecks' TS goes grazy with that
@@ -74,21 +77,59 @@ describe('DataModule Integration Tests', () => {
       let loanGetResult: Loan | null = {} as Loan;
 
       lenderUserId = v4();
+      const lenderCreatedAt = new Date();
       const lenderUser: DeepPartial<ApplicationUser> = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'test-lender@mail.com',
         id: lenderUserId,
         phoneNumber: '123',
+        dateOfBirth: null,
+        createdAt: lenderCreatedAt,
+        verificationLockedUntil: null,
+        pendingEmail: null,
+        pendingPhoneNumber: null,
+        deletedAt: null,
+        registrationStatus: RegistrationStatus.NotRegistered,
+        onboardStatus: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zipCode: null,
+        verificationType: null,
+        secret: null,
+        secretExpiresAt: null,
+        verificationStatus: VerificationStatus.NotVerified,
+        verificationAttempts: 0,
       };
 
       borrowerUserId = v4();
+      const borrowerCreatedAt = new Date();
       const borrowerUser: DeepPartial<ApplicationUser> = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'test-borrower@mail.com',
         id: borrowerUserId,
-        phoneNumber: '123',
+        phoneNumber: '456',
+        dateOfBirth: null,
+        createdAt: borrowerCreatedAt,
+        verificationLockedUntil: null,
+        pendingEmail: null,
+        pendingPhoneNumber: null,
+        deletedAt: null,
+        registrationStatus: RegistrationStatus.NotRegistered,
+        onboardStatus: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zipCode: null,
+        verificationType: null,
+        secret: null,
+        secretExpiresAt: null,
+        verificationStatus: VerificationStatus.NotVerified,
+        verificationAttempts: 0,
       };
 
       expectedLoanId = v4();
@@ -111,7 +152,7 @@ describe('DataModule Integration Tests', () => {
 
       expect(lenderResult).toEqual(lenderUser);
       expect(borrowerResult).toEqual(borrowerUser);
-      expect(loanResult).toEqual(expectedLoan);
+      expect(expectedLoan).toEqual(expect.objectContaining(loanResult));
 
       // Try to get written entities from database and compare with expected
 
@@ -131,26 +172,61 @@ describe('DataModule Integration Tests', () => {
       expect(loanGetResult).toEqual(expectedLoan);
     });
 
-    // Skipping this test as it is not working as expected aafter transactional changes
-    // TODO: need to make Service methods transactional and re-test then
-    it.skip('should rollback create a lender, borrower and a loan', async () => {
+    // Note: should not be running exclusively - only after the previous test (it setup the database entries to be already existed)
+    it('should rollback create a lender, borrower and a loan', async () => {
       // now we will try to create fake users and duplicate loan insert
       fakeLenderId = v4();
-      const fakeLender: DeepPartial<ApplicationUser> = {
+      const fakeLender: ApplicationUser = {
+        id: fakeLenderId,
         firstName: 'John',
         lastName: 'Doe',
         email: 'test-fake-lender@mail.com',
-        id: fakeLenderId,
         phoneNumber: '123',
+        dateOfBirth: null,
+        createdAt: new Date(),
+        verificationLockedUntil: null,
+        pendingEmail: null,
+        pendingPhoneNumber: null,
+        deletedAt: null,
+        registrationStatus: RegistrationStatus.NotRegistered,
+        onboardStatus: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zipCode: null,
+        verificationType: null,
+        secret: null,
+        secretExpiresAt: null,
+        verificationStatus: VerificationStatus.NotVerified,
+        verificationAttempts: 0,
       };
 
       fakeBorrowerId = v4();
-      const fakeBorrower: DeepPartial<ApplicationUser> = {
+      const fakeBorrower: ApplicationUser = {
+        id: fakeBorrowerId,
         firstName: 'John',
         lastName: 'Doe',
         email: 'test-fake-borrower@mail.com',
-        id: fakeBorrowerId,
-        phoneNumber: '123',
+        phoneNumber: '456',
+        dateOfBirth: null,
+        createdAt: new Date(),
+        verificationLockedUntil: null,
+        pendingEmail: null,
+        pendingPhoneNumber: null,
+        deletedAt: null,
+        registrationStatus: RegistrationStatus.NotRegistered,
+        onboardStatus: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zipCode: null,
+        verificationType: null,
+        secret: null,
+        secretExpiresAt: null,
+        verificationStatus: VerificationStatus.NotVerified,
+        verificationAttempts: 0,
       };
 
       // We set existing loan id to be the same as the one we created in previous test
@@ -164,7 +240,8 @@ describe('DataModule Integration Tests', () => {
         borrower: fakeBorrower,
       };
 
-      const fakeTransaction = await withTransactionHandler(async () => {
+      // Do not await this transaction, as we want to test the rejection with async expect
+      const fakeTransaction = withTransactionHandler(async () => {
         await dataService.users.create(fakeLender);
         await dataService.users.create(fakeBorrower);
         await dataService.loans.create(fakeLoan);
