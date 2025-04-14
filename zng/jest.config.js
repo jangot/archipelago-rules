@@ -33,5 +33,6 @@ module.exports = {
     '^@library/entity(|/.*)$': '<rootDir>/libs/entity/src/$1',
     '^@library/extensions(|/.*)$': '<rootDir>/libs/extensions/src/$1',
     '^@library/shared(|/.*)$': '<rootDir>/libs/shared/src/$1',
+    '^@core(|/.*)$': '<rootDir>/apps/core/src/$1',
   },
 };

@@ -3,12 +3,16 @@ import { v4 as uuidv4 } from 'uuid';
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { memoryDataSourceForTests } from '../postgress-memory-datasource';
-import { UserCreateRequestDto, UserUpdateRequestDto } from '../../src/dto';
-import { UsersModule } from '../../src/users/users.module';
-import { UsersService } from '../../src/users/users.service';
 import { IBackup } from 'pg-mem';
 import { ValueOperator } from '@library/shared/common/search';
 import { ContactType } from '@library/entity/enum';
+import { UsersModule } from '../../src/users';
+import { UserCreateRequestDto, UserUpdateRequestDto } from '@core/dto';
+import { UsersService } from '@core/users/users.service';
+
+jest.mock('camelcase-keys', () => ({
+  camelcaseKeys: jest.fn(),
+}));
 
 describe('UsersService Integration Tests', () => {
   let module: TestingModule;
