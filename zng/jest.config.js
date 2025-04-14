@@ -35,4 +35,7 @@ module.exports = {
     '^@library/shared(|/.*)$': '<rootDir>/libs/shared/src/$1',
     '^@core(|/.*)$': '<rootDir>/apps/core/src/$1',
   },
+  
+  // Include custom setup files that run after the test framework has been set up
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 };

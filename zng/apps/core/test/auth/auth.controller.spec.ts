@@ -30,13 +30,6 @@ import { memoryDataSourceForTests } from '../postgress-memory-datasource';
 import { REGISTERED_USER_DUMP_1 } from './data-dump';
 import { generateWrongCode } from './test.helper';
 
-// Jest can not 'understand' camelcase-keys ESM properly. Mock it to avoid errors.
-jest.mock('camelcase-keys', () => ({
-  camelcaseKeys: jest.fn(),
-}));
-// TODO: investigate why .env variable do not make an effect
-jest.setTimeout(300000);
-
 describe('AuthController - Negative Test Cases', () => {
   let app: INestApplication;
   let databaseBackup: IBackup;
