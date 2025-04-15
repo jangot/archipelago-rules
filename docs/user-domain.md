@@ -9,7 +9,7 @@ config:
     theme: base
 ---
 classDiagram
-namespace Core {
+namespace core {
   %% enumeration types represented as classes just for Design purposes
   class RegistrationStatus {
     <<enumeration>>
