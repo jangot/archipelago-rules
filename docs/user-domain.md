@@ -4,9 +4,9 @@
 ---
 config:
   title: User Domain
+  theme: neutral
   class:
     hideEmptyMembersBox: true
-    theme: base
 ---
 classDiagram
 namespace core {
