@@ -1,5 +1,6 @@
 import { EntityId } from '@library/shared/common/data/id.entity';
 import { IApplicationUser } from './iapplication-user';
+import { LoanClosure, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanType } from '../enum';
 
 export interface ILoan extends EntityId<string> {
   id: string; // UUID
@@ -14,12 +15,14 @@ export interface ILoan extends EntityId<string> {
   // New fields WIP
   // #region General / Descriptional Info
   /** Enum that gives an idea of the type of loan (P2P, DBP, B2B, whatever) */
-  type: string; 
+  type: LoanType; 
   /** Gives a direction info. Particularly useful for Loans bound to unregistered User (contact). 
    * Helps to identify who is the lender and who is the borrower */
   isLendLoan: boolean; 
   /** Enum that gives an idea of the state of the loan (created, completed, etc.) */
-  state: string; 
+  state: LoanState; 
+  /** Enum that gives an idea of how Loan was closed (Paid out, Declined, Deactivated, Forgiven, Cancelled) */
+  closureType: LoanClosure | null;
   /** Description of the loan --> might be multiple fields based on Product requirements */
   description: string | null; 
   /** URL to the attachment (if any) --> might be multiple fields based on Product requirements */
@@ -28,30 +31,19 @@ export interface ILoan extends EntityId<string> {
   deeplink: string | null; 
   // #endregion
 
-  // #region Partner-related Info
-  /** Partner FK if Loan is Partner-referred */
-  partnerId: string | null; 
-  /** IPartner in fact, not IApplicationUser for sure */
-  partner: IApplicationUser | null; 
-  /** If Loan was created by Partner Preset (presets could not be changed if any Loans created with it already - keeps data linked relevant) */
-  presetLink: string | null; 
-  // etc
-  // #endregion
-
-  // #region Timestamps
-  /** Timestamp when the loan was created */
-  createdAt: Date;
-  /** Timestamp when the loan was last updated */
-  updatedAt: Date | null;
-  /** When the loan was accepted by the target user */
-  acceptedAt: Date | null; 
-  //etc
-  // #endregion
-
   // #region Target/Source Bindings
   /** For the Loans that are created targeting User who not registered yet. 
    * Contains contact uri in format mailto:email or tel:+1234567890 */
   targetUserUri: string | null; 
+
+  /** During Loan Creation we (and prbably User) do not know is Loan target user registered in Zirtue.
+   * We need to know what is first name of target user despite the fact that we do not know if they are registered or not
+   */
+  targetUserFirstName: string | null;
+  /** During Loan Creation we (and prbably User) do not know is Loan target user registered in Zirtue.
+   * We need to know what is last name of target user despite the fact that we do not know if they are registered or not
+   */
+  targetUserLastName: string | null;
 
   // For B2C and B2B Loans I suggest to think about creating service-user for Partner
   // It will be used (for now) only for binding a Loan to it
@@ -60,18 +52,13 @@ export interface ILoan extends EntityId<string> {
 
   // #endregion
 
-  // #region Payment Account Bindings
-  // Idea is to remove four accounts links from zirtue-microservices implementation and keep just two
-  // Should nicely cover all needs for changes / validation / information retrieval
-  // Transfers objects will still contain the fact accounts used while this fields are for storing current ones
-  /** FK to PaymentAccount for Lender */
-  lenderAccountId: string | null;
-  /** (type - payment method object, TBD) PaymentAccount for Lender */
-  lenderAccount: string | null;
-  /** FK to PaymentAccount for Borrower */
-  borrowerAccountId: string | null;
-  /** (type - payment method object, TBD) PaymentAccount for Borrower */
-  borrowerAccount: string | null;
+  // #region Bill-Pay info
+  /** Biller FK if loan is DBP or Custom Bill Pay (when Biller is not in Network) */
+  billerId: string | null;
+  /** IBiller in fact, not 'string' for sure */
+  biller: string | null;
+  /** Account Number from Biller system to which pay towards */
+  billingAccountNumber: string | null;
   // #endregion
 
   // #region Payment Schedule Info
@@ -88,7 +75,7 @@ export interface ILoan extends EntityId<string> {
   /** Enum that tells how often (re)payment should happen
  * 'monthly' by default but configurable
  * For now lets not overcomplicate it with custom repayment frequency */  
-  paymentFrequency: string | null;
+  paymentFrequency: LoanPaymentFrequency;
   /** Amount of next (re)payment. 
    * Only for next one as we (check that) want to support rescheduling
    */
@@ -99,34 +86,67 @@ export interface ILoan extends EntityId<string> {
   /** Enum for fee pay mode (who and how)
    * Lets keep it simple and have just few 'presets'
    */
-  feeMode: string | null;
+  feeMode: LoanFeeMode | null;
   /** Total amount of the fee.
    * If it is splitted to few payments - need to keep track on that
    */
   feeValue: number | null;
   // #endregion
 
-  // #region Loan State Tracking
-  // For Loan State I suggest to have a separate table, which will contain historical entries of Loan state changes
-  // No matter was it success or failure - we are interested in storing this information anyway
-  // It will contain:
-  /** 'id' not 'stateId'. PK UUID */
-  stateId: string;
-  /** FK to Loan */
-  loanId: string;
-  /** 'state' not 'loanState'. Enum. At which Loan state event happened */
-  loanState: string;
-  /** Enum. What event happened */
-  event: string;
-  /** Historical order int */
-  order: number;
-  /** Timestamp of event happened */
-  timestamp: Date;
-  /** Optional - User resulted an event */
-  userId: string | null;
-  /** Optional - Transfer whith which event happened */
-  transferId: string | null;
-  /** Optional - JSON with any extra event data payload */
-  data: object | null;
+  // #region Payment Account Bindings
+  // Idea is to remove four accounts links from zirtue-microservices implementation and keep just two
+  // Should nicely cover all needs for changes / validation / information retrieval
+  // Transfers objects will still contain the fact accounts used while this fields are for storing current ones
+  /** FK to PaymentAccount for Lender */
+  lenderAccountId: string | null;
+  /** (type - payment method object, TBD) PaymentAccount for Lender */
+  lenderAccount: string | null;
+  /** FK to PaymentAccount for Borrower */
+  borrowerAccountId: string | null;
+  /** (type - payment method object, TBD) PaymentAccount for Borrower */
+  borrowerAccount: string | null;
   // #endregion
+
+  // #region Partner-related Info
+  /** Partner FK if Loan is Partner-referred */
+  partnerId: string | null; 
+  /** IPartner in fact, not 'string' for sure */
+  partner: string | null; 
+  /** If Loan was created by Partner Preset (presets could not be changed if any Loans created with it already - keeps data linked relevant) */
+  presetLink: string | null; 
+  // etc
+  // #endregion
+
+  // #region Timestamps
+  /** Timestamp when the loan was created */
+  createdAt: Date;
+  /** Timestamp when the loan was last updated */
+  updatedAt: Date | null;
+  /** When the loan was accepted by the target user */
+  acceptedAt: Date | null; 
+  //etc
+  // #endregion
+
+
+  // // #region Loan State Tracking
+  // // For Loan State I suggest to have a separate table, which will contain historical entries of Loan state changes
+  // // No matter was it success or failure - we are interested in storing this information anyway
+  // // It will contain:
+  // /** 'id' not 'stateId'. PK UUID */
+  // stateId: string;
+  // /** FK to Loan */
+  // loanId: string;
+  // /** 'state' not 'loanState'. Enum. At which Loan state event happened */
+  // loanState: string;
+  // /** Enum. What event happened */
+  // event: string;
+  // /** Timestamp of event happened */
+  // timestamp: Date;
+  // /** Optional - User resulted an event */
+  // userId: string | null;
+  // /** Optional - Transfer whith which event happened */
+  // transferId: string | null;
+  // /** Optional - JSON with any extra event data payload */
+  // data: object | null;
+  // // #endregion
 }
