@@ -1,6 +1,7 @@
 import { EntityId } from '@library/shared/common/data/id.entity';
 import { IApplicationUser } from './iapplication-user';
 import { LoanClosure, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanType } from '../enum';
+import { IBiller } from './ibiller';
 
 export interface ILoan extends EntityId<string> {
   id: string; // UUID
@@ -17,14 +18,21 @@ export interface ILoan extends EntityId<string> {
   /** Enum that gives an idea of the type of loan (P2P, DBP, B2B, whatever) */
   type: LoanType; 
   /** Gives a direction info. Particularly useful for Loans bound to unregistered User (contact). 
-   * Helps to identify who is the lender and who is the borrower */
+   * Helps to identify who is the lender and who is the borrower.
+   * `isLendLoan: true` = Loan Offer.
+   * `isLendLoan: false` = Loan Request. */
   isLendLoan: boolean; 
   /** Enum that gives an idea of the state of the loan (created, completed, etc.) */
   state: LoanState; 
   /** Enum that gives an idea of how Loan was closed (Paid out, Declined, Deactivated, Forgiven, Cancelled) */
   closureType: LoanClosure | null;
-  /** Description of the loan --> might be multiple fields based on Product requirements */
-  description: string | null; 
+  /** Relationship between lender and borrower. FE controls content */
+  relationship: string | null;
+  /** Reason for the Loan. FE controls content */
+  reason: string | null;
+  /** User-defined note for the Loan */
+  note: string | null;
+
   /** URL to the attachment (if any) --> might be multiple fields based on Product requirements */
   attachement: string | null; 
   /** Deeplink to Loan for sharing / invite */
@@ -53,10 +61,10 @@ export interface ILoan extends EntityId<string> {
   // #endregion
 
   // #region Bill-Pay info
-  /** Biller FK if loan is DBP or Custom Bill Pay (when Biller is not in Network) */
+  /** Biller Id FK  */
   billerId: string | null;
-  /** IBiller in fact, not 'string' for sure */
-  biller: string | null;
+  /** IBiller referenced by `billerId` */
+  biller: IBiller | null;
   /** Account Number from Biller system to which pay towards */
   billingAccountNumber: string | null;
   // #endregion
