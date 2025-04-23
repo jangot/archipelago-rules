@@ -4,3 +4,6 @@ export * from './ilogin';
 export * from './iuser-registration';
 export * from './inotification-definition';
 export * from './ibiller';
+export * from './ipayment-account';
+export * from './itransfer';
+export * from './iloan-payment';

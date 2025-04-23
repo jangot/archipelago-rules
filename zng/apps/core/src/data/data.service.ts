@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IBillerRepository, ILoanRepository, ILoginRepository, IUserRegistrationRepository, IUserRepository } from '../shared/interfaces/repositories';
+import { IBillerRepository, ILoanPaymentRepository, ILoanRepository, ILoginRepository, IPaymentAccountRepository, ITransferRepository, IUserRegistrationRepository, IUserRepository } from '../shared/interfaces/repositories';
 import { IDataService } from '@library/shared/common/data/idata.service';
 
 @Injectable()
@@ -9,7 +9,10 @@ export class CoreDataService extends IDataService {
     @Inject(ILoanRepository) public readonly loans: ILoanRepository,
     @Inject(ILoginRepository) public readonly logins: ILoginRepository,
     @Inject(IUserRegistrationRepository) public readonly userRegistrations: IUserRegistrationRepository,
-    @Inject(IBillerRepository) public readonly billers: IBillerRepository
+    @Inject(IBillerRepository) public readonly billers: IBillerRepository,
+    @Inject(IPaymentAccountRepository) public readonly paymentAccounts: IPaymentAccountRepository,
+    @Inject(ITransferRepository) public readonly transfers: ITransferRepository,
+    @Inject(ILoanPaymentRepository) public readonly loanPayments: ILoanPaymentRepository,
   ) {
     super();
   } 

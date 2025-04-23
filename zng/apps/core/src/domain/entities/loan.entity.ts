@@ -1,8 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { ILoan } from '@library/entity/interface';
 import { LoanType, LoanState, LoanClosure, LoanPaymentFrequency, LoanFeeMode } from '@library/entity/enum';
 import { ApplicationUser } from './application.user.entity';
 import { Biller } from './biller.entity';
+import { PaymentAccount } from './payment.account.entity';
+import { ILoanPayment } from '@library/entity/interface/iloan-payment';
+import { LoanPayment } from './loan.payment.entity';
 
 @Entity({ schema: 'core' })
 // When using @Check('<constraint_name>', '<expression') -- always specify a Constraint name
@@ -93,6 +96,9 @@ export class Loan implements ILoan {
   @Column({ type: 'decimal', nullable: true })
   paymmentAmount: number | null;
 
+  @OneToMany(() => LoanPayment, (loanPayment) => loanPayment.loan, { nullable: true })
+  payments: LoanPayment[] | null;
+
   @Column({ type: 'text', nullable: true })
   feeMode: LoanFeeMode | null;
 
@@ -102,14 +108,16 @@ export class Loan implements ILoan {
   @Column({ type: 'uuid', nullable: true })
   lenderAccountId: string | null;
 
-  // TODO: Link to Entity
-  lenderAccount: string | null;
+  @ManyToOne(() => PaymentAccount, { nullable: true })
+  @JoinColumn({ name: 'lender_account_id' })
+  lenderAccount: PaymentAccount | null;
 
   @Column({ type: 'uuid', nullable: true })
   borrowerAccountId: string | null;
 
-  // TODO: Link to Entity
-  borrowerAccount: string | null;
+  @ManyToOne(() => PaymentAccount, { nullable: true })
+  @JoinColumn({ name: 'borrower_account_id' })
+  borrowerAccount: PaymentAccount | null;
 
   @Column({ type: 'uuid', nullable: true })
   partnerId: string | null;

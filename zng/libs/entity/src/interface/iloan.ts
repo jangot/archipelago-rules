@@ -2,6 +2,8 @@ import { EntityId } from '@library/shared/common/data/id.entity';
 import { IApplicationUser } from './iapplication-user';
 import { LoanClosure, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanType } from '../enum';
 import { IBiller } from './ibiller';
+import { IPaymentAccount } from './ipayment-account';
+import { ILoanPayment } from './iloan-payment';
 
 export interface ILoan extends EntityId<string> {
   id: string; // UUID
@@ -88,6 +90,8 @@ export interface ILoan extends EntityId<string> {
    * Only for next one as we (check that) want to support rescheduling
    */
   paymmentAmount: number | null;
+
+  payments: ILoanPayment[] | null;
   // #endregion
 
   // #region Fee
@@ -108,11 +112,11 @@ export interface ILoan extends EntityId<string> {
   /** FK to PaymentAccount for Lender */
   lenderAccountId: string | null;
   /** (type - payment method object, TBD) PaymentAccount for Lender */
-  lenderAccount: string | null;
+  lenderAccount: IPaymentAccount | null;
   /** FK to PaymentAccount for Borrower */
   borrowerAccountId: string | null;
   /** (type - payment method object, TBD) PaymentAccount for Borrower */
-  borrowerAccount: string | null;
+  borrowerAccount: IPaymentAccount | null;
   // #endregion
 
   // #region Partner-related Info

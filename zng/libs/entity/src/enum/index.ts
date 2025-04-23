@@ -18,3 +18,11 @@ export * from './loan-fee-mode';
 // #region Biller
 export * from './biller.type';
 // #endregion
+
+// #region Payments
+export * from './payment-account.type';
+export * from './payment-account-provider.type';
+export * from './transfer.state';
+export * from './loan-payment.type';
+export * from './loan-payment.state';
+// #endregion
