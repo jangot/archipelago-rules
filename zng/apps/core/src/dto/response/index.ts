@@ -7,3 +7,6 @@ export * from './jwt-payload.dto';
 
 // Registration
 export * from './user-register-response.dto';
+
+// Loan
+export * from './loan.response.dto';

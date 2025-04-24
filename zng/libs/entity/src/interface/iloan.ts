@@ -9,11 +9,11 @@ export interface ILoan extends EntityId<string> {
   id: string; // UUID
   amount: number;
 
-  lenderId: string;
-  lender: IApplicationUser;
+  lenderId: string | null;
+  lender: IApplicationUser | null;
 
-  borrowerId: string;
-  borrower: IApplicationUser;
+  borrowerId: string | null;
+  borrower: IApplicationUser | null;
 
   // New fields WIP
   // #region General / Descriptional Info

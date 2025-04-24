@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { LoansService } from './loans.service';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@core/auth/guards';
 import { IRequest } from '@library/shared/types';
 import { UUIDParam } from '@library/shared/common/pipes/uuidparam';
+import { LoanCreateRequestDto, LoanResponseDto } from '@core/dto';
 
 @Controller('loans')
 @ApiTags('loans')
@@ -45,9 +46,15 @@ export class LoansController {
   // from type selection until KYC
   @Post()
   @ApiOperation({ summary: 'Create a new loan (from type selection until KYC)', description: 'Create a new loan (from type selection until KYC)' })
-  public async create(@Body() input: unknown): Promise<unknown> {
+  @ApiCreatedResponse({ description: 'Loan created successfully', type: LoanResponseDto })
+  public async create(@Req() request: IRequest, @Body() input: LoanCreateRequestDto): Promise<LoanResponseDto | null> {
+    // TODO: make a validation stuff here
+    const userId = request.user?.id;
+    if (!userId) {
+      throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
+    }
     this.logger.debug('Creating loan', { input });
-    return;
+    return await this.loansService.createLoan(userId, input);
   }
 
   // Accept loan and provide details required (target payment method, etc.)

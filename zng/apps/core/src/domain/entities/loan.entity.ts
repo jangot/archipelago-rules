@@ -4,7 +4,6 @@ import { LoanType, LoanState, LoanClosure, LoanPaymentFrequency, LoanFeeMode } f
 import { ApplicationUser } from './application.user.entity';
 import { Biller } from './biller.entity';
 import { PaymentAccount } from './payment.account.entity';
-import { ILoanPayment } from '@library/entity/interface/iloan-payment';
 import { LoanPayment } from './loan.payment.entity';
 
 @Entity({ schema: 'core' })
@@ -19,21 +18,21 @@ export class Loan implements ILoan {
   @Column('decimal')
   amount: number;
 
-  @Column('uuid')
-  lenderId: string;
+  @Column({ type: 'uuid', nullable: true })
+  lenderId: string | null;
 
   // TODO: In Loan we heve two AppUsers, thats why simple cascade deletion decorator is not make sense (we need to have one User already deleted and socind in deletion)
   // We might try to achieve this by having custom enitity subscriber and resolve this problem there
-  @ManyToOne(() => ApplicationUser)
+  @ManyToOne(() => ApplicationUser, { nullable: true })
   @JoinColumn({ name: 'lender_id' }) // FYI, column names defined here must match the DB generated ones!
-  lender: ApplicationUser;
+  lender: ApplicationUser | null;
 
-  @Column('uuid')
-  borrowerId: string;
+  @Column({ type: 'uuid', nullable: true })
+  borrowerId: string | null;
 
-  @ManyToOne(() => ApplicationUser)
+  @ManyToOne(() => ApplicationUser, { nullable: true })
   @JoinColumn({ name: 'borrower_id' })
-  borrower: ApplicationUser;
+  borrower: ApplicationUser | null;
 
   @Column({ type: 'text' })
   type: LoanType;

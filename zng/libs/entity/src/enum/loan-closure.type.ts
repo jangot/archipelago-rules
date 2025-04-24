@@ -1,4 +1,4 @@
-export const LonaClosureCodes = {
+export const LoanClosureCodes = {
   /** Entire Loan was repaid */
   PaidOut: 'paid_out',
   /** Loan closed by creator before Accepted */
@@ -11,4 +11,4 @@ export const LonaClosureCodes = {
   Deactivated: 'deactivated',
 } as const;
 
-export type LoanClosure = typeof LonaClosureCodes[keyof typeof LonaClosureCodes];
+export type LoanClosure = typeof LoanClosureCodes[keyof typeof LoanClosureCodes];
