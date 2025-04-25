@@ -18,3 +18,7 @@ export * from './loan.create.request.dto';
 // #region Biller
 export * from './biller.create-custom.request.dto';
 // #endregion
+
+// #region Payment
+export * from './payment-method.create.request.dto';
+//

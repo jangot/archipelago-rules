@@ -11,7 +11,8 @@ import { DataModule } from './data';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { LendingModule } from './lending/lending.module';
+import { BankingModule } from './banking/banking.module';
 
 // Add Core specific modules to be Imported into the Core Module here
 export const CoreModules: Array<Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference> = 
-    [DataModule, UsersModule, AuthModule, LendingModule];
+    [DataModule, UsersModule, AuthModule, LendingModule, BankingModule];

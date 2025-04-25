@@ -13,3 +13,6 @@ export * from './loan.response.dto';
 
 // Biller
 export * from './biller.response.dto';
+
+// Payment
+export * from './payment-account.response.dto';

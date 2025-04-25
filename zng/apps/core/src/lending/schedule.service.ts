@@ -2,9 +2,10 @@ import { IDomainServices } from '@core/domain/idomain.services';
 import { LoanFeeModeCodes, LoanPaymentFrequency, LoanPaymentFrequencyCodes } from '@library/entity/enum';
 import { round2 } from '@library/shared/common/helpers';
 import { PlanPreviewInput, PlanPreviewOutputItem } from '@library/shared/types/lending';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { addMonths, addWeeks } from 'date-fns';
 
+@Injectable()
 export class ScheduleService {
   private readonly logger: Logger = new Logger(ScheduleService.name);
   
