@@ -14,3 +14,7 @@ export * from './user-detail-update-request.dto';
 // #region Loan
 export * from './loan.create.request.dto';
 // #endregion
+
+// #region Biller
+export * from './biller.create-custom.request.dto';
+// #endregion

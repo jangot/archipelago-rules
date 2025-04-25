@@ -23,7 +23,7 @@ export class LoanCreateCommandHandler
     }
 
     if (type === LoanTypeCodes.Personal) {
-      const personalBiller = await this.domainServices.loanServices.createPersonalBiller(loanCreateInput);
+      const personalBiller = await this.domainServices.loanServices.createPersonalBiller(loanCreateInput, creatorId);
       if (!personalBiller) {
         this.logger.error('LoanCreateCommand: Failed to create personal Biller', { payload });
         throw new UnableToCreatePersonalBillerException('Failed to create personal biller');

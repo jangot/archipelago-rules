@@ -1,9 +1,10 @@
 import { LoanPaymentFrequency, LoanPaymentFrequencyCodes, LoanType, LoanTypeCodes } from '@library/entity/enum';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
 import { NIL } from 'uuid';
 
+@ApiSchema({ name: 'loanCreateRequest' })
 export class LoanCreateRequestDto {
   @ApiProperty({ description: 'Loan amount', type: Number, required: true, example: 100.50 })
   @Expose()

@@ -1,5 +1,7 @@
 import { Biller } from '@core/domain/entities';
 import { IBillerRepository } from '@core/shared/interfaces/repositories';
+import { BillerTypeCodes } from '@library/entity/enum';
+import { IBiller } from '@library/entity/interface';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,5 +13,9 @@ export class BillerRepository extends RepositoryBase<Biller> implements IBillerR
 
   constructor(@InjectRepository(Biller) protected readonly repository: Repository<Biller>) {
     super(repository, Biller);
+  }
+
+  public async getAllCustomBillers(createdById: string): Promise<IBiller[] | null> {
+    return this.repository.find({ where: { createdById, type: BillerTypeCodes.Custom } });
   }
 }

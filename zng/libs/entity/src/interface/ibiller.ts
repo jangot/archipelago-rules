@@ -1,5 +1,6 @@
 import { EntityId } from '@library/shared/common/data';
 import { BillerType } from '../enum';
+import { IApplicationUser } from './iapplication-user';
 
 export interface IBiller extends EntityId<string> {
   id: string; // UUID
@@ -18,5 +19,7 @@ export interface IBiller extends EntityId<string> {
   createdAt: Date;
   updatedAt: Date | null;
 
+  createdById: string | null;
+  createdBy: IApplicationUser | null;
   // TODO: other fields
 }

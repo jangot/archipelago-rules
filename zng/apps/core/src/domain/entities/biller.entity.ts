@@ -1,6 +1,7 @@
 import { BillerType } from '@library/entity/enum';
 import { IBiller } from '@library/entity/interface';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { ApplicationUser } from './application.user.entity';
 
 @Entity({ schema: 'core' })
 export class Biller implements IBiller {
@@ -19,4 +20,11 @@ export class Biller implements IBiller {
 
   @UpdateDateColumn({ type: 'timestamp with time zone', nullable: true })
   updatedAt: Date | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  createdById: string | null;
+
+  @ManyToOne(() => ApplicationUser, { nullable: true })
+  createdBy: ApplicationUser | null;
+
 }

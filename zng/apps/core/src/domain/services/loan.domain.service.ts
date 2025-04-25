@@ -23,11 +23,22 @@ export class LoanDomainService extends BaseDomainServices {
     return this.data.loans.create({ ...loan, state: LoanStateCodes.Created });
   }
 
-  public async createPersonalBiller(loan: DeepPartial<ILoan>): Promise<IBiller | null> {
+  public async createPersonalBiller(loan: DeepPartial<ILoan>, createdById: string): Promise<IBiller | null> {
     const { targetUserFirstName: firstName, targetUserLastName: lastName, isLendLoan } = loan;
     const loanType = isLendLoan ? 'offer' : 'request';
     const billerName = `Personal ${loanType} to ${firstName} ${lastName}`;
-    return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Personal });
+    return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Personal, createdById });
+  }
+
+  public async getOrCreateCustomBiller(createdById: string, billerName: string): Promise<IBiller | null> {
+    // To reduce the duplicates chance we try to find same Biller first
+    const existingBiller = await this.data.billers.findOne({ where: { name: billerName, createdById, type: BillerTypeCodes.Custom } });
+    if (existingBiller) return existingBiller;
+    return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Custom, createdById });
+  }
+
+  public async getCustomBillers(createdById: string): Promise<Array<IBiller> | null> {
+    return this.data.billers.getAllCustomBillers(createdById);
   }
   
 }
