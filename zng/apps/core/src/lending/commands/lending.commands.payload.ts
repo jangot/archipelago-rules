@@ -1,4 +1,4 @@
-import { LoanPaymentFrequency, LoanType } from '@library/entity/enum';
+import { LoanBindIntent, LoanPaymentFrequency, LoanType } from '@library/entity/enum';
 
 export interface LendingBasePayload {
   loanId: string | null;
@@ -20,5 +20,15 @@ export interface LoanCreatePayload extends LendingBasePayload {
   billingAccountNumber: string | null;
   paymentsCount: number;
   paymentFrequency: LoanPaymentFrequency;
+}
+
+export interface LoanProposePayload extends LendingBasePayload {
+  userId: string;
+  sourcePaymentAccountId: string;
+}
+
+export interface LoanBindPayload extends LendingBasePayload {
+  contactUri: string;
+  intent: LoanBindIntent;
 }
 

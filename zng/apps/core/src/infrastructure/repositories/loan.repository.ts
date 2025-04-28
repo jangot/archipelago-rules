@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILoanRepository } from '../../shared/interfaces/repositories';
 import { Loan } from '../../domain/entities';
 import { ILoan } from '@library/entity/interface';
+import { bindTargetUserToLoans } from '../sql_generated/bind-target-user-to-loans.queries';
 
 @Injectable()
 export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {
@@ -21,5 +22,51 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     this.logger.debug(`getByLenderId: ${lenderId}`);
 
     return this.repository.findBy({ lenderId });
+  }
+
+  public async getLoansForBinding(contactUri: string): Promise<ILoan[]> {
+    this.logger.debug(`getLoansForBinding: ${contactUri}`);
+
+    return this.repository.find({ 
+      where: [
+        { targetUserUri: contactUri, isLendLoan: true, borrowerId: IsNull() }, 
+        { targetUserUri: contactUri, isLendLoan: false, lenderId: IsNull() },
+      ], 
+    });
+  }
+
+  public async bindLoansToUser(userId: string, loanId?: string, contactUri?: string): Promise<ILoan[]> {
+    this.logger.debug(`bindLoansToUser: userId=${userId}, loanId=${loanId}, contactUri=${contactUri}`);
+
+    if (!loanId && !contactUri) {
+      throw new Error('Either loanId or contactUri must be provided.');
+    }
+
+    const updatedLoans: ILoan[] = [];
+
+    if (loanId) {
+      const loan = await this.repository.findOne({ where: { id: loanId } });
+      if (!loan) {
+        throw new Error(`Loan with id ${loanId} not found.`);
+      }
+
+      const updatePayload = loan.isLendLoan
+        ? { borrowerId: userId }
+        : { lenderId: userId };
+
+      await this.repository.update({ id: loanId }, updatePayload);
+      const updatedLoan = await this.repository.findOne({ where: { id: loanId } });
+      if (updatedLoan) {
+        updatedLoans.push(updatedLoan);
+      }
+    } else {
+
+
+      // TODO: types are broken - find a way to align pgtyped type with ILoan
+      // const result = await this.runSqlQuery({ userId, contactUri }, bindTargetUserToLoans);
+      // updatedLoans.push(...result);
+    }
+
+    return updatedLoans;
   }
 }

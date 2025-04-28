@@ -19,6 +19,10 @@ export class LoanDomainService extends BaseDomainServices {
     super(data);
   }
 
+  public async getLoanById(loanId: string): Promise<ILoan | null> {
+    return this.data.loans.findOne({ where: { id: loanId } });
+  }
+
   public async createLoan(loan: DeepPartial<ILoan>): Promise<ILoan | null> {
     return this.data.loans.create({ ...loan, state: LoanStateCodes.Created });
   }
@@ -39,6 +43,18 @@ export class LoanDomainService extends BaseDomainServices {
 
   public async getCustomBillers(createdById: string): Promise<Array<IBiller> | null> {
     return this.data.billers.getAllCustomBillers(createdById);
+  }
+
+  public async updateLoan(loan: ILoan): Promise<boolean | null> {
+    return this.data.loans.update(loan.id, loan);
+  }
+
+  public async getLoansForBinding(contactUri: string): Promise<Array<ILoan>> {
+    return this.data.loans.getLoansForBinding(contactUri);
+  }
+
+  public async bindLoansToUser(userId: string, loanId?: string, contactUri?: string): Promise<Array<ILoan>> {
+    return this.data.loans.bindLoansToUser(userId, loanId, contactUri);
   }
   
 }

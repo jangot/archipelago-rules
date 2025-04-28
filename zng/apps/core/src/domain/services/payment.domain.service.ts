@@ -20,4 +20,9 @@ export class PaymentDomainService extends BaseDomainServices {
     this.logger.debug(`Adding payment account for user ${userId}`, { input });
     return this.data.paymentAccounts.create({ ...input, ownerId: userId });
   }
+
+  public async getPaymentAccountById(paymentAccountId: string): Promise<IPaymentAccount | null> {
+    this.logger.debug(`Fetching payment account by ID ${paymentAccountId}`);
+    return this.data.paymentAccounts.findOne({ where: { id: paymentAccountId } });
+  }
 }

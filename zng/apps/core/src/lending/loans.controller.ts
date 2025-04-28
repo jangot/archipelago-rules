@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestj
 import { JwtAuthGuard } from '@core/auth/guards';
 import { IRequest } from '@library/shared/types';
 import { UUIDParam } from '@library/shared/common/pipes/uuidparam';
-import { LoanCreateRequestDto, LoanResponseDto } from '@core/dto';
+import { LoanCreateRequestDto, LoanProposeRequestDto, LoanResponseDto } from '@core/dto';
 
 @Controller('loans')
 @ApiTags('loans')
@@ -76,9 +76,19 @@ export class LoansController {
   // Connect bank account to loan and send to target for acceptance
   @Patch(':id')
   @ApiOperation({ summary: 'Connect a bank account to the loan and send it to the target for acceptance', description: 'Connect a bank account to the loan and send it to the target for acceptance' })
-  public async connectAndSend(@Body() input: unknown): Promise<unknown> {
-    this.logger.debug('Connecting and sending loan', { input });
-    return;
+  public async connectAndSend(@Req() request: IRequest, @UUIDParam('id') id: string, @Body() input: LoanProposeRequestDto): Promise<unknown> {
+    const userId = request.user?.id;
+    if (!userId) {
+      throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
+    }
+    if (!id) {
+      throw new HttpException('Loan Id is required', HttpStatus.BAD_REQUEST);
+    }
+    if (!input || !input.sourcePaymentAccountId) {
+      throw new HttpException('Missing Payment Account Id', HttpStatus.BAD_REQUEST);
+    }
+    this.logger.debug('Connecting and sending loan', { id, input });
+    return await this.loansService.proposeLoan(userId, id, input.sourcePaymentAccountId);
   }
 
   // TODO: is there real need of generic 'update' endpoint?

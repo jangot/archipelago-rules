@@ -10,6 +10,7 @@ import { DeepPartial } from 'typeorm';
 export class LoanCreateCommandHandler 
   extends LendingBaseCommandHandler<LoanCreateCommand, ILoan | null> 
   implements ICommandHandler<LoanCreateCommand> {
+    
   public async execute(command: LoanCreateCommand): Promise<ILoan | null> {
     const { payload } = command;
     const { userId: creatorId, billerId, type, isLendLoan } = payload;
