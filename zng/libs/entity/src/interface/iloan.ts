@@ -36,7 +36,7 @@ export interface ILoan extends EntityId<string> {
   note: string | null;
 
   /** URL to the attachment (if any) --> might be multiple fields based on Product requirements */
-  attachement: string | null; 
+  attachment: string | null; 
   /** Deeplink to Loan for sharing / invite */
   deeplink: string | null; 
   // #endregion
@@ -72,7 +72,7 @@ export interface ILoan extends EntityId<string> {
   // #endregion
 
   // #region Payment Schedule Info
-  /** Total numebr of (re)payments for the Loan */
+  /** Total number of (re)payments for the Loan */
   paymentsCount: number;
   /** Displays the index of current (re)payment.
    * If Loan not in acceptance yet - null

@@ -56,7 +56,7 @@ export class Loan implements ILoan {
   note: string | null;
 
   @Column({ type: 'text', nullable: true })
-  attachement: string | null;
+  attachment: string | null;
 
   @Column({ type: 'text', nullable: true })
   deeplink: string | null;
