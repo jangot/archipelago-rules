@@ -4,12 +4,12 @@
 ---
 config:
   title: User Domain
+  theme: neutral
   class:
     hideEmptyMembersBox: true
-    theme: base
 ---
 classDiagram
-namespace Core {
+namespace core {
   %% enumeration types represented as classes just for Design purposes
   class RegistrationStatus {
     <<enumeration>>
