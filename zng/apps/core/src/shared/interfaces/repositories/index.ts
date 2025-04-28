@@ -2,3 +2,7 @@ export * from './iloan.repository';
 export * from './iuser.repository';
 export * from './ilogin.repository';
 export * from './iuser.registration.repository';
+export * from './ibiller.repository';
+export * from './ipayment.account.repository';
+export * from './itransfer.repository';
+export * from './iloan.payment.repository';
