@@ -4,7 +4,8 @@ import { LoanProposeCommand } from './lending.commands';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exceptions/domain';
 import { ActionNotAllowedException } from '@core/domain/exceptions/loan-domain.exceptions';
-import { LoanStateCodes } from '@library/entity/enum';
+import { LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
+import { DeepPartial } from 'typeorm';
 
 @CommandHandler(LoanProposeCommand)
 export class LoanProposeCommandHandler 
@@ -15,11 +16,12 @@ export class LoanProposeCommandHandler
     const { payload: { userId, loanId, sourcePaymentAccountId } } = command;
 
     const loan = await this.loadLoan(loanId);
-    const { lenderId, borrowerId, isLendLoan } = loan;
-    const canBeProposedBy = isLendLoan ? lenderId : borrowerId;
+    const { lenderId, borrowerId, invitee } = loan;
+    const isInviteeBorrower = invitee.type === LoanInviteeTypeCodes.Borrower;
+    const canBeProposedBy = isInviteeBorrower ? lenderId : borrowerId;
 
     if (canBeProposedBy !== userId) {
-      throw new ActionNotAllowedException(`Only ${isLendLoan ? 'lender' : 'borrower'} can propose the loan ${isLendLoan ? 'offer' : 'request'}`);
+      throw new ActionNotAllowedException(`Only ${isInviteeBorrower ? 'lender' : 'borrower'} can propose the loan ${isInviteeBorrower ? 'offer' : 'request'}`);
     }
 
     const paymentAccount = await this.domainServices.paymentServices.getPaymentAccountById(sourcePaymentAccountId);
@@ -32,15 +34,16 @@ export class LoanProposeCommandHandler
 
     // TODO: Add Payment Account state validation (e.g. not verified yet)
 
-    if (isLendLoan) {
-      loan.lenderAccountId = paymentAccount.id;
-      loan.state = LoanStateCodes.Offered;
+    const updates: DeepPartial<ILoan> = {};
+    if (isInviteeBorrower) {
+      updates.lenderAccountId = paymentAccount.id;
+      updates.state = LoanStateCodes.Offered;
     } else {
-      loan.borrowerAccountId = paymentAccount.id;
-      loan.state = LoanStateCodes.Requested;
+      updates.borrowerAccountId = paymentAccount.id;
+      updates.state = LoanStateCodes.Requested;
     }
 
-    const updateResult = await this.domainServices.loanServices.updateLoan(loan);
+    const updateResult = await this.domainServices.loanServices.updateLoan(loan.id, updates);
     if (!updateResult) {
       throw new EntityFailedToUpdateException('Failed to update loan');
     }

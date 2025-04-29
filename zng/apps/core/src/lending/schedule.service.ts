@@ -13,17 +13,17 @@ export class ScheduleService {
 
   public async previewRepaymentPlan(input: PlanPreviewInput): Promise<PlanPreviewOutputItem[]> {
     const payments: PlanPreviewOutputItem[] = [];
-    const { amount, paymentsCount, paymentFrequency, feeMode, feeValue, repaymentStartDate } = input;
+    const { amount, paymentsCount, paymentFrequency, feeMode, feeAmount, repaymentStartDate } = input;
     // Fast-quit for invalid input
-    if (amount <= 0 || paymentsCount <= 0 || (feeValue !== null && feeValue < 0)) return payments;
+    if (amount <= 0 || paymentsCount <= 0 || (feeAmount !== null && feeAmount < 0)) return payments;
     // Cuurentrly support only 'Standard' fee type
-    if (feeValue && feeValue > 0 && feeMode && feeMode !== LoanFeeModeCodes.Standard) return payments;
+    if (feeAmount && feeAmount > 0 && feeMode && feeMode !== LoanFeeModeCodes.Standard) return payments;
 
     // TODO: Move control over that higher?
     const firstPaymentDate = repaymentStartDate || addMonths(new Date(), 1);
 
 
-    let totalBalance = amount + (feeValue || 0);
+    let totalBalance = amount + (feeAmount || 0);
     // For 'Standard' fee mode we spread its amount to repayment process
     let paymentAmount = round2(totalBalance / paymentsCount); 
     for (let i = 0; i < paymentsCount; i++) {

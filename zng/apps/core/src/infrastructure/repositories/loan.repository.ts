@@ -27,12 +27,8 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
   public async getLoansForBinding(contactUri: string): Promise<ILoan[]> {
     this.logger.debug(`getLoansForBinding: ${contactUri}`);
 
-    return this.repository.find({ 
-      where: [
-        { targetUserUri: contactUri, isLendLoan: true, borrowerId: IsNull() }, 
-        { targetUserUri: contactUri, isLendLoan: false, lenderId: IsNull() },
-      ], 
-    });
+    // TODO: Implement
+    return [];
   }
 
   public async bindLoansToUser(userId: string, loanId?: string, contactUri?: string): Promise<ILoan[]> {
@@ -50,15 +46,16 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
         throw new Error(`Loan with id ${loanId} not found.`);
       }
 
-      const updatePayload = loan.isLendLoan
-        ? { borrowerId: userId }
-        : { lenderId: userId };
+      // TODO: fix as isLendLoan disappeared
+      // const updatePayload = loan.isLendLoan
+      //   ? { borrowerId: userId }
+      //   : { lenderId: userId };
 
-      await this.repository.update({ id: loanId }, updatePayload);
-      const updatedLoan = await this.repository.findOne({ where: { id: loanId } });
-      if (updatedLoan) {
-        updatedLoans.push(updatedLoan);
-      }
+      // await this.repository.update({ id: loanId }, updatePayload);
+      // const updatedLoan = await this.repository.findOne({ where: { id: loanId } });
+      // if (updatedLoan) {
+      //   updatedLoans.push(updatedLoan);
+      // }
     } else {
 
 

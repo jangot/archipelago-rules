@@ -1,5 +1,5 @@
 import { CoreDataService } from '@core/data/data.service';
-import { BillerTypeCodes, LoanStateCodes } from '@library/entity/enum';
+import { BillerTypeCodes, LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
 import { IBiller, ILoan } from '@library/entity/interface';
 import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
 import { Injectable, Logger } from '@nestjs/common';
@@ -20,17 +20,22 @@ export class LoanDomainService extends BaseDomainServices {
   }
 
   public async getLoanById(loanId: string): Promise<ILoan | null> {
-    return this.data.loans.findOne({ where: { id: loanId } });
+    return this.data.loans.findOne({ where: { id: loanId }, relations: ['invitee'] });
   }
 
   public async createLoan(loan: DeepPartial<ILoan>): Promise<ILoan | null> {
-    return this.data.loans.create({ ...loan, state: LoanStateCodes.Created });
+    const createdLoan = await this.data.loans.create({ ...loan, state: LoanStateCodes.Created });
+    const { id: loanId } = createdLoan;
+    const invitee = loan.invitee!;
+    invitee.loanId = loanId;
+    await this.data.loanInvitees.create(invitee);
+    return this.getLoanById(loanId);
   }
 
   public async createPersonalBiller(loan: DeepPartial<ILoan>, createdById: string): Promise<IBiller | null> {
-    const { targetUserFirstName: firstName, targetUserLastName: lastName, isLendLoan } = loan;
-    const loanType = isLendLoan ? 'offer' : 'request';
-    const billerName = `Personal ${loanType} to ${firstName} ${lastName}`;
+    const { invitee } = loan;
+    const loanTypeText = invitee ? invitee.type === LoanInviteeTypeCodes.Borrower ? 'offer' : 'request' : '';
+    const billerName = `Personal ${loanTypeText} to ${invitee?.firstName} ${invitee?.lastName}`;
     return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Personal, createdById });
   }
 
@@ -45,8 +50,8 @@ export class LoanDomainService extends BaseDomainServices {
     return this.data.billers.getAllCustomBillers(createdById);
   }
 
-  public async updateLoan(loan: ILoan): Promise<boolean | null> {
-    return this.data.loans.update(loan.id, loan);
+  public async updateLoan(loanId: string, loan: DeepPartial<ILoan>): Promise<boolean | null> {
+    return this.data.loans.update(loanId, loan);
   }
 
   public async getLoansForBinding(contactUri: string): Promise<Array<ILoan>> {

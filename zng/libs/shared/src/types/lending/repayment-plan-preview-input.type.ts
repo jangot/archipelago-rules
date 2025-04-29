@@ -5,6 +5,6 @@ export interface PlanPreviewInput {
   paymentsCount: number;
   paymentFrequency: LoanPaymentFrequency;
   feeMode: LoanFeeMode | null;
-  feeValue: number | null;
+  feeAmount: number | null;
   repaymentStartDate: Date | null;
 }

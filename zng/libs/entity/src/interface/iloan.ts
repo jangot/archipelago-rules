@@ -4,6 +4,7 @@ import { LoanClosure, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanType } f
 import { IBiller } from './ibiller';
 import { IPaymentAccount } from './ipayment-account';
 import { ILoanPayment } from './iloan-payment';
+import { ILoanInvitee } from './iloan-invitee';
 
 export interface ILoan extends EntityId<string> {
   id: string; // UUID
@@ -19,15 +20,10 @@ export interface ILoan extends EntityId<string> {
   // #region General / Descriptional Info
   /** Enum that gives an idea of the type of loan (P2P, DBP, B2B, whatever) */
   type: LoanType; 
-  /** Gives a direction info. Particularly useful for Loans bound to unregistered User (contact). 
-   * Helps to identify who is the lender and who is the borrower.
-   * `isLendLoan: true` = Loan Offer.
-   * `isLendLoan: false` = Loan Request. */
-  isLendLoan: boolean; 
   /** Enum that gives an idea of the state of the loan (created, completed, etc.) */
   state: LoanState; 
   /** Enum that gives an idea of how Loan was closed (Paid out, Declined, Deactivated, Forgiven, Cancelled) */
-  closureType: LoanClosure | null;
+  closureType: LoanClosure;
   /** Relationship between lender and borrower. FE controls content */
   relationship: string | null;
   /** Reason for the Loan. FE controls content */
@@ -42,24 +38,7 @@ export interface ILoan extends EntityId<string> {
   // #endregion
 
   // #region Target/Source Bindings
-  /** For the Loans that are created targeting User who not registered yet. 
-   * Contains contact uri in format mailto:email or tel:+1234567890 */
-  targetUserUri: string | null; 
-
-  /** During Loan Creation we (and prbably User) do not know is Loan target user registered in Zirtue.
-   * We need to know what is first name of target user despite the fact that we do not know if they are registered or not
-   */
-  targetUserFirstName: string | null;
-  /** During Loan Creation we (and prbably User) do not know is Loan target user registered in Zirtue.
-   * We need to know what is last name of target user despite the fact that we do not know if they are registered or not
-   */
-  targetUserLastName: string | null;
-
-  // For B2C and B2B Loans I suggest to think about creating service-user for Partner
-  // It will be used (for now) only for binding a Loan to it
-  // Such ServiceUser will have a type (needs to extend ApplicationUser) and will be excluded from most avaliable actions for real Users (Login, change props, etc)
-  // By this we will avoid making solution more complex to support B2C B2B Loans
-
+  invitee: ILoanInvitee;
   // #endregion
 
   // #region Bill-Pay info
@@ -74,22 +53,11 @@ export interface ILoan extends EntityId<string> {
   // #region Payment Schedule Info
   /** Total number of (re)payments for the Loan */
   paymentsCount: number;
-  /** Displays the index of current (re)payment.
-   * If Loan not in acceptance yet - null
-   */
-  currentPaymentIndex: number | null;
-  /** Contains a date at which Loan repayment should happen
-   * Might be createdAt + 1month by default but configurable
-   */
-  nextPaymentDate: Date | null;
+
   /** Enum that tells how often (re)payment should happen
  * 'monthly' by default but configurable
  * For now lets not overcomplicate it with custom repayment frequency */  
   paymentFrequency: LoanPaymentFrequency;
-  /** Amount of next (re)payment. 
-   * Only for next one as we (check that) want to support rescheduling
-   */
-  paymmentAmount: number | null;
 
   payments: ILoanPayment[] | null;
   // #endregion
@@ -102,7 +70,7 @@ export interface ILoan extends EntityId<string> {
   /** Total amount of the fee.
    * If it is splitted to few payments - need to keep track on that
    */
-  feeValue: number | null;
+  feeAmount: number | null;
   // #endregion
 
   // #region Payment Account Bindings
@@ -117,16 +85,6 @@ export interface ILoan extends EntityId<string> {
   borrowerAccountId: string | null;
   /** (type - payment method object, TBD) PaymentAccount for Borrower */
   borrowerAccount: IPaymentAccount | null;
-  // #endregion
-
-  // #region Partner-related Info
-  /** Partner FK if Loan is Partner-referred */
-  partnerId: string | null; 
-  /** IPartner in fact, not 'string' for sure */
-  partner: string | null; 
-  /** If Loan was created by Partner Preset (presets could not be changed if any Loans created with it already - keeps data linked relevant) */
-  presetLink: string | null; 
-  // etc
   // #endregion
 
   // #region Timestamps

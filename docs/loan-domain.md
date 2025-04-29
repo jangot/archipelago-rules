@@ -93,7 +93,6 @@ namespace Core {
     +uuid lenderId
     +uuid borrowerId
     +LoanType type
-    +boolean isLendLoan
     +LoanState state
     +LoanClosure closureType?
     +string relationship?
@@ -101,9 +100,6 @@ namespace Core {
     +string note?
     +string attachment?
     +string deeplink?
-    +string targetUserUri?
-    +string targetUserFirstName?
-    +string targetUserLastName?
 
     +uuid billerId?
     +string billingAccountNumber?

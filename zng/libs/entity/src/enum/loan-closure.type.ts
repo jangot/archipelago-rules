@@ -1,4 +1,6 @@
 export const LoanClosureCodes = {
+  /** Loan not completed yet */
+  Open: 'open',
   /** Entire Loan was repaid */
   PaidOut: 'paid_out',
   /** Loan closed by creator before Accepted */

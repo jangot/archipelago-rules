@@ -16,16 +16,16 @@ describe('ScheduleService - previewRepaymentPlan', () => {
         paymentsCount: 5, 
         paymentFrequency: LoanPaymentFrequencyCodes.Monthly, 
         feeMode: null, 
-        feeValue: null, 
+        feeAmount: null, 
         repaymentStartDate: null, 
       },
-      { amount: 100, paymentsCount: 0, paymentFrequency: LoanPaymentFrequencyCodes.Monthly, feeMode: null, feeValue: null, repaymentStartDate: null },
+      { amount: 100, paymentsCount: 0, paymentFrequency: LoanPaymentFrequencyCodes.Monthly, feeMode: null, feeAmount: null, repaymentStartDate: null },
       { 
         amount: 100, 
         paymentsCount: 5, 
         paymentFrequency: LoanPaymentFrequencyCodes.Monthly, 
         feeMode: LoanFeeModeCodes.Standard, 
-        feeValue: -10, 
+        feeAmount: -10, 
         repaymentStartDate: null, 
       },
     ];
@@ -42,7 +42,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
       paymentsCount: 3,
       paymentFrequency: LoanPaymentFrequencyCodes.Monthly,
       feeMode: LoanFeeModeCodes.Standard,
-      feeValue: 30,
+      feeAmount: 30,
       repaymentStartDate: null,
     };
 
@@ -62,7 +62,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
       paymentsCount: 4,
       paymentFrequency: LoanPaymentFrequencyCodes.Monthly,
       feeMode: LoanFeeModeCodes.Standard,
-      feeValue: 0,
+      feeAmount: 0,
       repaymentStartDate,
     };
 
@@ -83,7 +83,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
       paymentsCount: 5,
       paymentFrequency: LoanPaymentFrequencyCodes.Weekly,
       feeMode: LoanFeeModeCodes.Standard,
-      feeValue: 0,
+      feeAmount: 0,
       repaymentStartDate,
     };
 
@@ -104,7 +104,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
       paymentsCount: 3,
       paymentFrequency: LoanPaymentFrequencyCodes.Semimonthly,
       feeMode: LoanFeeModeCodes.Standard,
-      feeValue: 0,
+      feeAmount: 0,
       repaymentStartDate,
     };
 
@@ -123,7 +123,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
       paymentsCount: 3,
       paymentFrequency: LoanPaymentFrequencyCodes.Monthly,
       feeMode: LoanFeeModeCodes.Standard,
-      feeValue: 0,
+      feeAmount: 0,
       repaymentStartDate: null,
     };
 

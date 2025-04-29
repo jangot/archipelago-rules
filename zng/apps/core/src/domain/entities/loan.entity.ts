@@ -1,10 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
 import { ILoan } from '@library/entity/interface';
-import { LoanType, LoanState, LoanClosure, LoanPaymentFrequency, LoanFeeMode } from '@library/entity/enum';
+import { LoanType, LoanState, LoanClosure, LoanPaymentFrequency, LoanFeeMode, LoanClosureCodes } from '@library/entity/enum';
 import { ApplicationUser } from './application.user.entity';
 import { Biller } from './biller.entity';
 import { PaymentAccount } from './payment.account.entity';
 import { LoanPayment } from './loan.payment.entity';
+import { LoanInvitee } from './loan.invitee.entity';
 
 @Entity({ schema: 'core' })
 // When using @Check('<constraint_name>', '<expression') -- always specify a Constraint name
@@ -37,14 +38,11 @@ export class Loan implements ILoan {
   @Column({ type: 'text' })
   type: LoanType;
 
-  @Column({ type: 'boolean', default: true })
-  isLendLoan: boolean;
-
   @Column({ type: 'text' })
   state: LoanState;
 
-  @Column({ type: 'text', nullable: true })
-  closureType: LoanClosure | null;
+  @Column({ type: 'text', nullable: false, default: LoanClosureCodes.Open })
+  closureType: LoanClosure;
 
   @Column({ type: 'text', nullable: true })
   relationship: string | null;
@@ -61,14 +59,8 @@ export class Loan implements ILoan {
   @Column({ type: 'text', nullable: true })
   deeplink: string | null;
 
-  @Column({ type: 'text', nullable: true })
-  targetUserUri: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  targetUserFirstName: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  targetUserLastName: string | null;
+  @OneToOne(() => LoanInvitee, (invitee) => invitee.loan, { nullable: false })
+  invitee: LoanInvitee;
 
   @Column({ type: 'uuid', nullable: true })
   billerId: string | null;
@@ -83,17 +75,8 @@ export class Loan implements ILoan {
   @Column({ type: 'int' })
   paymentsCount: number;
 
-  @Column({ type: 'int', nullable: true })
-  currentPaymentIndex: number | null;
-
-  @Column({ type: 'timestamp with time zone', nullable: true })
-  nextPaymentDate: Date | null;
-
   @Column({ type: 'text' })
   paymentFrequency: LoanPaymentFrequency;
-
-  @Column({ type: 'decimal', nullable: true })
-  paymmentAmount: number | null;
 
   @OneToMany(() => LoanPayment, (loanPayment) => loanPayment.loan, { nullable: true })
   payments: LoanPayment[] | null;
@@ -102,7 +85,7 @@ export class Loan implements ILoan {
   feeMode: LoanFeeMode | null;
 
   @Column({ type: 'decimal', nullable: true })
-  feeValue: number | null;
+  feeAmount: number | null;
 
   @Column({ type: 'uuid', nullable: true })
   lenderAccountId: string | null;
@@ -117,15 +100,6 @@ export class Loan implements ILoan {
   @ManyToOne(() => PaymentAccount, { nullable: true })
   @JoinColumn({ name: 'borrower_account_id' })
   borrowerAccount: PaymentAccount | null;
-
-  @Column({ type: 'uuid', nullable: true })
-  partnerId: string | null;
-
-  // TODO: Link to Entity
-  partner: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  presetLink: string | null;
 
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;

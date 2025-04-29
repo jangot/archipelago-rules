@@ -2,9 +2,10 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LoanCreateCommand } from './lending.commands';
 import { LendingBaseCommandHandler } from './lending.base.command-handler';
 import { ILoan } from '@library/entity/interface';
-import { LoanTypeCodes } from '@library/entity/enum';
+import { LoanInviteeTypeCodes, LoanTypeCodes } from '@library/entity/enum';
 import { BillerNotSelectedException, UnableToCreatePersonalBillerException } from '@core/domain/exceptions/loan-domain.exceptions';
 import { DeepPartial } from 'typeorm';
+import { MissingInputException } from '@library/shared/common/exceptions/domain';
 
 @CommandHandler(LoanCreateCommand)
 export class LoanCreateCommandHandler 
@@ -13,8 +14,14 @@ export class LoanCreateCommandHandler
     
   public async execute(command: LoanCreateCommand): Promise<ILoan | null> {
     const { payload } = command;
-    const { userId: creatorId, billerId, type, isLendLoan } = payload;
+    const { userId: creatorId, billerId, type, invitee } = payload;
     const loanCreateInput: DeepPartial<ILoan> = { ...payload };
+
+    // Check Loan Invitee data provided
+    if (!invitee || !invitee.type || !invitee.email || !invitee.phone) {
+      throw new MissingInputException('Loan Invitee details missing');
+    }
+    const { type: inviteeType } = invitee;
 
     // Check Biller - create personal if P2P, otherwise if empty - throw
 
@@ -34,9 +41,9 @@ export class LoanCreateCommandHandler
     // TODO billingAccountNumebr validation here?
 
     // Link user to lender/borrower
-    if (isLendLoan) {
+    if (inviteeType === LoanInviteeTypeCodes.Borrower) {
       loanCreateInput.lenderId = creatorId;
-    } else {
+    } else if (inviteeType === LoanInviteeTypeCodes.Lender) {
       loanCreateInput.borrowerId = creatorId;
     }
 

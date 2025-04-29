@@ -1,4 +1,4 @@
-import { IUserRepository, ILoanRepository, ILoginRepository, IUserRegistrationRepository, IBillerRepository, IPaymentAccountRepository, ITransferRepository, ILoanPaymentRepository } from '../../shared/interfaces/repositories';
+import { IUserRepository, ILoanRepository, ILoginRepository, IUserRegistrationRepository, IBillerRepository, IPaymentAccountRepository, ITransferRepository, ILoanPaymentRepository, ILoanInviteeRepository } from '../../shared/interfaces/repositories';
 import { BillerRepository } from './biller.repository';
 import { LoanRepository } from './loan.repository';
 import { LoginRepository } from './login.repository';
@@ -7,6 +7,7 @@ import { UserRegistrationRepository } from './user.registration.repository';
 import { UserRepository } from './user.repository';
 import { TransferRepository } from './transfer.repository';
 import { LoanPaymentRepository } from './loan.payment.repository';
+import { LoanInviteeRepository } from './loan.invitee.repository';
 
 export * from './user.repository';
 export * from './loan.repository';
@@ -16,6 +17,7 @@ export * from './biller.repository';
 export * from './payment.account.repository';
 export * from './transfer.repository';
 export * from './loan.payment.repository';
+export * from './loan.invitee.repository';
 
 export const CustomCoreRepositories = [
   { provide: IUserRepository, useClass: UserRepository },
@@ -26,4 +28,5 @@ export const CustomCoreRepositories = [
   { provide: IPaymentAccountRepository, useClass: PaymentAccountRepository },
   { provide: ITransferRepository, useClass: TransferRepository },
   { provide: ILoanPaymentRepository, useClass: LoanPaymentRepository },
+  { provide: ILoanInviteeRepository, useClass: LoanInviteeRepository },
 ];

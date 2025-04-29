@@ -14,6 +14,7 @@ export * from './loan-closure.type';
 export * from './loan-payment-frequency.type';
 export * from './loan-fee-mode';
 export * from './loan.bind-intent.type';
+export * from './loan-invitee.type';
 // #endregion
 
 // #region Biller

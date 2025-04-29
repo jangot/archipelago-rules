@@ -21,24 +21,18 @@ export interface IBindTargetUserToLoansResult {
   currentPaymentIndex: number | null;
   deeplink: string | null;
   feeMode: string | null;
-  feeValue: string | null;
+  feeAmount: string | null;
   id: string;
-  isLendLoan: boolean;
   lenderAccountId: string | null;
   lenderId: string | null;
   nextPaymentDate: Date | null;
   note: string | null;
-  partnerId: string | null;
   paymentFrequency: string;
   paymentsCount: number;
   paymmentAmount: string | null;
-  presetLink: string | null;
   reason: string | null;
   relationship: string | null;
   state: string;
-  targetUserFirstName: string | null;
-  targetUserLastName: string | null;
-  targetUserUri: string | null;
   type: string;
   updatedAt: Date | null;
 }
