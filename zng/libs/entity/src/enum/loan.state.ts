@@ -18,7 +18,7 @@ export const LoanStateCodes = {
   /** Funds transfer from Zirtue to Borrower \ Biller started */
   Disbursing: 'disbursing',
   /** Funds transfer from Zirtue to Borrower \ Biller paused */
-  DisburisngPaused: 'disbursing_paused',
+  DisbursingPaused: 'disbursing_paused',
   /** Funds transfer from Zirtue to Borrower \ Biller completed */
   Disbursed: 'disbursed',
   /** Borrower started to repay the loan */

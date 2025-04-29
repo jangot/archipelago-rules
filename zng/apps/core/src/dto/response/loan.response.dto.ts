@@ -129,7 +129,7 @@ export class LoanResponseDto {
   @Expose()
   paymmentAmount: number | null;
 
-  @ApiProperty({ description: 'Fee mode for the loan', enum: LoanFeeModeCodes, example: LoanFeeModeCodes.Standart, required: false })
+  @ApiProperty({ description: 'Fee mode for the loan', enum: LoanFeeModeCodes, example: LoanFeeModeCodes.Standard, required: false })
   @IsOptional()
   @Expose()
   feeMode: LoanFeeMode | null;

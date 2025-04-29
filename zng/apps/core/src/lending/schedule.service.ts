@@ -16,15 +16,15 @@ export class ScheduleService {
     const { amount, paymentsCount, paymentFrequency, feeMode, feeValue, repaymentStartDate } = input;
     // Fast-quit for invalid input
     if (amount <= 0 || paymentsCount <= 0 || (feeValue !== null && feeValue < 0)) return payments;
-    // Cuurentrly support only 'Standart' fee type
-    if (feeValue && feeValue > 0 && feeMode && feeMode !== LoanFeeModeCodes.Standart) return payments;
+    // Cuurentrly support only 'Standard' fee type
+    if (feeValue && feeValue > 0 && feeMode && feeMode !== LoanFeeModeCodes.Standard) return payments;
 
     // TODO: Move control over that higher?
     const firstPaymentDate = repaymentStartDate || addMonths(new Date(), 1);
 
 
     let totalBalance = amount + (feeValue || 0);
-    // For 'Standart' fee mode we spread its amount to repayment process
+    // For 'Standard' fee mode we spread its amount to repayment process
     let paymentAmount = round2(totalBalance / paymentsCount); 
     for (let i = 0; i < paymentsCount; i++) {
       const paymentDate = this.getRepaymentDate(firstPaymentDate, paymentFrequency, i);

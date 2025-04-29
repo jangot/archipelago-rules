@@ -1,3 +1,24 @@
+<style>
+  /* use this to force non-dark mode even when IDE is using Dark Mode*/
+  .mermaid {
+    display: flex;                    /* turn on flex layout */
+    justify-content: center;          /* center children horizontally */
+    background-color: white !important;
+  }
+  .mermaid svg {
+    width: auto !important;           /* don’t force it to fill the parent */
+  }
+  body {
+    background: white;
+    font-color: black;
+  }
+  h3 {
+    color: #2a2a2a;
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+    text-align: center;
+}
+</style>
 ### Loan Domain (WIP)
 
 ```mermaid
@@ -54,7 +75,7 @@ namespace Core {
 
   class LoanFeeMode {
     <<enumeration>>
-    Standart
+    Standard
   }
 
   class BillerType {
@@ -68,6 +89,7 @@ namespace Core {
     <<Entity>>
     +uuid id
     +decimal amount
+
     +uuid lenderId
     +uuid borrowerId
     +LoanType type
@@ -82,19 +104,21 @@ namespace Core {
     +string targetUserUri?
     +string targetUserFirstName?
     +string targetUserLastName?
+
     +uuid billerId?
     +string billingAccountNumber?
+
     +int paymentsCount
+    +LoanPaymentFrequency paymentFrequency
+    +LoanFeeMode feeMode?
+    +decimal feeAmount?
+    +decimal paymentAmount?
+
     +int currentPaymentIndex?
     +Date nextPaymentDate?
-    +LoanPaymentFrequency paymentFrequency
-    +decimal paymentAmount?
-    +LoanFeeMode feeMode?
-    +decimal feeValue?
+    
     +uuid lenderAccountId?
     +uuid borrowerAccountId?
-    +uuid partnerId?
-    +string presetLink?
     +Date createdAt
     +Date updatedAt?
     +Date acceptedAt?
