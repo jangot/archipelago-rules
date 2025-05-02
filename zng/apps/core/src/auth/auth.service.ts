@@ -18,13 +18,13 @@ export class AuthService {
   public async initiateLoginSession(request: LoginRequestDto): Promise<UserLoginResponseDTO> {
     const contactInfo = this.extractContactInfo(request);
 
-    return await this.commandBus.execute(new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType }));
+    return this.commandBus.execute(new LoginInitiateCommand({ contact: contactInfo.contact, contactType: contactInfo.contactType }));
   }
 
   public async verifyLoginSession(request: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
     const contactInfo = this.extractContactInfo(request);
 
-    return await this.commandBus.execute(
+    return this.commandBus.execute(
       new LoginVerifyCommand({
         userId: request.userId ?? undefined,
         contact: contactInfo.contact,

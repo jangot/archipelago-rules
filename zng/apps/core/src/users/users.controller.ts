@@ -153,7 +153,7 @@ export class UsersController {
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
   @Post()
   public async createUser(@Body() user: UserCreateRequestDto): Promise<UserResponseDto | null> {
-    return await this.userService.createUser(user);
+    return this.userService.createUser(user);
   }
 
   @ApiBody({ type: UserUpdateRequestDto })

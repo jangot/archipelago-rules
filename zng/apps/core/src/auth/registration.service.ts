@@ -132,7 +132,7 @@ export class RegistrationService {
 
     // We cannot pass in the loginId if the registration is complete. This will cause us to regenerate and save a new JWT token, and 
     // we will save it in the database.
-    return loginId ? await this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType, loginId })) : new ApiStatusResponseDto('Success', 'Registration completed');
+    return loginId ? this.commandBus.execute(new LoginOnContactVerifiedCommand({ userId, contactType, loginId })) : new ApiStatusResponseDto('Success', 'Registration completed');
     
   }
 }
