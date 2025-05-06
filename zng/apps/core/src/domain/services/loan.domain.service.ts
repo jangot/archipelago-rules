@@ -1,6 +1,6 @@
 import { CoreDataService } from '@core/data/data.service';
 import { BillerTypeCodes, LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
-import { IBiller, ILoan } from '@library/entity/interface';
+import { IBiller, ILoan, ILoanInvitee } from '@library/entity/interface';
 import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -32,8 +32,7 @@ export class LoanDomainService extends BaseDomainServices {
     return this.getLoanById(loanId);
   }
 
-  public async createPersonalBiller(loan: DeepPartial<ILoan>, createdById: string): Promise<IBiller | null> {
-    const { invitee } = loan;
+  public async createPersonalBiller(invitee: DeepPartial<ILoanInvitee>, createdById: string): Promise<IBiller | null> {
     const loanTypeText = invitee ? invitee.type === LoanInviteeTypeCodes.Borrower ? 'offer' : 'request' : '';
     const billerName = `Personal ${loanTypeText} to ${invitee?.firstName} ${invitee?.lastName}`;
     return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Personal, createdById });
