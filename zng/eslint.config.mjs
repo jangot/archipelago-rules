@@ -48,7 +48,8 @@ export default [
       '@typescript-eslint/no-unused-vars': ['warn', { vars: 'all', args: 'after-used', ignoreRestSiblings: true }],
       'no-unused-expressions': 'warn',
       'no-unused-labels': 'warn',
-
+      'no-return-await': 'error',
+      
       // Stylistic rules (replacing Prettier)
       '@stylistic/indent': ['warn', 2],
       '@stylistic/quotes': ['warn', 'single', { avoidEscape: true }],

@@ -55,14 +55,14 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
   }
 
   public async getAll(): Promise<Entity[]> {
-    return await this.repository.find();
+    return this.repository.find();
   }
 
   public async insert(item: DeepPartial<Entity>, returnResult: false): Promise<Entity['id'] | null>;
   public async insert(item: DeepPartial<Entity>, returnResult: true): Promise<Entity | null>;
   public async insert(item: DeepPartial<Entity>, returnResult: boolean = false): Promise<Entity['id'] | Entity | null> {
     if (returnResult) {
-      return await this.insertWithResult(item);
+      return this.insertWithResult(item);
     }
 
     const insertResult = await this.repository.insert(item);
@@ -87,7 +87,7 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
   }
 
   public async create(item: DeepPartial<Entity>): Promise<Entity> {
-    return await this.repository.save(item);
+    return this.repository.save(item);
   }
 
   public async update(id: Entity['id'], item: DeepPartial<Entity>): Promise<boolean> {
@@ -100,11 +100,11 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
   }
 
   public async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
-    return await this.repository.findOne(options);
+    return this.repository.findOne(options);
   }
 
   public async findOneBy(where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[]): Promise<Entity | null> {
-    return await this.repository.findOneBy(where);
+    return this.repository.findOneBy(where);
   }
 
   public async find(options: FindManyOptions<Entity>): Promise<IPaging<Entity>> {
@@ -144,9 +144,9 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
   public async remove(entity: Entity, options?: RemoveOptions): Promise<Entity>;
   public async remove(entityOrEntities: Entity | Entity[], options?: RemoveOptions): Promise<Entity | Entity[]> {
     if (Array.isArray(entityOrEntities)) {
-      return await this.repository.remove(entityOrEntities, options);
+      return this.repository.remove(entityOrEntities, options);
     } else {
-      return await this.repository.remove(entityOrEntities, options);
+      return this.repository.remove(entityOrEntities, options);
     }
   }
 

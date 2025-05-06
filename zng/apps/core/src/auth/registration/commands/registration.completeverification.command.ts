@@ -31,7 +31,7 @@ export class VerificationCompleteCommandHandler
     if (!id) {
       throw new MissingInputException('User id cannot be null when completing verification.');
     }
-    return await this.completeVerification(id);
+    return this.completeVerification(id);
   }
 
   @Transactional()

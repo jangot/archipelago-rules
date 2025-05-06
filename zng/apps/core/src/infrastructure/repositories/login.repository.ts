@@ -27,13 +27,13 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
   }
 
   public async getAllUserLogins(userId: string): Promise<ILogin[]> {
-    return await this.repository.find({ where: { userId } });
+    return this.repository.find({ where: { userId } });
   }
 
   public async getUserLoginForSecret(userId: string, secret: string, isAccessToken = false): Promise<ILogin | null> {
     this.logger.debug(`Looking by userId: ${userId} and secret: ${secret}`);
     const searchQuery: FindOptionsWhere<Login> = isAccessToken ? { userId, sessionId: secret } : { userId, secret };
-    return await this.repository.findOneBy(searchQuery);
+    return this.repository.findOneBy(searchQuery);
   }
 
   public async deleteUserLoginsByAccessToken(userId: string, accessToken: string): Promise<void> {

@@ -118,7 +118,7 @@ export class AuthController {
   @ApiExtraModels(RegistrationRequestDto)
   @ApiBody({ schema: { $ref: getSchemaPath(RegistrationRequestDto) } })
   public async register(@Body() body: RegistrationDto): Promise<UserRegisterResponseDto> {
-    return await this.registrationService.register(body);
+    return this.registrationService.register(body);
   }
 
   @Put('register')
@@ -132,7 +132,7 @@ export class AuthController {
   public async updateVerificationField(@Body() body: RegistrationUpdateRequestDto, 
     @Req() request: IRequest): Promise<UserRegisterResponseDto | null> {
     const userId = request.user?.id;
-    return await this.registrationService.updateRegistrationContact(body, userId);
+    return this.registrationService.updateRegistrationContact(body, userId);
   }
 
   // Calling /register/verify again after sending initial code
@@ -150,7 +150,7 @@ export class AuthController {
   @ApiExtraModels(RegistrationVerifyRequestDto, UserLoginPayloadDto)
   @ApiBody({ type: RegistrationVerifyRequestDto, schema: { $ref: getSchemaPath(RegistrationVerifyRequestDto) } })
   public async verifyRegistration(@Body() body: RegistrationVerifyRequestDto): Promise<UserLoginPayloadDto | ApiStatusResponseDto | null> {
-    return await this.registrationService.verifyRegistration(body);
+    return this.registrationService.verifyRegistration(body);
   }
 }
 //#endregion

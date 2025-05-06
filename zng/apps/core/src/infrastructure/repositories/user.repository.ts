@@ -24,13 +24,13 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
 
     switch (type) {
       case ContactType.EMAIL:
-        return await this.repository.findOneBy({ email: contact });
+        return this.repository.findOneBy({ email: contact });
       case ContactType.PHONE_NUMBER:
-        return await this.repository.findOneBy({ phoneNumber: contact });
+        return this.repository.findOneBy({ phoneNumber: contact });
       case ContactType.PENDING_EMAIL:
-        return await this.repository.findOneBy({ pendingEmail: contact });
+        return this.repository.findOneBy({ pendingEmail: contact });
       case ContactType.PENDING_PHONE_NUMBER:
-        return await this.repository.findOneBy({ pendingPhoneNumber: contact });
+        return this.repository.findOneBy({ pendingPhoneNumber: contact });
       default:
         break;
     }

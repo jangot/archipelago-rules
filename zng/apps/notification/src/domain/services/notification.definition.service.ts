@@ -27,7 +27,7 @@ export class NotificationDomainService extends BaseDomainServices {
    * @returns Array of NotificationDefinitionResponseDto DTOs
    */
   async getAllDefinitions(): Promise<INotificationDefinition[]> {
-    return await this.data.notificationDefinitions.getAll();
+    return this.data.notificationDefinitions.getAll();
   }
 
   /**
@@ -38,7 +38,7 @@ export class NotificationDomainService extends BaseDomainServices {
    * @throws NotFoundException if no definition is found with the provided ID
    */
   async getDefinitionById(id: string): Promise<INotificationDefinition | null> {
-    return await this.data.notificationDefinitions.getById(id);
+    return this.data.notificationDefinitions.getById(id);
   }
 
   /**
@@ -48,7 +48,7 @@ export class NotificationDomainService extends BaseDomainServices {
    * @returns A NotificationDefinitionResponseDto DTO for the created definition
    */
   async createDefinition(notificationDefinition: DeepPartial<INotificationDefinition>): Promise<INotificationDefinition | null> {
-    return await this.data.notificationDefinitions.insert(notificationDefinition, true);
+    return this.data.notificationDefinitions.insert(notificationDefinition, true);
   }
 
   /**

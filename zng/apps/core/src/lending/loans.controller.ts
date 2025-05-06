@@ -54,7 +54,7 @@ export class LoansController {
       throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
     }
     this.logger.debug('Creating loan', { input });
-    return await this.loansService.createLoan(userId, input);
+    return this.loansService.createLoan(userId, input);
   }
 
   // Accept loan and provide details required (target payment method, etc.)
@@ -88,7 +88,7 @@ export class LoansController {
       throw new HttpException('Missing Payment Account Id', HttpStatus.BAD_REQUEST);
     }
     this.logger.debug('Connecting and sending loan', { id, input });
-    return await this.loansService.proposeLoan(userId, id, input.sourcePaymentAccountId);
+    return this.loansService.proposeLoan(userId, id, input.sourcePaymentAccountId);
   }
 
   // TODO: is there real need of generic 'update' endpoint?
