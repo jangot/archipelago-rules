@@ -6,6 +6,10 @@ import { ILoanRepository } from '../../shared/interfaces/repositories';
 import { Loan } from '../../domain/entities';
 import { ILoan } from '@library/entity/interface';
 import { bindTargetUserToLoans } from '../sql_generated/bind-target-user-to-loans.queries';
+import { LoanBindToContactInput } from '@library/shared/types/lending';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
+import { LoanInviteeType, LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
+import { ActionNotSupportedForStateException } from '@core/domain/exceptions/loan-domain.exceptions';
 
 @Injectable()
 export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {
@@ -18,24 +22,19 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     super(repository, Loan);
   }
 
+
   public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {
     this.logger.debug(`getByLenderId: ${lenderId}`);
 
     return this.repository.findBy({ lenderId });
   }
 
-  public async getLoansForBinding(contactUri: string): Promise<ILoan[]> {
-    this.logger.debug(`getLoansForBinding: ${contactUri}`);
+  public async setLoansTarget(input: LoanBindToContactInput): Promise<ILoan[]> {
+    const { contactValue, contactType, intent, loanId } = input;
+    this.logger.debug(`setLoansTarget: intent:${intent}, contactValue:${contactValue}`, { input });
 
-    // TODO: Implement
-    return [];
-  }
-
-  public async bindLoansToUser(userId: string, loanId?: string, contactUri?: string): Promise<ILoan[]> {
-    this.logger.debug(`bindLoansToUser: userId=${userId}, loanId=${loanId}, contactUri=${contactUri}`);
-
-    if (!loanId && !contactUri) {
-      throw new Error('Either loanId or contactUri must be provided.');
+    if (!loanId && !contactValue && !contactType) {
+      throw new MissingInputException('Either loanId or contact information must be provided.');
     }
 
     const updatedLoans: ILoan[] = [];
@@ -43,7 +42,7 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     if (loanId) {
       const loan = await this.repository.findOne({ where: { id: loanId } });
       if (!loan) {
-        throw new Error(`Loan with id ${loanId} not found.`);
+        throw new EntityNotFoundException(`Loan with id ${loanId} not found.`);
       }
 
       // TODO: fix as isLendLoan disappeared

@@ -1,7 +1,10 @@
+import { ContactType } from '@library/entity/enum';
 import { ILoanInvitee } from '@library/entity/interface';
 import { IRepositoryBase } from '@library/shared/common/data';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ILoanInviteeRepository extends IRepositoryBase<ILoanInvitee> {}
+
+export interface ILoanInviteeRepository extends IRepositoryBase<ILoanInvitee> {
+  getLoanInvitee(loanId: string, contactValue: string, contactType: ContactType): Promise<ILoanInvitee | null>;
+}
 
 export const ILoanInviteeRepository = Symbol('ILoanInviteeRepository');
