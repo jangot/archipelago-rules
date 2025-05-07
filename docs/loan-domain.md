@@ -326,3 +326,105 @@ namespace Core {
   TBD
 
   ---
+
+  ## LoanPayments and Transfers
+
+  ### LoanPayments
+**LoanPayment** - Entity that reflects a certain payment from Loan lifecycle. During `Funding`, `Disbursing` and `Repaying` states of the **Loan** Zirtue should execute funds transfers between **Lender**, **Borrower**, **Biller** and **internal accounts**. LoanPayments allows to keep track of such funds transfers which are started, failed or completed successfully. LoanPayments won't be created for scheduled in advance payments to keep data transparent.
+
+Here is a current structure of LoanPayment:
+```typescript
+  /** UUID */
+  id: string;
+
+  /** The amount of payment */
+  amount: number;
+
+
+  /** Id of the Loan that keeps this payment */
+  loanId: string; 
+
+  /** Loan Entity */
+  loan: Loan; 
+
+
+  /** Reflects the Payment Index for Loan Repayments.
+   * `null` while Loan is not in Repayment state.
+   */
+  paymentIndex: number | null;
+
+    /** Shows for what Loan lifecycle Payment is assigned
+   * `funding` - Lender transfers funds to Zirtue
+   * `disbursement` - Zirtue transfers funds to Biller
+   * `fee` - Lender pays Zirtue fee
+   * `repayment` - Borrower repays Lender
+   * `refund` - Performing refund for the payment
+   */
+  type: LoanPaymentType;
+
+    /** Indicates order number for Loan Payment if multiple stages are involved.
+   * Ex: In Loan 'Repayment' stage `0` is for `Borrower->Zirtue` payment and `1` for `Zirtue->Lender`.
+   * For one-stage payments and by default `0` is used.
+   */
+  stage: number;
+
+    /** Indicates current state of the Loan Payment.
+   * `pending` - Payment is executed but not completed yet
+   * `completed` - Payment was executed successfully
+   * `failed` - Payment was not executed successfully due to some error
+   */
+  state: LoanPaymentState;
+
+  createdAt: Date;
+  updatedAt: Date | null;
+
+    /** What date Loan Payment was executed last time. 
+     * Should be the same with `originalExecutionDate` if it is first execution attempt, 
+     * otherwise - should contain the date of latest re-attempt */
+  executionDate: Date;
+
+    /** Date for which Loan Payment was originally scheduled */
+  originalExecutionDate: Date;
+
+    /**
+   * Collection of Transfers that are part of this Loan Payment.
+   * Ideally should contain only one Transfer. 
+   * But if Transfer failed and re-attempt happened - new Transfer will be also referenced to the same Loan Payment.
+   */
+  transfers: Transfer[] | null;
+```
+
+Let's take a look on example:
+Imagine that we have a Direct Bill Pay Loan that in `Repaying` state, last payment just failed after re-attempt. Loan was configured to three repayments. Here is an array of LoanPayments that were created during the whole Loan lifecycle (some fields are removed to improve readability):
+```typescript
+// 1. Funding: Lender transfers funds to Zirtue
+{ amount: 1000, loanId: 'loan-uuid', paymentIndex: null, type: 'funding', stage: 0, state: 'completed', transfers: [lender-zirtue-transfer] },
+// 2. Funding: Lender pays fee to Zirtue
+{ amount: 30, loanId: 'loan-uuid', paymentIndex: null, type: 'fee', stage: 0, state: 'completed', transfers: [lender-zirtue-fee-transfer] },
+// 3. Disbursement: Zirtue transfers funds to Biller
+{ amount: 1000, loanId: 'loan-uuid', paymentIndex: null, type: 'disbursement', stage: 0, state: 'completed', transfers: [zirtue-biller-transfer] },
+// 4.1 Repayment #1: Borrower -> Zirtue
+{ amount: 333.33, loanId: 'loan-uuid', paymentIndex: 0, type: 'repayment', stage: 0, state: 'completed', transfers: [borrower-zirtue-transfer1] },
+//     Repayment #1: Zirtue -> Lender
+{ amount: 333.33, loanId: 'loan-uuid', paymentIndex: 0, type: 'repayment', stage: 1, state: 'completed', transfers: [zirtue-lender-transfer1] },
+// 4.2 Repayment #2: Borrower -> Zirtue
+{ amount: 333.33, loanId: 'loan-uuid', paymentIndex: 1, type: 'repayment', stage: 0, state: 'completed', transfers: [borrower-zirtue-transfer2] },
+//     Repayment #2: Zirtue -> Lender
+{ amount: 333.33, loanId: 'loan-uuid', paymentIndex: 1, type: 'repayment', stage: 1, state: 'completed', transfers: [zirtue-lender-transfer2] },
+// 4.3 Repayment #3: Borrower -> Zirtue
+{ amount: 333.34, loanId: 'loan-uuid', paymentIndex: 2, type: 'repayment', stage: 0, state: 'completed', transfers: [borrower-zirtue-transfer3] },
+//     Repayment #3: Zirtue -> Lender
+{ amount: 333.34, loanId: 'loan-uuid', paymentIndex: 2, type: 'repayment', stage: 1, state: 'failed', transfers: [zirtue-lender-transfer3-1, zirtue-lender-transfer3-2] },
+```
+
+Note: In most positive case scenario (all transfers were succeeded during whole Loan lifecycle) the number of Transfers made is equal to number of LoanPayments stored.
+
+  ---
+
+  ### Transfers
+
+  ---
+
+  ### LoanPayments relationship with Transfers
+
+  ---
