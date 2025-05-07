@@ -1,16 +1,3 @@
-<style>
-  /* use this to force non-dark mode even when IDE is using Dark Mode*/
-  .mermaid {
-    display: flex;                    /* turn on flex layout */
-    justify-content: center;          /* center children horizontally */
-    background-color: white !important;
-    
-  }
-  .mermaid svg {
-    width: auto !important;           /* don’t force it to fill the parent */
-  }
-
-</style>
 ### Loan Domain (WIP)
 
 
@@ -422,7 +409,7 @@ Note: In most positive case scenario (all transfers were succeeded during whole 
   ---
 
   ### Transfers
-**Transfer** Entity defines an explicit transfer of funds `amount` from `source` to `target` with as less extra referencies (*none is ideal*) as possible.
+**Transfer** Entity defines an explicit transfer of funds `amount` from `source` to `target` with as few extra references (*none is ideal*) as possible.
 The purpose of that is to keep the flexibility in flows where funds transfers are possible. Also it is expected that `transfers` won't be only **`Core`** namespace specific but also will be used by separate **`Payments`** microservice which will execute the transfers.
 
 At the moment the structure of Transfer Entity is following:
@@ -460,10 +447,10 @@ At the moment the structure of Transfer Entity is following:
   loanPayment: LoanPayment | null;
 ```
 
-As it was mentioned before - Transfer Entity should stay as clean as possible from any referencies. But in the strucutere above we see that there are already three referencies presented:
-- `loanPayment` reference allows **LoanPayment** Entity to aggregate all **Transfers** made for this payemnt. This reference is nullable for the purpose of having non-Loan Transfer also being kept the same place (ex *batch payments*). 
-To keep Transfer Entity less linked to other Entities there is an **Alternative approach**(likely to be implemented): solve LoanPayments <> Transfers relationships by having intermediate Table `LoanPaymentTransfers` which as like for many-to-many relationships (in fact Transfers are `many to (one OR none)` with LoanPayments). This table will keep referencies for **LoanPayments** and **Transfers** aligned while **Transfer** itself won't have a reference to **LoanPayment**
-- `sourceAccount` and `destinationAccount` referencies seems to be required - this is the exact **from - to** information. But there is also **Alternative approach**(also likely to be implemented) - to have a reference not directly to **PaymentAccount** but another aggregation Table which will keep referencies between different types of Payment Methods Accounts. *The naming should be fixed here*. Fields `sourceAccountType` and `destinationAccountType` are exactly highlightning that requirement for Transfer execution - the service (which will execute the transfer) should know at some point what types of APIs / flows should be used to perform the transfer. But ideally **Transfer** Entity should not keep this information also.
+As it was mentioned before - Transfer Entity should stay as clean as possible from any references. But in the structure above we see that there are already three references presented:
+- `loanPayment` reference allows **LoanPayment** Entity to aggregate all **Transfers** made for this payemnt. This reference is nullable for the purpose of supporting non-Loan Transfers being stored in the same place (ex *batch payments*). 
+To keep Transfer Entity less linked to other Entities there is an **Alternative approach**(likely to be implemented): solve LoanPayments <> Transfers relationships by having intermediate Table `LoanPaymentTransfers` which as like for many-to-many relationships (in fact Transfers are `many to (one OR none)` with LoanPayments). This table will keep references for **LoanPayments** and **Transfers** aligned while **Transfer** itself won't have a reference to **LoanPayment**
+- `sourceAccount` and `destinationAccount` references seems to be required - this is the exact **from - to** information. But there is also **Alternative approach**(also likely to be implemented) - to have a reference not directly to **PaymentAccount** but another aggregation Table which will keep references between different types of Payment Methods Accounts. *The naming should be fixed here*. Fields `sourceAccountType` and `destinationAccountType` are exactly highlightning that requirement for Transfer execution - the service (which will execute the transfer) should know at some point what types of APIs / flows should be used to perform the transfer. But ideally **Transfer** Entity should not keep this information also.
 
   ---
 
