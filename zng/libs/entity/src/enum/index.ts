@@ -27,4 +27,7 @@ export * from './payment-account-provider.type';
 export * from './transfer.state';
 export * from './loan-payment.type';
 export * from './loan-payment.state';
+export * from './payment-account.ownersip.type';
+export * from './payment-account.state';
+export * from './payment-account.details.type';
 // #endregion

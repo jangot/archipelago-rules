@@ -18,7 +18,7 @@ export class PaymentDomainService extends BaseDomainServices {
 
   public async addPaymentAccount(userId: string, input: DeepPartial<IPaymentAccount>): Promise<IPaymentAccount | null> {
     this.logger.debug(`Adding payment account for user ${userId}`, { input });
-    return this.data.paymentAccounts.create({ ...input, ownerId: userId });
+    return this.data.paymentAccounts.create({ ...input, userId: userId });
   }
 
   public async getPaymentAccountById(paymentAccountId: string): Promise<IPaymentAccount | null> {

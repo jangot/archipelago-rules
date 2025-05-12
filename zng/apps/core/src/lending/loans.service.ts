@@ -121,7 +121,7 @@ export class LoansService {
     if (!paymentAccount) {
       throw new EntityNotFoundException('Payment account not found');
     }
-    if (ownerId && paymentAccount.ownerId !== ownerId) {
+    if (ownerId && paymentAccount.userId !== ownerId) {
       throw new ActionNotAllowedException('Payment account does not belong to the user');
     }
 
