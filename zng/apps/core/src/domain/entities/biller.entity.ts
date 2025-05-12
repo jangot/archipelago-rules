@@ -2,9 +2,11 @@ import { BillerType } from '@library/entity/enum';
 import { IBiller } from '@library/entity/interface';
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
+import { PaymentAccount } from './payment.account.entity';
 
 @Entity({ schema: 'core' })
 export class Biller implements IBiller {
+
 
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -27,4 +29,9 @@ export class Biller implements IBiller {
   @ManyToOne(() => ApplicationUser, { nullable: true })
   createdBy: ApplicationUser | null;
 
+  @Column({ type: 'uuid', nullable: true })
+  paymentAccountId: string | null;
+
+  @ManyToOne(() => PaymentAccount, { nullable: true })
+  paymentAccount: PaymentAccount | null;
 }

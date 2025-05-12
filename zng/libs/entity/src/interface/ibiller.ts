@@ -1,6 +1,7 @@
 import { EntityId } from '@library/shared/common/data';
 import { BillerType } from '../enum';
 import { IApplicationUser } from './iapplication-user';
+import { IPaymentAccount } from './ipayment-account';
 
 export interface IBiller extends EntityId<string> {
   id: string; // UUID
@@ -21,5 +22,8 @@ export interface IBiller extends EntityId<string> {
 
   createdById: string | null;
   createdBy: IApplicationUser | null;
-  // TODO: other fields
+  
+  paymentAccountId: string | null;
+  paymentAccount: IPaymentAccount | null;
+
 }
