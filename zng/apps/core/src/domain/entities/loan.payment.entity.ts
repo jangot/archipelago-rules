@@ -20,13 +20,13 @@ export class LoanPayment implements ILoanPayment {
   loan: Loan;
 
   @Column({ type: 'integer', nullable: true })
-  paymentIndex: number | null;
+  paymentNumber: number | null;
 
   @Column({ type: 'text' })
   type: LoanPaymentType;
 
   @Column({ type: 'integer', default: 0 })
-  stage: number;
+  step: number;
 
   @Column({ type: 'text' })
   state: LoanPaymentState;
@@ -38,12 +38,14 @@ export class LoanPayment implements ILoanPayment {
   updatedAt: Date | null;
 
   @Column({ type: 'timestamp with time zone' })
-  executionDate: Date;
+  initiatedAt: Date;
 
   @Column({ type: 'timestamp with time zone' })
-  originalExecutionDate: Date;
+  scheduledAt: Date;
 
   @OneToMany(() => Transfer, (transfer) => transfer.loanPayment, { nullable: true })
   transfers: Transfer[] | null;
-    
+
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  completedAt: Date | null;
 }
