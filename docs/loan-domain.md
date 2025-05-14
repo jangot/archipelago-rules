@@ -314,7 +314,7 @@ namespace Core {
 
   ---
 
-  ## LoanPayments and Transfers
+  ## LoanPayments and Transfers // TODO: Update to latest design
 
   ### LoanPayments
 **LoanPayment** - Entity that reflects a certain payment from Loan lifecycle. During `Funding`, `Disbursing` and `Repaying` states of the **Loan** Zirtue should execute funds transfers between **Lender**, **Borrower**, **Biller** and **internal accounts**. LoanPayments allows to keep track of such funds transfers which are started, failed or completed successfully. LoanPayments won't be created for scheduled in advance payments to keep data transparent.
@@ -459,3 +459,78 @@ To keep Transfer Entity less linked to other Entities there is an **Alternative 
 TBD
 
   ---
+
+  # Loan Payments Processing
+
+## Loan lifecycle parts
+**Loan lifecycle part** - a group of Loan lifecycle states gathered together by the same purpose. For example `Funding` in the Loan lifecycle is a group of states that are required to be completed in order to have the Loan funded.
+
+Main payments-related Loan lifecycle parts:
+- `Funding`
+  - Funding
+  - FundingPaused
+  - Funded
+  - ? FundingError
+- `Disbursement`
+  - Disbursing
+  - DisbursingPaused
+  - Disbursed
+  - ? DisbursementError
+- `Repayment`
+  - Repaying
+  - RepaymentPaused
+  - Repaid
+  - ? RepaymentError
+
+Side payments-related Loan lifecycle parts (not decided yet are they required to be separated):
+- `Fee`
+  - Fee
+  - FeePaused
+  - FeeCompleted
+  - ? FeeError
+- `Refund`
+  - Refund
+  - RefundPaused
+  - RefundCompleted
+  - ? RefundError
+ 
+
+## Hierarchy of Payment-related entities
+```mermaid
+flowchart TD
+    Loan --has many--> LoanPayment
+    LoanPayment --has many--> LoanPaymentStep
+    LoanPaymentStep --has many--> Transfer
+
+    Transfer -.change state.-> LoanPaymentStep
+    LoanPaymentStep -.change state.-> LoanPayment
+    LoanPayment -.change state.-> Loan
+```
+
+### Loan
+> Controls general loan information and configuration
+
+### LoanPayment
+> Controls payment information on lifecycle level (`One LoanPayment per Loan lifecycle part`).
+
+*Not all Loan lifecycle parts involves LoanPayment though* - it is designed that one **LoanPayment** will be created for each of the payments-related Loan lifecycle parts. But it is not required to have a separate **LoanPayment** for each of the states inside the part. For example - `Funding` part can be represented by single **LoanPayment** with internal state which represents the completeness of the part.
+
+
+
+### LoanPaymentStep
+> Controls payment information on **Transfer Execution** level (`One LoanPaymentStep per Transfer Execution` in positive-case scenario when no re-attempts are required).
+
+Single **LoanPayment** can be represented by multiple **LoanPaymentSteps** - it is required to have a separate **LoanPaymentStep** for each of the transfers that are executed. For example - `Funding` part can be represented by single **LoanPayment** with multiple **LoanPaymentSteps**.
+
+The number of **LoanPaymentSteps** is dictated by the [Payment Route](./loan-payment-flows.md#loan-payments-router) that is used to generate chain of transfers definitions. For example - if `Lender` has `Checkbook ACH` account while `Borrower` has `Fiserv Debit Card` account - to process `Lender -> Borrower` **Payment** it should be done in two `Payment Steps`.
+
+### Transfer
+> Controls transfer information on execution level (`One Transfer per LoanPaymentStep` in positive-case scenario when no re-attempts are required)
+
+
+  ## Moving Forward
+TBD: Description of how state changes are handled in the system. The design and explanation of how BE decides that:
+- Loan should move further in state
+- LoanPayment should move further in state
+- LoanPaymentStep should move further in state
+- Transfer should move further in state
