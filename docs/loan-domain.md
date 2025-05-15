@@ -495,26 +495,72 @@ Side payments-related Loan lifecycle parts (not decided yet are they required to
   - ? RefundError
  
 
-## Hierarchy of Payment-related entities
+## Hierarchy and Logic of Payment-related Entities
 ```mermaid
 flowchart TD
-    Loan --has many--> LoanPayment
-    LoanPayment --has many--> LoanPaymentStep
-    LoanPaymentStep --has many--> Transfer
+    Loan --produce--> LoanPayment
+    LoanPayment --produce--> LoanPaymentStep
+    LoanPaymentStep --produce--> Transfer
 
     Transfer -.change state.-> LoanPaymentStep
     LoanPaymentStep -.change state.-> LoanPayment
     LoanPayment -.change state.-> Loan
 ```
+For each layer there are following rules:
+- `Layer entry creation is controlled by the previous layer if exists`
+- `Layer entry state might be result of next layer state change if exists or layer itslef might change the state`
+- `No creation or state change is possible by skipping the layer`
+
+TBD: Description of how state changes are handled in the system. The design and explanation of how BE decides that:
+- Loan should move further in state
+- LoanPayment should move further in state
+- LoanPaymentStep should move further in state
+- Transfer should move further in state
 
 ### Loan
 > Controls general loan information and configuration
 
+Created and controlled by:
+- **LoanService**
+- **LoanDomainService**
+
+Actions:
+- **Calls [PaymentRouter](./loan-payment-flows.md#loan-payments-router)** before switching to further lifecycle state part
+  - Calls Router each time when new `Repayment` Payment is scheduling
+  - Calls Router once other lifecycle state part is comming
+  - Validates that Route found
+- **Calls `LoanPaymentFactory` to create and initiate relevant `LoanPayment`** on own major state change
+  - Also provide **PaymentRoute** `PK` 
+
 ### LoanPayment
-> Controls payment information on lifecycle level (`One LoanPayment per Loan lifecycle part`).
+> Controls payment information on lifecycle level (`One LoanPayment per Loan lifecycle part, multiple for Repayment`).
 
 *Not all Loan lifecycle parts involves LoanPayment though* - it is designed that one **LoanPayment** will be created for each of the payments-related Loan lifecycle parts. But it is not required to have a separate **LoanPayment** for each of the states inside the part. For example - `Funding` part can be represented by single **LoanPayment** with internal state which represents the completeness of the part.
 
+> TODO: Write down Factory methods (including how it should react to signals)
+
+Created and controlled by **LoanPaymentFactory**. Factory, depending on the `Loan lifecycle part` (**Funding**, **Disbursement**, **Repayment**, **Fee**, **Refund**) will return the specific **LoanPaymentManager** instance:
+  - **FundingManager**
+  - **DisbursementManager**
+  - **RepaymentManager**
+  - **FeeManager**
+  - **RefundManager**
+
+While each **LoanPaymentManager** will provide certain, lifecycle-specific functionality, all of them will implement the following methods:
+- `initiate()`
+  - Checks the existance of **LoanPayment** for the current **Loan** and **Loan lifecycle part** to prevent duplicates
+  - Creates **LoanPayment** if it does not exist
+  - Gets **PaymentRoute** by provided `PK` to generate the list of **LoanPaymentSteps** for the current **LoanPayment**
+    - If the list is empty - throws an error that **LoanPayment** could not be routed
+    - (`Funding specific`) If list contains one **LoanPaymentStep** - completes **Funding** part without execution (*if `Funding + Disbursement` could be managed through single transfer - we make **null**-ish **Funding** and one-transfer **Disbursement***)
+    - (`Funding + Disbursement specific`) if **LoanPayment** routes with multiple steps - we take `N-1` steps for `Funding` and only last step for `Disbursement`
+- `advance()`
+  - Reacts to **LoanPaymentStep** 'signals' (ex. events) and updates **LoanPayment** state and other informational fields accordingly
+  - If recieves a signal that **LoanPaymentStep** is completed - checks if all requirements are met:
+    - If all **LoanPaymentSteps** are completed - completes **LoanPayment**
+    - If not all **LoanPaymentSteps** are completed - updates **LoanPayment** state and information accordingly
+- `complete()`
+  - Completes **LoanPayment** if all **LoanPaymentSteps** are completed and send a signal to **Loan** to move forward in the lifecycle
 
 
 ### LoanPaymentStep
@@ -524,13 +570,148 @@ Single **LoanPayment** can be represented by multiple **LoanPaymentSteps** - it 
 
 The number of **LoanPaymentSteps** is dictated by the [Payment Route](./loan-payment-flows.md#loan-payments-router) that is used to generate chain of transfers definitions. For example - if `Lender` has `Checkbook ACH` account while `Borrower` has `Fiserv Debit Card` account - to process `Lender -> Borrower` **Payment** it should be done in two `Payment Steps`.
 
+Created and controlled by **LoanPaymentStepManager**:
+- `createRoute()`
+  - In bulk creates **LoanPaymentSteps** for the current **LoanPayment**
+- `createStep()`
+  - (potential special-casing) Creates a single **LoanPaymentStep** for the current **LoanPayment**
+- `execute()`
+  - Creates(`!`) and executes(`?`) **Transfer** for the current **LoanPaymentStep**
+  - Updates **LoanPaymentStep** state and other informational fields accordingly
+- `update()`
+  - Updates **LoanPaymentStep** state and other informational fields accordingly
+- `complete()`
+  - Completes **LoanPaymentStep** if all requirements are met and sends a signal to **LoanPayment**
+
+Currently **LoanPaymentStep** do not require being uniquely processed depending on the **LoanPayment** type. As it goes from the definition - **LoanPaymentStep** is more like a wrapper ontop of **Transfer** where certain extended logic applied. That helps to keep real **Transfer** processing being separated from the **LoanPaymentStep** logic and namespace.
+
 ### Transfer
 > Controls transfer information on execution level (`One Transfer per LoanPaymentStep` in positive-case scenario when no re-attempts are required)
 
+Created by **LoanPaymentStepManager** (at least for **LoanPaymentStep** related transfers)
 
-  ## Moving Forward
-TBD: Description of how state changes are handled in the system. The design and explanation of how BE decides that:
-- Loan should move further in state
-- LoanPayment should move further in state
-- LoanPaymentStep should move further in state
-- Transfer should move further in state
+Controlled by **TransferExecutionService** which stays outside of the `Core` namespace and placed in `Payments` project:
+- `execute()`
+  - Executes transfer for the current **Transfer**
+  - Updates **Transfer** state and other informational fields accordingly
+  - Sends a signal that **Transfer** is executing
+- `update()`
+  - Updates **Transfer** state and other informational fields accordingly
+  - Sends a signals that **Transfer** is updated to certain state
+- `complete()`
+  - Completes **Transfer** if all requirements are met and sends a signal to **LoanPaymentStep**
+
+**TransferExecutionService** based on the **Transfer** configuration calls **PaymentExecutionFactory** to select the proper **PaymentProvider** interation, like:
+- **CheckbookPaymentProvider**
+- **FiservPaymentProvider**
+- **TabapayPaymentProvider**
+- etc.
+
+**PaymentProvider** executes the transfer and returns the result back to **TransferExecutionService** which updates the **Transfer** state and sends a signal to **LoanPaymentStep**.
+
+## Layers Communication
+```mermaid
+flowchart TD
+    %% Entities
+    Loan[Loan Entity]
+    LoanPayment[LoanPayment Entity]
+    LoanPaymentStep[LoanPaymentStep Entity]
+    Transfer[Transfer Entity]
+    PaymentAccount[PaymentAccount Entity]
+
+    %% Services
+    LoanService[LoanService]
+    LoanDomainService[LoanDomainService]
+    PaymentRouter[PaymentRouter]
+    
+    %% Factories
+    LoanPaymentFactory[LoanPaymentFactory]
+    PaymentExecutionFactory[PaymentExecutionFactory]
+    
+    %% Managers
+    FundingManager[Funding Manager]
+    DisbursementManager[Disbursement Manager]
+    RepaymentManager[Repayment Manager]
+    FeeManager[Fee Manager]
+    RefundManager[Refund Manager]
+    LoanPaymentStepManager[LoanPaymentStep Manager]
+    
+    %% Providers
+    TransferExecutionService[TransferExecution Service]
+    PaymentProvider[Payment Provider]
+
+    %% Entity Relationships - Left side of diagram
+    Loan -->|produces| LoanPayment
+    Transfer -->|references| PaymentAccount
+    
+    %% State Change Signals - Right side of diagram (upward flow)
+    Transfer -.->|state change| LoanPaymentStep
+    LoanPaymentStep -.->|state change| LoanPayment
+    LoanPayment -.->|state change| Loan
+    
+    %% Action Flow - Core sequence
+    subgraph ServiceFlow[Loan Service Flow]
+        LoanService -->|uses| LoanDomainService
+        LoanService -->|creates via| LoanPaymentFactory
+        LoanService -->|calls| PaymentRouter
+        PaymentRouter -->|returns route key to| LoanService
+        
+        %% Styling for this subgraph
+        style ServiceFlow fill:none,stroke:#666666,stroke-width:1px,stroke-dasharray:3
+    end
+
+    subgraph FactoryFlow[LoanPaymentFactory Flow]
+        LoanPaymentFactory -->|creates| FundingManager
+        LoanPaymentFactory -->|creates| DisbursementManager
+        LoanPaymentFactory -->|creates| RepaymentManager
+        LoanPaymentFactory -->|creates| FeeManager
+        LoanPaymentFactory -->|creates| RefundManager
+        
+        %% Manager actions merged into factory flow
+        FundingManager -->|manages| LoanPayment
+        DisbursementManager -->|manages| LoanPayment
+        RepaymentManager -->|manages| LoanPayment
+        FeeManager -->|manages| LoanPayment
+        RefundManager -->|manages| LoanPayment
+        
+        %% Styling for this subgraph
+        style FactoryFlow fill:none,stroke:#666666,stroke-width:1px,stroke-dasharray:3
+    end
+    
+    subgraph StepFlow[LoanPaymentStep Management Flow]
+        LoanPayment -->|controls| LoanPaymentStepManager
+        LoanPaymentStepManager -->|creates| Transfer
+        LoanPaymentStepManager -->|creates & manages| LoanPaymentStep
+        
+        
+        %% Styling for this subgraph
+        style StepFlow fill:none,stroke:#666666,stroke-width:1px,stroke-dasharray:3
+    end
+    
+    subgraph ExecutionFlow[TransferExecution Flow]
+        LoanPaymentStepManager -->|requests execution via| TransferExecutionService
+        TransferExecutionService -->|uses| PaymentExecutionFactory
+        PaymentExecutionFactory -->|creates| PaymentProvider
+        TransferExecutionService -->|executes| Transfer
+        
+        %% Styling for this subgraph
+        style ExecutionFlow fill:none,stroke:#666666,stroke-width:1px,stroke-dasharray:3
+    end
+    
+    %% Styling - Theme-neutral colors with appropriate contrast
+    classDef entity fill:#d8b4fe,stroke:#6b21a8,stroke-width:2px,color:#1e1e1e
+    classDef service fill:#93c5fd,stroke:#1d4ed8,stroke-width:2px,color:#1e1e1e
+    classDef manager fill:#bae6fd,stroke:#0369a1,stroke-width:2px,color:#1e1e1e
+    classDef factory fill:#86efac,stroke:#047857,stroke-width:2px,color:#1e1e1e
+    classDef provider fill:#fdba74,stroke:#c2410c,stroke-width:2px,color:#1e1e1e
+    
+    %% Apply styles to nodes
+    class Loan,LoanPayment,LoanPaymentStep,Transfer,PaymentAccount entity
+    class LoanService,LoanDomainService,PaymentRouter service
+    class FundingManager,DisbursementManager,RepaymentManager,FeeManager,RefundManager,LoanPaymentStepManager manager
+    class LoanPaymentFactory,PaymentExecutionFactory factory
+    class TransferExecutionService,PaymentProvider provider
+    
+    %% Style the subgraphs directly in their definition
+    %% Note: We can't use class for subgraphs with spaces in Mermaid
+```
