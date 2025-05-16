@@ -314,33 +314,53 @@ namespace Core {
 
   ---
 
-  ## LoanPayments and Transfers // TODO: Update to latest design
+  ## LoanPayments, LoanPaymentSteps and Transfers
 
-  ### LoanPayments
-**LoanPayment** - Entity that reflects a certain payment from Loan lifecycle. During `Funding`, `Disbursing` and `Repaying` states of the **Loan** Zirtue should execute funds transfers between **Lender**, **Borrower**, **Biller** and **internal accounts**. LoanPayments allows to keep track of such funds transfers which are started, failed or completed successfully. LoanPayments won't be created for scheduled in advance payments to keep data transparent.
+  ### Payment Hierarchy Overview
+  
+The loan payment system follows a hierarchical structure where each layer is responsible for a specific aspect of the payment process:
 
-Here is a current structure of LoanPayment:
+```mermaid
+flowchart TD
+    Loan --produce--> LoanPayment
+    LoanPayment --produce--> LoanPaymentStep
+    LoanPaymentStep --produce--> Transfer
+
+    Transfer -.change state.-> LoanPaymentStep
+    LoanPaymentStep -.change state.-> LoanPayment
+    LoanPayment -.change state.-> Loan
+```
+
+For each layer there are the following rules:
+- Layer entry creation is controlled by the previous layer if it exists
+- Layer entry state might be a result of next layer state change if it exists or the layer itself might change the state
+- No creation or state change is possible by skipping the layer
+
+### LoanPayment
+**LoanPayment** - Entity that reflects a certain payment from the Loan lifecycle. During `Funding`, `Disbursing`, and `Repaying` states of the **Loan**, Zirtue executes funds transfers between **Lender**, **Borrower**, **Biller** and **internal accounts**. LoanPayments track such funds transfers which are started, failed or completed successfully. LoanPayments won't be created for scheduled in advance payments to keep data transparent.
+
+Here is the updated structure of LoanPayment:
+
 ```typescript
+interface ILoanPayment {
   /** UUID */
   id: string;
 
   /** The amount of payment */
   amount: number;
 
-
   /** Id of the Loan that keeps this payment */
   loanId: string; 
 
   /** Loan Entity */
-  loan: Loan; 
-
+  loan: ILoan; 
 
   /** Reflects the Payment Index for Loan Repayments.
    * `null` while Loan is not in Repayment state.
    */
   paymentIndex: number | null;
 
-    /** Shows for what Loan lifecycle Payment is assigned
+  /** Shows for what Loan lifecycle Payment is assigned
    * `funding` - Lender transfers funds to Zirtue
    * `disbursement` - Zirtue transfers funds to Biller
    * `fee` - Lender pays Zirtue fee
@@ -349,13 +369,7 @@ Here is a current structure of LoanPayment:
    */
   type: LoanPaymentType;
 
-    /** Indicates order number for Loan Payment if multiple stages are involved.
-   * Ex: In Loan 'Repayment' stage `0` is for `Borrower->Zirtue` payment and `1` for `Zirtue->Lender`.
-   * For one-stage payments and by default `0` is used.
-   */
-  stage: number;
-
-    /** Indicates current state of the Loan Payment.
+  /** Indicates current state of the Loan Payment.
    * `pending` - Payment is executed but not completed yet
    * `completed` - Payment was executed successfully
    * `failed` - Payment was not executed successfully due to some error
@@ -365,62 +379,101 @@ Here is a current structure of LoanPayment:
   createdAt: Date;
   updatedAt: Date | null;
 
-    /** What date Loan Payment was executed last time. 
-     * Should be the same with `originalExecutionDate` if it is first execution attempt, 
-     * otherwise - should contain the date of latest re-attempt */
+  /** What date Loan Payment was executed last time. 
+   * Should be the same with `originalExecutionDate` if it is first execution attempt, 
+   * otherwise - should contain the date of latest re-attempt */
   executionDate: Date;
 
-    /** Date for which Loan Payment was originally scheduled */
+  /** Date for which Loan Payment was originally scheduled */
   originalExecutionDate: Date;
 
-    /**
-   * Collection of Transfers that are part of this Loan Payment.
-   * Ideally should contain only one Transfer. 
-   * But if Transfer failed and re-attempt happened - new Transfer will be also referenced to the same Loan Payment.
+  /**
+   * Collection of LoanPaymentSteps that are part of this Loan Payment.
+   * Each Step represents a specific transfer segment in the payment route.
    */
-  transfers: Transfer[] | null;
+  steps: ILoanPaymentStep[];
+}
 ```
 
-Let's take a look on example:
-Imagine that we have a Direct Bill Pay Loan that in `Repaying` state, last payment just failed after re-attempt. Loan was configured to three repayments. Here is an array of LoanPayments that were created during the whole Loan lifecycle (some fields are removed to improve readability):
+Notable changes:
+- Removed the `stage` property as it's now handled by the LoanPaymentStep layer
+- Removed direct reference to `transfers` as they are now accessed through LoanPaymentSteps
+- Added `steps` property which contains LoanPaymentSteps
+
+### LoanPaymentStep
+**LoanPaymentStep** - Entity that represents a single step in the payment route chain. Multiple steps may be required to complete a single LoanPayment, especially when transfers involve different payment providers or account types.
+
 ```typescript
-// 1. Funding: Lender transfers funds to Zirtue
-{ amount: 1000, loanId: 'loan-uuid', paymentIndex: null, type: 'funding', stage: 0, state: 'completed', transfers: [lender-zirtue-transfer] },
-// 2. Funding: Lender pays fee to Zirtue
-{ amount: 30, loanId: 'loan-uuid', paymentIndex: null, type: 'fee', stage: 0, state: 'completed', transfers: [lender-zirtue-fee-transfer] },
-// 3. Disbursement: Zirtue transfers funds to Biller
-{ amount: 1000, loanId: 'loan-uuid', paymentIndex: null, type: 'disbursement', stage: 0, state: 'completed', transfers: [zirtue-biller-transfer] },
-// 4.1 Repayment #1: Borrower -> Zirtue
-{ amount: 333.33, loanId: 'loan-uuid', paymentIndex: 0, type: 'repayment', stage: 0, state: 'completed', transfers: [borrower-zirtue-transfer1] },
-//     Repayment #1: Zirtue -> Lender
-{ amount: 333.33, loanId: 'loan-uuid', paymentIndex: 0, type: 'repayment', stage: 1, state: 'completed', transfers: [zirtue-lender-transfer1] },
-// 4.2 Repayment #2: Borrower -> Zirtue
-{ amount: 333.33, loanId: 'loan-uuid', paymentIndex: 1, type: 'repayment', stage: 0, state: 'completed', transfers: [borrower-zirtue-transfer2] },
-//     Repayment #2: Zirtue -> Lender
-{ amount: 333.33, loanId: 'loan-uuid', paymentIndex: 1, type: 'repayment', stage: 1, state: 'completed', transfers: [zirtue-lender-transfer2] },
-// 4.3 Repayment #3: Borrower -> Zirtue
-{ amount: 333.34, loanId: 'loan-uuid', paymentIndex: 2, type: 'repayment', stage: 0, state: 'completed', transfers: [borrower-zirtue-transfer3] },
-//     Repayment #3: Zirtue -> Lender
-{ amount: 333.34, loanId: 'loan-uuid', paymentIndex: 2, type: 'repayment', stage: 1, state: 'failed', transfers: [zirtue-lender-transfer3-1, zirtue-lender-transfer3-2] },
+interface ILoanPaymentStep {
+  /** UUID */
+  id: string;
+  
+  /** Reference to the parent LoanPayment */
+  loanPaymentId: string;
+
+  /**
+   * Integer order number of the step.
+   * Starts with 0.
+   */
+  order: number;
+
+  /** Payment Step transfer amount. Typically the same as Loan Payment amount */
+  amount: number;
+  
+  /** FK to Payment Account from which transfer will be performed */
+  sourcePaymentAccountId: string;
+  
+  /** FK to Payment Account to which transfer will be performed */
+  targetPaymentAccountId: string;
+
+  /**
+   * Collection of Transfers that are part of this Loan Payment Step.
+   * Ideally contains only one Transfer.
+   * If Transfer failed and re-attempt happened - new Transfer will be referenced to the same Step.
+   */
+  transfers: ITransfer[] | null;
+
+  /**
+   * Current state of the Payment Step:
+   * 'created' - Step is created but transfers not yet initiated
+   * 'confirmed' - Step is confirmed (e.g., user confirmed payment)
+   * 'pending' - Step's transfer is in progress
+   * 'completed' - Step was completed successfully
+   * 'failed' - Step failed due to transfer error
+   */
+  state: PaymentStepState;
+
+  /**
+   * Indicates what state of the preceding step to wait for before proceeding:
+   * 'none' - Do not wait for previous steps (default for first step)
+   * 'confirmation' - Wait for previous step to be confirmed
+   * 'completion' - Wait for previous step to be completed
+   */
+  awaitStepState: PaymentStepState;
+  
+  /**
+   * Reference to the previous step that must reach awaitStepState before this step can proceed.
+   * If null, will use the step with (order-1)
+   */
+  awaitStepId: string | null;
+}
 ```
 
-Note: In most positive case scenario (all transfers were succeeded during whole Loan lifecycle) the number of Transfers made is equal to number of LoanPayments stored.
+LoanPaymentSteps are an important addition that enable complex payment routes involving multiple transfers, potentially across different payment providers. They provide better tracking and management of the payment process.
 
-  ---
+### Transfers
+**Transfer** Entity defines an explicit transfer of funds `amount` from `source` to `target` with as few extra references as possible. This maintains flexibility for funds transfer flows and allows the **Payments** microservice to execute transfers independently.
 
-  ### Transfers
-**Transfer** Entity defines an explicit transfer of funds `amount` from `source` to `target` with as few extra references (*none is ideal*) as possible.
-The purpose of that is to keep the flexibility in flows where funds transfers are possible. Also it is expected that `transfers` won't be only **`Core`** namespace specific but also will be used by separate **`Payments`** microservice which will execute the transfers.
-
-At the moment the structure of Transfer Entity is following:
 ```typescript
+interface ITransfer {
   /** UUID */
   id: string;
 
   /** Transfer amount */
   amount: number;
 
-    /** Current Transfer state:
+  /**
+   * Current Transfer state:
    * `pending` - Transfer is executed but not completed yet
    * `completed` - Transfer was executed successfully
    * `failed` - Transfer was not executed successfully due to some error
@@ -433,30 +486,167 @@ At the moment the structure of Transfer Entity is following:
   createdAt: Date;
   updatedAt: Date | null;
 
-
+  /** Source payment account ID */
   sourceAccountId: string | null;
-  sourceAccount: PaymentAccount | null;
+  
+  /** Source payment account (relation) */
+  sourceAccount: IPaymentAccount | null;
 
+  /** Destination payment account ID */
   destinationAccountId: string | null;
-  destinationAccount: PaymentAccount | null;
+  
+  /** Destination payment account (relation) */
+  destinationAccount: IPaymentAccount | null;
 
+  /** Type of source account for payment provider selection */
   sourceAccountType: string;
+  
+  /** Type of destination account for payment provider selection */
   destinationAccountType: string;
-
-  loanPaymentId: string | null;
-  loanPayment: LoanPayment | null;
+}
 ```
 
-As it was mentioned before - Transfer Entity should stay as clean as possible from any references. But in the structure above we see that there are already three references presented:
-- `loanPayment` reference allows **LoanPayment** Entity to aggregate all **Transfers** made for this payemnt. This reference is nullable for the purpose of supporting non-Loan Transfers being stored in the same place (ex *batch payments*). 
-To keep Transfer Entity less linked to other Entities there is an **Alternative approach**(likely to be implemented): solve LoanPayments <> Transfers relationships by having intermediate Table `LoanPaymentTransfers` which as like for many-to-many relationships (in fact Transfers are `many to (one OR none)` with LoanPayments). This table will keep references for **LoanPayments** and **Transfers** aligned while **Transfer** itself won't have a reference to **LoanPayment**
-- `sourceAccount` and `destinationAccount` references seems to be required - this is the exact **from - to** information. But there is also **Alternative approach**(also likely to be implemented) - to have a reference not directly to **PaymentAccount** but another aggregation Table which will keep references between different types of Payment Methods Accounts. *The naming should be fixed here*. Fields `sourceAccountType` and `destinationAccountType` are exactly highlightning that requirement for Transfer execution - the service (which will execute the transfer) should know at some point what types of APIs / flows should be used to perform the transfer. But ideally **Transfer** Entity should not keep this information also.
+Key changes:
+- Removed direct reference to `loanPayment` as transfers are now linked to LoanPaymentSteps
+- The transfer is now a more generic entity that can be used for any funds transfer
 
-  ---
+### Example Payment Flow
 
-### LoanPayments relationship with Transfers
+> TODO: Review one more time for accuracy
+Let's examine a Direct Bill Pay Loan with multiple payment steps:
 
-TBD
+```typescript
+// Loan Payment: Funding (Lender to Zirtue using Checkbook ACH)
+{
+  id: 'loan-payment-1',
+  amount: 1000,
+  loanId: 'loan-uuid',
+  paymentIndex: null,
+  type: 'funding',
+  state: 'completed',
+  steps: [
+    {
+      id: 'payment-step-1',
+      loanPaymentId: 'loan-payment-1',
+      order: 0,
+      amount: 1000,
+      sourcePaymentAccountId: 'lender-account',
+      targetPaymentAccountId: 'zirtue-internal-ach',
+      state: 'completed',
+      transfers: [{ id: 'transfer-1', amount: 1000, state: 'completed', /*...*/ }]
+    }
+  ]
+},
+
+// Loan Payment: Fee
+{
+  id: 'loan-payment-2',
+  amount: 30,
+  loanId: 'loan-uuid',
+  paymentIndex: null,
+  type: 'fee',
+  state: 'completed',
+  steps: [
+    {
+      id: 'payment-step-2',
+      loanPaymentId: 'loan-payment-2',
+      order: 0,
+      amount: 30,
+      sourcePaymentAccountId: 'lender-account',
+      targetPaymentAccountId: 'zirtue-fee-account',
+      state: 'completed',
+      transfers: [{ id: 'transfer-2', amount: 30, state: 'completed', /*...*/ }]
+    }
+  ]
+},
+
+// Loan Payment: Disbursement (Zirtue to Biller using Checkbook ACH)
+{
+  id: 'loan-payment-3',
+  amount: 1000,
+  loanId: 'loan-uuid',
+  paymentIndex: null,
+  type: 'disbursement',
+  state: 'completed',
+  steps: [
+    {
+      id: 'payment-step-3',
+      loanPaymentId: 'loan-payment-3',
+      order: 0,
+      amount: 1000,
+      sourcePaymentAccountId: 'zirtue-internal-ach',
+      targetPaymentAccountId: 'biller-account',
+      state: 'completed',
+      transfers: [{ id: 'transfer-3', amount: 1000, state: 'completed', /*...*/ }]
+    }
+  ]
+},
+
+// Loan Payment: Repayment #1 (Complex multi-step flow: Borrower with Fiserv Debit -> Lender with Checkbook ACH)
+{
+  id: 'loan-payment-4',
+  amount: 333.33,
+  loanId: 'loan-uuid',
+  paymentIndex: 0,
+  type: 'repayment',
+  state: 'completed',
+  steps: [
+    // Step 1: Borrower Debit -> Zirtue Debit
+    {
+      id: 'payment-step-4-1',
+      loanPaymentId: 'loan-payment-4',
+      order: 0,
+      amount: 333.33,
+      sourcePaymentAccountId: 'borrower-debit',
+      targetPaymentAccountId: 'zirtue-debit',
+      state: 'completed',
+      awaitStepState: 'none',
+      awaitStepId: null,
+      transfers: [{ id: 'transfer-4-1', amount: 333.33, state: 'completed', /*...*/ }]
+    },
+    // Step 2: Zirtue ACH -> Lender ACH (waits for step 1 to complete)
+    {
+      id: 'payment-step-4-2',
+      loanPaymentId: 'loan-payment-4',
+      order: 1,
+      amount: 333.33,
+      sourcePaymentAccountId: 'zirtue-ach',
+      targetPaymentAccountId: 'lender-ach',
+      state: 'completed',
+      awaitStepState: 'completion',
+      awaitStepId: 'payment-step-4-1',
+      transfers: [{ id: 'transfer-4-2', amount: 333.33, state: 'completed', /*...*/ }]
+    }
+  ]
+}
+```
+
+The example demonstrates how the new structure supports:
+1. Simple single-step payments (funding, fee, disbursement)
+2. Complex multi-step payments (repayment) that require intermediate accounts
+3. Dependencies between steps with the await mechanism
+
+### Payment Route Determination
+
+The **Loan Payments Router** is responsible for determining the payment steps required to complete a payment. It takes into account:
+
+1. Source payment account properties (type, ownership, provider)
+2. Destination payment account properties (type, ownership, provider)
+3. Loan configuration (type, stage)
+
+The router returns a route consisting of one or more steps, which are then used to create the LoanPaymentSteps.
+
+Routes and RouteSteps are pre-defined in the database to support various payment flow combinations without requiring thousands of individual route definitions.
+
+### Payment Processing Services
+
+The payment processing is managed by several specialized services:
+
+1. **LoanPaymentFactory** - Creates LoanPayment entities based on loan lifecycle stage
+2. **LoanPaymentStepManager** - Creates and manages LoanPaymentSteps
+3. **TransferExecutionService** - Executes actual transfers and monitors their state
+
+These services ensure proper coordination between the different layers of the payment process, maintaining the state transitions from Transfer through LoanPaymentStep to LoanPayment, and finally to Loan.
 
   ---
 
@@ -496,16 +686,7 @@ Side payments-related Loan lifecycle parts (not decided yet are they required to
  
 
 ## Hierarchy and Logic of Payment-related Entities
-```mermaid
-flowchart TD
-    Loan --produce--> LoanPayment
-    LoanPayment --produce--> LoanPaymentStep
-    LoanPaymentStep --produce--> Transfer
 
-    Transfer -.change state.-> LoanPaymentStep
-    LoanPaymentStep -.change state.-> LoanPayment
-    LoanPayment -.change state.-> Loan
-```
 For each layer there are following rules:
 - `Layer entry creation is controlled by the previous layer if exists`
 - `Layer entry state might be result of next layer state change if exists or layer itslef might change the state`

@@ -86,9 +86,9 @@ Thus **Loan Payments Router** should take as INPUT:
 - Loan properties
 
 and returns as OUTPUT:
-- list of **Payment Steps** 
+- list of **Route Steps** 
 
-## Route Key
+## Route Types and Entities Structure
 To allow **Loan Payment Router** support certain level of flexibility (cross-provider transfers, multiple internal accounts for the same **Payment Provider**) following variables participation in **Payment Routing**:
 - Loan Configuration:
   - `loanType`: 'dbp' | 'p2p' | 'rr'
@@ -100,44 +100,68 @@ To allow **Loan Payment Router** support certain level of flexibility (cross-pro
 
 **Route Key** - is unique combination of Loan Configuration and two Payment Account Configurations (*from* and *to*).
 
-### Route Key and Route Value Structure
-Lets assume that for now **Payment Routes** are the same for `loanType` (if it will not be the truth - we may extend *Base Routing* by LoanType-special routes).
-The structure of **Route Key** then will look like:
 ```typescript
-interface IRouteAccountConfiguration {
-    paymentAccountType: PaymentAccountType; // 'debit_card' | 'bank_account' | 'rpps'
-    ownership: PaymentAccountOwnershipType; // 'personal' | 'internal' | 'external'
-    provider: PaymentAccountProvider; // 'checkbook' | 'fiserv' | 'tabapay'
-}
+interface IRouteStep {
 
-interface IRouteKey {
-    stage: string; // 'funding' | 'disbursement' | 'fee' | 'repayment' | 'refund'
+    id: string; // uuid
+    routeId: string; // FK to Route
 
-    from: IRouteAccountConfiguration;
-    to: IRouteAccountConfiguration;
-
-}
-```
-The structure of **Route Value** is even more straightforward:
-```typescript
-interface IPaymentRoute {
     order: number; // Order of a Route element in a chain
     fromId: string | null; // Id of the Payment Account if it is pre-defined (e.g. Zirtue Internal For Checkbook ACH Funding)    
     toId: string | null; // Id of the Payment Account if it is pre-defined (e.g. Zirtue Internal For Checkbook ACH Funding)
 }
 
-interface IRouteValue {
-    route: IPaymentRoute[];
+interface IRoute {
+    id: string; // uuid
+
+    //TODO: Cover by indexes? Composite indexes (from & to) as all 6 fields expected to persist?
+    // #region Route Key - unique combination of the fields
+    fromAccount: PaymentAccountType; // 'debit_card' | 'bank_account' | 'rpps';
+    fromOwnership: PaymentAccountOwnershipType; // 'personal' | 'internal' | 'external';
+    fromProvider: PaymentAccountProvider; // 'checkbook' | 'fiserv' | 'tabapay';
+
+    toAccount: PaymentAccountType; // 'debit_card' | 'bank_account' | 'rpps';    
+    toOwnership: PaymentAccountOwnershipType; // 'personal' | 'internal' | 'external';    
+    toProvider: PaymentAccountProvider; // 'checkbook' | 'fiserv' | 'tabapay';
+
+    //TODO: Use GIN Index for these two?
+    loanStagesSupported: LoanStage[]; // 'funding' | 'disbursement' | 'fee' | 'repayment' | 'refund'
+    loanTypesSupported: LoanType[]; // 'dbp' | 'p2p' | 'rr'
+    // #endregion
+    steps: IRouteStep[];
 }
 ```
-So, basically saying **Route** is an ordered array of two **Payment Account** referencies. For the same **Payment Provider** route it might contain only one entry.
 
-If `fromId` or `toId` is not `null` - it means that for this route part **Payment Account** if pre-defined and fixed. Empty (`null`) values are expected to be only for **personal** accounts.
+The idea of **Payment Route** requires `ALL` of following fields being provided for search:
+- **fromAccount**
+- **fromOwnership**
+- **fromProvider**
+- **toAccount**
+- **toOwnership**
+- **toProvider**
+
+because as input before we have two **Payment Accounts** and we need to find a route that will allow to transfer funds from one to another.
+
+Basically saying **Route** is an ordered array of **Route Steps** each of which have up to two **PaymentAccount** referencies:
+- If in **Route Step** both `fromId` and `toId` are `null` - it means that this **Route Step** must be the only step in the route, both **Payment Account**s came from **Loan**
+- If either `fromId` or `toId` is `null` - it means that for this route part **Payment Account** is not pre-defined and can be `lenderAccountId`, `borrowerAccountId` or `Biller's PaymentAccountId` - depending on **Loan** configuration and intended **Loan Stage**
+- If `fromId` or `toId` is not `null` - it means that for this route part **Payment Account** if pre-defined and fixed
 
 ## Building a Loan Payment Route
 If we attempt to have all variations of **Route Keys** then we will have *thousands* of them, which is complete overkill.
 To solve this we could have pre-defined static collection of **Routes** with **Route Keys** that are supported per **Loan Type** and **Loan Stage**. **Payment Routes** not being mentioned in collection appears to be unsupported.
 
+Thus we will have pre-defined Tables for **Routes** and **Route Steps** that will be used to build **Payment Route** for the **Loan Payment**.
+
+### Supported Loan Payment Routes
+- Route must start from null and end with null
+- Route must have at least one step
+- Tabapay may be used only for `Disbursement` stage and for `external` accounts
+- `Internal` are accounts that Zirtue have for providers
+
+> TODO: `(?)`add more specifics
+
+---
 
 ### Loan Payment Step
 
@@ -189,7 +213,6 @@ interface ILoanPayment {
 }
 ```
 
-### Pre-Generating Loan Payment Step
 **Loan** moves further in it's payments stages (`Funding`, `Disbursement`, `Fee`, `Repayment`) ONLY if:
 - Previous stage successfully completed
 OR
@@ -198,5 +221,49 @@ OR
 This means that next stage won't be reached until previous **Loan Payment** will have all **Loan Payment Steps** completed. 
 To not have everything pre-generated we agreed that we will not schedule all payments in advance. But in terms of **Loan Payment Steps** - we might have them pre-generated for incoming **Loan Payment**. It means that if **Loan** goes to **Funding** stage - we will create **Loan Payment** with `type: 'funding'` and also generate required **Loan Payments Steps** for this to fixate the **Payment Route** and do not implement thousands of possible routes.
 
-### Supported Loan Payment Routes example
-TBD 
+## Payment Routing Process
+```mermaid
+flowchart TD
+    subgraph "Route Definition"
+        Route[Route]
+        RouteStep[Route Step]
+        Route -->|contains| RouteStep
+    end
+
+    subgraph "Payment Execution"
+        Loan[Loan]
+        LoanPayment[Loan Payment]
+        LoanPaymentStep[Loan Payment Step]
+        Transfer[Transfer]
+        
+        Loan -->|produces| LoanPayment
+        LoanPayment -->|contains| LoanPaymentStep
+        LoanPaymentStep -->|produces| Transfer
+    end
+
+    subgraph "Payment Routing Process"
+        LoanService[Loan Service]
+        PaymentRouter[Payment Router]
+        LoanPaymentFactory[Loan Payment Factory]
+        LoanPaymentStepManager[Loan Payment Step Manager]
+        TransferExecutionService[Transfer Execution Service]
+        
+        LoanService -->|1 calls| PaymentRouter
+        PaymentRouter -->|2 returns route| LoanService
+        LoanService -->|3 calls| LoanPaymentFactory
+        LoanPaymentFactory -->|4 creates| LoanPayment
+        LoanPaymentFactory -->|5 calls| LoanPaymentStepManager
+        LoanPaymentStepManager -->|6 creates steps based on route| LoanPaymentStep
+        LoanPaymentStepManager -->|7 calls| TransferExecutionService
+        TransferExecutionService -->|8 executes| Transfer
+    end
+    
+    Transfer -->|9 state change| LoanPaymentStep
+    LoanPaymentStep -->|10 state change| LoanPayment
+    LoanPayment -->|11 state change| Loan
+    
+    Route -->|defines possible paths| PaymentRouter
+    RouteStep -->|defines steps| PaymentRouter
+    PaymentRouter -->|determines| LoanPaymentStep
+```
+
