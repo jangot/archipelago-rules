@@ -370,11 +370,21 @@ interface ILoanPayment {
   type: LoanPaymentType;
 
   /** Indicates current state of the Loan Payment.
+   * `created` - Payment is created but not yet initiated
    * `pending` - Payment is executed but not completed yet
    * `completed` - Payment was executed successfully
    * `failed` - Payment was not executed successfully due to some error
    */
   state: LoanPaymentState;
+
+/**
+ * Indicates what was the reason of marking LoanPayment as 'completed':
+ * `paid` - Payment was executed successfully
+ * `forgiven` - Payment was forgiven
+ * `skipped` - Payment was skipped
+ * `not_completed` - Payment was not completed yet (Default)
+*/
+  completionReason: LoanPaymentCompletionReason;
 
   createdAt: Date;
   updatedAt: Date | null;
@@ -436,7 +446,6 @@ interface ILoanPaymentStep {
   /**
    * Current state of the Payment Step:
    * 'created' - Step is created but transfers not yet initiated
-   * 'confirmed' - Step is confirmed (e.g., user confirmed payment)
    * 'pending' - Step's transfer is in progress
    * 'completed' - Step was completed successfully
    * 'failed' - Step failed due to transfer error
@@ -474,6 +483,7 @@ interface ITransfer {
 
   /**
    * Current Transfer state:
+   * `created` - Transfer is created but not yet initiated
    * `pending` - Transfer is executed but not completed yet
    * `completed` - Transfer was executed successfully
    * `failed` - Transfer was not executed successfully due to some error
@@ -487,27 +497,23 @@ interface ITransfer {
   updatedAt: Date | null;
 
   /** Source payment account ID */
-  sourceAccountId: string | null;
+  sourceAccountId: string;
   
   /** Source payment account (relation) */
-  sourceAccount: IPaymentAccount | null;
+  sourceAccount: IPaymentAccount;
 
   /** Destination payment account ID */
-  destinationAccountId: string | null;
+  destinationAccountId: string;
   
   /** Destination payment account (relation) */
-  destinationAccount: IPaymentAccount | null;
-
-  /** Type of source account for payment provider selection */
-  sourceAccountType: string;
-  
-  /** Type of destination account for payment provider selection */
-  destinationAccountType: string;
+  destinationAccount: IPaymentAccount;
 }
 ```
 
 Key changes:
 - Removed direct reference to `loanPayment` as transfers are now linked to LoanPaymentSteps
+- Removed Payment Account Types as they are presented in referenced PaymentAccounts
+- Reference to `sourceAccount` and `destinationAccount` are not nullable now as all internal and external Payment Accounts are required to be linked to the Transfer
 - The transfer is now a more generic entity that can be used for any funds transfer
 
 ### Example Payment Flow
@@ -524,6 +530,7 @@ Let's examine a Direct Bill Pay Loan with multiple payment steps:
   paymentIndex: null,
   type: 'funding',
   state: 'completed',
+  completionReason: 'paid',
   steps: [
     {
       id: 'payment-step-1',
@@ -546,6 +553,7 @@ Let's examine a Direct Bill Pay Loan with multiple payment steps:
   paymentIndex: null,
   type: 'fee',
   state: 'completed',
+  completionReason: 'paid',
   steps: [
     {
       id: 'payment-step-2',
@@ -568,6 +576,7 @@ Let's examine a Direct Bill Pay Loan with multiple payment steps:
   paymentIndex: null,
   type: 'disbursement',
   state: 'completed',
+  completionReason: 'paid',
   steps: [
     {
       id: 'payment-step-3',
@@ -590,6 +599,7 @@ Let's examine a Direct Bill Pay Loan with multiple payment steps:
   paymentIndex: 0,
   type: 'repayment',
   state: 'completed',
+  completionReason: 'paid',
   steps: [
     // Step 1: Borrower Debit -> Zirtue Debit
     {
@@ -896,3 +906,143 @@ flowchart TD
     %% Style the subgraphs directly in their definition
     %% Note: We can't use class for subgraphs with spaces in Mermaid
 ```
+
+## Loan Payments States
+
+### States Definitions
+
+- **LoanPayment**:
+  - `created` - LoanPayment is created but not yet initiated
+  - `pending` - LoanPayment is initiated but not completed yet
+  - `completed` - LoanPayment was executed successfully
+  - `failed` - LoanPayment was not executed successfully due to some error
+- **LoanPaymentStep**:
+  - `created` - LoanPaymentStep is created but not yet initiated
+  - `pending` - LoanPaymentStep is initiated but not completed yet
+  - `completed` - LoanPaymentStep was executed successfully
+  - `failed` - LoanPaymentStep was not executed successfully due to some error
+- **Transfer**:
+  - `created` - Transfer is created but not yet initiated
+  - `pending` - Transfer is executed but not completed yet
+  - `completed` - Transfer was executed successfully
+  - `failed` - Transfer was not executed successfully due to some error
+
+As you can see - the states are similar for all three entities. The difference is in the level of abstraction and the context in which they are used. By this the process of state change is similar for all three entities and do not bring any additional complexity to the system.
+
+For **LoanPayment** and **LoanPaymentStep** only `completed` is terminating state. For **Transfer** it is `completed` and `failed` states that are terminating. The reason for this is that **Transfer** can be re-attempted while **LoanPayment** and **LoanPaymentStep** are supposed to be completed as a final result of the process - *Loan can not move forward in the lifecycle if **LoanPayment** is not completed. The same applies to **LoanPaymentStep** - it can not be completed if **Transfer** is not completed*.
+
+To include cases when certain Payments might be Forgiven (in `Repayment`) or Loan might have zero-payments stage (e.g. `Funding` with no payments when same provider is used for both Lender and Borrower and `Funding + Disbursement` might be completed within one Transfer) we have field `completionReason` in **LoanPayment**. This field allows to have **LoanPayment** being completed by special cases like forgiveness or skipping the payment.
+
+### Changing States
+
+The state transitions for payment-related entities follow a consistent pattern, but with specific behaviors at each level of the payment hierarchy. The diagrams below illustrate how each entity transitions between states and the conditions that trigger these transitions.
+
+#### LoanPayment State Transitions
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    
+    [*] --> created: Creation by LoanPaymentFactory
+    created --> pending: Initiation (initiate())
+    pending --> completed: All LoanPaymentSteps completed
+    pending --> failed: Critical error or timeout
+    
+    created --> completed: Special cases<br>(zero fee, same provider bypass)
+    
+    state completed {
+        [*] --> paid: Normal payment
+        [*] --> forgiven: Payment forgiven
+        [*] --> skipped: Lifecycle part skipped
+    }
+    
+    failed --> pending: Retry mechanism
+    
+    note right of completed
+        completionReason enum:
+        - paid
+        - forgiven
+        - skipped
+    end note
+```
+
+#### LoanPaymentStep State Transitions
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    
+    [*] --> created: Creation by LoanPaymentStepManager
+    created --> pending: Dependencies completed<br>& Execution started (execute())
+    pending --> completed: Transfer completed
+    pending --> failed: Transfer failed
+    failed --> pending: New Transfer attempt
+    
+    note right of created
+        Step remains in created state
+        until all dependencies (awaitStepId)
+        reach required state (awaitStepState)
+    end note
+    
+    note right of pending
+        Transfer is being executed
+        by payment provider
+    end note
+```
+
+#### Transfer State Transitions
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    
+    [*] --> created: Creation by TransferExecutionService
+    created --> pending: Payment provider processing started
+    pending --> completed: Funds successfully transferred
+    pending --> failed: Error in processing
+    
+    note right of failed
+        Failed is a terminating state for Transfer.
+        Recovery requires creating a new Transfer
+        attached to the same LoanPaymentStep.
+    end note
+```
+
+### State Transition Dependencies
+
+The state transitions across these entities follow a hierarchical pattern:
+
+```mermaid
+flowchart TD
+    subgraph "State Change Flow"
+        direction TB
+        
+        Transfer -->|"Complete/Fail"| LoanPaymentStep
+        LoanPaymentStep -->|"All Steps Complete"| LoanPayment
+        LoanPayment -->|"Complete"| Loan
+        
+        Transfer -->|"State: completed"| NotifyStep[Notify LoanPaymentStep]
+        NotifyStep -->|"Check all transfers"| StepDecision{"All transfers completed?"}
+        StepDecision -->|"Yes"| CompleteStep[Complete LoanPaymentStep]
+        StepDecision -->|"No"| WaitTransfer[Wait for other transfers]
+        
+        CompleteStep -->|"State: completed"| NotifyPayment[Notify LoanPayment]
+        NotifyPayment -->|"Check all steps"| PaymentDecision{"All steps completed?"}
+        PaymentDecision -->|"Yes"| CompletePayment[Complete LoanPayment]
+        PaymentDecision -->|"No"| WaitStep[Wait for other steps]
+        
+        CompletePayment -->|"State: completed"| NotifyLoan[Notify Loan]
+        NotifyLoan -->|"Update loan state"| NextLoanStage[Move to next loan stage]
+    end
+    
+    classDef process fill:#d8b4fe,stroke:#6b21a8,stroke-width:1px,color:#1e1e1e
+    classDef decision fill:#bae6fd,stroke:#0369a1,stroke-width:1px,color:#1e1e1e
+    classDef notification fill:#86efac,stroke:#047857,stroke-width:1px,color:#1e1e1e
+    
+    class Transfer,LoanPaymentStep,LoanPayment,Loan process
+    class StepDecision,PaymentDecision decision
+    class NotifyStep,NotifyPayment,NotifyLoan,CompleteStep,CompletePayment,NextLoanStage notification
+    class WaitTransfer,WaitStep process
+```
+
+### On Error States
