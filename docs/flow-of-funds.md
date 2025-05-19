@@ -13,18 +13,16 @@ config:
 
 stateDiagram-v2
   direction LR
-  classDef biller fill:#00f
-  classDef lender fill:green
+  classDef zpre fill:#00f
+  classDef zrev fill:navy
+  classDef lender fill:red
 
   zpre : <i class="fas fa-piggy-bank"></i> Zirtue Prefunded Account
   zrev : <i class="fas fa-wallet"></i> Zirtue Revenue Account
-  Borrower: <i class="fas fa-file-invoice"></i> Borrower
   Lender : <i class="fas fa-money-bill"></i> Lender
-  Lender:::lender --> zpre
-  zpre --> zrev
-  zpre --> Borrower:::biller
+  Lender:::lender --> zpre:::zpre
+  zpre --> zrev:::zrev
 ```
-&nbsp;
 
 &nbsp;
 ### `Biller is Biller Network (RPPS)`
@@ -38,17 +36,39 @@ config:
 
 stateDiagram-v2
   direction LR
-  classDef biller fill:#00f
-  classDef lender fill:green
+  classDef zpre fill:#00f
+  classDef zrev fill:navy
+  classDef lender fill:red
 
   zpre : <i class="fas fa-piggy-bank"></i> Zirtue Prefunded Account
   zrev : <i class="fas fa-wallet"></i> Zirtue Revenue Account
-  biller: <i class="fas fa-file-invoice-dollar"></i> Biller Network
   Lender : <i class="fas fa-money-bill"></i> Lender
-  Lender:::lender --> zpre
-  zpre --> zrev
-  zpre --> biller:::biller
+  Lender:::lender --> zpre:::zpre
+  zpre --> zrev:::zrev
 ```
+
+&nbsp;
+### `Biller is Direct (Lender -> Borrower)`
+```mermaid
 ---
+config:
+  title: Flow of Funds
+  class:
+    theme: base
+---
+
+stateDiagram-v2
+  direction LR
+  classDef zpre fill:#00f
+  classDef zrev fill:navy
+  classDef lender fill:red
+
+  zpre : <i class="fas fa-piggy-bank"></i> Zirtue Prefunded Account
+  zrev : <i class="fas fa-wallet"></i> Zirtue Revenue Account
+  Lender : <i class="fas fa-money-bill"></i> Lender
+  Lender:::lender --> zpre:::zpre
+  zpre --> zrev:::zrev
+```
+&nbsp;
 &nbsp;
 ## Disbursement

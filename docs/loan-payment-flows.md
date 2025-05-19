@@ -42,7 +42,7 @@ flowchart LR
     Disbursement --> Repayment
 ```
 
-## RR (Repayment Requset)
+## RR (Repayment Request)
 Not a priority right now, but allows to check general functionality by supporting flow preiosuly requested (in Zirtue Legacy).
 The general difference - there is no `Funding` and `Disbursement` stages at all - Users want to setup only `Repayment` phase.
 
