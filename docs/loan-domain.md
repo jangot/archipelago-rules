@@ -1046,3 +1046,63 @@ flowchart TD
 ```
 
 ### On Error States
+
+#### Error states philosophy
+Within payments processing we have two types of errors:
+1. **Business errors** - errors that are expected and handled by the system. For example - `Transfer` failed due to insufficient funds on the personal source account. In this case we can retry the transfer or notify the user about the error.
+2. **Technical errors** - errors that are unexpected and should be handled by the system. For example - `Transfer` failed due to network error or timeout. In this case we should retry the transfer and notify internal team about the error to be tracked.
+
+When **Business Error** happen - User should be aware what happened and what should be done. In this case we should notify the User about the error and provide a way to resolve it. For example - `Transfer` failed due to insufficient funds on the personal source account. In this case we can retry the transfer or notify the user about the error.
+
+When **Technical Error** happen - User should not be aware what happened and what should be done. In this case we should retry the transfer and notify internal team about the error to be tracked. When error is addressed there should be a way to retry the transfer and continue the process.
+
+That being said - **Business Error** changes states upfront to the **Loan**. **Technical Error** should not change the state of the entities except **Transfer** itself.
+
+#### Cases for Business and Technical Errors
+##### Business Error
+- `source in ['personal' -> anywhere]`
+  - `insufficient_funds` - Insufficient funds on the source account
+  - `invalid_account` - Invalid source account
+  - `account_closed` - Source account is closed
+  - `account_blocked` - Source account is blocked
+  - `account_not_found` - Source account not found
+  - `account_not_supported` - Source account not supported
+  - etc
+- `target in [anywhere -> 'personal']`
+  - `invalid_account` - Invalid target account
+  - `account_closed` - Target account is closed
+  - `account_blocked` - Target account is blocked
+  - `account_not_found` - Target account not found
+  - `account_not_supported` - Target account not supported
+  - etc
+
+As you might see the Business Error might occur only on the `personal` accounts. The reason for this is that we do not have control over the personal accounts and we can not guarantee that they are valid. 
+
+##### Technical Error
+**Technical Error** - is an **Transfer** Error which happened during the execution of the transfer between `internal` or `external` accounts. The error might be caused by the following reasons:
+- `network_error` - Network error
+- `timeout` - Timeout error
+- `provider_error` - Payment provider error
+- `internal_error` - Internal error
+- `unknown_error` - Unknown error
+- etc
+
+##### Technical Error Special Cases
+Also there are two cases of Error where the reason of the Error is `internal` or `external` account (means it is **Technical Error**) but other side of the **Transfer** is `personal` account. These cases are:
+- `source 'personal' -> target 'internal'/'external'`
+  - First step of `Funding` in multi-step **LoanPayment**
+  - `Fee` payment 
+  - First step of `Repayment` in multi-step **LoanPayment**
+- `source 'internal'/'external' -> target 'personal'`
+  - `Disbursement` payment in Loan where Borrower/Biller has `personal` account
+  - Last step of `Repayment` in multi-step **LoanPayment**
+
+#### Error states for payment entities
+
+##### Transfer Error
+
+##### LoanPaymentStep Error
+
+##### LoanPayment Error
+
+#### Loan Error
