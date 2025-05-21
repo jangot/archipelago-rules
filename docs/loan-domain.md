@@ -478,6 +478,9 @@ interface ITransfer {
   /** UUID */
   id: string;
 
+  /** FK to LoanPaymentStep */
+  loanPaymentStepId: string | null;
+
   /** Transfer amount */
   amount: number;
 
@@ -512,6 +515,7 @@ interface ITransfer {
 
 Key changes:
 - Removed direct reference to `loanPayment` as transfers are now linked to LoanPaymentSteps
+- Added optional `loanPaymentStepId` to link transfers to their respective steps. This field is optional due to support payements re-routing
 - Removed Payment Account Types as they are presented in referenced PaymentAccounts
 - Reference to `sourceAccount` and `destinationAccount` are not nullable now as all internal and external Payment Accounts are required to be linked to the Transfer
 - The transfer is now a more generic entity that can be used for any funds transfer
@@ -946,7 +950,7 @@ stateDiagram-v2
     [*] --> created: Creation by LoanPaymentFactory
     created --> pending: Initiation (initiate())
     pending --> completed: All LoanPaymentSteps completed
-    pending --> failed: Critical error or timeout
+    pending --> failed: Business Error or Critical Timeout
     
     created --> completed: Special cases<br>(zero fee, same provider bypass)
     
@@ -956,7 +960,17 @@ stateDiagram-v2
         [*] --> skipped: Lifecycle part skipped
     }
     
-    failed --> pending: Retry mechanism
+    failed --> pending: Retry mechanism after error resolution
+    
+    note right of pending
+        Remains pending during Technical Errors
+        in underlying Transfers
+    end note
+    
+    note right of failed
+        Only transitions to failed on Business Errors
+        which requires user intervention
+    end note
     
     note right of completed
         completionReason enum:
@@ -975,8 +989,9 @@ stateDiagram-v2
     [*] --> created: Creation by LoanPaymentStepManager
     created --> pending: Dependencies completed<br>& Execution started (execute())
     pending --> completed: Transfer completed
-    pending --> failed: Transfer failed
-    failed --> pending: New Transfer attempt
+    pending --> failed: Business Error in Transfer
+    
+    failed --> pending: New Transfer attempt<br>after error resolution
     
     note right of created
         Step remains in created state
@@ -985,8 +1000,13 @@ stateDiagram-v2
     end note
     
     note right of pending
-        Transfer is being executed
-        by payment provider
+        Remains pending during Technical Errors
+        in underlying Transfer
+    end note
+    
+    note right of failed
+        Only transitions to failed on Business Errors
+        which requires user intervention
     end note
 ```
 
@@ -1001,10 +1021,18 @@ stateDiagram-v2
     pending --> completed: Funds successfully transferred
     pending --> failed: Error in processing
     
+    state failed {
+        [*] --> business: Error with personal accounts
+        [*] --> technical: Error with internal/external accounts
+    }
+    
     note right of failed
         Failed is a terminating state for Transfer.
         Recovery requires creating a new Transfer
         attached to the same LoanPaymentStep.
+        
+        Business errors propagate up to Loan
+        Technical errors only affect Transfer
     end note
 ```
 
@@ -1026,6 +1054,15 @@ flowchart TD
         StepDecision -->|"Yes"| CompleteStep[Complete LoanPaymentStep]
         StepDecision -->|"No"| WaitTransfer[Wait for other transfers]
         
+        Transfer -->|"State: failed (business)"| BusinessError[Create TransferError]
+        BusinessError -->|"Business Error"| FailStep[Fail LoanPaymentStep]
+        FailStep -->|"Propagate"| FailPayment[Fail LoanPayment]
+        FailPayment -->|"Propagate"| PauseLoan[Set Loan to Paused state]
+        
+        Transfer -->|"State: failed (technical)"| TechnicalError[Create TransferError]
+        TechnicalError -->|"Technical Error"| NotifyTeam[Notify Internal Team]
+        NotifyTeam -->|"Resolution"| RetryTransfer[Create New Transfer]
+        
         CompleteStep -->|"State: completed"| NotifyPayment[Notify LoanPayment]
         NotifyPayment -->|"Check all steps"| PaymentDecision{"All steps completed?"}
         PaymentDecision -->|"Yes"| CompletePayment[Complete LoanPayment]
@@ -1038,11 +1075,13 @@ flowchart TD
     classDef process fill:#d8b4fe,stroke:#6b21a8,stroke-width:1px,color:#1e1e1e
     classDef decision fill:#bae6fd,stroke:#0369a1,stroke-width:1px,color:#1e1e1e
     classDef notification fill:#86efac,stroke:#047857,stroke-width:1px,color:#1e1e1e
+    classDef error fill:#fca5a5,stroke:#b91c1c,stroke-width:1px,color:#1e1e1e
     
-    class Transfer,LoanPaymentStep,LoanPayment,Loan process
+    class Transfer,LoanPaymentStep,LoanPayment,Loan,RetryTransfer process
     class StepDecision,PaymentDecision decision
-    class NotifyStep,NotifyPayment,NotifyLoan,CompleteStep,CompletePayment,NextLoanStage notification
+    class NotifyStep,NotifyPayment,NotifyLoan,CompleteStep,CompletePayment,NextLoanStage,NotifyTeam notification
     class WaitTransfer,WaitStep process
+    class BusinessError,TechnicalError,FailStep,FailPayment,PauseLoan error
 ```
 
 ### On Error States
@@ -1056,7 +1095,7 @@ When **Business Error** happen - User should be aware what happened and what sho
 
 When **Technical Error** happen - User should not be aware what happened and what should be done. In this case we should retry the transfer and notify internal team about the error to be tracked. When error is addressed there should be a way to retry the transfer and continue the process.
 
-That being said - **Business Error** changes states upfront to the **Loan**. **Technical Error** should not change the state of the entities except **Transfer** itself.
+That being said - **Business Error** changes states (to `failed`) upfront to the **Loan** and set its state to one of the `pause` accordingly to current lifecycle part. **Technical Error** should not change the state of the entities except **Transfer** itself - all higher-level entities remains `pending`.
 
 #### Cases for Business and Technical Errors
 ##### Business Error
@@ -1097,12 +1136,89 @@ Also there are two cases of Error where the reason of the Error is `internal` or
   - `Disbursement` payment in Loan where Borrower/Biller has `personal` account
   - Last step of `Repayment` in multi-step **LoanPayment**
 
-#### Error states for payment entities
+#### TransferError Entity
+To handle the errors we have `TransferError` entity which is created when the **Transfer** fails. The `TransferError` entity contains the following fields:
+```typescript
+interface ITransferError {
+  id: string; // UUID
 
-##### Transfer Error
+  transferId: string; // FK to Transfer
+  loanId: string; // FK to Loan
 
-##### LoanPaymentStep Error
+  // TODO: Block below is TBD
+  // Main purposes are:
+  // 1. Highlight is it business or technical error
+  // 2. Give enhough description about what happened in short manner
+  type: TransferErrorType; // Type of the error: 'business' or 'technical'
+  issuerAccountType: PaymentAccountType; // Type of the account which caused the error
+  code: TransferErrorCode; // Enum of the error code
 
-##### LoanPayment Error
+  displayMessage: string; // Message to be displayed to the user / team
 
-#### Loan Error
+  createdAt: Date; // Date of the error
+
+  raw: string; // Raw error data from the provider. TODO: Maybe more typped than just string
+}
+```
+
+To have the explicit way of identifying that is currently Loan has an error or not we extend `ILoan` with new fields:
+```typescript
+interface ILoan {
+  currentError: ITransferError | null; // Current error of the Loan
+  retryCount: number; // Number of retries for the Loan. Includes only errors reasoned by personal accounts
+}
+```
+while Loan has `currentError` - it is not possible to move forward in the lifecycle. The `currentError` should be cleared when the error is resolved and the process is continued.
+
+#### TransferError Effects on Entities
+
+```mermaid
+flowchart TD
+    %% Main Entities
+    Transfer[Transfer]
+    Step[LoanPaymentStep]
+    Payment[LoanPayment]
+    Loan[Loan]
+    
+    %% Error Entity
+    Error[TransferError]
+    
+    %% Business Error Path
+    Transfer -->|"Business Error"| Error
+    Error -->|"source: 'personal' -> anywhere<br>or<br>target: anywhere -> 'personal'"| CreateBusinessError["Create Business Error<br>(insufficient_funds, invalid_account, etc)"]
+    CreateBusinessError -->|"Set error type: 'business'"| BusinessError[Business Error<br>in TransferError]
+    BusinessError -->|"Requires user intervention"| UpdateLoan["Update Loan:<br>- currentError = error<br>- increment retryCount"]
+    BusinessError -->|"Failed"| FailStep["Update LoanPaymentStep:<br>- state = 'failed'"]
+    FailStep -->|"Failed"| FailPayment["Update LoanPayment:<br>- state = 'failed'"]
+    FailPayment -->|"Loan state"| PauseLoan["Pause Loan:<br>- state = '{current}Paused'<br>(e.g. FundingPaused, RepaymentPaused)"]
+    
+    %% Technical Error Path
+    Transfer -->|"Technical Error"| Error
+    Error -->|"source: 'internal'/'external' -> anywhere<br>or<br>target: anywhere -> 'internal'/'external'"| CreateTechnicalError["Create Technical Error<br>(network_error, timeout, provider_error, etc)"]
+    CreateTechnicalError -->|"Set error type: 'technical'"| TechnicalError[Technical Error<br>in TransferError]
+    TechnicalError -->|"Internal tracking only"| InternalNotification["Notify Internal Team<br>No state change propagation"]
+    TechnicalError -->|"Failed"| KeepPending["Keep upper entities pending:<br>- LoanPaymentStep: 'pending'<br>- LoanPayment: 'pending'<br>- Loan: unchanged"]
+    InternalNotification -->|"After resolution"| CreateNewTransfer["Create new Transfer<br>for same LoanPaymentStep<br>after issue resolution"]
+    
+    %% Special Cases
+    Error -->|"Technical Error with Personal Account interaction"| SpecialCase["Special Case:<br>- First step of Funding<br>- Fee payment<br>- First/Last step of Repayment"]
+    SpecialCase -->|"Technical fix may be needed<br>before user intervention"| HybridHandling["Handled case-by-case<br>depending on context"]
+    
+    %% Retry Process
+    UpdateLoan -->|"After user resolves issue"| ResolveError["Clear currentError<br>in Loan"]
+    ResolveError -->|"Retry"| CreateNewTransfer
+    CreateNewTransfer -->|"Continue process"| ContinueProcess["Process continues with<br>new Transfer instance"]
+    
+    %% Styling
+    classDef entity fill:#d8b4fe,stroke:#6b21a8,stroke-width:1px,color:#1e1e1e
+    classDef error fill:#fca5a5,stroke:#b91c1c,stroke-width:1px,color:#1e1e1e
+    classDef process fill:#bae6fd,stroke:#0369a1,stroke-width:1px,color:#1e1e1e
+    classDef action fill:#86efac,stroke:#047857,stroke-width:1px,color:#1e1e1e
+    
+    class Transfer,Step,Payment,Loan entity
+    class Error,BusinessError,TechnicalError,SpecialCase error
+    class CreateBusinessError,CreateTechnicalError,UpdateLoan,FailStep,FailPayment,PauseLoan,KeepPending,HybridHandling process
+    class InternalNotification,ResolveError,CreateNewTransfer,ContinueProcess action
+```
+
+## Loan Payment Events
