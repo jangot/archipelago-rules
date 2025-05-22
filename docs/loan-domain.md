@@ -302,17 +302,7 @@ namespace Core {
     Repaid --> Closed
   ```
 
----
 
-  ### State change conditions
-  TBD
-
-  ---
-
-  ### Loan State change on Error
-  TBD
-
-  ---
 
   ## LoanPayments, LoanPaymentSteps and Transfers
 
@@ -1222,3 +1212,252 @@ flowchart TD
 ```
 
 ## Loan Payment Events
+
+### Why Payment Events?
+Due to the variety of way how different Payment Providers work and how they response about transfer state we need to have a way to handle all of the possible cases. Some Payment Providers resposnes immediatly with the transfer state, some of them have a webhook which notifies us about the transfer state and some of them even do this via files. To handle all of these cases we need to have a way to process the updates and align the state of the transfer accordingly.
+
+As LoanPaymentStep state relies on the Transfer state, LoanPayment state relies on the LoanPaymentStep state and Loan state relies on the LoanPayment state - all layers should support the events and be able to process them to not wait for the response from the Payment Provider.
+
+### Payment Events
+#### Transfer Events
+- `TransferCreated` - Transfer was just created. No processing started yet. On this **Transfer** has `created` state.
+- `TransferInitiated` - Transfer has been taken for processing. On this **Transfer** has `pending` state.
+- `TransferCompleted` - Transfer was completed successfully. On this **Transfer** has `completed` state.
+- `TransferFailed` - Transfer failed with error. On this **Transfer** has `failed` state.
+
+#### LoanPaymentStep Events
+- `LoanPaymentStepCreated` - LoanPaymentStep was just created. No processing started yet. On this **LoanPaymentStep** has `created` state.
+- `LoanPaymentStepInitiated` - LoanPaymentStep has been taken for processing. On this **LoanPaymentStep** has `pending` state.
+- `LoanPaymentStepCompleted` - LoanPaymentStep was completed successfully. On this **LoanPaymentStep** has `completed` state.
+- `LoanPaymentStepFailed` - LoanPaymentStep failed with error. On this **LoanPaymentStep** has `failed` state.
+
+#### LoanPayment Events
+- `LoanPaymentCreated` - LoanPayment was just created. No processing started yet. On this **LoanPayment** has `created` state.
+- `LoanPaymentInitiated` - LoanPayment has been taken for processing. On this **LoanPayment** has `pending` state.
+- `LoanPaymentCompleted` - LoanPayment was completed successfully. On this **LoanPayment** has `completed` state.
+- `LoanPaymentFailed` - LoanPayment failed with error. On this **LoanPayment** has `failed` state.
+
+### Events Payload
+Most of the events already have their descriptional name and do not require many additional fields. For such Events it would be enough just to inherit from the base event:
+```typescript
+interface IBasePaymentEventPayload {
+  id: string; // uuid of the Event for tracking / idempotency
+  entityId: string; // uuid of the Entity
+  timestamp: Date; // timestamp of the Event
+}
+```
+some events might require additional fields to be passed in the payload. For example:
+```typescript
+interface ITransferFailedEventPayload extends IBasePaymentEventPayload {
+  errorId: string; // TransferError entity
+  transferId: string; // uuid of the Transfer
+  type: TransferErrorType; // Type of the error: 'business' or 'technical'
+}
+```
+
+
+### Events Dispatching, Handling and Processing (WIP)
+
+Let's examine how events flow through each layer of the payment system:
+
+#### 1. Transfer Events Layer
+
+```mermaid
+graph LR
+    %% External trigger
+    ExternalWebhook["Payment<br>Provider<br>Webhook"]
+    
+    %% Service
+    TransferExecService["Transfer<br>Execution<br>Service"]
+    
+    %% Event Bus
+    EventBus((Event<br>Bus))
+    
+    %% Transfer Events
+    subgraph TransferEvents["Transfer Events"]
+        direction TB
+        TE1["TransferCreated"] --> TE2
+        TE2["TransferInitiated"] --> TE3
+        TE3["TransferCompleted"]
+        TE2 --> TE4
+        TE4["TransferFailed"]
+    end
+    
+    %% Error handling
+    subgraph ErrorHandling["Error Handling"]
+        BizError["Business<br>Error"]
+        TechError["Technical<br>Error"]
+    end
+    
+    %% Higher Layer
+    StepLayer["LoanPaymentStep<br>Layer"]
+    
+    %% Flow
+    ExternalWebhook -->|"Status<br>Update"| TransferExecService
+    TransferExecService -.->|"Publishes"| TransferEvents
+    TransferEvents --> EventBus
+    
+    EventBus -->|"Transfer<br>Events"| StepLayer
+    
+    TE4 -->|"Categorized as"| ErrorHandling
+    BizError -.->|"Updates<br>loan"| StepLayer
+    TechError -.->|"Triggers<br>retry"| TransferExecService
+    
+    %% Styling
+    classDef events fill:#bae6fd,stroke:#0369a1,stroke-width:1px,color:#1e1e1e
+    classDef eventBus fill:#fdba74,stroke:#c2410c,stroke-width:1px,color:#1e1e1e,stroke-dasharray: 5 5
+    classDef service fill:#d8b4fe,stroke:#6b21a8,stroke-width:1px,color:#1e1e1e
+    classDef external fill:#fca5a5,stroke:#b91c1c,stroke-width:1px,color:#1e1e1e
+    classDef error fill:#fca5a5,stroke:#b91c1c,stroke-width:1px,color:#1e1e1e
+    classDef layer fill:#a3e635,stroke:#3f6212,stroke-width:1px,color:#1e1e1e,stroke-dasharray: 5 5
+    
+    class TE1,TE2,TE3,TE4 events
+    class EventBus eventBus
+    class TransferExecService service
+    class ExternalWebhook external
+    class BizError,TechError error
+    class StepLayer layer
+```
+
+#### 2. LoanPaymentStep Events Layer
+
+```mermaid
+graph LR
+    %% Service
+    PaymentStepManager["LoanPayment<br>Step<br>Manager"]
+    
+    %% Event Bus
+    EventBus((Event<br>Bus))
+    
+    %% Step Events
+    subgraph StepEvents["LoanPaymentStep Events"]
+        direction TB
+        SE1["LoanPaymentStepCreated"] --> SE2
+        SE2["LoanPaymentStepInitiated"] --> SE3
+        SE3["LoanPaymentStepCompleted"]
+        SE2 --> SE4
+        SE4["LoanPaymentStepFailed"]
+    end
+    
+    %% Lower Layer
+    TransferLayer["Transfer<br>Layer"]
+    
+    %% Higher Layer
+    PaymentLayer["LoanPayment<br>Layer"]
+    
+    %% Flow
+    TransferLayer -->|"Transfer<br>Events"| PaymentStepManager
+    PaymentStepManager -.->|"Publishes"| StepEvents
+    StepEvents --> EventBus
+    EventBus -->|"Step<br>Events"| PaymentLayer
+    
+    %% Key connection from Transfer Layer
+    TransferLayer -.->|"TransferCompleted<br>Triggers"| SE3
+    
+    %% Styling
+    classDef events fill:#bae6fd,stroke:#0369a1,stroke-width:1px,color:#1e1e1e
+    classDef eventBus fill:#fdba74,stroke:#c2410c,stroke-width:1px,color:#1e1e1e,stroke-dasharray: 5 5
+    classDef service fill:#d8b4fe,stroke:#6b21a8,stroke-width:1px,color:#1e1e1e
+    classDef layer fill:#a3e635,stroke:#3f6212,stroke-width:1px,color:#1e1e1e,stroke-dasharray: 5 5
+    
+    class SE1,SE2,SE3,SE4 events
+    class EventBus eventBus
+    class PaymentStepManager service
+    class TransferLayer,PaymentLayer layer
+```
+
+#### 3. LoanPayment Events Layer
+
+```mermaid
+graph LR
+    %% Service
+    PaymentFactory["LoanPayment<br>Factory"]
+    
+    %% Event Bus
+    EventBus((Event<br>Bus))
+    
+    %% Payment Events
+    subgraph PaymentEvents["LoanPayment Events"]
+        direction TB
+        PE1["LoanPaymentCreated"] --> PE2
+        PE2["LoanPaymentInitiated"] --> PE3
+        PE3["LoanPaymentCompleted"]
+        PE2 --> PE4
+        PE4["LoanPaymentFailed"]
+    end
+    
+    %% Lower Layer
+    StepLayer["LoanPaymentStep<br>Layer"]
+    
+    %% Higher Layer
+    LoanLayer["Loan<br>Layer"]
+    
+    %% Flow
+    StepLayer -->|"Step<br>Events"| PaymentFactory
+    PaymentFactory -.->|"Publishes"| PaymentEvents
+    PaymentEvents --> EventBus
+    EventBus -->|"Payment<br>Events"| LoanLayer
+    
+    %% Key connection from Step Layer
+    StepLayer -.->|"All Steps Complete<br>Triggers"| PE3
+    
+    %% Styling
+    classDef events fill:#bae6fd,stroke:#0369a1,stroke-width:1px,color:#1e1e1e
+    classDef eventBus fill:#fdba74,stroke:#c2410c,stroke-width:1px,color:#1e1e1e,stroke-dasharray: 5 5
+    classDef service fill:#d8b4fe,stroke:#6b21a8,stroke-width:1px,color:#1e1e1e
+    classDef layer fill:#a3e635,stroke:#3f6212,stroke-width:1px,color:#1e1e1e,stroke-dasharray: 5 5
+    
+    class PE1,PE2,PE3,PE4 events
+    class EventBus eventBus
+    class PaymentFactory service
+    class StepLayer,LoanLayer layer
+```
+
+#### 4. Loan Events Layer
+
+```mermaid
+graph LR
+    %% Service
+    LoanService["Loan<br>Service"]
+    
+    %% Event Bus
+    EventBus((Event<br>Bus))
+    
+    %% Loan Events
+    subgraph LoanEvents["Loan Events"]
+        direction TB
+        LE1["LoanStateUpdated"]
+        LE2["LoanErrorOccurred"]
+        LE3["LoanPaymentsCompleted"]
+    end
+    
+    %% Lower Layer
+    PaymentLayer["LoanPayment<br>Layer"]
+    
+    %% Flow
+    PaymentLayer -->|"Payment<br>Events"| LoanService
+    LoanService -.->|"Publishes"| LoanEvents
+    LoanEvents --> EventBus
+    
+    %% Key connections from Payment Layer
+    PaymentLayer -.->|"Payment Completed<br>Triggers"| LE1
+    PaymentLayer -.->|"All Payments Complete<br>Triggers"| LE3
+    LE3 -.->|"Signals loan<br>completion"| LE1
+    
+    %% Styling
+    classDef events fill:#bae6fd,stroke:#0369a1,stroke-width:1px,color:#1e1e1e
+    classDef eventBus fill:#fdba74,stroke:#c2410c,stroke-width:1px,color:#1e1e1e,stroke-dasharray: 5 5
+    classDef service fill:#d8b4fe,stroke:#6b21a8,stroke-width:1px,color:#1e1e1e
+    classDef layer fill:#a3e635,stroke:#3f6212,stroke-width:1px,color:#1e1e1e,stroke-dasharray: 5 5
+    
+    class LE1,LE2,LE3 events
+    class EventBus eventBus
+    class LoanService service
+    class PaymentLayer layer
+```
+
+
+TBD: Implementation depends on the selected technologies.
+Most suitable options are:
+- SNS+SQS Pattern for Reliable Event Delivery
+- NestJS Microservice Transport with Redis
