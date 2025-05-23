@@ -2,7 +2,6 @@ import { LoanPaymentType, LoanPaymentState } from '@library/entity/enum';
 import { ILoanPayment } from '@library/entity/interface/iloan-payment';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Loan } from './loan.entity';
-import { Transfer } from './transfer.entity';
 
 @Entity({ schema: 'core' })
 export class LoanPayment implements ILoanPayment {
@@ -43,8 +42,8 @@ export class LoanPayment implements ILoanPayment {
   @Column({ type: 'timestamp with time zone' })
   scheduledAt: Date;
 
-  @OneToMany(() => Transfer, (transfer) => transfer.loanPayment, { nullable: true })
-  transfers: Transfer[] | null;
+  @OneToMany(() => LoanPaymentStep, (step) => step.loanPaymentId, { nullable: true })
+  steps: LoanPaymentStep[] | null;
 
   @Column({ type: 'timestamp with time zone', nullable: true })
   completedAt: Date | null;

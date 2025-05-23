@@ -15,6 +15,8 @@ import { PaymentAccount } from './payment.account.entity';
 import { Transfer } from './transfer.entity';
 import { LoanPayment } from './loan.payment.entity';
 import { LoanInvitee } from './loan.invitee.entity';
+import { PaymentsRouteStep } from './payments.route.step.entity';
+import { PaymentsRoute } from './payments.route.entity';
 
 export * from './application.user.entity';
 export * from './loan.entity';
@@ -25,7 +27,21 @@ export * from './payment.account.entity';
 export * from './transfer.entity';
 export * from './loan.payment.entity';
 export * from './loan.invitee.entity';
+export * from './payments.route.step.entity';
+export * from './payments.route.entity';
 
 // Add all Core Entities here (will get add the TypeORM entities[])
 // The glob pattern method does not seem to work properly, especially with WebPack
-export const CoreEntities = [Loan, ApplicationUser, Login, UserRegistration, Biller, PaymentAccount, Transfer, LoanPayment, LoanInvitee];
+export const CoreEntities = [
+  Loan, 
+  ApplicationUser, 
+  Login, 
+  UserRegistration, 
+  Biller, 
+  PaymentAccount, 
+  Transfer, 
+  LoanPayment, 
+  LoanInvitee, 
+  PaymentsRouteStep,
+  PaymentsRoute,
+];

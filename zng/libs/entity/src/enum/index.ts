@@ -30,4 +30,5 @@ export * from './loan-payment.state';
 export * from './payment-account.ownersip.type';
 export * from './payment-account.state';
 export * from './payment-account.details.type';
+export * from './payment-step.state';
 // #endregion

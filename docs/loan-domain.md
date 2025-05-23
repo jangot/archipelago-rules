@@ -382,10 +382,13 @@ interface ILoanPayment {
   /** What date Loan Payment was executed last time. 
    * Should be the same with `originalExecutionDate` if it is first execution attempt, 
    * otherwise - should contain the date of latest re-attempt */
-  executionDate: Date;
+  initiatedAt: Date;
 
   /** Date for which Loan Payment was originally scheduled */
-  originalExecutionDate: Date;
+  scheduledAt: Date;
+
+  /** Date when Payment was completed.*/
+  completedAt: Date | null;
 
   /**
    * Collection of LoanPaymentSteps that are part of this Loan Payment.
@@ -444,11 +447,10 @@ interface ILoanPaymentStep {
 
   /**
    * Indicates what state of the preceding step to wait for before proceeding:
-   * 'none' - Do not wait for previous steps (default for first step)
-   * 'confirmation' - Wait for previous step to be confirmed
-   * 'completion' - Wait for previous step to be completed
+   * 'null' - Do not wait for previous steps (default for first step)
+   * 'completed' - Wait for previous step to be completed
    */
-  awaitStepState: PaymentStepState;
+  awaitStepState: PaymentStepState | null;
   
   /**
    * Reference to the previous step that must reach awaitStepState before this step can proceed.

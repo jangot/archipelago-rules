@@ -1,7 +1,7 @@
 import { EntityId } from '@library/shared/common/data';
 import { ILoan } from './iloan';
 import { LoanPaymentState, LoanPaymentType } from '../enum';
-import { ITransfer } from './itransfer';
+import { ILoanPaymentStep } from './iloan-payment-step';
 
 export interface ILoanPayment extends EntityId<string> {
   id: string; // UUID
@@ -22,11 +22,7 @@ export interface ILoanPayment extends EntityId<string> {
    * `refund` - Performing refund for the payment
    */
   type: LoanPaymentType;
-  /** Indicates order number for Loan Payment if multiple steps are involved.
-   * Ex: In Loan 'Repayment' step `0` is for `Borrower->Zirtue` payment and `1` for `Zirtue->Lender`.
-   * For one-step payments and by default `0` is used.
-   */
-  step: number;
+
   /** Indicates current state of the Loan Payment.
    * `pending` - Payment is executed but not completed yet
    * `completed` - Payment was executed successfully
@@ -45,9 +41,8 @@ export interface ILoanPayment extends EntityId<string> {
   /** Date when Payment was completed.*/
   completedAt: Date | null;
   /**
-   * Collection of Transfers that are part of this Loan Payment.
-   * Ideally should contain only one Transfer. 
-   * But if Transfer failed and re-attempt happened - new Transfer will be also referenced to the same Loan Payment.
+   * Collection of LoanPaymentSteps that are part of this Loan Payment.
+   * Each Step represents a specific transfer segment in the payment route.
    */
-  transfers: ITransfer[] | null;
+  steps: ILoanPaymentStep[] | null;
 }

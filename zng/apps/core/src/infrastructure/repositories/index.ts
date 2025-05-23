@@ -1,4 +1,4 @@
-import { IUserRepository, ILoanRepository, ILoginRepository, IUserRegistrationRepository, IBillerRepository, IPaymentAccountRepository, ITransferRepository, ILoanPaymentRepository, ILoanInviteeRepository } from '../../shared/interfaces/repositories';
+import { IUserRepository, ILoanRepository, ILoginRepository, IUserRegistrationRepository, IBillerRepository, IPaymentAccountRepository, ITransferRepository, ILoanPaymentRepository, ILoanInviteeRepository, IPaymentsRouteStepRepository, IPaymentsRouteRepository } from '../../shared/interfaces/repositories';
 import { BillerRepository } from './biller.repository';
 import { LoanRepository } from './loan.repository';
 import { LoginRepository } from './login.repository';
@@ -8,6 +8,8 @@ import { UserRepository } from './user.repository';
 import { TransferRepository } from './transfer.repository';
 import { LoanPaymentRepository } from './loan.payment.repository';
 import { LoanInviteeRepository } from './loan.invitee.repository';
+import { PaymentsRouteStepRepository } from './payments.route.step.repository';
+import { PaymentsRouteRepository } from './payments.route.repository';
 
 export * from './user.repository';
 export * from './loan.repository';
@@ -18,6 +20,8 @@ export * from './payment.account.repository';
 export * from './transfer.repository';
 export * from './loan.payment.repository';
 export * from './loan.invitee.repository';
+export * from './payments.route.step.repository';
+export * from './payments.route.repository';
 
 export const CustomCoreRepositories = [
   { provide: IUserRepository, useClass: UserRepository },
@@ -29,4 +33,6 @@ export const CustomCoreRepositories = [
   { provide: ITransferRepository, useClass: TransferRepository },
   { provide: ILoanPaymentRepository, useClass: LoanPaymentRepository },
   { provide: ILoanInviteeRepository, useClass: LoanInviteeRepository },
+  { provide: IPaymentsRouteStepRepository, useClass: PaymentsRouteStepRepository },
+  { provide: IPaymentsRouteRepository, useClass: PaymentsRouteRepository },
 ];

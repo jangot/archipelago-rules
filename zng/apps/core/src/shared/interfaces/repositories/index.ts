@@ -7,3 +7,5 @@ export * from './ipayment.account.repository';
 export * from './itransfer.repository';
 export * from './iloan.payment.repository';
 export * from './iloan.invitee.repository';
+export * from './ipayments.route.step.repository';
+export * from './ipayments.route.repository';

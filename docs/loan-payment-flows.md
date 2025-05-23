@@ -101,17 +101,18 @@ To allow **Loan Payment Router** support certain level of flexibility (cross-pro
 **Route Key** - is unique combination of Loan Configuration and two Payment Account Configurations (*from* and *to*).
 
 ```typescript
-interface IRouteStep {
+interface IPaymentsRouteStep {
 
     id: string; // uuid
-    routeId: string; // FK to Route
+    routeId: string; // FK to PaymentsRoute
+    route: IPaymentsRoute;
 
     order: number; // Order of a Route element in a chain
     fromId: string | null; // Id of the Payment Account if it is pre-defined (e.g. Zirtue Internal For Checkbook ACH Funding)    
     toId: string | null; // Id of the Payment Account if it is pre-defined (e.g. Zirtue Internal For Checkbook ACH Funding)
 }
 
-interface IRoute {
+interface IPaymentsRoute {
     id: string; // uuid
 
     //TODO: Cover by indexes? Composite indexes (from & to) as all 6 fields expected to persist?
@@ -128,7 +129,7 @@ interface IRoute {
     loanStagesSupported: LoanStage[]; // 'funding' | 'disbursement' | 'fee' | 'repayment' | 'refund'
     loanTypesSupported: LoanType[]; // 'dbp' | 'p2p' | 'rr'
     // #endregion
-    steps: IRouteStep[];
+    steps: IPaymentsRouteStep[];
 }
 ```
 
