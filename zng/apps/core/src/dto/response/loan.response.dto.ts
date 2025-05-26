@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { IsBoolean, IsDate, IsDecimal, IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsDate, IsDecimal, IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { LoanClosure, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanStateCodes, LoanType, LoanTypeCodes, LoanClosureCodes, LoanPaymentFrequencyCodes, LoanFeeModeCodes, LoanInviteeType, LoanInviteeTypeCodes } from '@library/entity/enum';
 import { NIL } from 'uuid';
 import { Expose } from 'class-transformer';

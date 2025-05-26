@@ -1,35 +1,33 @@
 import { EntityId } from '@library/shared/common/data';
 import { IPaymentAccount } from './ipayment-account';
 import { TransferState } from '../enum';
-import { ILoanPayment } from './iloan-payment';
+import { ILoanPaymentStep } from './iloan-payment-step';
+import { ITransferError } from './itransfer-error';
 
 export interface ITransfer extends EntityId<string> {
   id: string; // UUID
   amount: number;
 
-  /** Current Transfer state:
+  /**
+   * Current Transfer state:
+   * `created` - Transfer is created but not yet initiated
    * `pending` - Transfer is executed but not completed yet
    * `completed` - Transfer was executed successfully
    * `failed` - Transfer was not executed successfully due to some error
    */
   state: TransferState;
   /** Error data if Transfer failed */
-  errorData: string | null;
+  error: ITransferError | null;
 
   createdAt: Date;
   updatedAt: Date | null;
 
-  // TODO: What to do with Zirtue internal accounts? Billers accounts?
-  
-  sourceAccountId: string | null;
-  sourceAccount: IPaymentAccount | null;
-  destinationAccountId: string | null;
-  destinationAccount: IPaymentAccount | null;
-  // TODO: ? 'user', 'zirtue_ach', 'zirtue_card', 'biller'
-  sourceAccountType: string; 
-  destinationAccountType: string;
+  sourceAccountId: string;
+  sourceAccount: IPaymentAccount;
+  destinationAccountId: string;
+  destinationAccount: IPaymentAccount;
 
-  loanPaymentId: string | null;
-  loanPayment: ILoanPayment | null;
+  loanPaymentStepId: string | null;
+  loanPaymentStep: ILoanPaymentStep | null;
 
 }

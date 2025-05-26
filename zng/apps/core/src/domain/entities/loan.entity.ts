@@ -6,6 +6,7 @@ import { Biller } from './biller.entity';
 import { PaymentAccount } from './payment.account.entity';
 import { LoanPayment } from './loan.payment.entity';
 import { LoanInvitee } from './loan.invitee.entity';
+import { TransferError } from './transfer.error.entity';
 
 @Entity({ schema: 'core' })
 // When using @Check('<constraint_name>', '<expression') -- always specify a Constraint name
@@ -109,4 +110,11 @@ export class Loan implements ILoan {
 
   @Column({ type: 'timestamp with time zone', nullable: true })
   acceptedAt: Date | null;
+
+  @OneToOne(() => TransferError, { nullable: true })
+  currentError: TransferError | null; // Current error of the Loan
+
+  @Column({ type: 'int', default: 0 })
+  retryCount: number; // Number of retries for the Loan. Includes only errors reasoned by personal accounts
+
 }

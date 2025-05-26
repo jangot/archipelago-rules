@@ -1,12 +1,16 @@
+import { EntityId } from '@library/shared/common/data';
 import { PaymentStepState } from '../enum';
 import { ITransfer } from './itransfer';
+import { ILoanPayment } from './iloan-payment';
+import { IPaymentAccount } from './ipayment-account';
 
-export interface ILoanPaymentStep {
+export interface ILoanPaymentStep extends EntityId<string> {
   /** UUID */
   id: string;
     
   /** Reference to the parent LoanPayment */
   loanPaymentId: string;
+  loanPayment: ILoanPayment;
   
   /**
      * Integer order number of the step.
@@ -19,9 +23,11 @@ export interface ILoanPaymentStep {
     
   /** FK to Payment Account from which transfer will be performed */
   sourcePaymentAccountId: string;
+  sourcePaymentAccount: IPaymentAccount;
     
   /** FK to Payment Account to which transfer will be performed */
   targetPaymentAccountId: string;
+  targetPaymentAccount: IPaymentAccount;
   
   /**
      * Collection of Transfers that are part of this Loan Payment Step.

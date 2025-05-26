@@ -1135,14 +1135,13 @@ interface ITransferError {
   id: string; // UUID
 
   transferId: string; // FK to Transfer
-  loanId: string; // FK to Loan
+  loanId: string | null; // FK to Loan
 
   // TODO: Block below is TBD
   // Main purposes are:
   // 1. Highlight is it business or technical error
   // 2. Give enhough description about what happened in short manner
   type: TransferErrorType; // Type of the error: 'business' or 'technical'
-  issuerAccountType: PaymentAccountType; // Type of the account which caused the error
   code: TransferErrorCode; // Enum of the error code
 
   displayMessage: string; // Message to be displayed to the user / team

@@ -4,7 +4,7 @@ import { transformPhoneNumber } from '@library/shared/common/data/transformers/p
 import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsBoolean, IsEmail, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsEmail, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID, MaxLength } from 'class-validator';
 import { NIL } from 'uuid';
 
 @ApiSchema({ name: 'loanInviteeCreateRequest' })

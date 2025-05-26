@@ -91,7 +91,7 @@ export class LoanDomainService extends BaseDomainServices {
 
   public async setLoansTarget(input: LoanBindToUserInput): Promise<Array<ILoan>> {
     const updatedLoans: ILoan[] = [];
-    const { contactValue, contactType, intent, loanId, userId } = input;
+    const { contactValue, contactType, loanId, userId } = input;
     let targetUserId = userId;
 
     if (!loanId && !contactValue && !contactType) {

@@ -2,6 +2,7 @@ import { LoanPaymentType, LoanPaymentState } from '@library/entity/enum';
 import { ILoanPayment } from '@library/entity/interface/iloan-payment';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Loan } from './loan.entity';
+import { LoanPaymentStep } from './loan.payment.step.entity';
 
 @Entity({ schema: 'core' })
 export class LoanPayment implements ILoanPayment {

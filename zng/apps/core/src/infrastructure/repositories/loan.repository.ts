@@ -1,15 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IsNull, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILoanRepository } from '../../shared/interfaces/repositories';
 import { Loan } from '../../domain/entities';
 import { ILoan } from '@library/entity/interface';
-import { bindTargetUserToLoans } from '../sql_generated/bind-target-user-to-loans.queries';
 import { LoanBindToContactInput } from '@library/shared/types/lending';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
-import { LoanInviteeType, LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
-import { ActionNotSupportedForStateException } from '@core/domain/exceptions/loan-domain.exceptions';
 
 @Injectable()
 export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {

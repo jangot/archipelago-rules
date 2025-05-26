@@ -5,6 +5,7 @@ import { IBiller } from './ibiller';
 import { IPaymentAccount } from './ipayment-account';
 import { ILoanPayment } from './iloan-payment';
 import { ILoanInvitee } from './iloan-invitee';
+import { ITransferError } from './itransfer-error';
 
 export interface ILoan extends EntityId<string> {
   id: string; // UUID
@@ -96,6 +97,10 @@ export interface ILoan extends EntityId<string> {
   acceptedAt: Date | null; 
   //etc
   // #endregion
+
+  currentError: ITransferError | null; // Current error of the Loan
+  retryCount: number; // Number of retries for the Loan. Includes only errors reasoned by personal accounts
+
 
 
   // // #region Loan State Tracking
