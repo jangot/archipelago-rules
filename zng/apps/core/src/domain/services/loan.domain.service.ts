@@ -9,6 +9,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { DeepPartial } from 'typeorm';
 import { ActionNotSupportedForStateException } from '../exceptions/loan-domain.exceptions';
+import { LoanRelation } from '../entities/relations';
+
+
 
 @Injectable()
 export class LoanDomainService extends BaseDomainServices {
@@ -22,8 +25,9 @@ export class LoanDomainService extends BaseDomainServices {
     super(data);
   }
 
-  public async getLoanById(loanId: string): Promise<ILoan | null> {
-    return this.data.loans.findOne({ where: { id: loanId }, relations: ['invitee'] });
+  // #region Loan
+  public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> {
+    return this.data.loans.findOne({ where: { id: loanId }, relations });
   }
 
   public async createLoan(loan: DeepPartial<ILoan>): Promise<ILoan | null> {
@@ -33,23 +37,6 @@ export class LoanDomainService extends BaseDomainServices {
     invitee.loanId = loanId;
     await this.data.loanInvitees.create(invitee);
     return this.getLoanById(loanId);
-  }
-
-  public async createPersonalBiller(invitee: DeepPartial<ILoanInvitee>, createdById: string): Promise<IBiller | null> {
-    const loanTypeText = invitee ? invitee.type === LoanInviteeTypeCodes.Borrower ? 'offer' : 'request' : '';
-    const billerName = `Personal ${loanTypeText} to ${invitee?.firstName} ${invitee?.lastName}`;
-    return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Personal, createdById });
-  }
-
-  public async getOrCreateCustomBiller(createdById: string, billerName: string): Promise<IBiller | null> {
-    // To reduce the duplicates chance we try to find same Biller first
-    const existingBiller = await this.data.billers.findOne({ where: { name: billerName, createdById, type: BillerTypeCodes.Custom } });
-    if (existingBiller) return existingBiller;
-    return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Custom, createdById });
-  }
-
-  public async getCustomBillers(createdById: string): Promise<Array<IBiller> | null> {
-    return this.data.billers.getAllCustomBillers(createdById);
   }
 
   public async updateLoan(loanId: string, loan: DeepPartial<ILoan>): Promise<boolean | null> {
@@ -122,5 +109,32 @@ export class LoanDomainService extends BaseDomainServices {
     }
     return updatedLoans;
   }
+  // #endregion
+
+  // #region Biller
+  public async createPersonalBiller(invitee: DeepPartial<ILoanInvitee>, createdById: string): Promise<IBiller | null> {
+    const loanTypeText = invitee ? invitee.type === LoanInviteeTypeCodes.Borrower ? 'offer' : 'request' : '';
+    const billerName = `Personal ${loanTypeText} to ${invitee?.firstName} ${invitee?.lastName}`;
+    return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Personal, createdById });
+  }
+
+  public async getOrCreateCustomBiller(createdById: string, billerName: string): Promise<IBiller | null> {
+    // To reduce the duplicates chance we try to find same Biller first
+    const existingBiller = await this.data.billers.findOne({ where: { name: billerName, createdById, type: BillerTypeCodes.Custom } });
+    if (existingBiller) return existingBiller;
+    return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Custom, createdById });
+  }
+
+  public async getCustomBillers(createdById: string): Promise<Array<IBiller> | null> {
+    return this.data.billers.getAllCustomBillers(createdById);
+  }
+  // #endregion
+
+
+
+
+
+
+
   
 }

@@ -11,6 +11,7 @@ import { DeepPartial } from 'typeorm';
 import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/interface';
 import { LendingLogic } from './lending.logic';
 import { LoanBindToContactInput } from '@library/shared/types/lending';
+import { LOAN_RELATIONS } from '@core/domain/entities/relations';
 
 @Injectable()
 export class LoansService {
@@ -109,7 +110,7 @@ export class LoansService {
     if (!loanId) {
       throw new MissingInputException('Missing Loan Id');
     }
-    const loan = await this.domainServices.loanServices.getLoanById(loanId);
+    const loan = await this.domainServices.loanServices.getLoanById(loanId, [LOAN_RELATIONS.Invitee]);
     if (!loan) {
       throw new EntityNotFoundException('Loan not found');
     }
