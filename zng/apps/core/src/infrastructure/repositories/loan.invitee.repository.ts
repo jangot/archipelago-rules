@@ -1,4 +1,5 @@
 import { LoanInvitee } from '@core/domain/entities';
+import { LoanInviteeRelation } from '@core/domain/entities/relations';
 import { ILoanInviteeRepository } from '@core/shared/interfaces/repositories';
 import { ContactType } from '@library/entity/enum';
 import { ILoanInvitee } from '@library/entity/interface';
@@ -23,6 +24,18 @@ export class LoanInviteeRepository extends RepositoryBase<LoanInvitee> implement
         return this.repository.findOne({ where: { loanId, phone: contactValue } });
       default:
         return null;
+    }
+  }
+
+  public async searchInvitees(contactValue: string, contactType: ContactType, relations?: LoanInviteeRelation[]): Promise<ILoanInvitee[]> {
+    switch (contactType) {
+      case ContactType.EMAIL:
+        return this.repository.find({ where: { email: contactValue }, relations });
+      case ContactType.PHONE_NUMBER:
+        return this.repository.find({ where: { phone: contactValue }, relations });
+      default:
+        this.logger.warn(`Unsupported contact type for searchInvitees: ${contactType}`);
+        return [];
     }
   }
 } 

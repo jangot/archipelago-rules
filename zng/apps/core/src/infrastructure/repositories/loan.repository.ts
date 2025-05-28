@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILoanRepository } from '../../shared/interfaces/repositories';
-import { Loan } from '../../domain/entities';
 import { ILoan } from '@library/entity/interface';
-import { LoanAssignToContactInput } from '@library/shared/types/lending';
-import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
+import { LoansSetTargetUserInput } from '@library/shared/types/lending';
+import { LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
+import { Loan } from '@core/domain/entities';
+import { ILoanRepository } from '@core/shared/interfaces/repositories';
 
 @Injectable()
 export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {
@@ -20,32 +20,32 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
   }
 
 
+
   public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {
     this.logger.debug(`getByLenderId: ${lenderId}`);
 
     return this.repository.findBy({ lenderId });
   }
 
-  // WIP
-  public async setLoansTarget(input: LoanAssignToContactInput): Promise<ILoan[]> {
-    const { contactValue, contactType, intent, loanId } = input;
-    this.logger.debug(`setLoansTarget: intent:${intent}, contactValue:${contactValue}`, { input });
+  public async assignUserToLoans(input: LoansSetTargetUserInput): Promise<void> {
+    const { userId, loansTargets } = input;
+    this.logger.debug(`assignUserToLoans: for User ${userId}`, loansTargets);
 
-    if (!loanId && !contactValue && !contactType) {
-      throw new MissingInputException('Either loanId or contact information must be provided.');
-    }
+    // Make two arrays - for borrowerId and lenderId
+    const borrowerUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Borrower).map(t => t.loanId);
+    const lenderUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Lender).map(t => t.loanId);
 
-    const updatedLoans: ILoan[] = [];
+    // Run two bulk updates inside a transaction
+    return this.repository.manager.transaction(async manager => {
+      const repo = manager.getRepository(Loan);
 
-    if (loanId) {
-      const loan = await this.repository.findOne({ where: { id: loanId } });
-      if (!loan) {
-        throw new EntityNotFoundException(`Loan with id ${loanId} not found.`);
-      }    
-    } else {
-      
-    }
+      if (borrowerUpdates.length > 0) {
+        await repo.update({ id: In(borrowerUpdates) }, { borrowerId: userId, state: LoanStateCodes.BorrowerAssigned });
+      }
 
-    return updatedLoans;
+      if (lenderUpdates.length > 0) {
+        await repo.update({ id: In(lenderUpdates) }, { lenderId: userId, state: LoanStateCodes.LenderAssigned });
+      }
+    });
   }
 }

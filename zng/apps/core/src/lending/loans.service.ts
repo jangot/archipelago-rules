@@ -75,26 +75,8 @@ export class LoansService {
     return result as unknown as LoanResponseDto | null;
   }
 
-  // WIP
   public async setLoansTarget(input: LoanAssignToContactInput): Promise<void> {
-    const { contactValue, contactType, intent, loanId } = input;
-    // Before looking for Loans we should check that User with provided contact is registered  
-
-    const user = await this.domainServices.userServices.getUserByContact(contactValue, contactType);
-    
-    if (!user || user.registrationStatus !== RegistrationStatus.Registered) {
-      switch (intent) {
-        // If intent is `propose` - it is okay if no such User yet (means that assignment will happen when User registered)
-        case LoanAssignIntentCodes.Propose:
-          this.logger.log(`Attempted to assign Loan ${loanId} to ${contactType} ${contactValue} during proposal but User not registered yet`);
-          break;
-        case LoanAssignIntentCodes.Registration:
-          this.logger.error(`Attempted to assign Loan ${loanId} to ${contactType} ${contactValue} after registration but could not find User or registration is not completed yet`);
-          break;
-      }
-      return;
-    }
-    await this.domainServices.loanServices.setLoansTarget({ ...input, userId: user.id });
+    await this.domainServices.loanServices.setLoansTarget(input);
   }
 
   private async createPersonalBiller(invitee: DeepPartial<ILoanInvitee>, createdById: string): Promise<IBiller> {
