@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { In, Repository } from 'typeorm';
+import { DeepPartial, In, Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILoan } from '@library/entity/interface';
@@ -7,6 +7,7 @@ import { LoansSetTargetUserInput } from '@library/shared/types/lending';
 import { LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
 import { Loan } from '@core/domain/entities';
 import { ILoanRepository } from '@core/shared/interfaces/repositories';
+import { LoanRelation } from '@core/domain/entities/relations';
 
 @Injectable()
 export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {
@@ -19,12 +20,24 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     super(repository, Loan);
   }
 
+  public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> {
+    this.logger.debug(`getLoanById: ${loanId}`, relations);
+
+    return this.repository.findOne({ where: { id: loanId }, relations: relations });
+  }
+
 
 
   public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {
     this.logger.debug(`getByLenderId: ${lenderId}`);
 
     return this.repository.findBy({ lenderId });
+  }
+
+  public async createLoan(loan: DeepPartial<Loan>): Promise<Loan | null> {
+    this.logger.debug('createLoan:', loan);
+
+    return this.repository.create({ ...loan, state: LoanStateCodes.Created });
   }
 
   public async assignUserToLoans(input: LoansSetTargetUserInput): Promise<void> {

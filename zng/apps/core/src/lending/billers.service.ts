@@ -12,7 +12,7 @@ export class BillersService {
   @MapToDto(BillerResponseDto)
   public async createCustomBiller(creatorId: string, name: string): Promise<BillerResponseDto | null> {
     this.logger.debug(`createBiller: Creating custom Biller with name: ${name} by request from user: ${creatorId}`);
-    const result = await this.domainServices.loanServices.getOrCreateCustomBiller(creatorId, name);
+    const result = await this.domainServices.loanServices.createCustomBiller(creatorId, name);
     return result as unknown as BillerResponseDto | null;
   }
 

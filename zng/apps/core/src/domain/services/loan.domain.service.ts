@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { DeepPartial } from 'typeorm';
 import { LOAN_INVITEE_RELATIONS, LOAN_RELATIONS, LoanRelation } from '../entities/relations';
+import { EntityFailedToUpdateException } from '@library/shared/common/exceptions/domain';
 
 @Injectable()
 export class LoanDomainService extends BaseDomainServices {
@@ -23,11 +24,13 @@ export class LoanDomainService extends BaseDomainServices {
 
   // #region Loan
   public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> {
-    return this.data.loans.findOne({ where: { id: loanId }, relations }); // <-- to repo method
+    return this.data.loans.getLoanById(loanId, relations);
   }
 
   public async createLoan(loan: DeepPartial<ILoan>): Promise<ILoan | null> {
-    const createdLoan = await this.data.loans.create({ ...loan, state: LoanStateCodes.Created });
+    const createdLoan = await this.data.loans.createLoan(loan);
+    if (!createdLoan) throw new EntityFailedToUpdateException('Failed to create Loan');
+    
     const { id: loanId } = createdLoan;
     const invitee = loan.invitee!;
     invitee.loanId = loanId;
@@ -142,14 +145,11 @@ export class LoanDomainService extends BaseDomainServices {
   public async createPersonalBiller(invitee: DeepPartial<ILoanInvitee>, createdById: string): Promise<IBiller | null> {
     const loanTypeText = invitee ? invitee.type === LoanInviteeTypeCodes.Borrower ? 'offer' : 'request' : '';
     const billerName = `Personal ${loanTypeText} to ${invitee?.firstName} ${invitee?.lastName}`;
-    return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Personal, createdById });
+    return this.data.billers.createBiller({ name: billerName, type: BillerTypeCodes.Personal, createdById });
   }
 
-  public async getOrCreateCustomBiller(createdById: string, billerName: string): Promise<IBiller | null> {
-    // To reduce the duplicates chance we try to find same Biller first
-    const existingBiller = await this.data.billers.findOne({ where: { name: billerName, createdById, type: BillerTypeCodes.Custom } });
-    if (existingBiller) return existingBiller;
-    return this.data.billers.create({ name: billerName, type: BillerTypeCodes.Custom, createdById });
+  public async createCustomBiller(createdById: string, billerName: string): Promise<IBiller | null> {
+    return this.data.billers.createBiller({ name: billerName, type: BillerTypeCodes.Custom, createdById });
   }
 
   public async getCustomBillers(createdById: string): Promise<Array<IBiller> | null> {
