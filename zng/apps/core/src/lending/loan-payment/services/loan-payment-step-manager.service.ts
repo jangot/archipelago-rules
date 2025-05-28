@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Loan } from '../../../domain/entities/loan.entity';
 import { LoanPayment } from '../../../domain/entities/loan.payment.entity';
 import { LoanPaymentStep } from '../../../domain/entities/loan.payment.step.entity';
 import { LoanPaymentFactory } from '../loan-payment.factory';
@@ -83,35 +82,9 @@ export class LoanPaymentStepManager {
         return updatedStep;
       }
       
-      // Get the loan
-      const loan = loanPayment.loan;
-      
-      // Determine the lifecycle part based on payment type
-      let lifecyclePart: string;
-      switch (loanPayment.type) {
-        case 'funding':
-          lifecyclePart = LoanPaymentFactory.FUNDING;
-          break;
-        case 'disbursement':
-          lifecyclePart = LoanPaymentFactory.DISBURSEMENT;
-          break;
-        case 'repayment':
-          lifecyclePart = LoanPaymentFactory.REPAYMENT;
-          break;
-        case 'fee':
-          lifecyclePart = LoanPaymentFactory.FEE;
-          break;
-        case 'refund':
-          lifecyclePart = LoanPaymentFactory.REFUND;
-          break;
-        default:
-          this.logger.error(`Unsupported payment type: ${loanPayment.type}`);
-          return updatedStep;
-      }
-      
       // Get the appropriate manager and advance the payment state
-      const manager = this.loanPaymentFactory.getManager(lifecyclePart, loan.type);
-      await manager.advance(loanPayment, updatedStep);
+      const manager = this.loanPaymentFactory.getManager(loanPayment.type);
+      await manager.advance(loanPayment.id);
       
       return updatedStep;
     } catch (error) {

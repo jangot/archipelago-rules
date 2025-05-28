@@ -52,35 +52,37 @@ export class LoanPaymentService {
         lifecyclePart = this.determineLifecyclePart(loan);
       }
 
+      // More broken / wrong code here.
       // Get the appropriate loan payment manager
-      const manager = this.loanPaymentFactory.getManager(lifecyclePart, loan.type);
+      // const manager = this.loanPaymentFactory.getManager(lifecyclePart, loan.type);
 
-      // Initiate the payment using the manager
-      let payment: LoanPayment | null;
+      // // Initiate the payment using the manager
+      // let payment: LoanPayment | null;
       
-      // Special handling for repayment which may need payment number
-      if (lifecyclePart === LoanPaymentFactory.REPAYMENT) {
-        // Find the next payment number
-        const paymentNumber = await this.determineNextRepaymentNumber(loan);
-        payment = await (manager as any).initiate(loan, routeId, paymentNumber);
-      } else {
-        payment = await manager.initiate(loan, routeId);
-      }
+      // // Special handling for repayment which may need payment number
+      // if (lifecyclePart === LoanPaymentFactory.REPAYMENT) {
+      //   // Find the next payment number
+      //   const paymentNumber = await this.determineNextRepaymentNumber(loan);
+      //   payment = await (manager as any).initiate(loan, routeId, paymentNumber);
+      // } else {
+      //   payment = await manager.initiate(loan, routeId);
+      // }
 
-      if (!payment) {
-        return null;
-      }
+      // if (!payment) {
+      //   return null;
+      // }
 
       // Create the payment steps
-      const steps = await this.loanPaymentStepManager.createSteps(payment, routeId);
+      // const steps = await this.loanPaymentStepManager.createSteps(payment, routeId);
       
-      if (!steps) {
-        // If step creation failed, try to remove the payment
-        await this.loanPaymentRepository.remove(payment);
-        return null;
-      }
+      // if (!steps) {
+      //   // If step creation failed, try to remove the payment
+      //   await this.loanPaymentRepository.remove(payment);
+      //   return null;
+      // }
 
-      return payment;
+      // return payment;
+      return null;
     } catch (error) {
       this.logger.error(`Failed to initiate payment: ${error.message}`, error.stack);
       return null;
@@ -94,23 +96,25 @@ export class LoanPaymentService {
    */
   private determineLifecyclePart(loan: Loan): string {
     // Map loan states to lifecycle parts
-    switch (loan.state) {
-      case LoanStateCodes.Created:
-      case LoanStateCodes.Accepted:
-        return LoanPaymentFactory.FUNDING;
+    // switch (loan.state) {
+    //   case LoanStateCodes.Created:
+    //   case LoanStateCodes.Accepted:
+    //     return LoanPaymentFactory.FUNDING;
       
-      case LoanStateCodes.Funded:
-        return LoanPaymentFactory.DISBURSEMENT;
+    //   case LoanStateCodes.Funded:
+    //     return LoanPaymentFactory.DISBURSEMENT;
       
-      case LoanStateCodes.Repaying:
-        return LoanPaymentFactory.REPAYMENT;
+    //   case LoanStateCodes.Repaying:
+    //     return LoanPaymentFactory.REPAYMENT;
       
-        // Additional states would map to appropriate lifecycle parts
+    //     // Additional states would map to appropriate lifecycle parts
       
-      default:
-        this.logger.warn(`Could not determine lifecycle part for loan state: ${loan.state}`);
-        throw new Error(`Unsupported loan state for payment initiation: ${loan.state}`);
-    }
+    //   default:
+    //     this.logger.warn(`Could not determine lifecycle part for loan state: ${loan.state}`);
+    //     throw new Error(`Unsupported loan state for payment initiation: ${loan.state}`);
+    // }
+    // No idea what should be returned here, or even if it should be in this class or not.
+    return LoanPaymentTypeCodes.Funding;
   }
 
   /**

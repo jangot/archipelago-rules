@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transfer } from '../../../domain/entities/transfer.entity';
 import { LoanPaymentStep } from '../../../domain/entities/loan.payment.step.entity';
-import { PaymentStepState, PaymentStepStateCodes } from '@library/entity/enum';
+import { PaymentStepStateCodes } from '@library/entity/enum';
 import { LoanPaymentStepManager } from './loan-payment-step-manager.service';
 
 /**
@@ -47,8 +47,8 @@ export class TransferExecutionService {
       // Create a new transfer
       const transfer = this.transferRepository.create({
         amount: step.amount,
-        sourcePaymentAccountId: step.sourcePaymentAccountId,
-        targetPaymentAccountId: step.targetPaymentAccountId,
+        sourceAccountId: step.sourcePaymentAccountId,
+        destinationAccountId: step.targetPaymentAccountId,
         loanPaymentStep: step,
         // Additional transfer properties would be set here
       });
