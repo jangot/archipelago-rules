@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ILoanRepository } from '../../shared/interfaces/repositories';
 import { Loan } from '../../domain/entities';
 import { ILoan } from '@library/entity/interface';
-import { LoanBindToContactInput } from '@library/shared/types/lending';
+import { LoanAssignToContactInput } from '@library/shared/types/lending';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
 
 @Injectable()
@@ -26,7 +26,8 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     return this.repository.findBy({ lenderId });
   }
 
-  public async setLoansTarget(input: LoanBindToContactInput): Promise<ILoan[]> {
+  // WIP
+  public async setLoansTarget(input: LoanAssignToContactInput): Promise<ILoan[]> {
     const { contactValue, contactType, intent, loanId } = input;
     this.logger.debug(`setLoansTarget: intent:${intent}, contactValue:${contactValue}`, { input });
 
@@ -40,24 +41,9 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
       const loan = await this.repository.findOne({ where: { id: loanId } });
       if (!loan) {
         throw new EntityNotFoundException(`Loan with id ${loanId} not found.`);
-      }
-
-      // TODO: fix as isLendLoan disappeared
-      // const updatePayload = loan.isLendLoan
-      //   ? { borrowerId: userId }
-      //   : { lenderId: userId };
-
-      // await this.repository.update({ id: loanId }, updatePayload);
-      // const updatedLoan = await this.repository.findOne({ where: { id: loanId } });
-      // if (updatedLoan) {
-      //   updatedLoans.push(updatedLoan);
-      // }
+      }    
     } else {
-
-
-      // TODO: types are broken - find a way to align pgtyped type with ILoan
-      // const result = await this.runSqlQuery({ userId, contactUri }, bindTargetUserToLoans);
-      // updatedLoans.push(...result);
+      
     }
 
     return updatedLoans;

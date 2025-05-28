@@ -3,7 +3,7 @@ import { BillerTypeCodes, LoanInviteeType, LoanInviteeTypeCodes, LoanStateCodes 
 import { IBiller, ILoan, ILoanInvitee } from '@library/entity/interface';
 import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
-import { LoanBindToUserInput } from '@library/shared/types/lending';
+import { LoanAssignToUserInput } from '@library/shared/types/lending';
 import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -76,7 +76,7 @@ export class LoanDomainService extends BaseDomainServices {
     return this.getLoanById(loanId);
   }
 
-  public async setLoansTarget(input: LoanBindToUserInput): Promise<Array<ILoan>> {
+  public async setLoansTarget(input: LoanAssignToUserInput): Promise<Array<ILoan>> {
     const updatedLoans: ILoan[] = [];
     const { contactValue, contactType, loanId, userId } = input;
     let targetUserId = userId;
@@ -84,7 +84,6 @@ export class LoanDomainService extends BaseDomainServices {
     if (!loanId && !contactValue && !contactType) {
       throw new MissingInputException('Either loanId or contact information must be provided.');
     }
-
 
     if (loanId) {
       const invitee = await this.data.loanInvitees.getLoanInvitee(loanId, contactValue, contactType);      

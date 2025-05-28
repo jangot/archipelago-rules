@@ -38,7 +38,7 @@ export interface ILoan extends EntityId<string> {
   deeplink: string | null; 
   // #endregion
 
-  // #region Target/Source Bindings
+  // #region Target/Source Assignment
   invitee: ILoanInvitee;
   // #endregion
 
@@ -74,7 +74,7 @@ export interface ILoan extends EntityId<string> {
   feeAmount: number | null;
   // #endregion
 
-  // #region Payment Account Bindings
+  // #region Payment Account Assignment
   // Idea is to remove four accounts links from zirtue-microservices implementation and keep just two
   // Should nicely cover all needs for changes / validation / information retrieval
   // Transfers objects will still contain the fact accounts used while this fields are for storing current ones

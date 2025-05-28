@@ -2,7 +2,7 @@ import { LoanCreateRequestDto, LoanResponseDto } from '@core/dto';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
-import { LoanBindIntentCodes, LoanInviteeTypeCodes, LoanStateCodes, LoanTypeCodes, RegistrationStatus } from '@library/entity/enum';
+import { LoanAssignIntentCodes, LoanInviteeTypeCodes, LoanStateCodes, LoanTypeCodes, RegistrationStatus } from '@library/entity/enum';
 import { IDomainServices } from '@core/domain/idomain.services';
 import { ConfigService } from '@nestjs/config';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
@@ -10,7 +10,7 @@ import { ActionNotAllowedException, UnableToCreatePersonalBillerException } from
 import { DeepPartial } from 'typeorm';
 import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/interface';
 import { LendingLogic } from './lending.logic';
-import { LoanBindToContactInput } from '@library/shared/types/lending';
+import { LoanAssignToContactInput } from '@library/shared/types/lending';
 import { LOAN_RELATIONS } from '@core/domain/entities/relations';
 
 @Injectable()
@@ -76,7 +76,7 @@ export class LoansService {
   }
 
   // WIP
-  public async setLoansTarget(input: LoanBindToContactInput): Promise<void> {
+  public async setLoansTarget(input: LoanAssignToContactInput): Promise<void> {
     const { contactValue, contactType, intent, loanId } = input;
     // Before looking for Loans we should check that User with provided contact is registered  
 
@@ -84,12 +84,12 @@ export class LoansService {
     
     if (!user || user.registrationStatus !== RegistrationStatus.Registered) {
       switch (intent) {
-        // If intent is `propose` - it is okay if no such User yet (means that binding will happen when User registered)
-        case LoanBindIntentCodes.Propose:
-          this.logger.log(`Attempted to bind Loan ${loanId} to ${contactType} ${contactValue} during proposal but User not registered yet`);
+        // If intent is `propose` - it is okay if no such User yet (means that assignment will happen when User registered)
+        case LoanAssignIntentCodes.Propose:
+          this.logger.log(`Attempted to assign Loan ${loanId} to ${contactType} ${contactValue} during proposal but User not registered yet`);
           break;
-        case LoanBindIntentCodes.Registration:
-          this.logger.error(`Attempted to bind Loan ${loanId} to ${contactType} ${contactValue} after registration but could not find User or registration not completed yet`);
+        case LoanAssignIntentCodes.Registration:
+          this.logger.error(`Attempted to assign Loan ${loanId} to ${contactType} ${contactValue} after registration but could not find User or registration is not completed yet`);
           break;
       }
       return;
