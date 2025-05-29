@@ -63,8 +63,7 @@ export class PaymentDomainService extends BaseDomainServices {
       loanStage: state, loanType, 
     });
 
-    if (route) return route;
-    return null;
+    return route;
   }
 
   public async createPaymentByRoute(routeId: string, loanId: string, paymentType: LoanPaymentType): Promise<void> {}
