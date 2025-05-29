@@ -49,13 +49,13 @@ export class LoansService {
   @MapToDto(LoanResponseDto)
   public async proposeLoan(userId: string, loanId: string,  sourcePaymentAccountId: string): Promise<LoanResponseDto | null> {
 
-    const loan = await this.loadLoan(loanId);
+    const loan = await this.getLoan(loanId);
     LendingLogic.validateLoanProposeInput(userId, loan);
 
     const { invitee } = loan;
     const isInviteeBorrower = invitee.type === LoanInviteeTypeCodes.Borrower;
     
-    const paymentAccount = await this.loadPaymentAccount(sourcePaymentAccountId, userId);
+    const paymentAccount = await this.getPaymentAccount(sourcePaymentAccountId, userId);
     
     const updates: DeepPartial<ILoan> = {};
     if (isInviteeBorrower) {
@@ -71,7 +71,7 @@ export class LoansService {
       throw new EntityFailedToUpdateException('Failed to update loan');
     }
 
-    const result = await this.loadLoan(loanId);
+    const result = await this.getLoan(loanId);
     return result as unknown as LoanResponseDto | null;
   }
 
@@ -88,7 +88,7 @@ export class LoansService {
     return personalBiller;
   }
 
-  private async loadLoan(loanId: string | null): Promise<ILoan> {
+  private async getLoan(loanId: string | null): Promise<ILoan> {
     if (!loanId) {
       throw new MissingInputException('Missing Loan Id');
     }
@@ -99,7 +99,7 @@ export class LoansService {
     return loan;
   }
 
-  private async loadPaymentAccount(accountId: string, ownerId?: string): Promise<IPaymentAccount> {
+  private async getPaymentAccount(accountId: string, ownerId?: string): Promise<IPaymentAccount> {
     const paymentAccount = await this.domainServices.paymentServices.getPaymentAccountById(accountId);
     if (!paymentAccount) {
       throw new EntityNotFoundException('Payment account not found');

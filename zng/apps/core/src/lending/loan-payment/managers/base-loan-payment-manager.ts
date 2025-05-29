@@ -36,7 +36,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     
     try {
       // Get all steps for this loan payment to determine overall state
-      const loanPayment = await this.loadPayment(loanPaymentId, [
+      const loanPayment = await this.getPayment(loanPaymentId, [
         LOAN_PAYMENT_RELATIONS.Steps, 
         LOAN_PAYMENT_RELATIONS.StepsTransfers, 
         LOAN_PAYMENT_RELATIONS.StepsTransfersErrors,
@@ -100,7 +100,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     return LoanPaymentStateCodes.Created;
   }
 
-  protected async loadLoan(loanId: string, relations?: LoanRelation[]): Promise<ILoan> {
+  protected async getLoan(loanId: string, relations?: LoanRelation[]): Promise<ILoan> {
     if (!loanId) {
       throw new MissingInputException('Missing Loan Id');
     }
@@ -111,7 +111,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     return loan;
   }
 
-  protected async loadPayment(paymentId: string, relations?: LoanPaymentRelation[]): Promise<ILoanPayment> {
+  protected async getPayment(paymentId: string, relations?: LoanPaymentRelation[]): Promise<ILoanPayment> {
     if (!paymentId) {
       throw new MissingInputException('Missing payment ID');
     }
@@ -122,7 +122,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     return loanPayment;
   }
 
-  protected async loadStep(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<ILoanPaymentStep> {
+  protected async getStep(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<ILoanPaymentStep> {
     if (!stepId) {
       throw new MissingInputException('Missing step ID');
     }
