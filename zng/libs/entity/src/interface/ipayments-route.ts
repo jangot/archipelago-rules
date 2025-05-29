@@ -7,14 +7,14 @@ export interface IPaymentsRoute extends EntityId<string> {
   id: string;
 
   // #region Route Key - unique combination of the fields
-  /** Source account type ('debit_card' | 'bank_account' | 'rpps') */
+  /** Source account type ('debit_card' | 'bank_account' | 'biller_network') */
   fromAccount: PaymentAccountType;
   /** Source account ownership ('personal' | 'internal' | 'external') */
   fromOwnership: PaymentAccountOwnershipType;
   /** Source account provider ('checkbook' | 'fiserv' | 'tabapay') */
   fromProvider: PaymentAccountProvider;
 
-  /** Destination account type ('debit_card' | 'bank_account' | 'rpps') */
+  /** Destination account type ('debit_card' | 'bank_account' | 'biller_network') */
   toAccount: PaymentAccountType;    
   /** Destination account ownership ('personal' | 'internal' | 'external') */
   toOwnership: PaymentAccountOwnershipType;    

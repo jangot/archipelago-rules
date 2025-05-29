@@ -17,7 +17,7 @@ export class BillerResponseDto {
   name: string;
 
   /** Type of the Biller: 
-     * `network` - Biller was imported from Billers network (RPPS); 
+     * `network` - Biller was imported from Billers network (biller_network); 
      * `custom` - Biller that was added by User (not found in Billers network); 
      * `personal` - Emulates the real Biller for P2P Loans. */
   @ApiProperty({ description: 'Type of the biller', enum: BillerTypeCodes, example: BillerTypeCodes.Network })

@@ -94,7 +94,7 @@ To allow **Loan Payment Router** support certain level of flexibility (cross-pro
   - `loanType`: 'dbp' | 'p2p' | 'rr'
   - `stage`: 'funding' | 'disbursement' | 'fee' | 'repayment' | 'refund'
 - Payment Account Configuration (twice as there is *source* and *target* of the payment):
-  - `paymentAccountType`: 'debit_card' | 'bank_account' | 'rpps'
+  - `paymentAccountType`: 'debit_card' | 'bank_account' | 'biller_network'
   - `ownership`: 'personal' | 'internal' | 'external'
   - `provider`: 'checkbook' | 'fiserv' | 'tabapay'
 
@@ -117,11 +117,11 @@ interface IPaymentsRoute {
 
     //TODO: Cover by indexes? Composite indexes (from & to) as all 6 fields expected to persist?
     // #region Route Key - unique combination of the fields
-    fromAccount: PaymentAccountType; // 'debit_card' | 'bank_account' | 'rpps';
+    fromAccount: PaymentAccountType; // 'debit_card' | 'bank_account' | 'biller_network';
     fromOwnership: PaymentAccountOwnershipType; // 'personal' | 'internal' | 'external';
     fromProvider: PaymentAccountProvider; // 'checkbook' | 'fiserv' | 'tabapay';
 
-    toAccount: PaymentAccountType; // 'debit_card' | 'bank_account' | 'rpps';    
+    toAccount: PaymentAccountType; // 'debit_card' | 'bank_account' | 'biller_network';    
     toOwnership: PaymentAccountOwnershipType; // 'personal' | 'internal' | 'external';    
     toProvider: PaymentAccountProvider; // 'checkbook' | 'fiserv' | 'tabapay';
 
