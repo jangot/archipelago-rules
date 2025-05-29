@@ -1,9 +1,51 @@
-import { LoanPaymentFrequency, LoanPaymentFrequencyCodes, LoanType, LoanTypeCodes } from '@library/entity/enum';
+import { LoanInviteeType, LoanInviteeTypeCodes, LoanPaymentFrequency, LoanPaymentFrequencyCodes, LoanType, LoanTypeCodes } from '@library/entity/enum';
+import { MapTo } from '@library/entity/mapping/mapping.decorators';
+import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
+import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
+import { IsEmail, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID, MaxLength } from 'class-validator';
 import { NIL } from 'uuid';
 
+@ApiSchema({ name: 'loanInviteeCreateRequest' })
+export class LoanInviteeCreateRequestDto {
+  @ApiProperty({ description: 'Type of invitee User', type: String, required: true, enum: LoanInviteeTypeCodes, example: LoanInviteeTypeCodes.Borrower })
+  @Expose()
+  @IsNotEmpty()
+  @IsString()
+  type: LoanInviteeType;
+
+  @ApiProperty({ description: 'Invitee First Name', type: String, required: false, example: 'John' })
+  @Expose()
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  firstName: string | null;
+
+  @ApiProperty({ description: 'Invitee Last Name', type: String, required: false, example: 'Doe' })
+  @Expose()
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  lastName: string | null;
+
+  @ApiProperty({ description: 'Invitee Email Address', type: String, required: false })
+  @Expose()
+  @IsEmail()
+  @IsOptional()
+  @MaxLength(320)
+  email: string | null;
+
+  @ApiProperty({ description: 'Invitee Phone Number', type: String, required: false })
+  @Expose()
+  @IsNotEmpty()
+  @MaxLength(32)
+  @IsString()
+  @IsOptional()
+  @IsValidPhoneNumber()
+  @MapTo({ transform: transformPhoneNumber })
+  phone: string | null;
+}
 @ApiSchema({ name: 'loanCreateRequest' })
 export class LoanCreateRequestDto {
   @ApiProperty({ description: 'Loan amount', type: Number, required: true, example: 100.50 })
@@ -17,12 +59,6 @@ export class LoanCreateRequestDto {
   @IsNotEmpty()
   @IsString()
   type: LoanType;
-
-  @ApiProperty({ description: 'Loan direction. If true, it is a loan offer. If false, it is a loan request.', type: Boolean, required: true, example: true })
-  @Expose()
-  @IsNotEmpty()
-  @IsBoolean()
-  isLendLoan: boolean;
 
   @ApiProperty({ description: 'Relationship between lender and borrower', type: String, required: false, example: 'Family' })
   @Expose()
@@ -48,25 +84,10 @@ export class LoanCreateRequestDto {
   @IsString()
   attachement: string | null;
  
-
-  @ApiProperty({ description: 'Contact URI of target User. Might be either mailto: or tel: ', type: String, required: true, example: 'mailto:john@example.com' })
+  @ApiProperty({ description: 'Loan Invitee', type: LoanInviteeCreateRequestDto, required: true })
   @Expose()
   @IsNotEmpty()
-  @IsString()
-  // TODO: Add custom URI Validator
-  targetUserUri: string;
- 
-  @ApiProperty({ description: 'First name of target User', type: String, required: true, example: 'John' })
-  @Expose()
-  @IsNotEmpty()
-  @IsString()
-  targetUserFirstName: string;
-
-  @ApiProperty({ description: 'Last name of target User', type: String, required: true, example: 'Doe' })
-  @Expose()
-  @IsNotEmpty()
-  @IsString()
-  targetUserLastName: string;
+  invitee: LoanInviteeCreateRequestDto;
 
   @ApiProperty({ description: 'Biller ID for Bill Pay Loans', type: String, required: false, example: NIL })
   @Expose()
@@ -92,3 +113,5 @@ export class LoanCreateRequestDto {
   @IsString()
   paymentFrequency: LoanPaymentFrequency;
 }
+
+

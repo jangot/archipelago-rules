@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IsNull, Repository } from 'typeorm';
+import { DeepPartial, In, Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILoanRepository } from '../../shared/interfaces/repositories';
-import { Loan } from '../../domain/entities';
 import { ILoan } from '@library/entity/interface';
-import { bindTargetUserToLoans } from '../sql_generated/bind-target-user-to-loans.queries';
+import { LoansSetTargetUserInput } from '@library/shared/types/lending';
+import { LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
+import { Loan } from '@core/domain/entities';
+import { ILoanRepository } from '@core/shared/interfaces/repositories';
+import { LoanRelation } from '@core/domain/entities/relations';
 
 @Injectable()
 export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {
@@ -18,55 +20,45 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     super(repository, Loan);
   }
 
+  public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> {
+    this.logger.debug(`getLoanById: ${loanId}`, relations);
+
+    return this.repository.findOne({ where: { id: loanId }, relations: relations });
+  }
+
+
+
   public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {
     this.logger.debug(`getByLenderId: ${lenderId}`);
 
     return this.repository.findBy({ lenderId });
   }
 
-  public async getLoansForBinding(contactUri: string): Promise<ILoan[]> {
-    this.logger.debug(`getLoansForBinding: ${contactUri}`);
+  public async createLoan(loan: DeepPartial<Loan>): Promise<Loan | null> {
+    this.logger.debug('createLoan:', loan);
 
-    return this.repository.find({ 
-      where: [
-        { targetUserUri: contactUri, isLendLoan: true, borrowerId: IsNull() }, 
-        { targetUserUri: contactUri, isLendLoan: false, lenderId: IsNull() },
-      ], 
-    });
+    return this.repository.create({ ...loan, state: LoanStateCodes.Created });
   }
 
-  public async bindLoansToUser(userId: string, loanId?: string, contactUri?: string): Promise<ILoan[]> {
-    this.logger.debug(`bindLoansToUser: userId=${userId}, loanId=${loanId}, contactUri=${contactUri}`);
+  public async assignUserToLoans(input: LoansSetTargetUserInput): Promise<void> {
+    const { userId, loansTargets } = input;
+    this.logger.debug(`assignUserToLoans: for User ${userId}`, loansTargets);
 
-    if (!loanId && !contactUri) {
-      throw new Error('Either loanId or contactUri must be provided.');
-    }
+    // Make two arrays - for borrowerId and lenderId
+    const borrowerUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Borrower).map(t => t.loanId);
+    const lenderUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Lender).map(t => t.loanId);
 
-    const updatedLoans: ILoan[] = [];
+    // Run two bulk updates inside a transaction
+    return this.repository.manager.transaction(async manager => {
+      const repo = manager.getRepository(Loan);
 
-    if (loanId) {
-      const loan = await this.repository.findOne({ where: { id: loanId } });
-      if (!loan) {
-        throw new Error(`Loan with id ${loanId} not found.`);
+      if (borrowerUpdates.length > 0) {
+        await repo.update({ id: In(borrowerUpdates) }, { borrowerId: userId, state: LoanStateCodes.BorrowerAssigned });
       }
 
-      const updatePayload = loan.isLendLoan
-        ? { borrowerId: userId }
-        : { lenderId: userId };
-
-      await this.repository.update({ id: loanId }, updatePayload);
-      const updatedLoan = await this.repository.findOne({ where: { id: loanId } });
-      if (updatedLoan) {
-        updatedLoans.push(updatedLoan);
+      if (lenderUpdates.length > 0) {
+        await repo.update({ id: In(lenderUpdates) }, { lenderId: userId, state: LoanStateCodes.LenderAssigned });
       }
-    } else {
-
-
-      // TODO: types are broken - find a way to align pgtyped type with ILoan
-      // const result = await this.runSqlQuery({ userId, contactUri }, bindTargetUserToLoans);
-      // updatedLoans.push(...result);
-    }
-
-    return updatedLoans;
+    });
   }
 }

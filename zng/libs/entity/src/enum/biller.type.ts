@@ -1,5 +1,5 @@
 export const BillerTypeCodes = {
-  /** Biller was imported from Billers network (RPPS) */
+  /** Biller was imported from Billers network (biller_network) */
   Network: 'network',
   /** Biller that was added by User (not found in Billers network) */
   Custom: 'custom',

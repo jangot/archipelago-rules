@@ -1,4 +1,5 @@
 export const LoanPaymentStateCodes = {
+  Created: 'created',
   Pending: 'pending',
   Completed: 'completed',
   Failed: 'failed',

@@ -1,9 +1,51 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { IsBoolean, IsDate, IsDecimal, IsInt, IsOptional, IsString, IsUUID } from 'class-validator';
-import { LoanClosure, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanStateCodes, LoanType, LoanTypeCodes, LoanClosureCodes, LoanPaymentFrequencyCodes, LoanFeeModeCodes } from '@library/entity/enum';
+import { IsDate, IsDecimal, IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { LoanClosure, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanStateCodes, LoanType, LoanTypeCodes, LoanClosureCodes, LoanPaymentFrequencyCodes, LoanFeeModeCodes, LoanInviteeType, LoanInviteeTypeCodes } from '@library/entity/enum';
 import { NIL } from 'uuid';
 import { Expose } from 'class-transformer';
+import { IsValidPhoneNumber } from '@library/shared/common/validators/phone-number.validator';
+import { MapTo } from '@library/entity/mapping/mapping.decorators';
+import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
 
+@ApiSchema({ name: 'loanInviteeResponse' })
+export class LoanInviteeResponseDto {
+  @ApiProperty({ description: 'Type of invitee User', type: String, required: true, enum: LoanInviteeTypeCodes, example: LoanInviteeTypeCodes.Borrower })
+  @Expose()
+  @IsNotEmpty()
+  @IsString()
+  type: LoanInviteeType;
+
+  @ApiProperty({ description: 'Invitee First Name', type: String, required: false, example: 'John' })
+  @Expose()
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  firstName: string | null;
+
+  @ApiProperty({ description: 'Invitee Last Name', type: String, required: false, example: 'Doe' })
+  @Expose()
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  lastName: string | null;
+
+  @ApiProperty({ description: 'Invitee Email Address', type: String, required: false })
+  @Expose()
+  @IsEmail()
+  @IsOptional()
+  @MaxLength(320)
+  email: string | null;
+
+  @ApiProperty({ description: 'Invitee Phone Number', type: String, required: false })
+  @Expose()
+  @IsNotEmpty()
+  @MaxLength(32)
+  @IsString()
+  @IsOptional()
+  @IsValidPhoneNumber()
+  @MapTo({ transform: transformPhoneNumber })
+  phone: string | null;
+}
 @ApiSchema({ name: 'loanResponse' })
 export class LoanResponseDto {
   @ApiProperty({ description: 'Unique identifier for the loan', type: 'string', format: 'uuid', example: NIL })
@@ -29,11 +71,6 @@ export class LoanResponseDto {
 
   @ApiProperty({ description: 'Type of the loan', enum: LoanTypeCodes, example: LoanTypeCodes.DirectBillPay })
   type: LoanType;
-
-  @ApiProperty({ description: 'Indicates if the loan is a lend loan', type: 'boolean', example: true })
-  @IsBoolean()
-  @Expose()
-  isLendLoan: boolean;
 
   @ApiProperty({ description: 'Current state of the loan', enum: LoanStateCodes, example: LoanStateCodes.Created })
   state: LoanState;
@@ -73,23 +110,10 @@ export class LoanResponseDto {
   @Expose()
   deeplink: string | null;
 
-  @ApiProperty({ description: 'Target user URI for unregistered users', type: 'string', example: 'mailto:example@example.com', required: false })
-  @IsString()
-  @IsOptional()
+  @ApiProperty({ description: 'Loan Invitee', type: LoanInviteeResponseDto, required: false })
   @Expose()
-  targetUserUri: string | null;
-
-  @ApiProperty({ description: 'First name of the target user', type: 'string', example: 'John', required: false })
-  @IsString()
   @IsOptional()
-  @Expose()
-  targetUserFirstName: string | null;
-
-  @ApiProperty({ description: 'Last name of the target user', type: 'string', example: 'Doe', required: false })
-  @IsString()
-  @IsOptional()
-  @Expose()
-  targetUserLastName: string | null;
+  invitee: LoanInviteeResponseDto | null;
 
   @ApiProperty({ description: 'Unique identifier for the biller', type: 'string', format: 'uuid', example: NIL, required: false })
   @IsUUID()
@@ -108,26 +132,8 @@ export class LoanResponseDto {
   @Expose()
   paymentsCount: number;
 
-  @ApiProperty({ description: 'Index of the current payment', type: 'integer', example: 3, required: false })
-  @IsInt()
-  @IsOptional()
-  @Expose()
-  currentPaymentIndex: number | null;
-
-  @ApiProperty({ description: 'Date of the next payment', type: 'string', format: 'date-time', example: '2023-12-01T00:00:00Z', required: false })
-  @IsDate()
-  @IsOptional()
-  @Expose()
-  nextPaymentDate: Date | null;
-
   @ApiProperty({ description: 'Frequency of loan payments', enum: LoanPaymentFrequencyCodes, example: LoanPaymentFrequencyCodes.Monthly })
   paymentFrequency: LoanPaymentFrequency;
-
-  @ApiProperty({ description: 'Amount of the next payment', type: 'number', example: 100.50, required: false })
-  @IsDecimal()
-  @IsOptional()
-  @Expose()
-  paymmentAmount: number | null;
 
   @ApiProperty({ description: 'Fee mode for the loan', enum: LoanFeeModeCodes, example: LoanFeeModeCodes.Standard, required: false })
   @IsOptional()
@@ -138,7 +144,7 @@ export class LoanResponseDto {
   @IsDecimal()
   @IsOptional()
   @Expose()
-  feeValue: number | null;
+  feeAmount: number | null;
 
   @ApiProperty({ description: 'Unique identifier for the lender payment account', type: 'string', format: 'uuid', example: NIL, required: false })
   @IsUUID()
@@ -151,18 +157,6 @@ export class LoanResponseDto {
   @IsOptional()
   @Expose()
   borrowerAccountId: string | null;
-
-  @ApiProperty({ description: 'Unique identifier for the partner', type: 'string', format: 'uuid', example: NIL, required: false })
-  @IsUUID()
-  @IsOptional()
-  @Expose()
-  partnerId: string | null;
-
-  @ApiProperty({ description: 'Preset link for the loan', type: 'string', example: 'https://example.com/preset/123', required: false })
-  @IsString()
-  @IsOptional()
-  @Expose()
-  presetLink: string | null;
 
   @ApiProperty({ description: 'Date when the loan was created', type: 'string', format: 'date-time', example: '2023-01-01T00:00:00Z' })
   @IsDate()

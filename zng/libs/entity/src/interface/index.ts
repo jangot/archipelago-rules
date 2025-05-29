@@ -7,3 +7,8 @@ export * from './ibiller';
 export * from './ipayment-account';
 export * from './itransfer';
 export * from './iloan-payment';
+export * from './iloan-invitee';
+export * from './iloan-payment-step';
+export * from './ipayments-route-step';
+export * from './ipayments-route';
+export * from './itransfer-error';

@@ -9,11 +9,11 @@ import { BillersService } from './billers.service';
 import { LoansService } from './loans.service';
 import { ScheduleService } from './schedule.service';
 import { CqrsModule } from '@nestjs/cqrs';
-import { LendingCommandHandlers } from './commands';
+import { LoanPaymentModule } from './loan-payment/loan-payment.module';
 
 @Module({
-  imports: [JwtModule, ConfigModule, DomainModule, CqrsModule],
+  imports: [JwtModule, ConfigModule, DomainModule, CqrsModule, LoanPaymentModule],
   controllers: [BillersController, LoansController, ScheduleController],
-  providers: [Logger, BillersService, LoansService, ScheduleService, ...LendingCommandHandlers],
+  providers: [Logger, BillersService, LoansService, ScheduleService],
 })
 export class LendingModule {}

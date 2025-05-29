@@ -1,4 +1,5 @@
 export const TransferStateCodes = {
+  Created: 'created',
   Pending: 'pending',
   Completed: 'completed',
   Failed: 'failed',

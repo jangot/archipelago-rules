@@ -1,8 +1,9 @@
 import { TransferState } from '@library/entity/enum';
 import { ITransfer } from '@library/entity/interface/itransfer';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { PaymentAccount } from './payment.account.entity';
-import { LoanPayment } from './loan.payment.entity';
+import { TransferError } from './transfer.error.entity';
+import { LoanPaymentStep } from './loan.payment.step.entity';
 
 @Entity({ schema: 'core' })
 export class Transfer implements ITransfer {
@@ -24,31 +25,29 @@ export class Transfer implements ITransfer {
   @UpdateDateColumn({ type: 'timestamp with time zone', nullable: true })
   updatedAt: Date | null;
 
-  @Column({ type: 'uuid', nullable: true })
-  sourceAccountId: string | null;
+  @Column({ type: 'uuid', nullable: false })
+  sourceAccountId: string;
 
-  @ManyToOne(() => PaymentAccount, { nullable: true })
+  @ManyToOne(() => PaymentAccount, { nullable: false })
   @JoinColumn({ name: 'source_account_id' })
-  sourceAccount: PaymentAccount | null;
+  sourceAccount: PaymentAccount;
 
-  @Column({ type: 'uuid', nullable: true })
-  destinationAccountId: string | null;
+  @Column({ type: 'uuid', nullable: false })
+  destinationAccountId: string;
 
-  @ManyToOne(() => PaymentAccount, { nullable: true })
+  @ManyToOne(() => PaymentAccount, { nullable: false })
   @JoinColumn({ name: 'destination_account_id' })
-  destinationAccount: PaymentAccount | null;
+  destinationAccount: PaymentAccount;
 
-  @Column({ type: 'text' })
-  sourceAccountType: string;
-
-  @Column({ type: 'text' })
-  destinationAccountType: string;
+  @OneToOne(() => TransferError, (error) => error.transfer, { nullable: true })
+  error: TransferError | null;
 
   @Column({ type: 'uuid', nullable: true })
-  loanPaymentId: string | null;
+  loanPaymentStepId: string | null;
 
-  @ManyToOne(() => LoanPayment, { nullable: true })
-  @JoinColumn({ name: 'loan_payment_id' })
-  loanPayment: LoanPayment | null;
+  @ManyToOne(() => LoanPaymentStep, { nullable: true })
+  @JoinColumn({ name: 'loan_payment_step_id' })
+  loanPaymentStep: LoanPaymentStep | null;
+
     
 }

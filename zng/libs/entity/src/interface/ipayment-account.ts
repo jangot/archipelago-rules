@@ -1,14 +1,19 @@
 import { EntityId } from '@library/shared/common/data';
 import { IApplicationUser } from './iapplication-user';
-import { PaymentAccountProvider, PaymentAccountType } from '../enum';
+import { PaymentAccountOwnershipType, PaymentAccountProvider, PaymentAccountState, PaymentAccountType } from '../enum';
+import { PaymentAccountDetails } from '@library/shared/types/lending';
 
 export interface IPaymentAccount extends EntityId<string> {
   id: string; // UUID
 
-  ownerId: string;
-  owner: IApplicationUser;
+  userId: string | null;
+  user: IApplicationUser | null;
 
   type: PaymentAccountType;
-  provider: PaymentAccountProvider;
+  ownership: PaymentAccountOwnershipType;
+  state: PaymentAccountState;
+
+  provider: PaymentAccountProvider; // Move to entity ???
     
+  details: PaymentAccountDetails | null;
 }

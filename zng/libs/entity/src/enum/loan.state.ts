@@ -5,8 +5,10 @@ export const LoanStateCodes = {
   Requested: 'requested',
   /** (Lender side) Lender provided payment method information, waiting to set target User */
   Offered: 'offered',
-  /** Target User is registered, linked to Loan */
-  Bound: 'bound',
+  /** Loan Offer has Borrower User assigned */
+  BorrowerAssigned: 'borrower_assigned',
+  /** Loan Request has Lender User assigned*/
+  LenderAssigned: 'lender_assigned',
   /** Target User Accepted the Loan */
   Accepted: 'accepted',
   /** Funds transfer from Lender to Zirtue started */
