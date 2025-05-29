@@ -17,7 +17,7 @@ export class CoreDataService extends IDataService {
     @Inject(ILoanPaymentStepRepository) public readonly loanPaymentSteps: ILoanPaymentStepRepository,
     @Inject(ILoanInviteeRepository) public readonly loanInvitees: ILoanInviteeRepository,
     @Inject(IPaymentsRouteStepRepository) public readonly paymentsRouteSteps: IPaymentsRouteStepRepository,
-    @Inject(IPaymentsRouteRepository) public readonly paymentsRoute: IPaymentsRouteStepRepository,
+    @Inject(IPaymentsRouteRepository) public readonly paymentsRoute: IPaymentsRouteRepository,
     @Inject(ITransferErrorRepository) public readonly transferErrors: ITransferErrorRepository
   ) {
     super();

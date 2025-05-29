@@ -1,7 +1,11 @@
-import { PaymentsRoute } from '@core/domain/entities/payments.route.entity';
+import { PaymentsRouteRelation } from '@core/domain/entities/relations';
+import { IPaymentsRoute } from '@library/entity/interface';
 import { IRepositoryBase } from '@library/shared/common/data';
+import { PaymentRouteSearchInput } from '@library/shared/types/lending';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface IPaymentsRouteRepository extends IRepositoryBase<PaymentsRoute> {}
+ 
+export interface IPaymentsRouteRepository extends IRepositoryBase<IPaymentsRoute> {
+  findRoute(input: PaymentRouteSearchInput, relations?: PaymentsRouteRelation[]): Promise<IPaymentsRoute | null>;
+}
 
 export const IPaymentsRouteRepository = Symbol('IPaymentsRouteRepository');

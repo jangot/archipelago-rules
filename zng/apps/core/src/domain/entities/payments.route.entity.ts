@@ -1,4 +1,4 @@
-import { PaymentAccountType, PaymentAccountOwnershipType, PaymentAccountProvider, LoanState, LoanType } from '@library/entity/enum';
+import { PaymentAccountType, PaymentAccountOwnershipType, PaymentAccountProvider, LoanType, LoanPaymentType } from '@library/entity/enum';
 import { IPaymentsRoute } from '@library/entity/interface';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { PaymentsRouteStep } from './payments.route.step.entity';
@@ -27,7 +27,7 @@ export class PaymentsRoute implements IPaymentsRoute {
   toProvider: PaymentAccountProvider;
 
   @Column({ type: 'text', array: true })
-  loanStagesSupported: LoanState[];
+  loanStagesSupported: LoanPaymentType[];
 
   @Column({ type: 'text', array: true })
   loanTypesSupported: LoanType[];

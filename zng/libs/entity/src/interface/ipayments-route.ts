@@ -1,5 +1,5 @@
 import { EntityId } from '@library/shared/common/data';
-import { LoanState, LoanType, PaymentAccountOwnershipType, PaymentAccountProvider, PaymentAccountType } from '../enum';
+import { LoanPaymentType, LoanType, PaymentAccountOwnershipType, PaymentAccountProvider, PaymentAccountType } from '../enum';
 import { IPaymentsRouteStep } from './ipayments-route-step';
 
 export interface IPaymentsRoute extends EntityId<string> {
@@ -25,7 +25,7 @@ export interface IPaymentsRoute extends EntityId<string> {
      * Supported loan stages ('funding' | 'disbursement' | 'fee' | 'repayment' | 'refund')
      * @todo Use GIN Index for this field?
      */
-  loanStagesSupported: LoanState[];
+  loanStagesSupported: LoanPaymentType[];
   /** 
      * Supported loan types ('dbp' | 'p2p' | 'rr')
      * @todo Use GIN Index for this field?
