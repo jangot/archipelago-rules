@@ -1,10 +1,10 @@
 import { PaymentAccount } from '@library/shared/domain/entities/payment.account.entity';
 import { PaymentAccountRelation } from '@library/shared/domain/entities/relations';
-import { IPaymentAccountRepository } from '@core/shared/interfaces/repositories';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
+import { IPaymentAccountRepository } from '@library/shared/interfaces/repositories';
 
 @Injectable()
 export class PaymentAccountRepository extends RepositoryBase<PaymentAccount> implements IPaymentAccountRepository {

@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IBillerRepository, ILoanInviteeRepository, ILoanPaymentRepository, ILoanPaymentStepRepository, ILoanRepository, ILoginRepository, IPaymentAccountRepository, IPaymentsRouteRepository, IPaymentsRouteStepRepository, ITransferErrorRepository, ITransferRepository, IUserRegistrationRepository, IUserRepository } from '../shared/interfaces/repositories';
+import { IBillerRepository, ILoanInviteeRepository, ILoanRepository, ILoginRepository, IUserRegistrationRepository, IUserRepository } from '../shared/interfaces/repositories';
 import { IDataService } from '@library/shared/common/data/idata.service';
+import { IPaymentAccountRepository } from '@library/shared/interfaces/repositories';
 
 @Injectable()
 export class CoreDataService extends IDataService {
-  // eslint-disable-next-line max-params
+   
   constructor(
     @Inject(IUserRepository) public readonly users: IUserRepository,
     @Inject(ILoanRepository) public readonly loans: ILoanRepository,
@@ -12,13 +13,7 @@ export class CoreDataService extends IDataService {
     @Inject(IUserRegistrationRepository) public readonly userRegistrations: IUserRegistrationRepository,
     @Inject(IBillerRepository) public readonly billers: IBillerRepository,
     @Inject(IPaymentAccountRepository) public readonly paymentAccounts: IPaymentAccountRepository,
-    @Inject(ITransferRepository) public readonly transfers: ITransferRepository,
-    @Inject(ILoanPaymentRepository) public readonly loanPayments: ILoanPaymentRepository,
-    @Inject(ILoanPaymentStepRepository) public readonly loanPaymentSteps: ILoanPaymentStepRepository,
     @Inject(ILoanInviteeRepository) public readonly loanInvitees: ILoanInviteeRepository,
-    @Inject(IPaymentsRouteStepRepository) public readonly paymentsRouteSteps: IPaymentsRouteStepRepository,
-    @Inject(IPaymentsRouteRepository) public readonly paymentsRoute: IPaymentsRouteRepository,
-    @Inject(ITransferErrorRepository) public readonly transferErrors: ITransferErrorRepository
   ) {
     super();
   } 

@@ -46,6 +46,7 @@ export const CoreEntities = [
   LoanInvitee, 
 ];
 
+// Add all Payment Entities here
 export const PaymentEntities = [
   Transfer, 
   LoanPayment, 

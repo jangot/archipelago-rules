@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { CoreDataService } from './data.service';
+import { PaymentDataService } from './data.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
-import { CustomCoreRepositories } from '../infrastructure/repositories';
+import { CustomPaymentRepositories } from '../infrastructure/repositories';
 import { CoreEntities, PaymentEntities } from '@library/shared/domain/entities';
 import { DbSchemaCodes, TypeOrmModuleConfiguration } from '@library/shared/common/data';
 import { SharedCoreRepositories } from '@library/shared/infrastructure/repositories';
@@ -15,12 +15,12 @@ import { SharedCoreRepositories } from '@library/shared/infrastructure/repositor
     TypeOrmModule.forRootAsync(TypeOrmModuleConfiguration({ entities: PaymentEntities, schema: DbSchemaCodes.Payment })),
   ],
   providers: [
-    CoreDataService, 
+    PaymentDataService, 
     ...registerCustomRepositoryProviders(CoreEntities), 
     ...registerCustomRepositoryProviders(PaymentEntities),  
-    ...CustomCoreRepositories,
+    ...CustomPaymentRepositories,
     ...SharedCoreRepositories,
   ],
-  exports: [CoreDataService],
+  exports: [PaymentDataService],
 })
 export class DataModule {}

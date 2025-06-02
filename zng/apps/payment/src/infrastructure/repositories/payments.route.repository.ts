@@ -1,11 +1,11 @@
 import { PaymentsRoute } from '@library/shared/domain/entities/payments.route.entity';
 import { PaymentsRouteRelation } from '@library/shared/domain/entities/relations';
-import { IPaymentsRouteRepository } from '@core/shared/interfaces/repositories';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { PaymentRouteSearchInput } from '@library/shared/types/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArrayContains, Repository } from 'typeorm';
+import { IPaymentsRouteRepository } from '@payment/shared/interfaces/repositories';
 
 @Injectable()
 export class PaymentsRouteRepository extends RepositoryBase<PaymentsRoute> implements IPaymentsRouteRepository {

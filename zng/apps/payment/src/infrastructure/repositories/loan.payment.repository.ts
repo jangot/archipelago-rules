@@ -1,10 +1,10 @@
 import { LoanPayment } from '@library/shared/domain/entities';
 import { LoanPaymentRelation } from '@library/shared/domain/entities/relations';
-import { ILoanPaymentRepository } from '@core/shared/interfaces/repositories';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
+import { ILoanPaymentRepository } from '@payment/shared/interfaces/repositories';
 
 @Injectable()
 export class LoanPaymentRepository extends RepositoryBase<LoanPayment> implements ILoanPaymentRepository {

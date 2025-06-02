@@ -1,9 +1,9 @@
 import { LoanPaymentStep } from '@library/shared/domain/entities';
-import { ILoanPaymentStepRepository } from '@core/shared/interfaces/repositories';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ILoanPaymentStepRepository } from '@payment/shared/interfaces/repositories';
 
 @Injectable()
 export class LoanPaymentStepRepository extends RepositoryBase<LoanPaymentStep> implements ILoanPaymentStepRepository {

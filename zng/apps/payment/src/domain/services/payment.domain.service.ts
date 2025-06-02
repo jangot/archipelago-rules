@@ -1,18 +1,18 @@
-import { CoreDataService } from '@core/data/data.service';
 import { ILoanPayment, ILoanPaymentStep, IPaymentAccount, IPaymentsRoute } from '@library/entity/interface';
 import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
-import { LoanPaymentRelation, LoanPaymentStepRelation, PaymentAccountRelation } from '../../../../../libs/shared/src/domain/entities/relations';
 import { LoanPaymentType, LoanType } from '@library/entity/enum';
+import { PaymentDataService } from '@payment/data/data.service';
+import { LoanPaymentRelation, LoanPaymentStepRelation, PaymentAccountRelation } from '@library/shared/domain/entities/relations';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
   protected readonly logger = new Logger(PaymentDomainService.name);
 
   constructor(
-    protected readonly data: CoreDataService,
+    protected readonly data: PaymentDataService,
     protected readonly config: ConfigService
   ) {
     super(data);

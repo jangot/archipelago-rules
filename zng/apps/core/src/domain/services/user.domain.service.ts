@@ -22,7 +22,7 @@ import { generateCRC32String } from '@library/shared/common/helpers/crc32.helper
 import { IPaging, PagingOptionsDto } from '@library/shared/common/paging';
 import { SearchFilterDto } from '@library/shared/common/search';
 import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
-import { CoreDataService } from '../../data/data.service';
+import { CoreDataService } from '@core/data/data.service';
 @Injectable()
 export class UserDomainService extends BaseDomainServices {
   protected readonly logger = new Logger(UserDomainService.name);

@@ -1,9 +1,9 @@
 import { PaymentsRouteStep } from '@library/shared/domain/entities';
-import { IPaymentsRouteStepRepository } from '@core/shared/interfaces/repositories';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { IPaymentsRouteStepRepository } from '@payment/shared/interfaces/repositories';
 
 @Injectable()
 export class PaymentsRouteStepRepository extends RepositoryBase<PaymentsRouteStep> implements IPaymentsRouteStepRepository {
