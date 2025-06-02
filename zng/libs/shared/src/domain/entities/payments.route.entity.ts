@@ -2,8 +2,9 @@ import { PaymentAccountType, PaymentAccountOwnershipType, PaymentAccountProvider
 import { IPaymentsRoute } from '@library/entity/interface';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { PaymentsRouteStep } from './payments.route.step.entity';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
-@Entity({ schema: 'core' })
+@Entity({ schema: DbSchemaCodes.Payment })
 export class PaymentsRoute implements IPaymentsRoute {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { LoanPaymentType, LoanPaymentTypeCodes } from '@library/entity/enum';
-import { Loan } from '../../../domain/entities/loan.entity';
+import { Loan } from '../../../../../../libs/shared/src/domain/entities/loan.entity';
 
 /**
  * Service responsible for determining payment routes based on loan types and configurations

@@ -5,9 +5,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ILoan } from '@library/entity/interface';
 import { LoansSetTargetUserInput } from '@library/shared/types/lending';
 import { LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
-import { Loan } from '@core/domain/entities';
+import { Loan } from '@library/shared/domain/entities';
 import { ILoanRepository } from '@core/shared/interfaces/repositories';
-import { LoanRelation } from '@core/domain/entities/relations';
+import { LoanRelation } from '@library/shared/domain/entities/relations';
 
 @Injectable()
 export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {

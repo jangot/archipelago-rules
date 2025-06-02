@@ -1,4 +1,4 @@
-import { Biller } from '@core/domain/entities';
+import { Biller } from '@library/shared/domain/entities';
 import { IBillerRepository } from '@core/shared/interfaces/repositories';
 import { BillerTypeCodes } from '@library/entity/enum';
 import { IBiller } from '@library/entity/interface';

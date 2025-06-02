@@ -2,8 +2,9 @@ import { LoanInviteeType } from '@library/entity/enum';
 import { ILoanInvitee } from '@library/entity/interface';
 import { Loan } from './loan.entity';
 import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
-@Entity({ schema: 'core' })
+@Entity({ schema: DbSchemaCodes.Core })
 export class LoanInvitee implements ILoanInvitee {
   @PrimaryGeneratedColumn('uuid')
   id: string;

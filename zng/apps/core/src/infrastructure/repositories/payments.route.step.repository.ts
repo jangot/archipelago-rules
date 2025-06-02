@@ -1,4 +1,4 @@
-import { PaymentsRouteStep } from '@core/domain/entities';
+import { PaymentsRouteStep } from '@library/shared/domain/entities';
 import { IPaymentsRouteStepRepository } from '@core/shared/interfaces/repositories';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';

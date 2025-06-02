@@ -7,7 +7,7 @@ import { ContactType } from '@library/entity/enum';
 import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
 import { IDomainServices } from '@core/domain/idomain.services';
 import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exceptions/domain';
-import { ApplicationUser } from '@core/domain/entities';
+import { ApplicationUser } from '@library/shared/domain/entities';
 import { UserCreateRequestDto, UserDetailResponseDto, UserDetailsUpdateRequestDto, UserDetailsUpdateResponseDto, UserResponseDto, UserUpdateRequestDto } from '@core/dto';
 
 @Injectable()

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
 import { IDomainServices } from '@core/domain/idomain.services';
 import { ILoanPayment } from '@library/entity/interface';
-import { LOAN_RELATIONS } from '@core/domain/entities/relations';
+import { LOAN_RELATIONS } from '@library/shared/domain/entities/relations';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
 
 /**

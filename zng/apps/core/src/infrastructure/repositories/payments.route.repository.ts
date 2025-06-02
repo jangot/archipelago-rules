@@ -1,5 +1,5 @@
-import { PaymentsRoute } from '@core/domain/entities/payments.route.entity';
-import { PaymentsRouteRelation } from '@core/domain/entities/relations';
+import { PaymentsRoute } from '@library/shared/domain/entities/payments.route.entity';
+import { PaymentsRouteRelation } from '@library/shared/domain/entities/relations';
 import { IPaymentsRouteRepository } from '@core/shared/interfaces/repositories';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { PaymentRouteSearchInput } from '@library/shared/types/lending';

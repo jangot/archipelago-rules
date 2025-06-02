@@ -1,4 +1,4 @@
-import { LoanRelation } from '@core/domain/entities/relations';
+import { LoanRelation } from '@library/shared/domain/entities/relations';
 import { ILoan } from '@library/entity/interface';
 import { IRepositoryBase } from '@library/shared/common/data/ibase.repository';
 import { LoansSetTargetUserInput } from '@library/shared/types/lending';

@@ -1,4 +1,4 @@
-import { LoanInviteeRelation } from '@core/domain/entities/relations';
+import { LoanInviteeRelation } from '@library/shared/domain/entities/relations';
 import { ContactType } from '@library/entity/enum';
 import { ILoanInvitee } from '@library/entity/interface';
 import { IRepositoryBase } from '@library/shared/common/data';

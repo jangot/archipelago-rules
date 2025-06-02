@@ -6,7 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { withTransactionHandler } from '@library/shared/common/data/withtransaction.handler';
 import { RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 import { ILoanRepository, IUserRepository } from '@core/shared/interfaces/repositories';
-import { ApplicationUser, Loan } from '@core/domain/entities';
+import { ApplicationUser, Loan } from '@library/shared/domain/entities';
 import { CoreDataService } from '@core/data/data.service';
 import { DataModule } from '@core/data';
 

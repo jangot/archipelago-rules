@@ -1,4 +1,4 @@
-import { PaymentsRouteStep } from '@core/domain/entities';
+import { PaymentsRouteStep } from '@library/shared/domain/entities';
 import { IRepositoryBase } from '@library/shared/common/data';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

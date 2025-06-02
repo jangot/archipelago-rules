@@ -1,5 +1,5 @@
-import { LoanPayment } from '@core/domain/entities';
-import { LoanPaymentRelation } from '@core/domain/entities/relations';
+import { LoanPayment } from '@library/shared/domain/entities';
+import { LoanPaymentRelation } from '@library/shared/domain/entities/relations';
 import { ILoanPaymentRepository } from '@core/shared/interfaces/repositories';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';

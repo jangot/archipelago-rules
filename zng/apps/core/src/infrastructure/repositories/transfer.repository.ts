@@ -1,4 +1,4 @@
-import { Transfer } from '@core/domain/entities';
+import { Transfer } from '@library/shared/domain/entities';
 import { ITransferRepository } from '@core/shared/interfaces/repositories';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';

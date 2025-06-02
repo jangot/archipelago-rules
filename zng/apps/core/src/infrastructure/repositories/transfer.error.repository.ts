@@ -1,4 +1,4 @@
-import { TransferError } from '@core/domain/entities';
+import { TransferError } from '@library/shared/domain/entities';
 import { ITransferErrorRepository } from '@core/shared/interfaces/repositories';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';

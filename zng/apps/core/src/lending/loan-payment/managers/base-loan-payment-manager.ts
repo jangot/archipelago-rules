@@ -3,7 +3,7 @@ import { LoanPaymentState, LoanPaymentStateCodes, PaymentStepStateCodes } from '
 import { ILoan, ILoanPayment, ILoanPaymentStep } from '@library/entity/interface';
 import { IDomainServices } from '@core/domain/idomain.services';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
-import { LOAN_PAYMENT_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation } from '@core/domain/entities/relations';
+import { LOAN_PAYMENT_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation } from '@library/shared/domain/entities/relations';
 import { ILoanPaymentManager } from '../interfaces';
 
 /**

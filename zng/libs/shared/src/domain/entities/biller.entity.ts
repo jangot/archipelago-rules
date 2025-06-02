@@ -3,8 +3,9 @@ import { IBiller } from '@library/entity/interface';
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
 import { PaymentAccount } from './payment.account.entity';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
-@Entity({ schema: 'core' })
+@Entity({ schema: DbSchemaCodes.Core })
 export class Biller implements IBiller {
 
 

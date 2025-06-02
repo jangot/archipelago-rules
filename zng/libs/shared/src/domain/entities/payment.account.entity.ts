@@ -3,8 +3,9 @@ import { IPaymentAccount } from '@library/entity/interface';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
 import { PaymentAccountDetails } from '@library/shared/types/lending';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
-@Entity({ schema: 'core' })
+@Entity({ schema: DbSchemaCodes.Core })
 export class PaymentAccount implements IPaymentAccount {
 
   @PrimaryGeneratedColumn('uuid')

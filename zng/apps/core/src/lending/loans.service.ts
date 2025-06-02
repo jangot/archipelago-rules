@@ -11,7 +11,7 @@ import { DeepPartial } from 'typeorm';
 import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/interface';
 import { LendingLogic } from './lending.logic';
 import { LoanAssignToContactInput } from '@library/shared/types/lending';
-import { LOAN_RELATIONS } from '@core/domain/entities/relations';
+import { LOAN_RELATIONS } from '@library/shared/domain/entities/relations';
 
 @Injectable()
 export class LoansService {

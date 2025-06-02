@@ -29,6 +29,7 @@ import { UserDomainService } from '@core/domain/services/user.domain.service';
 import { memoryDataSourceForTests } from '../postgress-memory-datasource';
 import { REGISTERED_USER_DUMP_1 } from './data-dump';
 import { generateWrongCode } from './test.helper';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
 describe('AuthController - Negative Test Cases', () => {
   let app: INestApplication;
@@ -75,7 +76,7 @@ describe('AuthController - Negative Test Cases', () => {
     loginInitiateHandler = module.get<LoginInitiateCommandHandler>(LoginInitiateCommandHandler);
 
     // Initiate data in database before backup
-    database.getSchema('core').none(REGISTERED_USER_DUMP_1);
+    database.getSchema(DbSchemaCodes.Core).none(REGISTERED_USER_DUMP_1);
 
     databaseBackup = database.backup();
     app = module.createNestApplication();

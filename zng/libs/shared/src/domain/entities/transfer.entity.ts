@@ -4,8 +4,9 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, Prim
 import { PaymentAccount } from './payment.account.entity';
 import { TransferError } from './transfer.error.entity';
 import { LoanPaymentStep } from './loan.payment.step.entity';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
-@Entity({ schema: 'core' })
+@Entity({ schema: DbSchemaCodes.Payment })
 export class Transfer implements ITransfer {
   @PrimaryGeneratedColumn('uuid')
   id: string;

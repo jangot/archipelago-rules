@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Loan } from '../../../domain/entities/loan.entity';
+import { Loan } from '../../../../../../libs/shared/src/domain/entities/loan.entity';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
 import { IDomainServices } from '@core/domain/idomain.services';
 import { ILoanPayment } from '@library/entity/interface';

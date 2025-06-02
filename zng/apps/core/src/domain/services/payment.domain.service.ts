@@ -4,7 +4,7 @@ import { BaseDomainServices } from '@library/shared/common/domainservices/domain
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
-import { LoanPaymentRelation, LoanPaymentStepRelation, PaymentAccountRelation } from '../entities/relations';
+import { LoanPaymentRelation, LoanPaymentStepRelation, PaymentAccountRelation } from '../../../../../libs/shared/src/domain/entities/relations';
 import { LoanPaymentType, LoanType } from '@library/entity/enum';
 
 @Injectable()

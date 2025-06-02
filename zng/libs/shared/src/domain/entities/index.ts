@@ -43,10 +43,13 @@ export const CoreEntities = [
   UserRegistration, 
   Biller, 
   PaymentAccount, 
+  LoanInvitee, 
+];
+
+export const PaymentEntities = [
   Transfer, 
   LoanPayment, 
   LoanPaymentStep,
-  LoanInvitee, 
   PaymentsRouteStep,
   PaymentsRoute,
   TransferError,

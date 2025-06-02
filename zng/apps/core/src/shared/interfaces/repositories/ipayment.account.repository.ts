@@ -1,4 +1,4 @@
-import { PaymentAccountRelation } from '@core/domain/entities/relations';
+import { PaymentAccountRelation } from '@library/shared/domain/entities/relations';
 import { IPaymentAccount } from '@library/entity/interface';
 import { IRepositoryBase } from '@library/shared/common/data';
 import { DeepPartial } from 'typeorm';

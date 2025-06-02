@@ -2,8 +2,9 @@ import { IPaymentsRouteStep } from '@library/entity/interface';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { PaymentAccount } from './payment.account.entity';
 import { PaymentsRoute } from './payments.route.entity';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
-@Entity({ schema: 'core' })
+@Entity({ schema: DbSchemaCodes.Payment })
 export class PaymentsRouteStep implements IPaymentsRouteStep {
   @PrimaryGeneratedColumn('uuid')
   id: string;

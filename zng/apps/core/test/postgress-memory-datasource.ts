@@ -4,7 +4,8 @@ import { v4 } from 'uuid';
 
 import { ZngNamingStrategy } from '@library/extensions/typeorm';
 
-import { CoreEntities } from '../src/domain/entities';
+import { CoreEntities } from '../../../libs/shared/src/domain/entities';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
 // Initiate newDb - in-memory PG database and create connection for TypeORM
 export const memoryDataSource = async (): Promise<DataSource> => {
@@ -12,13 +13,13 @@ export const memoryDataSource = async (): Promise<DataSource> => {
   const memoryDbConnection: DataSource = await memoryDatabase.adapters.createTypeormDataSource({
     type: 'postgres',
     entities: [...CoreEntities],
-    schema: 'core',
+    schema: DbSchemaCodes.Core,
     namingStrategy: new ZngNamingStrategy(),
   });
 
   registerMemoryDatabaseFunctions(memoryDatabase.public);
 
-  memoryDatabase.createSchema('core');
+  memoryDatabase.createSchema(DbSchemaCodes.Core);
 
   await memoryDbConnection.initialize();
   await memoryDbConnection.synchronize();
@@ -32,13 +33,13 @@ export const memoryDataSourceForTests = async (): Promise<{ dataSource: DataSour
   const dataSource: DataSource = await database.adapters.createTypeormDataSource({
     type: 'postgres',
     entities: [...CoreEntities],
-    schema: 'core',
+    schema: DbSchemaCodes.Core,
     namingStrategy: new ZngNamingStrategy(),
   });
 
   registerMemoryDatabaseFunctions(database.public);
 
-  database.createSchema('core');
+  database.createSchema(DbSchemaCodes.Core);
 
   await dataSource.initialize();
   await dataSource.synchronize();

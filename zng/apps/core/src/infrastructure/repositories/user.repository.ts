@@ -4,7 +4,7 @@ import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ContactType } from '@library/entity/enum';
 import { getUserDetailById, IGetUserDetailByIdResult } from '../sql_generated/get-user-detail.queries';
-import { ApplicationUser } from '../../domain/entities';
+import { ApplicationUser } from '../../../../../libs/shared/src/domain/entities';
 import { IUserRepository } from '../../shared/interfaces/repositories';
 import { IApplicationUser } from '@library/entity/interface';
 

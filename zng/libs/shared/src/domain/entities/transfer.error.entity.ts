@@ -3,8 +3,9 @@ import { ITransferError } from '@library/entity/interface/itransfer-error';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Transfer } from './transfer.entity';
 import { Loan } from './loan.entity';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
-@Entity({ schema: 'core' })
+@Entity({ schema: DbSchemaCodes.Payment })
 export class TransferError implements ITransferError {
   @PrimaryGeneratedColumn('uuid')
   id: string;

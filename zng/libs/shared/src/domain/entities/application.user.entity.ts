@@ -3,6 +3,7 @@ import { VerificationStatus } from '@library/entity/enum/verification.status';
 import { VerificationType } from '@library/entity/enum/verification.type';
 import { IApplicationUser } from '@library/entity/interface';
 import { DateTransformer } from '@library/extensions/typeorm/typeorm.date.transformer';
+import { DbSchemaCodes } from '@library/shared/common/data';
 import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, CreateDateColumn } from 'typeorm';
 
 // Thoughts to consider
@@ -12,7 +13,7 @@ import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, CreateDateCol
 // We could also normalize the phone number the user entered by using the phone npm module and store it in a consistent format
 // while also keeping the originally entered value
 // Things to consider...
-@Entity('users', { schema: 'core' })
+@Entity('users', { schema: DbSchemaCodes.Core })
 export class ApplicationUser implements IApplicationUser {
   @PrimaryGeneratedColumn('uuid')
   id: string;

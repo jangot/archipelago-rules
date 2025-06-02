@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Transfer } from '../../../domain/entities/transfer.entity';
-import { LoanPaymentStep } from '../../../domain/entities/loan.payment.step.entity';
+import { Transfer } from '../../../../../../libs/shared/src/domain/entities/transfer.entity';
+import { LoanPaymentStep } from '../../../../../../libs/shared/src/domain/entities/loan.payment.step.entity';
 import { PaymentStepStateCodes } from '@library/entity/enum';
 import { LoanPaymentStepManager } from './loan-payment-step-manager.service';
 

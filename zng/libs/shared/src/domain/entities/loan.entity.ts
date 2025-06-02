@@ -7,8 +7,9 @@ import { PaymentAccount } from './payment.account.entity';
 import { LoanPayment } from './loan.payment.entity';
 import { LoanInvitee } from './loan.invitee.entity';
 import { TransferError } from './transfer.error.entity';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
-@Entity({ schema: 'core' })
+@Entity({ schema: DbSchemaCodes.Core })
 // When using @Check('<constraint_name>', '<expression') -- always specify a Constraint name
 // (not worth trying to parse the expression to generate a reasonable Check constraint name)
 @Check('loans_borrower_id_ne_lender_id_check', '"borrower_id" <> "lender_id"') // Ensures borrowerId and lenderId are different
