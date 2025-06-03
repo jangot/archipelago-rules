@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { INotificationDefinition } from '@library/entity/interface';
-import { NotificationDataService } from '../../data';
 import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
 import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
+import { NotificationDataService } from '@notification/data';
 
 /**
  * Service for managing notification definitions

@@ -2,9 +2,9 @@ import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
-import { Login } from '../../../../../libs/shared/src/domain/entities';
-import { ILoginRepository } from '../../shared/interfaces/repositories';
 import { ILogin } from '@library/entity/interface';
+import { Login } from '@library/shared/domain/entities';
+import { ILoginRepository } from '@core/shared/interfaces/repositories';
 
 @Injectable()
 export class LoginRepository extends RepositoryBase<Login> implements ILoginRepository {

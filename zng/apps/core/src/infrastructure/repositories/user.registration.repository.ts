@@ -2,9 +2,9 @@ import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { UserRegistration } from '../../../../../libs/shared/src/domain/entities';
-import { IUserRegistrationRepository } from '../../shared/interfaces/repositories';
 import { IUserRegistration } from '@library/entity/interface';
+import { UserRegistration } from '@library/shared/domain/entities';
+import { IUserRegistrationRepository } from '@core/shared/interfaces/repositories';
 
 @Injectable()
 export class UserRegistrationRepository extends RepositoryBase<UserRegistration> implements IUserRegistrationRepository {

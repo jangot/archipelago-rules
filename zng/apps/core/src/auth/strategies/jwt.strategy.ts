@@ -2,10 +2,10 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
-import { IDomainServices } from '../../domain/idomain.services';
 import { ConfigurationVariableNotFoundException } from '@library/shared/common/exceptions/domain';
 import { IExpressRequestUser } from '@library/shared/types';
+import { IDomainServices } from '@core/domain/idomain.services';
+import { IJwtPayload } from '@core/domain/interfaces/ijwt-payload';
 
 // Interface to avoid using 'any' as a type in 'validate' method
 @Injectable()

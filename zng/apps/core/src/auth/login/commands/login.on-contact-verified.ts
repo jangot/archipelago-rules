@@ -1,9 +1,9 @@
 import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { LoginOnContactVerifiedCommand } from './login.commands';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dto';
 import { MissingInputException } from '@library/shared/common/exceptions/domain';
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
+import { UserLoginPayloadDto } from '@core/dto';
 
 @CommandHandler(LoginOnContactVerifiedCommand)
 export class LoginOnContactVerifiedCommandHandler

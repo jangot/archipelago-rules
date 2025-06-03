@@ -40,6 +40,12 @@
       "@payment/*": [
         "apps/payment/src/*"
       ],
+      "@notification": [
+        "apps/notification/src"
+      ],
+      "@notification/*": [
+        "apps/notification/src/*"
+      ],
       "@library/entity": [
         "libs/entity/src"
       ],

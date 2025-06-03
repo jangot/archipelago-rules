@@ -11,11 +11,11 @@ import { transformPhoneNumber } from '@library/shared/common/data/transformers/p
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { InitiatePhoneNumberVerificationCommand } from './registration.commands';
-import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
-import { ContactTakenException, RegistrationNotFoundException } from '../../../domain/exceptions';
+import { ContactTakenException, RegistrationNotFoundException } from '@core/domain/exceptions';
+import { VerificationEvent } from '@core/auth/verification';
 
 @CommandHandler(InitiatePhoneNumberVerificationCommand)
 export class InitiatePhoneNumberVerificationCommandHandler

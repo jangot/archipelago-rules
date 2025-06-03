@@ -1,5 +1,5 @@
 
-import { INotificationDefinitionRepository } from '../../shared/interfaces/repositories/inotification.definition.repository';
+import { INotificationDefinitionRepository } from '@notification/shared/interfaces/repositories/inotification.definition.repository';
 import { NotificationDefinitionRepository } from './notification.definition.repository';
 
 export * from './notification.definition.repository';

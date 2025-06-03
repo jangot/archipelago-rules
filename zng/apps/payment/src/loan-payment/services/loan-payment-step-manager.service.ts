@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LoanPayment } from '../../../../../libs/shared/src/domain/entities/loan.payment.entity';
-import { LoanPaymentStep } from '../../../../../libs/shared/src/domain/entities/loan.payment.step.entity';
 import { LoanPaymentFactory } from '../loan-payment.factory';
 import { PaymentStepState, PaymentStepStateCodes } from '@library/entity/enum';
+import { LoanPayment, LoanPaymentStep } from '@library/shared/domain/entities';
 
 /**
  * Service responsible for coordinating and managing loan payment steps

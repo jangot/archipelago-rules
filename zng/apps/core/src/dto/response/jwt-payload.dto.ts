@@ -1,4 +1,4 @@
-import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
+import { IJwtPayload } from '@core/domain/interfaces/ijwt-payload';
 
 export class JwtPayloadDto implements IJwtPayload {
   iss: string; // Issuer - auth server

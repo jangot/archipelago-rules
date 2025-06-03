@@ -4,8 +4,8 @@ import { v4 } from 'uuid';
 
 import { ZngNamingStrategy } from '@library/extensions/typeorm';
 
-import { CoreEntities } from '../../../libs/shared/src/domain/entities';
 import { DbSchemaCodes } from '@library/shared/common/data';
+import { CoreEntities } from '@library/shared/domain/entities';
 
 // Initiate newDb - in-memory PG database and create connection for TypeORM
 export const memoryDataSource = async (): Promise<DataSource> => {
