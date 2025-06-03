@@ -1,10 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { addTransactionalDataSource } from 'typeorm-transactional';
-import { DataSource } from 'typeorm';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
-import { DbConfiguration } from '@library/shared/common/data/dbcommon.config';
+import { DbSchemaCodes, TypeOrmModuleConfiguration } from '@library/shared/common/data/dbcommon.config';
 import { NotificationDataService } from './data.service';
 import { NotificationDefinition } from '../domain/entities/notification.definition.entity';
 import { NotificationEntities } from '../domain/entities';
@@ -16,24 +13,9 @@ import { CustomNotificationRepositories } from '../infrastructure/repositories';
  */
 @Module({
   imports: [
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => 
-        DbConfiguration({ 
-          configService, 
-          entities: [NotificationDefinition], 
-          schema: 'notifications', 
-        }),
-      // TypeORM Transactional DataSource initialization
-      async dataSourceFactory(options) {
-        if (!options) {
-          throw new Error('No Datasource options for TypeOrmModule provided');
-        }
+    // schema: notifications
+    TypeOrmModule.forRootAsync(TypeOrmModuleConfiguration({ entities: [NotificationDefinition], schema: DbSchemaCodes.Notification })),
 
-        return addTransactionalDataSource(new DataSource(options));
-      },
-    }),
   ],
   providers: [
     NotificationDataService, 

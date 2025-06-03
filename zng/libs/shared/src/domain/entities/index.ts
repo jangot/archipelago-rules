@@ -55,3 +55,5 @@ export const PaymentEntities = [
   PaymentsRoute,
   TransferError,
 ];
+
+export const AllEntities = [...CoreEntities, ...PaymentEntities];

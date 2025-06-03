@@ -14,8 +14,8 @@ import { addTransactionalDataSource } from 'typeorm-transactional';
 
 export const DbSchemaCodes = {
   Core: 'core',
-  Payment: 'payment',
-  Notification: 'notification',
+  Payment: 'payments',
+  Notification: 'notifications',
 } as const;
 
 export type DbSchemaType = (typeof DbSchemaCodes)[keyof typeof DbSchemaCodes];
@@ -50,6 +50,7 @@ export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOp
     entities: options.entities,
     schema: options.schema, // Default schema to use for all entities defined here
     migrations: options.migrations,
+    name: options.schema || 'default', // Use schema as the connection name
   };
 }
 
@@ -79,7 +80,7 @@ export function TypeOrmModuleConfiguration(options: BaseDatabaseConfigOptions): 
         throw new Error('No Datasource options for TypeOrmModule provided');
       }
     
-      return addTransactionalDataSource(new DataSource(options));
+      return addTransactionalDataSource(new DataSource({ ...options, name: schema }));
     },
   };
 }
