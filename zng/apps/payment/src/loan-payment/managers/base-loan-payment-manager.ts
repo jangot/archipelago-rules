@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { LoanPaymentState, LoanPaymentStateCodes, PaymentStepStateCodes } from '@library/entity/enum';
 import { ILoan, ILoanPayment, ILoanPaymentStep } from '@library/entity/interface';
-import { IDomainServices } from '@core/domain/idomain.services';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
 import { LOAN_PAYMENT_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation } from '@library/shared/domain/entities/relations';
 import { ILoanPaymentManager } from '../interfaces';
+import { IDomainServices } from '@payment/domain/idomain.services';
 
 /**
  * Base class for loan payment managers
@@ -104,7 +104,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     if (!loanId) {
       throw new MissingInputException('Missing Loan Id');
     }
-    const loan = await this.domainServices.loanServices.getLoanById(loanId, relations);
+    const loan = await this.domainServices.paymentServices.getLoanById(loanId, relations);
     if (!loan) {
       throw new EntityNotFoundException('Loan not found');
     }

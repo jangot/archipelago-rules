@@ -6,8 +6,8 @@ import { ILoan } from '@library/entity/interface';
 import { LoansSetTargetUserInput } from '@library/shared/types/lending';
 import { LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
 import { Loan } from '@library/shared/domain/entities';
-import { ILoanRepository } from '@core/shared/interfaces/repositories';
 import { LoanRelation } from '@library/shared/domain/entities/relations';
+import { ILoanRepository } from '@library/shared/interfaces/repositories';
 
 @Injectable()
 export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {

@@ -11,7 +11,7 @@ export class BankingService {
 
   @MapToDto(PaymentAccountResponseDto)
   public async addPaymentAccount(userId: string, input: PaymentMethodCreateRequestDto): Promise<PaymentAccountResponseDto | null> {
-    const result = await this.domainServices.paymentServices.addPaymentAccount(userId, input);
+    const result = await this.domainServices.userServices.addPaymentAccount(userId, input);
     return result as unknown as PaymentAccountResponseDto | null;
   }
 }

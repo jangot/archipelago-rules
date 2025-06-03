@@ -1,5 +1,5 @@
 import { IDataService } from '@library/shared/common/data/idata.service';
-import { IPaymentAccountRepository } from '@library/shared/interfaces/repositories';
+import { ILoanRepository, IPaymentAccountRepository } from '@library/shared/interfaces/repositories';
 import { Inject, Injectable } from '@nestjs/common';
 import { ILoanPaymentRepository, ILoanPaymentStepRepository, IPaymentsRouteRepository, IPaymentsRouteStepRepository, ITransferErrorRepository, ITransferRepository } from '@payment/shared/interfaces/repositories';
 
@@ -13,6 +13,7 @@ export class PaymentDataService extends IDataService {
     @Inject(IPaymentsRouteRepository) public readonly paymentsRoute: IPaymentsRouteRepository,
     @Inject(ITransferErrorRepository) public readonly transferErrors: ITransferErrorRepository,
     @Inject(IPaymentAccountRepository) public readonly paymentAccounts: IPaymentAccountRepository,
+    @Inject(ILoanRepository) public readonly loans: ILoanRepository,
   ) {
     super();
   }

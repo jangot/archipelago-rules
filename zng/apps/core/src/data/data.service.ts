@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IBillerRepository, ILoanInviteeRepository, ILoanRepository, ILoginRepository, IUserRegistrationRepository, IUserRepository } from '../shared/interfaces/repositories';
+import { IBillerRepository, ILoanInviteeRepository, ILoginRepository, IUserRegistrationRepository, IUserRepository } from '../shared/interfaces/repositories';
 import { IDataService } from '@library/shared/common/data/idata.service';
-import { IPaymentAccountRepository } from '@library/shared/interfaces/repositories';
+import { ILoanRepository, IPaymentAccountRepository } from '@library/shared/interfaces/repositories';
 
 @Injectable()
 export class CoreDataService extends IDataService {

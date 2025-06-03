@@ -100,7 +100,7 @@ export class LoansService {
   }
 
   private async getPaymentAccount(accountId: string, ownerId?: string): Promise<IPaymentAccount> {
-    const paymentAccount = await this.domainServices.paymentServices.getPaymentAccountById(accountId);
+    const paymentAccount = await this.domainServices.userServices.getPaymentAccountById(accountId);
     if (!paymentAccount) {
       throw new EntityNotFoundException('Payment account not found');
     }

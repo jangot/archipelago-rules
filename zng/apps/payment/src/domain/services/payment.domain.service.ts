@@ -1,11 +1,11 @@
-import { ILoanPayment, ILoanPaymentStep, IPaymentAccount, IPaymentsRoute } from '@library/entity/interface';
+import { ILoan, ILoanPayment, ILoanPaymentStep, IPaymentAccount, IPaymentsRoute } from '@library/entity/interface';
 import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
 import { LoanPaymentType, LoanType } from '@library/entity/enum';
 import { PaymentDataService } from '@payment/data/data.service';
-import { LoanPaymentRelation, LoanPaymentStepRelation, PaymentAccountRelation } from '@library/shared/domain/entities/relations';
+import { LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation } from '@library/shared/domain/entities/relations';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -27,6 +27,12 @@ export class PaymentDomainService extends BaseDomainServices {
   public async getPaymentAccountById(paymentAccountId: string, relations?: PaymentAccountRelation[]): Promise<IPaymentAccount | null> {
     this.logger.debug(`Fetching payment account by ID ${paymentAccountId}`, relations);
     return this.data.paymentAccounts.getPaymentAccountById(paymentAccountId, relations);
+  }
+  // #endregion
+
+  // #region Loan
+  public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> {
+    return this.data.loans.getLoanById(loanId, relations);
   }
   // #endregion
 
