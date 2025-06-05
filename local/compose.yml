@@ -1,13 +1,27 @@
 services:
   postgres:
     image: 'postgres:16.6'
-    container_name: name
+    container_name: postgres
     environment:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-  
+  localstack:
+    image: localstack/localstack
+    container_name: localstack
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      # LocalStack configuration: https://docs.localstack.cloud/references/configuration/
+      - DEBUG=${DEBUG:-0}
+      - SERVICES=sqs,lambda,logs
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./localstack/localstack-setup.sh:/etc/localstack/init/ready.d/localstack-setup.sh"
+      - "./localstack/function.zip:/tmp/function.zip"
 volumes:
   pgdata:

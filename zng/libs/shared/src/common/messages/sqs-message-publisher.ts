@@ -1,25 +1,33 @@
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
-import { IMessagePublisher } from './interfaces/imessagepublisher';
-import { MessagePayloads } from './interfaces/message-payload';
+import { MessagePayloadSqs } from './interfaces/message-payload';
+import { Logger } from '@nestjs/common';
+import { BaseMessagePublisher } from './base.message-publisher';
 
-export class SqsMessagePublisher implements IMessagePublisher {
-  constructor(private readonly sqsClient: SQSClient) {}
-
-  public async publish(payload: MessagePayloads): Promise<string> {
-    const command = this.createCommand(payload);
-    const result = await this.sqsClient.send(command);
-    
-    if (!result.MessageId) {
-      throw new Error('MessageId is required');
-    }
-
-    return result.MessageId;
+export class SqsMessagePublisher extends BaseMessagePublisher<SendMessageCommand> {
+  private readonly logger = new Logger(SqsMessagePublisher.name);
+  constructor(private readonly sqsClient: SQSClient) {
+    super();
   }
-
-  private createCommand(payload: MessagePayloads): SendMessageCommand {
+  
+  protected async createMessagePayload(payload: MessagePayloadSqs, message: string): Promise<SendMessageCommand> {
     return new SendMessageCommand({
       QueueUrl: payload.queueUrl,
-      MessageBody: JSON.stringify(payload.message),
+      MessageBody: message,
+      DelaySeconds: payload.delaySeconds,
+      MessageAttributes: payload.messageAttributes,
+      MessageSystemAttributes: payload.messageSystemAttributes,
+      MessageGroupId: payload.groupId,
+      MessageDeduplicationId: payload.deduplicationId,
     });
+  }
+
+  protected async sendMessage(message: SendMessageCommand): Promise<string> {
+    const result = await this.sqsClient.send(message);
+
+    if (!result.MessageId) {
+      this.logger.error('MessageId is required');
+      throw new Error('MessageId is required');
+    }
+    return result.MessageId;
   }
 }

@@ -15,4 +15,9 @@ export interface MessagePayloadSqs extends MessagePayload {
   deduplicationId?: string;
 }
 
-export type MessagePayloads = MessagePayloadSqs;
+export interface MessagePayloadTest extends MessagePayload {
+  readonly type: 'test';
+  message: string;
+}
+
+export type MessagePayloads = MessagePayloadSqs | MessagePayloadTest;
