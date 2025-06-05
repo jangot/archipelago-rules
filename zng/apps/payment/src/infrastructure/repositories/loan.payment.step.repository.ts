@@ -2,7 +2,7 @@ import { LoanPaymentStep } from '@library/shared/domain/entities';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { ILoanPaymentStepRepository } from '@payment/shared/interfaces/repositories';
 
 @Injectable()
@@ -11,5 +11,9 @@ export class LoanPaymentStepRepository extends RepositoryBase<LoanPaymentStep> i
 
   constructor(@InjectRepository(LoanPaymentStep) protected readonly repository: Repository<LoanPaymentStep>) {
     super(repository, LoanPaymentStep);
+  }
+
+  public async createPaymentSteps(steps: DeepPartial<LoanPaymentStep>[]): Promise<LoanPaymentStep[] | null> {
+    return this.repository.create(steps);
   }
 }

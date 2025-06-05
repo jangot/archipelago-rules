@@ -23,4 +23,8 @@ export class LoanPaymentRepository extends RepositoryBase<LoanPayment> implement
     if (!result) return null;
     return this.actionResult(result);
   }
+
+  public async createPayment(input: DeepPartial<LoanPayment>): Promise<LoanPayment | null> {
+    return this.repository.create(input);
+  }
 }

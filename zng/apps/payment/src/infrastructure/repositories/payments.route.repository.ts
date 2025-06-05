@@ -15,6 +15,10 @@ export class PaymentsRouteRepository extends RepositoryBase<PaymentsRoute> imple
     super(repository, PaymentsRoute);
   }
 
+  getRouteById(id: string, relations?: PaymentsRouteRelation[]): Promise<PaymentsRoute | null> {
+    return this.repository.findOne({ where: { id }, relations });
+  }
+
   findRoute(input: PaymentRouteSearchInput, relations?: PaymentsRouteRelation[]): Promise<PaymentsRoute | null> {
     const { fromAccount, fromOwnership, fromProvider, toAccount, toOwnership, toProvider, loanStage, loanType } = input;
     return this.repository.findOne({ 

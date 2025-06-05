@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { LoanPaymentState, LoanPaymentStateCodes, PaymentStepStateCodes } from '@library/entity/enum';
-import { ILoan, ILoanPayment, ILoanPaymentStep } from '@library/entity/interface';
+import { LoanPaymentState, LoanPaymentStateCodes, LoanPaymentType, PaymentStepStateCodes } from '@library/entity/enum';
+import { ILoan, ILoanPayment, ILoanPaymentStep, IPaymentsRoute } from '@library/entity/interface';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
 import { LOAN_PAYMENT_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation } from '@library/shared/domain/entities/relations';
 import { ILoanPaymentManager } from '../interfaces';
 import { IDomainServices } from '@payment/domain/idomain.services';
+import { DeepPartial } from 'typeorm';
 
 /**
  * Base class for loan payment managers
@@ -12,9 +13,11 @@ import { IDomainServices } from '@payment/domain/idomain.services';
 @Injectable()
 export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
   protected readonly logger: Logger;
+  protected readonly paymentType: LoanPaymentType;
 
   constructor(
     protected readonly domainServices: IDomainServices,
+    protected readonly type: LoanPaymentType,
   ) {
     this.logger = new Logger(this.constructor.name);
   }
@@ -24,7 +27,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param loanId The ID of the loan for which to initiate a payment
    * @returns The created loan payment or null if creation failed
    */
-  public abstract initiate(loanId: string): Promise<ILoanPayment | null>;
+  public abstract initiate(loanId: string): Promise<ILoanPayment | ILoanPayment[] | null>;
 
   /**
    * Advances the state of a loan payment based on step signals/events
@@ -132,4 +135,20 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     }
     return loanPaymentStep;
   }
+
+  /**
+   * Generates the steps required for a specific loan payment.
+   * Should implement all Payment-specific validations, restrictions, etc.
+   * @param payment The loan payment for which to generate steps
+   * @param route The route defining the steps to be taken. Requires steps to be loaded
+   * @param fromAccountId The ID of the source payment account
+   * @param toAccountId The ID of the target payment account
+   * @returns An array of loan payment steps to be created
+   */
+  protected abstract generateStepsForPayment(
+    payment: ILoanPayment | null, 
+    route: IPaymentsRoute | null, 
+    fromAccountId: string, 
+    toAccountId: string
+  ): DeepPartial<ILoanPaymentStep>[] | null;
 }

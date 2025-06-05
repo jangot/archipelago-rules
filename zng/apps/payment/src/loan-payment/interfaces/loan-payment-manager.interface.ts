@@ -9,7 +9,7 @@ export interface ILoanPaymentManager {
    * @param loanId The ID of the loan for which to initiate a payment
    * @returns The created loan payment or null if creation failed
    */
-  initiate(loanId: string): Promise<ILoanPayment | null>;
+  initiate(loanId: string): Promise<ILoanPayment | ILoanPayment[] | null>;
 
   /**
    * Advances the state of a loan payment based on step signals/events

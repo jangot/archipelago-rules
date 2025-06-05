@@ -38,11 +38,11 @@ export class LoanPayment implements ILoanPayment {
   @UpdateDateColumn({ type: 'timestamp with time zone', nullable: true })
   updatedAt: Date | null;
 
-  @Column({ type: 'timestamp with time zone' })
-  initiatedAt: Date;
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  initiatedAt: Date | null;
 
-  @Column({ type: 'timestamp with time zone' })
-  scheduledAt: Date;
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  scheduledAt: Date | null;
 
   @OneToMany(() => LoanPaymentStep, (step) => step.loanPaymentId, { nullable: true })
   steps: LoanPaymentStep[] | null;

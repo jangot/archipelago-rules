@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
 import { LoanPaymentType, LoanType } from '@library/entity/enum';
 import { PaymentDataService } from '@payment/data/data.service';
-import { LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation } from '@library/shared/domain/entities/relations';
+import {  LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS } from '@library/shared/domain/entities/relations';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -64,21 +64,31 @@ export class PaymentDomainService extends BaseDomainServices {
     const { type: fromAccount, ownership: fromOwnership, provider: fromProvider } = fromAccountResult;
     const { type: toAccount, ownership: toOwnership, provider: toProvider } = toAccountResult;
 
-    const route = await this.data.paymentsRoute.findRoute({ 
-      fromAccount, fromOwnership, fromProvider, toAccount, toOwnership, toProvider, 
-      loanStage: state, loanType, 
-    });
+    const route = await this.data.paymentsRoute.findRoute(
+      { 
+        fromAccount, fromOwnership, fromProvider, toAccount, toOwnership, toProvider, 
+        loanStage: state, loanType, 
+      }, 
+      [PAYMENTS_ROUTE_RELATIONS.Steps]);
 
     return route;
   }
 
-  public async createPaymentByRoute(routeId: string, loanId: string, paymentType: LoanPaymentType): Promise<void> {}
+  public async createPayment(input: DeepPartial<ILoanPayment>): Promise<ILoanPayment | null> {
+    this.logger.debug('Creating payment ', { input });
+
+    return this.data.loanPayments.createPayment(input);
+  }
 
   // #endregion
 
   // #region Loan Payment Steps
   public async getLoanPaymentStepById(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<ILoanPaymentStep | null> {
     return this.data.loanPaymentSteps.findOne({ where: { id: stepId }, relations });
+  }
+
+  public async createPaymentSteps(steps: DeepPartial<ILoanPaymentStep>[]): Promise<ILoanPaymentStep[] | null> {
+    return this.data.loanPaymentSteps.createPaymentSteps(steps);
   }
 
   // #endregion
