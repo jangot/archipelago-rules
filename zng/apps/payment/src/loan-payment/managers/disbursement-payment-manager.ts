@@ -12,7 +12,6 @@ import { v4 } from 'uuid';
  */
 @Injectable()
 export class DisbursementPaymentManager extends BaseLoanPaymentManager {
-
   constructor(protected readonly domainServices: IDomainServices) {
     super(domainServices, LoanPaymentTypeCodes.Disbursement);
   }
@@ -53,7 +52,6 @@ export class DisbursementPaymentManager extends BaseLoanPaymentManager {
       type
     );
 
-
     // 3. Create Payment and Steps -> save & return
     const payment = await this.domainServices.paymentServices.createPayment({
       amount,
@@ -61,7 +59,6 @@ export class DisbursementPaymentManager extends BaseLoanPaymentManager {
       paymentNumber: null,
       type: this.paymentType,
       state: LoanPaymentStateCodes.Created,
-
     });
 
     if (!payment) {
@@ -69,7 +66,7 @@ export class DisbursementPaymentManager extends BaseLoanPaymentManager {
       return null; // Payment creation failed
     }
 
-    const generatedSteps = await this.generateStepsForPayment(payment, route, lenderAccountId, biller.paymentAccountId);
+    const generatedSteps = this.generateStepsForPayment(payment, route, lenderAccountId, biller.paymentAccountId);
     if (!generatedSteps || !generatedSteps.length) {
       this.logger.error('Failed to generate disbursement payment steps for loan', { payment, route, lenderAccountId, billerPaymentAccountId: biller.paymentAccountId });
       return null; // Step generation failed
