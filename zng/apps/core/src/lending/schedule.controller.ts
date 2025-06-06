@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common';
-import { ScheduleService } from './schedule.service';
+import { ScheduleService } from '../../../../libs/shared/src/services/schedule.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@core/auth/guards';
 import { UUIDParam } from '@library/shared/common/pipes/uuidparam';

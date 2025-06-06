@@ -1,17 +1,13 @@
-import { IDomainServices } from '@core/domain/idomain.services';
 import { LoanFeeModeCodes, LoanPaymentFrequency, LoanPaymentFrequencyCodes } from '@library/entity/enum';
 import { round2 } from '@library/shared/common/helpers';
 import { PlanPreviewInput, PlanPreviewOutputItem } from '@library/shared/types/lending';
-import { Injectable, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { addMonths, addWeeks } from 'date-fns';
 
-@Injectable()
 export class ScheduleService {
   private readonly logger: Logger = new Logger(ScheduleService.name);
   
-  constructor(private readonly domainServices: IDomainServices) {}
-
-  public async previewRepaymentPlan(input: PlanPreviewInput): Promise<PlanPreviewOutputItem[]> {
+  public static previewRepaymentPlan(input: PlanPreviewInput): PlanPreviewOutputItem[] {
     const payments: PlanPreviewOutputItem[] = [];
     const { amount, paymentsCount, paymentFrequency, feeMode, feeAmount, repaymentStartDate } = input;
     // Fast-quit for invalid input
@@ -59,7 +55,7 @@ export class ScheduleService {
    * @param paymentIndex Index of the payment
    * @returns Date of the repayment
    */
-  private getRepaymentDate(firstPaymentDate: Date, paymentFrequency: LoanPaymentFrequency, paymentIndex: number): Date {
+  private static getRepaymentDate(firstPaymentDate: Date, paymentFrequency: LoanPaymentFrequency, paymentIndex: number): Date {
     if (paymentIndex < 0) {
       // TODO: Make Domain exception
       throw new Error('Payment index cannot be negative');

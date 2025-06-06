@@ -3,9 +3,11 @@ import { BaseDomainServices } from '@library/shared/common/domainservices/domain
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
-import { LoanPaymentType, LoanType } from '@library/entity/enum';
+import { LoanPaymentStateCodes, LoanPaymentType, LoanPaymentTypeCodes, LoanType } from '@library/entity/enum';
 import { PaymentDataService } from '@payment/data/data.service';
 import {  LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS } from '@library/shared/domain/entities/relations';
+import { PlanPreviewOutputItem } from '@library/shared/types/lending';
+import { v4 } from 'uuid';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -40,6 +42,12 @@ export class PaymentDomainService extends BaseDomainServices {
   public async getLoanPaymentById(paymentId: string, relations?: LoanPaymentRelation[]): Promise<ILoanPayment | null> {
     return this.data.loanPayments.getPaymentById(paymentId, relations);
   }
+
+  public async getPaymentsByIds(paymentIds: string[], relations?: LoanPaymentRelation[]): Promise<ILoanPayment[] | null> {
+    return this.data.loanPayments.getPaymentsByIds(paymentIds, relations);
+  }
+
+
 
   public async updatePayment(paymentId: string, updates: DeepPartial<ILoanPayment>): Promise<boolean | null> {
     this.logger.debug(`Updating loan payment ${paymentId}`, { updates });
@@ -78,6 +86,27 @@ export class PaymentDomainService extends BaseDomainServices {
     this.logger.debug('Creating payment ', { input });
 
     return this.data.loanPayments.createPayment(input);
+  }
+
+  public async saveRepaymentPlan(plan: PlanPreviewOutputItem[], loanId: string): Promise<ILoanPayment[] | null> {
+    this.logger.debug(`Saving repayment plan for loan ${loanId}`, { plan });
+
+    if (!plan || !plan.length) {
+      this.logger.warn(`No repayment plan provided for loan ${loanId}`);
+      return null;
+    }
+
+    const payments: DeepPartial<ILoanPayment>[] = plan.map(item => ({
+      id: v4(),
+      amount: item.amount,
+      loanId,
+      paymentNumber: item.index + 1,
+      type: LoanPaymentTypeCodes.Repayment,
+      state: LoanPaymentStateCodes.Created,
+      scheduledAt: item.paymentDate,
+    }));
+
+    return this.data.loanPayments.createPayments(payments);
   }
 
   // #endregion

@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
-import { ILoanPayment, ILoanPaymentStep, IPaymentsRoute, IPaymentsRouteStep } from '@library/entity/interface';
+import { ILoan, ILoanPayment, IPaymentsRouteStep } from '@library/entity/interface';
 import { IDomainServices } from '@payment/domain/idomain.services';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
-import { DeepPartial } from 'typeorm';
 
 /**
  * Handles loan funding payments
@@ -14,38 +13,51 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
     super(domainServices, LoanPaymentTypeCodes.Funding);
   }
 
-  // Funding payment implementation uses the base template method
+  /**
+   * Initiates a new funding payment for a loan
+   * @param loanId The ID of the loan for which to initiate a funding payment
+   * @returns The created loan payment or null if creation failed
+   */
+  public async initiate(loanId: string): Promise<ILoanPayment | null> {
+    return this.initiatePayment(loanId);
+  }
 
   /**
-   * For funding payments, we use specific steps from the route
-   * Funding + Disbursement specifics:
-   * - If route has 1 step: Funding has no steps (all handled by disbursement)
-   * - If route has N steps: Funding uses only the first step
+   * Gets the source and target payment account IDs for funding payment
+   * @param loan The loan for which to get payment accounts
+   * @returns Object containing fromAccountId and toAccountId
    */
-  protected generateStepsForPayment(
-    payment: ILoanPayment | null, 
-    route: IPaymentsRoute | null, 
-    fromAccountId: string, 
-    toAccountId: string
-  ): DeepPartial<ILoanPaymentStep>[] | null {
-    if (!route || !route.steps) {
-      return null;
+  protected async getPaymentAccounts(loan: ILoan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
+    const { lenderAccountId, biller } = loan;
+    
+    if (!lenderAccountId) {
+      this.logger.warn(`Lender account ID is missing for loan ${loan.id}`);
+      return { fromAccountId: null, toAccountId: null };
     }
 
-    const { steps: routeSteps } = route;
-    const stepsToApply: IPaymentsRouteStep[] = [];
-    
-    // Funding takes only the first step in a multi-step route
+    if (!biller || !biller.paymentAccountId) {
+      this.logger.warn(`Biller or Biller's payment Account is missing for loan ${loan.id}`);
+      return { fromAccountId: null, toAccountId: null };
+    }
+
+    return { 
+      fromAccountId: lenderAccountId,
+      toAccountId: biller.paymentAccountId,
+    };
+  }
+
+  /**
+   * Gets the route steps to apply for funding payment
+   * For Funding + Disbursement route:
+   * - If route has a single step, then Funding doesn't use any steps
+   * - If route has N steps, then Funding uses only the first step
+   * @param routeSteps Steps from the payment route
+   * @returns The steps to apply for this payment type
+   */
+  protected getStepsToApply(routeSteps: IPaymentsRouteStep[]): IPaymentsRouteStep[] {
     if (routeSteps.length > 1) {
-      stepsToApply.push(routeSteps[0]);
+      return [routeSteps[0]];
     }
-    
-    // If there's only one step, disbursement handles it, and funding has no steps
-    if (stepsToApply.length === 0) {
-      // Return empty array to indicate successful processing but no steps needed
-      return [];
-    }
-
-    return this.generateBasePaymentSteps(payment, route, stepsToApply, fromAccountId, toAccountId);
+    return [];
   }
 }

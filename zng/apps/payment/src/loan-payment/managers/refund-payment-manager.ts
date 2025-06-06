@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
-import { ILoanPayment, ILoanPaymentStep, IPaymentsRoute } from '@library/entity/interface';
+import { ILoan, ILoanPayment } from '@library/entity/interface';
 import { IDomainServices } from '@payment/domain/idomain.services';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
-import { DeepPartial } from 'typeorm';
 
 /**
  * Handles loan refund payments
@@ -15,26 +14,37 @@ export class RefundPaymentManager extends BaseLoanPaymentManager {
   }
 
   /**
-   * Refund payment uses the base template method from BaseLoanPaymentManager
+   * Initiates a new refund payment for a loan
    * TODO: Refund requires more sophisticated logic and should be revisited
    * This is a placeholder implementation that may not cover all edge cases.
+   * @param loanId The ID of the loan for which to initiate a refund payment
+   * @returns The created loan payment or null if creation failed
    */
+  public async initiate(loanId: string): Promise<ILoanPayment | null> {
+    return this.initiatePayment(loanId);
+  }
 
   /**
-   * For refund payments, we use all steps from the route
-   * TODO: This may need to be customized for specific refund scenarios
+   * Gets the source and target payment account IDs for refund payment
+   * @param loan The loan for which to get payment accounts
+   * @returns Object containing fromAccountId and toAccountId
    */
-  protected generateStepsForPayment(
-    payment: ILoanPayment | null, 
-    route: IPaymentsRoute | null, 
-    fromAccountId: string, 
-    toAccountId: string
-  ): DeepPartial<ILoanPaymentStep>[] | null {
-    if (!route || !route.steps) {
-      return null;
-    }
+  protected async getPaymentAccounts(loan: ILoan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
+    const { lenderAccountId, biller } = loan;
     
-    // Use all route steps for refund payments
-    return this.generateBasePaymentSteps(payment, route, route.steps, fromAccountId, toAccountId);
+    if (!lenderAccountId) {
+      this.logger.warn(`Lender account ID is missing for loan ${loan.id}`);
+      return { fromAccountId: null, toAccountId: null };
+    }
+
+    if (!biller || !biller.paymentAccountId) {
+      this.logger.warn(`Biller or Biller's payment Account is missing for loan ${loan.id}`);
+      return { fromAccountId: null, toAccountId: null };
+    }
+
+    return { 
+      fromAccountId: lenderAccountId,
+      toAccountId: biller.paymentAccountId,
+    };
   }
 }
