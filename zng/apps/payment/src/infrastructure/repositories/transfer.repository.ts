@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ITransferRepository } from '@payment/shared/interfaces/repositories';
+import { ITransfer } from '@library/entity/interface';
 
 @Injectable()
 export class TransferRepository extends RepositoryBase<Transfer> implements ITransferRepository {
@@ -11,5 +12,9 @@ export class TransferRepository extends RepositoryBase<Transfer> implements ITra
 
   constructor(@InjectRepository(Transfer) protected readonly repository: Repository<Transfer>) {
     super(repository, Transfer);
+  }
+
+  public async getLatestTransferForStep(stepId: string): Promise<ITransfer | null> {
+    return this.repository.findOne({ where: { loanPaymentStepId: stepId }, order: { order: 'DESC' } });
   }
 }

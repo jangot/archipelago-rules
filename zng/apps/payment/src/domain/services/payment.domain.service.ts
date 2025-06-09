@@ -1,4 +1,4 @@
-import { ILoan, ILoanPayment, ILoanPaymentStep, IPaymentAccount, IPaymentsRoute } from '@library/entity/interface';
+import { ILoan, ILoanPayment, ILoanPaymentStep, IPaymentAccount, IPaymentsRoute, ITransfer } from '@library/entity/interface';
 import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -8,6 +8,7 @@ import { PaymentDataService } from '@payment/data/data.service';
 import {  LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS } from '@library/shared/domain/entities/relations';
 import { PlanPreviewOutputItem } from '@library/shared/types/lending';
 import { v4 } from 'uuid';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -112,12 +113,23 @@ export class PaymentDomainService extends BaseDomainServices {
   // #endregion
 
   // #region Loan Payment Steps
-  public async getLoanPaymentStepById(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<ILoanPaymentStep | null> {
-    return this.data.loanPaymentSteps.findOne({ where: { id: stepId }, relations });
+  public async getLoanPaymentStepById(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<ILoanPaymentStep> {
+    if (!stepId) {
+      throw new MissingInputException('Missing step ID');
+    }
+    const loanPaymentStep = await this.data.loanPaymentSteps.getStepById(stepId, relations);
+    if (!loanPaymentStep) {
+      throw new EntityNotFoundException('Payment step not found');
+    }
+    return loanPaymentStep;
   }
 
   public async createPaymentSteps(steps: DeepPartial<ILoanPaymentStep>[]): Promise<ILoanPaymentStep[] | null> {
     return this.data.loanPaymentSteps.createPaymentSteps(steps);
+  }
+
+  public async getLatestTransferForStep(stepId: string): Promise<ITransfer | null> {
+    return this.data.transfers.getLatestTransferForStep(stepId);
   }
 
   // #endregion

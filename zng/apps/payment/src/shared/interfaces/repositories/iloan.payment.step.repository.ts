@@ -1,9 +1,11 @@
 import { ILoanPaymentStep } from '@library/entity/interface';
 import { IRepositoryBase } from '@library/shared/common/data';
+import { LoanPaymentStepRelation } from '@library/shared/domain/entities/relations';
 import { DeepPartial } from 'typeorm';
 
  
 export interface ILoanPaymentStepRepository extends IRepositoryBase<ILoanPaymentStep> {
+  getStepById(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<ILoanPaymentStep | null>;
   createPaymentSteps(steps: DeepPartial<ILoanPaymentStep>[]): Promise<ILoanPaymentStep[] | null>;
 }
 

@@ -7,7 +7,6 @@ import {
   RefundPaymentManager, 
 } from './managers';
 import { 
-  LoanPaymentStepManager, 
   LoanPaymentService, 
   PaymentRouteService,
   TransferExecutionService, 
@@ -27,14 +26,12 @@ import { DataModule } from '@payment/data/data.module';
     RepaymentPaymentManager,
     FeePaymentManager,
     RefundPaymentManager,
-    LoanPaymentStepManager,
     LoanPaymentService,
     PaymentRouteService,
     TransferExecutionService,
   ],
   exports: [
     LoanPaymentFactory,
-    LoanPaymentStepManager,
     LoanPaymentService,
     PaymentRouteService,
     TransferExecutionService,

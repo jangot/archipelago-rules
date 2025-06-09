@@ -263,14 +263,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
   }
 
   protected async getStep(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<ILoanPaymentStep> {
-    if (!stepId) {
-      throw new MissingInputException('Missing step ID');
-    }
-    const loanPaymentStep = await this.domainServices.paymentServices.getLoanPaymentStepById(stepId, relations);
-    if (!loanPaymentStep) {
-      throw new EntityNotFoundException('Payment step not found');
-    }
-    return loanPaymentStep;
+    return this.domainServices.paymentServices.getLoanPaymentStepById(stepId, relations);
   }
 
   /**

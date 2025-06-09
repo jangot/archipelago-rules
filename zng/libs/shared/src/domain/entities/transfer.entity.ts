@@ -43,6 +43,9 @@ export class Transfer implements ITransfer {
   @OneToOne(() => TransferError, (error) => error.transfer, { nullable: true })
   error: TransferError | null;
 
+  @Column({ type: 'integer', default: 0 })
+  order: number;
+
   @Column({ type: 'uuid', nullable: true })
   loanPaymentStepId: string | null;
 
