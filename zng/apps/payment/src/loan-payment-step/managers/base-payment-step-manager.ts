@@ -14,7 +14,10 @@ export abstract class BasePaymentStepManager implements ILoanPaymentStepManager 
     this.stepState = state;
   }
 
-  public abstract advance(stepId: string): Promise<boolean | null>;
+  public async advance(stepId: string): Promise<boolean | null> {
+    this.logger.debug(`Advancing step with ID: ${stepId} in state: ${this.stepState}`);
+    return this.advanceOnTransferState(stepId);
+  }
 
   protected async getLatestTransfer(stepId: string): Promise<ITransfer | null> {
     return this.domainServices.paymentServices.getLatestTransferForStep(stepId);

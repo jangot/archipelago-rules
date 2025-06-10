@@ -2,7 +2,7 @@ import { Transfer } from '@library/shared/domain/entities';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { ITransferRepository } from '@payment/shared/interfaces/repositories';
 import { ITransfer } from '@library/entity/interface';
 
@@ -17,4 +17,9 @@ export class TransferRepository extends RepositoryBase<Transfer> implements ITra
   public async getLatestTransferForStep(stepId: string): Promise<ITransfer | null> {
     return this.repository.findOne({ where: { loanPaymentStepId: stepId }, order: { order: 'DESC' } });
   }
+
+  public async createTransferForStep(transferData: DeepPartial<Transfer>): Promise<Transfer | null> {
+    return this.repository.create(transferData);
+  }
+
 }

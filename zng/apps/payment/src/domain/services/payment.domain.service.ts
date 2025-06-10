@@ -3,9 +3,9 @@ import { BaseDomainServices } from '@library/shared/common/domainservices/domain
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
-import { LoanPaymentStateCodes, LoanPaymentType, LoanPaymentTypeCodes, LoanType } from '@library/entity/enum';
+import { LoanPaymentStateCodes, LoanPaymentType, LoanPaymentTypeCodes, LoanType, PaymentStepState, TransferStateCodes } from '@library/entity/enum';
 import { PaymentDataService } from '@payment/data/data.service';
-import {  LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS } from '@library/shared/domain/entities/relations';
+import {  LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS } from '@library/shared/domain/entities/relations';
 import { PlanPreviewOutputItem } from '@library/shared/types/lending';
 import { v4 } from 'uuid';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
@@ -130,6 +130,34 @@ export class PaymentDomainService extends BaseDomainServices {
 
   public async getLatestTransferForStep(stepId: string): Promise<ITransfer | null> {
     return this.data.transfers.getLatestTransferForStep(stepId);
+  }
+
+  public async updatePaymentStepState(stepId: string, state: PaymentStepState): Promise<boolean | null> {
+    this.logger.debug(`Updating payment step ${stepId} to state ${state}`);
+    return this.data.loanPaymentSteps.updateStepState(stepId, state);
+  }
+
+  // #endregion
+
+  // #region Transfers
+
+  public async createTransferForStep(stepId: string): Promise<ITransfer | null> {
+    if (!stepId) {
+      throw new MissingInputException('Missing step ID');
+    }
+    this.logger.debug(`Creating transfer for step ${stepId}`);
+    const step = await this.getLoanPaymentStepById(stepId, [LOAN_PAYMENT_STEP_RELATIONS.Transfers]);
+    const { amount, sourcePaymentAccountId, targetPaymentAccountId, transfers } = step;
+    const transferOrder = transfers ? transfers.length : 0;
+    const transferData: DeepPartial<ITransfer> = {
+      amount,
+      state: TransferStateCodes.Created,
+      sourceAccountId: sourcePaymentAccountId,
+      destinationAccountId: targetPaymentAccountId,
+      order: transferOrder,
+      loanPaymentStepId: stepId,
+    };
+    return this.data.transfers.createTransferForStep(transferData);
   }
 
   // #endregion
