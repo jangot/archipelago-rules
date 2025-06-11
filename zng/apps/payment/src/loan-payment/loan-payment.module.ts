@@ -6,19 +6,15 @@ import {
   FeePaymentManager, 
   RefundPaymentManager, 
 } from './managers';
-import { 
-  LoanPaymentService, 
-  PaymentRouteService,
-  TransferExecutionService, 
-} from './services';
 import { LoanPaymentFactory } from './loan-payment.factory';
 import { DataModule } from '@payment/data/data.module';
+import { DomainModule } from '../domain/domain.module';
 
 /**
  * Module for handling loan payment operations
  */
 @Module({
-  imports: [DataModule],
+  imports: [DataModule, DomainModule],
   providers: [
     LoanPaymentFactory,
     FundingPaymentManager,
@@ -26,15 +22,9 @@ import { DataModule } from '@payment/data/data.module';
     RepaymentPaymentManager,
     FeePaymentManager,
     RefundPaymentManager,
-    LoanPaymentService,
-    PaymentRouteService,
-    TransferExecutionService,
   ],
   exports: [
     LoanPaymentFactory,
-    LoanPaymentService,
-    PaymentRouteService,
-    TransferExecutionService,
   ],
 })
 export class LoanPaymentModule {}

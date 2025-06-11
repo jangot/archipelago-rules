@@ -5,11 +5,11 @@ import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { DataModule } from '@payment/data/data.module';
-import { PaymentDomainService } from './services';
+import { ManagementDomainService, PaymentDomainService } from './services';
 
 @Module({
   imports: [CqrsModule, ConfigModule, DataModule, JwtModule],
-  providers: [PaymentDomainService, { provide: IDomainServices, useClass: DomainServices }],
+  providers: [PaymentDomainService, ManagementDomainService, { provide: IDomainServices, useClass: DomainServices }],
   exports: [IDomainServices],
 })
 export class DomainModule {}

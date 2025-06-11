@@ -1,5 +1,6 @@
-import { PaymentDomainService } from './services/payment.domain.service';
+import { ManagementDomainService, PaymentDomainService } from './services';
 
 export abstract class IDomainServices {
   readonly paymentServices: PaymentDomainService;
+  readonly management: ManagementDomainService;
 }

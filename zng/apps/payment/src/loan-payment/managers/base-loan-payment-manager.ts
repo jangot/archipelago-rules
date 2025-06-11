@@ -172,6 +172,8 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param step The step that triggered the state change
    * @returns The updated loan payment or null if update failed
    */
+  // TODO: Implementation is not fully correct and must be revisited.
+  // it does not work with multiple steps, steps in progress and does not handle some state changes
   public async advance(loanPaymentId: string): Promise<boolean | null> {
     
     try {
