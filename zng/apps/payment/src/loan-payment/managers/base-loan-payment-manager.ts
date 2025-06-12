@@ -7,6 +7,7 @@ import { ILoanPaymentManager } from '../interfaces';
 import { IDomainServices } from '@payment/domain/idomain.services';
 import { DeepPartial } from 'typeorm';
 import { v4 } from 'uuid';
+import { Transactional } from 'typeorm-transactional';
 
 /**
  * Interface for payment account pairs used in transfers
@@ -172,74 +173,119 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param step The step that triggered the state change
    * @returns The updated loan payment or null if update failed
    */
-  // TODO: Implementation is not fully correct and must be revisited.
-  // it does not work with multiple steps, steps in progress and does not handle some state changes
+  @Transactional()
   public async advance(loanPaymentId: string): Promise<boolean | null> {
+    // Get all steps for this loan payment to determine overall state
+    const loanPayment = await this.getPayment(loanPaymentId, [
+      LOAN_PAYMENT_RELATIONS.Steps, 
+      LOAN_PAYMENT_RELATIONS.StepsTransfers, 
+      LOAN_PAYMENT_RELATIONS.StepsTransfersErrors,
+    ]);
+    const { state, steps } = loanPayment;
+    // Sort steps by order ascending to process them in the correct sequence
+    const paymentSteps = steps?.sort((a, b) => a.order - b.order) || null;
     
-    try {
-      // Get all steps for this loan payment to determine overall state
-      const loanPayment = await this.getPayment(loanPaymentId, [
-        LOAN_PAYMENT_RELATIONS.Steps, 
-        LOAN_PAYMENT_RELATIONS.StepsTransfers, 
-        LOAN_PAYMENT_RELATIONS.StepsTransfersErrors,
-      ]);
-      const steps = loanPayment.steps;
-      
-      // Calculate the new state based on all steps
-      const newState = this.calculateNewState(steps);
-      
-      if (newState === loanPayment.state) {
-        this.logger.debug(`No state change needed for loan payment ${loanPayment.id}`);
-        return false;
-      }
-
-      // Update the loan payment state
-      loanPayment.state = newState;
-      
-      // If payment is completed, set completedAt timestamp
-      if (newState === LoanPaymentStateCodes.Completed && !loanPayment.completedAt) {
-        loanPayment.completedAt = new Date();
-      }
-      
-      return await this.domainServices.paymentServices.updatePayment(loanPaymentId, loanPayment);
-    } catch (error) {
-      this.logger.error(`Failed to advance loan payment ${loanPaymentId}: ${error.message}`, error.stack);
-      return null;
+    // 1. should complete payment?
+    const shouldCompletePayment = this.couldCompletePayment(paymentSteps) && state !== LoanPaymentStateCodes.Completed;
+    if (shouldCompletePayment) {
+      this.logger.debug(`Loan payment ${loanPaymentId} can be completed`);
+      // Set Completed state and completion info (date)
+      return this.domainServices.paymentServices.completePayment(loanPaymentId);
     }
+    // 2. should fail payment?
+    const failReasonStepId = this.couldFailPayment(paymentSteps);
+    if (failReasonStepId && state !== LoanPaymentStateCodes.Failed) {
+      this.logger.debug(`Loan payment ${loanPaymentId} failed by ${failReasonStepId}`);
+      // Set Failed state
+      return this.domainServices.paymentServices.failPayment(loanPaymentId, failReasonStepId);
+    }
+    // 3. should start next step?
+    const nextStepId = this.couldStartNextStep(paymentSteps);
+    if (nextStepId && (state === LoanPaymentStateCodes.Created || state === LoanPaymentStateCodes.Pending)) {
+      this.logger.debug(`Loan payment ${loanPaymentId} can start next step ${nextStepId}`);
+      // Set Pending state if needed and advance next step
+      const stepAdvance = await this.domainServices.management.advancePaymentStep(nextStepId, PaymentStepStateCodes.Created);
+      const paymentStateUpdate = state === LoanPaymentStateCodes.Pending 
+        ? true 
+        : await this.domainServices.paymentServices.updatePayment(loanPaymentId, { state: LoanPaymentStateCodes.Pending });
+      return stepAdvance && paymentStateUpdate;
+    }
+    // 4. TODO: States artifacts
+    return false; // No state change needed
   }
 
   /**
-   * Calculates the new state of a loan payment based on all its steps
-   * @param steps All steps of the loan payment
-   * @returns The calculated loan payment state
+   * Checks if Loan Payment can be considered completed.
+   * 
+   * We keep Payment completion requirements strict:
+   * - If any Step is in `created` state - Payment should wait for initiation and completion
+   * - If any Step is in `pending` state - Payment should wait for completion
+   * - If any Step is in `failed` state - Payment should wait until Step is retried or fixed 
+   * 
+   * Thus Payment can be considered completed only if all Steps are in `completed` state or no steps exist.
+   * @param steps Steps of the loan payment
+   * @returns True if all steps are completed, false otherwise
    */
-  protected calculateNewState(steps: ILoanPaymentStep[] | null): LoanPaymentState {
-    const allStepsCompleted = !steps || steps.every(step => step.state === PaymentStepStateCodes.Completed);
-    if (allStepsCompleted) {
-      return LoanPaymentStateCodes.Completed;
-    }
+  protected couldCompletePayment(steps: ILoanPaymentStep[] | null): boolean {
+    if (!steps || !steps.length) return true;
+    return steps.every(step => step.state === PaymentStepStateCodes.Completed);
+  }
 
-    // Check if any step has failed - only consider the latest active step by order
+  /**
+   * Checks if the payment could fail based on its steps
+   * 
+   * A payment could fail if:
+   * - There are steps that are not in `created` state
+   * - The last active step (highest order) is in `failed` state
+   * 
+   * @param steps Steps of the loan payment
+   * @returns The ID of the failed step that causes the payment to fail, or null if the payment should not fail
+   */
+  protected couldFailPayment(steps: ILoanPaymentStep[] | null): string | null {
+    if (!steps || !steps.length) return null;
+    
+    // Filter out steps that are in Created state
     const activeSteps = steps.filter(step => step.state !== PaymentStepStateCodes.Created);
-    if (activeSteps.length > 0) {
-      // Get the step with the highest order value
-      const latestStep = activeSteps.reduce((prev, current) => 
-        (prev.order > current.order) ? prev : current
-      );
-      
-      // Check the state of the latest step
-      if (latestStep.state === PaymentStepStateCodes.Failed) {
-        return LoanPaymentStateCodes.Failed;
-      }
-      
-      if (latestStep.state === PaymentStepStateCodes.Pending) {
-        return LoanPaymentStateCodes.Pending;
-      }
+    
+    if (!activeSteps.length) return null;
+    
+    // Sort steps by order to find the last one (highest order)
+    const lastActiveStep = activeSteps.reduce((latest, current) => 
+      latest.order > current.order ? latest : current
+    );
+    
+    // Return the step ID if the last active step is in Failed state, otherwise null
+    return lastActiveStep.state === PaymentStepStateCodes.Failed ? lastActiveStep.id : null;
+  }
+
+  /**
+   * Determines the next step that can be started based on the current steps
+   * This method finds the next step that is in `Created` state and follows the last completed step.
+   * @param steps All steps of the loan payment
+   * @returns The ID of the next step that can be started, or null if no step can be started
+   */
+  protected couldStartNextStep(steps: ILoanPaymentStep[] | null): string | null {
+    // Returns the ID of the next step that can be started, or null if no step can be started
+    if (!steps || !steps.length) return null;
+
+    // 1. Find the highest order completed step
+    const completedSteps = steps.filter(step => step.state === PaymentStepStateCodes.Completed);
+    if (!completedSteps.length) {
+      // If no steps are completed, check if we can start the first step
+      const firstStep = steps.find(step => step.order === 0);
+      return firstStep?.state === PaymentStepStateCodes.Created ? firstStep.id : null;
     }
 
-    // TODO: Doublecheck the need of that
-    // If none of the above, keep the payment in created state
-    return LoanPaymentStateCodes.Created;
+    // Get max order of completed steps
+    const maxCompletedOrder = Math.max(...completedSteps.map(step => step.order));
+
+    // 2. Find the next step after the highest completed one
+    const nextStep = steps.find(step => 
+      step.order === maxCompletedOrder + 1 && 
+      step.state === PaymentStepStateCodes.Created
+    );
+
+    return nextStep?.id || null;
   }
 
   protected async getLoan(loanId: string, relations?: LoanRelation[]): Promise<ILoan> {

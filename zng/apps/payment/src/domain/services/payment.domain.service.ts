@@ -110,6 +110,25 @@ export class PaymentDomainService extends BaseDomainServices {
     return this.data.loanPayments.createPayments(payments);
   }
 
+  public async completePayment(paymentId: string): Promise<boolean | null> {
+    this.logger.debug(`Completing payment ${paymentId}`);
+    return this.data.loanPayments.updatePayment(
+      paymentId, 
+      { 
+        state: LoanPaymentStateCodes.Completed, 
+        completedAt: new Date(), 
+      });
+  }
+
+  public async failPayment(paymentId: string, stepId: string): Promise<boolean | null> {
+    this.logger.debug(`Failing payment ${paymentId} because of step ${stepId}`);
+    return this.data.loanPayments.updatePayment(
+      paymentId, 
+      { 
+        state: LoanPaymentStateCodes.Failed, 
+      });
+  }
+
   // #endregion
 
   // #region Loan Payment Steps
