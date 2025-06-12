@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
 import { LoanPaymentStateCodes, LoanPaymentType, LoanPaymentTypeCodes, LoanType, PaymentStepState, TransferStateCodes } from '@library/entity/enum';
 import { PaymentDataService } from '@payment/data/data.service';
-import {  LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS } from '@library/shared/domain/entities/relations';
+import {  LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TransferRelation } from '@library/shared/domain/entities/relations';
 import { PlanPreviewOutputItem } from '@library/shared/types/lending';
 import { v4 } from 'uuid';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
@@ -177,6 +177,17 @@ export class PaymentDomainService extends BaseDomainServices {
       loanPaymentStepId: stepId,
     };
     return this.data.transfers.createTransferForStep(transferData);
+  }
+
+  public async getTransferById(transferId: string, relations?: TransferRelation[]): Promise<ITransfer> {
+    if (!transferId) {
+      throw new MissingInputException('Missing transfer ID');
+    }
+    const transfer = await this.data.transfers.getTransferById(transferId, relations);
+    if (!transfer) {
+      throw new EntityNotFoundException('Transfer not found');
+    }
+    return transfer;
   }
 
   // #endregion

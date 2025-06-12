@@ -4,3 +4,4 @@ export * from './loan.payment.step.relations';
 export * from './loan.invitee.relations';
 export * from './payment.account.relations';
 export * from './payments.route.relations';
+export * from './transfer.relations';

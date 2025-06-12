@@ -1,9 +1,10 @@
-import { LoanPaymentType, PaymentStepState } from '@library/entity/enum';
+import { LoanPaymentType, PaymentAccountProvider, PaymentStepState } from '@library/entity/enum';
 import { ILoanPayment } from '@library/entity/interface';
 import { Injectable, Logger } from '@nestjs/common';
-import { ILoanPaymentFactory } from '@payment/loan-payment';
-import { ILoanPaymentStepFactory } from '@payment/loan-payment-step/interfaces';
+import { ILoanPaymentFactory } from '@payment/loan-payments';
+import { ILoanPaymentStepFactory } from '@payment/loan-payment-steps/interfaces';
 import { isArray } from 'lodash';
+import { ITransferExecutionFactory } from '@payment/transfer-execution/interface';
 
 /**
  * Service to manage states of Loan, Loan Payment, Loan Payment Steps by aggregating their managers.
@@ -16,6 +17,7 @@ export class ManagementDomainService {
   constructor(
     private readonly loanPaymentFactory: ILoanPaymentFactory,
     private readonly loanPaymentStepFactory: ILoanPaymentStepFactory,
+    private readonly transferExecutionFactory: ITransferExecutionFactory
   ) {}
 
   /**
@@ -124,5 +126,22 @@ export class ManagementDomainService {
     
     const manager = await this.loanPaymentStepFactory.getManager(stepId, stepState);
     return manager.advance(stepId);
+  }
+
+  /**
+   * Executes a transfer for a specific payment step using the specified provider
+   * 
+   * This method retrieves the appropriate transfer execution provider based on the transfer ID and provider type,
+   * and then executes the transfer. It is used to handle the actual fund transfers for payment steps.
+   * 
+   * @param transferId - Unique identifier of the transfer to execute
+   * @param providerType - Type of payment account provider to use for executing the transfer
+   * @returns Promise resolving to boolean indicating success, or null if execution fails
+   */
+  public async executeTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
+    this.logger.debug(`Executing transfer ${transferId} with provider ${providerType}`);
+    
+    const transferExecutionProvider = await this.transferExecutionFactory.getProvider(transferId, providerType);
+    return transferExecutionProvider.executeTransfer(transferId);
   }
 }

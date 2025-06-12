@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import { ITransferRepository } from '@payment/shared/interfaces/repositories';
 import { ITransfer } from '@library/entity/interface';
+import { TransferRelation } from '@library/shared/domain/entities/relations';
 
 @Injectable()
 export class TransferRepository extends RepositoryBase<Transfer> implements ITransferRepository {
@@ -22,4 +23,7 @@ export class TransferRepository extends RepositoryBase<Transfer> implements ITra
     return this.repository.create(transferData);
   }
 
+  public async getTransferById(transferId: string, relations?: TransferRelation[]): Promise<Transfer | null> {
+    return this.repository.findOne({ where: { id: transferId }, relations });
+  }
 }

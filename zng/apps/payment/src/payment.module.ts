@@ -7,8 +7,9 @@ import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
 import { SharedModule } from '@library/shared';
 import { HealthModule } from '@library/shared/common/health/health.module';
 import { DomainModule } from './domain/domain.module';
-import { LoanPaymentModule } from './loan-payment/loan-payment.module';
-import { LoanPaymentStepModule } from './loan-payment-step/loan-payment-step.module';
+import { LoanPaymentModule } from './loan-payments/loan-payment.module';
+import { LoanPaymentStepModule } from './loan-payment-steps/loan-payment-step.module';
+import { TransferExecutionModule } from './transfer-execution/transfer-execution.module';
 
 @Module({ 
   imports: [
@@ -21,6 +22,7 @@ import { LoanPaymentStepModule } from './loan-payment-step/loan-payment-step.mod
     DomainModule,
     LoanPaymentModule,
     LoanPaymentStepModule,
+    TransferExecutionModule,
   ], 
   controllers: [PaymentController], 
   providers: [PaymentService, Logger], 
