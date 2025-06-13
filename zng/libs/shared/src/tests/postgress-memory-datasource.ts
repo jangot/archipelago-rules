@@ -4,22 +4,25 @@ import { v4 } from 'uuid';
 
 import { ZngNamingStrategy } from '@library/extensions/typeorm';
 
-import { DbSchemaCodes } from '@library/shared/common/data';
-import { CoreEntities } from '@library/shared/domain/entities';
+import { BaseDatabaseConfigOptions, DbSchemaCodes } from '@library/shared/common/data';
 
 // Initiate newDb - in-memory PG database and create connection for TypeORM
-export const memoryDataSource = async (): Promise<DataSource> => {
+export const memoryDataSource = async (options: BaseDatabaseConfigOptions): Promise<DataSource> => {
+  const { entities, schema } = options;
   const memoryDatabase = newDb();
   const memoryDbConnection: DataSource = await memoryDatabase.adapters.createTypeormDataSource({
     type: 'postgres',
-    entities: [...CoreEntities],
-    schema: DbSchemaCodes.Core,
+    entities,
+    schema,
     namingStrategy: new ZngNamingStrategy(),
   });
 
   registerMemoryDatabaseFunctions(memoryDatabase.public);
 
   memoryDatabase.createSchema(DbSchemaCodes.Core);
+  memoryDatabase.createSchema(DbSchemaCodes.Payment);
+  memoryDatabase.createSchema(DbSchemaCodes.Notification);
+
 
   await memoryDbConnection.initialize();
   await memoryDbConnection.synchronize();
@@ -28,18 +31,21 @@ export const memoryDataSource = async (): Promise<DataSource> => {
 };
 
 // Initiate newDb - in-memory PG database and create connection for TypeORM
-export const memoryDataSourceForTests = async (): Promise<{ dataSource: DataSource; database: IMemoryDb }> => {
+export const memoryDataSourceForTests = async (options: BaseDatabaseConfigOptions): Promise<{ dataSource: DataSource; database: IMemoryDb }> => {
+  const { entities, schema } = options;
   const database = newDb();
   const dataSource: DataSource = await database.adapters.createTypeormDataSource({
     type: 'postgres',
-    entities: [...CoreEntities],
-    schema: DbSchemaCodes.Core,
+    entities,
+    schema,
     namingStrategy: new ZngNamingStrategy(),
   });
 
   registerMemoryDatabaseFunctions(database.public);
 
   database.createSchema(DbSchemaCodes.Core);
+  database.createSchema(DbSchemaCodes.Payment);
+  database.createSchema(DbSchemaCodes.Notification);
 
   await dataSource.initialize();
   await dataSource.synchronize();

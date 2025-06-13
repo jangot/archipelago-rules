@@ -5,12 +5,14 @@ import { v4 } from 'uuid';
 import { Test, TestingModule } from '@nestjs/testing';
 import { withTransactionHandler } from '@library/shared/common/data/withtransaction.handler';
 import { RegistrationStatus, VerificationStatus } from '@library/entity/enum';
-import { ILoanRepository, IUserRepository } from '@core/shared/interfaces/repositories';
-import { ApplicationUser, Loan } from '@library/shared/domain/entities';
+import { IUserRepository } from '@core/shared/interfaces/repositories';
+import { AllEntities, ApplicationUser, Loan } from '@library/shared/domain/entities';
 import { CoreDataService } from '@core/data/data.service';
 import { DataModule } from '@core/data';
+import { memoryDataSource } from '@library/shared/tests/postgress-memory-datasource';
+import { ILoanRepository } from '@library/shared/interfaces/repositories';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
-import { memoryDataSource } from './postgress-memory-datasource';
 
 describe('DataModule Integration Tests', () => {
   let module: TestingModule;
@@ -19,7 +21,7 @@ describe('DataModule Integration Tests', () => {
   let userRepository: IUserRepository;
 
   beforeAll(async () => {
-    const memoryDB = await memoryDataSource();
+    const memoryDB = await memoryDataSource({ entities: [...AllEntities], schema: DbSchemaCodes.Core });
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
 
     module = await Test.createTestingModule({ imports: [DataModule] })

@@ -26,10 +26,11 @@ import { RegistrationCommandHandlers } from '@core/auth/registration/commands';
 import { LoginInitiateCommandHandler } from '@core/auth/login/commands/login.initiate.command';
 import { UserDomainService } from '@core/domain/services/user.domain.service';
 
-import { memoryDataSourceForTests } from '../postgress-memory-datasource';
 import { REGISTERED_USER_DUMP_1 } from './data-dump';
 import { generateWrongCode } from './test.helper';
 import { DbSchemaCodes } from '@library/shared/common/data';
+import { memoryDataSourceForTests } from '@library/shared/tests/postgress-memory-datasource';
+import { AllEntities } from '@library/shared/domain/entities';
 
 describe('AuthController - Negative Test Cases', () => {
   let app: INestApplication;
@@ -46,7 +47,7 @@ describe('AuthController - Negative Test Cases', () => {
   let loginInitiateHandlerSpy: jest.SpyInstance;
 
   beforeAll(async () => {
-    const memoryDBinstance = await memoryDataSourceForTests();
+    const memoryDBinstance = await memoryDataSourceForTests({ entities: [...AllEntities], schema: DbSchemaCodes.Core });
     const { dataSource, database } = memoryDBinstance;
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
     

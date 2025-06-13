@@ -34,6 +34,8 @@ module.exports = {
     '^@library/extensions(|/.*)$': '<rootDir>/libs/extensions/src/$1',
     '^@library/shared(|/.*)$': '<rootDir>/libs/shared/src/$1',
     '^@core(|/.*)$': '<rootDir>/apps/core/src/$1',
+    '^@payment(|/.*)$': '<rootDir>/apps/payment/src/$1',
+    '^@notification(|/.*)$': '<rootDir>/apps/notification/src/$1',
   },
   
   // Include custom setup files that run after the test framework has been set up
