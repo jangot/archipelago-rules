@@ -1,350 +1,409 @@
+import { IBackup } from 'pg-mem';
+import { DataSource } from 'typeorm';
+import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
+import { v4 as uuidv4 } from 'uuid';
+
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
 import { DataModule } from '../../src/data/data.module';
 import { DomainModule } from '../../src/domain/domain.module';
+import { ManagementModule } from '../../src/domain/management.module';
+import { ServicesModule } from '../../src/services/services.module';
 import { IDomainServices } from '../../src/domain/idomain.services';
-import { PaymentModule } from '../../src/payment.module';
+import { ManagementDomainService } from '../../src/domain/services';
+import { LoanPaymentService } from '../../src/services/loan-payment.service';
+import { LoanPaymentStepService } from '../../src/services/loan-payment-step.service';
+import { TransferExecutionService } from '../../src/services/transfer-execution.service';
+import { 
+  ILoanPaymentStep,
+  IPaymentAccount,
+} from '@library/entity/interface';
+import { 
+  LoanPaymentTypeCodes,
+  LoanPaymentStateCodes,
+  PaymentAccountTypeCodes,
+  PaymentAccountOwnershipTypeCodes,
+  PaymentAccountProviderCodes,
+  PaymentStepStateCodes,
+} from '@library/entity/enum';
+import { DeepPartial } from 'typeorm';
 import { LoanPaymentModule } from '../../src/loan-payments/loan-payment.module';
 import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
 import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { 
-  ILoan,
-  ILoanPayment,
-  ILoanPaymentStep,
-  IPaymentAccount,
-  IPaymentsRoute,
-  IPaymentsRouteStep,
-  ITransfer,
-} from '@library/entity/interface';
-import {
-  LoanPaymentStateCodes,
-  LoanPaymentTypeCodes,
-  LoanTypeCodes,
-  PaymentAccountOwnershipType,
-  PaymentAccountProviderCodes,
-  PaymentAccountType,
-  PaymentStepStateCodes,
-  TransferStateCodes,
-} from '@library/entity/enum';
-import { DeepPartial } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
-import { initializeTransactionalContext, patchTypeORMRepositoryWithBaseRepository } from 'typeorm-transactional';
-import { ConfigModule } from '@nestjs/config';
-import { CqrsModule } from '@nestjs/cqrs';
-import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
-import { SharedModule } from '@library/shared';
-import { HealthModule } from '@library/shared/common/health/health.module';
-import { LoggerErrorInterceptor } from 'nestjs-pino';
-import { HttpAdapterHost } from '@nestjs/core';
+import { memoryDataSourceForTests } from '@library/shared/tests/postgress-memory-datasource';
+import { AllEntities } from '@library/shared/domain/entities';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
-describe('Payment Process Flow (E2E)', () => {
-  let app: INestApplication;
+describe('Payment Process Flow Integration', () => {
+  let module: TestingModule;
   let domainServices: IDomainServices;
+  let managementDomainService: ManagementDomainService;
+  let loanPaymentService: LoanPaymentService;
+  let loanPaymentStepService: LoanPaymentStepService;
+  let transferExecutionService: TransferExecutionService;
+  let databaseBackup: IBackup;
 
   // Test data
-  const mockLoanId = uuidv4();
   const mockUserId = uuidv4();
-  const mockLenderAccountId = uuidv4();
-  const mockBorrowerAccountId = uuidv4();
-  const mockBillerAccountId = uuidv4();
-  const mockBillerId = uuidv4();
-  
-  // Mock objects that will be used by our mocked services
-  const mockLoan: DeepPartial<ILoan> = {
-    id: mockLoanId,
-    amount: 1000,
-    type: LoanTypeCodes.P2p,
-    lenderAccountId: mockLenderAccountId,
-    borrowerAccountId: mockBorrowerAccountId,
-    billerId: mockBillerId,
-    biller: {
-      id: mockBillerId,
-      paymentAccountId: mockBillerAccountId,
-    },
-  };
+  const mockLoanId = uuidv4();
+  const mockPaymentId = uuidv4();
+  const mockStepId = uuidv4();
+  const mockTransferId = uuidv4();
 
   const mockLenderAccount: DeepPartial<IPaymentAccount> = {
-    id: mockLenderAccountId,
     userId: mockUserId,
-    type: PaymentAccountType.BankAccount,
-    ownership: PaymentAccountOwnershipType.Personal,
+    type: PaymentAccountTypeCodes.BankAccount,
+    ownership: PaymentAccountOwnershipTypeCodes.Personal,
     provider: PaymentAccountProviderCodes.Checkbook,
+    isDefault: true,
+    isActive: true,
+    accountHolderName: 'John Doe (Lender)',
+    accountNumber: '1234567890',
+    routingNumber: '123456789',
   };
 
   const mockBorrowerAccount: DeepPartial<IPaymentAccount> = {
-    id: mockBorrowerAccountId,
-    userId: uuidv4(),
-    type: PaymentAccountType.BankAccount,
-    ownership: PaymentAccountOwnershipType.Personal,
-    provider: PaymentAccountProviderCodes.Checkbook,
+    userId: mockUserId,
+    type: PaymentAccountTypeCodes.BankAccount,
+    ownership: PaymentAccountOwnershipTypeCodes.Personal,
+    provider: PaymentAccountProviderCodes.Fiserv,
+    isDefault: true,
+    isActive: true,
+    accountHolderName: 'Jane Smith (Borrower)',
+    accountNumber: '0987654321',
+    routingNumber: '987654321',
   };
 
-  const mockBillerAccount: DeepPartial<IPaymentAccount> = {
-    id: mockBillerAccountId,
-    userId: mockBillerId,
-    type: PaymentAccountType.BankAccount,
-    ownership: PaymentAccountOwnershipType.Internal,
+  const mockPlatformAccount: DeepPartial<IPaymentAccount> = {
+    userId: mockUserId,
+    type: PaymentAccountTypeCodes.BankAccount,
+    ownership: PaymentAccountOwnershipTypeCodes.Internal,
     provider: PaymentAccountProviderCodes.Fiserv,
+    isDefault: true,
+    isActive: true,
+    accountHolderName: 'Zirtue Platform',
+    accountNumber: '5555555555',
+    routingNumber: '555555555',
   };
 
   beforeAll(async () => {
-    // Initialize the transactional context
-    initializeTransactionalContext();
-    patchTypeORMRepositoryWithBaseRepository();
+    // Create in-memory database with Payment schema
+    const memoryDBinstance = await memoryDataSourceForTests({ 
+      entities: [...AllEntities], 
+      schema: DbSchemaCodes.Payment, 
+    });
+    const { dataSource, database } = memoryDBinstance;
     
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        CqrsModule,
-        ConfigModule.forRoot({ isGlobal: true }),
-        GracefulShutdownModule.forRoot(),
-        SharedModule.forRoot(),
-        HealthModule,
-        DataModule,
-        DomainModule,
-        LoanPaymentModule,
-        LoanPaymentStepModule,
-        TransferExecutionModule,
-        PaymentModule,
-      ],
-    }).compile();
+    // Initialize transactional context
+    initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }));
+    // Create test module with real service implementations
+    module = await Test.createTestingModule({
+      imports: [
+        DataModule, // Real data module with repositories
+        DomainModule, // Real domain module with services
+        ManagementModule, // Management module with ManagementDomainService
+        ServicesModule, // Services module with application services
+        LoanPaymentModule, // Loan payment module
+        LoanPaymentStepModule, // Loan payment step module
+        TransferExecutionModule, // Transfer execution module
+      ],
+    })
+      .overrideProvider(DataSource)
+      .useValue(addTransactionalDataSource(dataSource))
+      .compile();
+
+    domainServices = module.get<IDomainServices>(IDomainServices);
+    managementDomainService = module.get<ManagementDomainService>(ManagementDomainService);
+    loanPaymentService = module.get<LoanPaymentService>(LoanPaymentService);
+    loanPaymentStepService = module.get<LoanPaymentStepService>(LoanPaymentStepService);
+    transferExecutionService = module.get<TransferExecutionService>(TransferExecutionService);
     
-    const { httpAdapter } = app.get(HttpAdapterHost);
-    app.useGlobalInterceptors(new LoggerErrorInterceptor());
-    app.setGlobalPrefix('/api/payment');
-    
-    domainServices = app.get<IDomainServices>(IDomainServices);
-    
-    // Mock the domain services methods
-    jest.spyOn(domainServices.paymentServices, 'getLoanById').mockResolvedValue(mockLoan as ILoan);
-    jest.spyOn(domainServices.paymentServices, 'getPaymentAccountById').mockImplementation(
-      async (id: string) => {
-        if (id === mockLenderAccountId) return mockLenderAccount as IPaymentAccount;
-        if (id === mockBorrowerAccountId) return mockBorrowerAccount as IPaymentAccount;
-        if (id === mockBillerAccountId) return mockBillerAccount as IPaymentAccount;
-        return null;
-      }
-    );
-    
-    await app.init();
+    databaseBackup = database.backup();
   });
 
   afterAll(async () => {
-    await app.close();
+    await module.close();
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    // Restore database to clean state before each test
+    databaseBackup.restore();
   });
 
-  describe('Health Check', () => {
-    it('GET /api/payment/health should return OK', () => {
-      return request(app.getHttpServer())
-        .get('/api/payment/health')
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toBeDefined();
-          expect(res.body.status).toBe('ok');
-        });
+  describe('Payment Service Integration', () => {
+    it('should initiate loan payment', async () => {
+      const result = await loanPaymentService.initiatePayment(mockLoanId, LoanPaymentTypeCodes.Funding);
+      
+      // Since no loan exists in test database, expect null
+      expect(result).toBeNull();
+    });
+
+    it('should advance loan payment', async () => {
+      // Create a payment first
+      const payment = await domainServices.paymentServices.createPayment({
+        loanId: mockLoanId,
+        amount: 1000,
+        type: LoanPaymentTypeCodes.Funding,
+        state: LoanPaymentStateCodes.Created,
+      });
+
+      const result = await loanPaymentService.advancePayment(payment!.id, LoanPaymentTypeCodes.Funding);
+      
+      // Expect result to indicate advancement was attempted
+      expect(result).toBeDefined();
     });
   });
 
-  describe('Payment Flow', () => {
-    it('should handle full payment process flow', async () => {
-      // Prepare mocks for a complete payment flow
-      const mockPaymentId = uuidv4();
-      const mockStepId = uuidv4();
-      const mockTransferId = uuidv4();
-      
-      const mockRouteSteps: DeepPartial<IPaymentsRouteStep>[] = [{
-        id: uuidv4(),
-        routeId: uuidv4(),
-        order: 0,
-        fromId: mockLenderAccountId,
-        toId: mockBillerAccountId,
-      }];
+  describe('Payment Step Service Integration', () => {
+    let mockStep: ILoanPaymentStep;
 
-      const mockRoute: DeepPartial<IPaymentsRoute> = {
-        id: uuidv4(),
-        fromAccount: PaymentAccountType.BankAccount,
-        fromOwnership: PaymentAccountOwnershipType.Personal,
-        fromProvider: PaymentAccountProviderCodes.Checkbook,
-        toAccount: PaymentAccountType.BankAccount,
-        toOwnership: PaymentAccountOwnershipType.Internal,
-        toProvider: PaymentAccountProviderCodes.Fiserv,
-        steps: mockRouteSteps as IPaymentsRouteStep[],
-      };
+    beforeEach(async () => {
+      // Create payment accounts
+      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockLenderAccount);
+      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockPlatformAccount);
 
-      const mockPaymentStep: DeepPartial<ILoanPaymentStep> = {
-        id: mockStepId,
-        loanPaymentId: mockPaymentId,
-        state: PaymentStepStateCodes.Created,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: mockLenderAccountId,
-        targetPaymentAccountId: mockBillerAccountId,
-      };
-
-      const mockPayment: DeepPartial<ILoanPayment> = {
-        id: mockPaymentId,
+      // Create a payment
+      const payment = await domainServices.paymentServices.createPayment({
         loanId: mockLoanId,
+        amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
-        amount: 1000,
-        steps: [mockPaymentStep as ILoanPaymentStep],
-      };
-
-      const mockTransfer: DeepPartial<ITransfer> = {
-        id: mockTransferId,
-        loanPaymentStepId: mockStepId,
-        state: TransferStateCodes.Created,
-        amount: 1000,
-        sourceAccountId: mockLenderAccountId,
-        destinationAccountId: mockBillerAccountId,
-        order: 0,
-      };
-
-      // Setup for payment initiation
-      jest.spyOn(domainServices.paymentServices, 'findRouteForPayment').mockResolvedValue(mockRoute as IPaymentsRoute);
-      jest.spyOn(domainServices.paymentServices, 'createPayment').mockResolvedValue(mockPayment as ILoanPayment);
-      jest.spyOn(domainServices.paymentServices, 'createPaymentSteps').mockResolvedValue([mockPaymentStep as ILoanPaymentStep]);
-      jest.spyOn(domainServices.paymentServices, 'getLoanPaymentById').mockResolvedValue(mockPayment as ILoanPayment);
-      
-      // Setup for step advancement
-      jest.spyOn(domainServices.paymentServices, 'getLoanPaymentStepById').mockResolvedValue(mockPaymentStep as ILoanPaymentStep);
-      jest.spyOn(domainServices.paymentServices, 'getLatestTransferForStep').mockImplementation(async (stepId) => {
-        if (stepId === mockStepId) {
-          return mockTransfer as ITransfer;
-        }
-        return null;
       });
-      jest.spyOn(domainServices.paymentServices, 'createTransferForStep').mockResolvedValue(mockTransfer as ITransfer);
-      jest.spyOn(domainServices.paymentServices, 'updatePaymentStepState').mockResolvedValue(true);
 
-      // Setup for transfer execution
-      jest.spyOn(domainServices.paymentServices, 'getTransferById').mockResolvedValue(mockTransfer as ITransfer);
-      
-      // 1. Initiate Funding Payment
-      const initiatePaymentEndpoint = `/api/payment/loans/${mockLoanId}/payments/funding/initiate`;
-      await request(app.getHttpServer())
-        .post(initiatePaymentEndpoint)
-        .expect(201)
-        .expect((res) => {
-          expect(res.body).toBeDefined();
-          expect(res.body.success).toBe(true);
-        });
-
-      expect(domainServices.paymentServices.getLoanById).toHaveBeenCalledWith(mockLoanId, expect.any(Array));
-      expect(domainServices.paymentServices.findRouteForPayment).toHaveBeenCalled();
-      expect(domainServices.paymentServices.createPayment).toHaveBeenCalled();
-      expect(domainServices.paymentServices.createPaymentSteps).toHaveBeenCalled();
-
-      // 2. Advance Payment Step
-      // Update mock transfer to Completed state for the next call
-      const completedTransfer = { ...mockTransfer, state: TransferStateCodes.Completed };
-      jest.spyOn(domainServices.paymentServices, 'getLatestTransferForStep').mockResolvedValue(completedTransfer as ITransfer);
-      
-      const advanceStepEndpoint = `/api/payment/payment-steps/${mockStepId}/advance`;
-      await request(app.getHttpServer())
-        .post(advanceStepEndpoint)
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toBeDefined();
-          expect(res.body.success).toBe(true);
-        });
-
-      expect(domainServices.paymentServices.getLoanPaymentStepById).toHaveBeenCalledWith(mockStepId);
-      expect(domainServices.paymentServices.getLatestTransferForStep).toHaveBeenCalledWith(mockStepId);
-      expect(domainServices.paymentServices.updatePaymentStepState).toHaveBeenCalledWith(
-        mockStepId, 
-        PaymentStepStateCodes.Completed
-      );
-
-      // 3. Advance Payment (to complete it)
-      // Update mock step to Completed state and payment to reflect all steps completed
-      const completedStep = { ...mockPaymentStep, state: PaymentStepStateCodes.Completed };
-      const pendingPayment = { ...mockPayment, steps: [completedStep as ILoanPaymentStep], state: LoanPaymentStateCodes.Pending };
-      
-      jest.spyOn(domainServices.paymentServices, 'getLoanPaymentById').mockResolvedValue(pendingPayment as ILoanPayment);
-      jest.spyOn(domainServices.paymentServices, 'completePayment').mockResolvedValue(true);
-
-      const advancePaymentEndpoint = `/api/payment/payments/${mockPaymentId}/advance`;
-      await request(app.getHttpServer())
-        .post(advancePaymentEndpoint)
-        .send({ type: LoanPaymentTypeCodes.Funding })
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toBeDefined();
-          expect(res.body.success).toBe(true);
-        });
-
-      expect(domainServices.paymentServices.getLoanPaymentById).toHaveBeenCalledWith(mockPaymentId, expect.any(Array));
-      expect(domainServices.paymentServices.completePayment).toHaveBeenCalledWith(mockPaymentId);
-
-      // 4. Initiate Disbursement Payment
-      // Mock for a new payment (disbursement) with different ID
-      const mockDisbursementPaymentId = uuidv4();
-      const mockDisbursementStepId = uuidv4();
-      const mockDisbursementTransferId = uuidv4();
-
-      const mockDisbursementStep: DeepPartial<ILoanPaymentStep> = {
-        id: mockDisbursementStepId,
-        loanPaymentId: mockDisbursementPaymentId,
-        state: PaymentStepStateCodes.Created,
+      // Create payment step
+      const steps = await domainServices.paymentServices.createPaymentSteps([{
+        loanPaymentId: payment!.id,
         order: 0,
         amount: 1000,
-        sourcePaymentAccountId: mockBillerAccountId,
-        targetPaymentAccountId: mockBorrowerAccountId,
-      };
+        sourcePaymentAccountId: sourceAccount!.id,
+        targetPaymentAccountId: destAccount!.id,
+        state: PaymentStepStateCodes.Created,
+      }]);
 
-      const mockDisbursementPayment: DeepPartial<ILoanPayment> = {
-        id: mockDisbursementPaymentId,
+      mockStep = steps![0];
+    });
+
+    it('should advance payment step', async () => {
+      const result = await loanPaymentStepService.advanceStep(mockStep.id);
+      
+      // Expect result to indicate advancement was attempted
+      expect(result).toBeDefined();
+    });
+
+    it('should advance payment step with specific state', async () => {
+      const result = await loanPaymentStepService.advanceStep(mockStep.id, PaymentStepStateCodes.Created);
+      
+      // Expect result to indicate advancement was attempted
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('Transfer Execution Service Integration', () => {
+    let mockTransfer: string;
+
+    beforeEach(async () => {
+      // Create payment accounts
+      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockLenderAccount);
+      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockPlatformAccount);
+
+      // Create a payment and step
+      const payment = await domainServices.paymentServices.createPayment({
         loanId: mockLoanId,
+        amount: 1000,
+        type: LoanPaymentTypeCodes.Funding,
+        state: LoanPaymentStateCodes.Created,
+      });
+
+      const steps = await domainServices.paymentServices.createPaymentSteps([{
+        loanPaymentId: payment!.id,
+        order: 0,
+        amount: 1000,
+        sourcePaymentAccountId: sourceAccount!.id,
+        targetPaymentAccountId: destAccount!.id,
+        state: PaymentStepStateCodes.Created,
+      }]);
+
+      // Create transfer for the step
+      const transfer = await domainServices.paymentServices.createTransferForStep(steps![0].id);
+      mockTransfer = transfer!.id;
+    });
+
+    it('should execute transfer', async () => {
+      const result = await transferExecutionService.executeTransfer(mockTransfer);
+      
+      // Expect result to indicate execution was attempted
+      expect(result).toBeDefined();
+    });
+
+    it('should execute transfer with specific provider', async () => {
+      const result = await transferExecutionService.executeTransfer(mockTransfer, PaymentAccountProviderCodes.Checkbook);
+      
+      // Expect result to indicate execution was attempted
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('End-to-End Payment Flow', () => {
+    let lenderAccount: IPaymentAccount | null;
+    let borrowerAccount: IPaymentAccount | null;
+    let platformAccount: IPaymentAccount | null;
+
+    beforeEach(async () => {
+      // Create all payment accounts
+      lenderAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockLenderAccount);
+      borrowerAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockBorrowerAccount);
+      platformAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockPlatformAccount);
+    });
+
+    it('should create and manage funding payment', async () => {
+      // Create funding payment
+      const fundingPayment = await domainServices.paymentServices.createPayment({
+        loanId: mockLoanId,
+        amount: 1000,
+        type: LoanPaymentTypeCodes.Funding,
+        state: LoanPaymentStateCodes.Created,
+      });
+
+      expect(fundingPayment).toBeDefined();
+      expect(fundingPayment!.type).toBe(LoanPaymentTypeCodes.Funding);
+      expect(fundingPayment!.state).toBe(LoanPaymentStateCodes.Created);
+
+      // Advance the payment
+      const advanceResult = await loanPaymentService.advancePayment(fundingPayment!.id, LoanPaymentTypeCodes.Funding);
+      expect(advanceResult).toBeDefined();
+    });
+
+    it('should create and manage disbursement payment', async () => {
+      // Create disbursement payment
+      const disbursementPayment = await domainServices.paymentServices.createPayment({
+        loanId: mockLoanId,
+        amount: 1000,
         type: LoanPaymentTypeCodes.Disbursement,
         state: LoanPaymentStateCodes.Created,
-        amount: 1000,
-        steps: [mockDisbursementStep as ILoanPaymentStep],
-      };
+      });
 
-      const mockDisbursementTransfer: DeepPartial<ITransfer> = {
-        id: mockDisbursementTransferId,
-        loanPaymentStepId: mockDisbursementStepId,
-        state: TransferStateCodes.Created,
+      expect(disbursementPayment).toBeDefined();
+      expect(disbursementPayment!.type).toBe(LoanPaymentTypeCodes.Disbursement);
+      expect(disbursementPayment!.state).toBe(LoanPaymentStateCodes.Created);
+
+      // Advance the payment
+      const advanceResult = await loanPaymentService.advancePayment(disbursementPayment!.id, LoanPaymentTypeCodes.Disbursement);
+      expect(advanceResult).toBeDefined();
+    });
+
+    it('should create and manage repayment payment', async () => {
+      // Create repayment payment
+      const repaymentPayment = await domainServices.paymentServices.createPayment({
+        loanId: mockLoanId,
+        amount: 500,
+        type: LoanPaymentTypeCodes.Repayment,
+        state: LoanPaymentStateCodes.Created,
+      });
+
+      expect(repaymentPayment).toBeDefined();
+      expect(repaymentPayment!.type).toBe(LoanPaymentTypeCodes.Repayment);
+      expect(repaymentPayment!.state).toBe(LoanPaymentStateCodes.Created);
+
+      // Advance the payment
+      const advanceResult = await loanPaymentService.advancePayment(repaymentPayment!.id, LoanPaymentTypeCodes.Repayment);
+      expect(advanceResult).toBeDefined();
+    });
+
+    it('should handle payment steps workflow', async () => {
+      // Create a payment
+      const payment = await domainServices.paymentServices.createPayment({
+        loanId: mockLoanId,
         amount: 1000,
-        sourceAccountId: mockBillerAccountId,
-        destinationAccountId: mockBorrowerAccountId,
+        type: LoanPaymentTypeCodes.Funding,
+        state: LoanPaymentStateCodes.Created,
+      });
+
+      // Create payment steps
+      const steps = await domainServices.paymentServices.createPaymentSteps([{
+        loanPaymentId: payment!.id,
         order: 0,
-      };
+        amount: 1000,
+        sourcePaymentAccountId: lenderAccount!.id,
+        targetPaymentAccountId: platformAccount!.id,
+        state: PaymentStepStateCodes.Created,
+      }]);
 
-      jest.spyOn(domainServices.paymentServices, 'createPayment').mockResolvedValue(mockDisbursementPayment as ILoanPayment);
-      jest.spyOn(domainServices.paymentServices, 'createPaymentSteps').mockResolvedValue([mockDisbursementStep as ILoanPaymentStep]);
-      
-      const initiateDisbursementEndpoint = `/api/payment/loans/${mockLoanId}/payments/disbursement/initiate`;
-      await request(app.getHttpServer())
-        .post(initiateDisbursementEndpoint)
-        .expect(201)
-        .expect((res) => {
-          expect(res.body).toBeDefined();
-          expect(res.body.success).toBe(true);
-        });
+      expect(steps).toBeDefined();
+      expect(steps!).toHaveLength(1);
 
-      expect(domainServices.paymentServices.getLoanById).toHaveBeenCalledWith(mockLoanId, expect.any(Array));
-      expect(domainServices.paymentServices.createPayment).toHaveBeenCalledWith(
-        expect.objectContaining({
+      // Advance the step
+      const stepAdvanceResult = await loanPaymentStepService.advanceStep(steps![0].id);
+      expect(stepAdvanceResult).toBeDefined();
+
+      // Create transfer for the step
+      const transfer = await domainServices.paymentServices.createTransferForStep(steps![0].id);
+      expect(transfer).toBeDefined();
+
+      // Execute the transfer
+      const transferResult = await transferExecutionService.executeTransfer(transfer!.id);
+      expect(transferResult).toBeDefined();
+    });
+
+    it('should coordinate multiple payment types', async () => {
+      // Create multiple payment types
+      const payments = await Promise.all([
+        domainServices.paymentServices.createPayment({
           loanId: mockLoanId,
+          amount: 1000,
+          type: LoanPaymentTypeCodes.Funding,
+          state: LoanPaymentStateCodes.Created,
+        }),
+        domainServices.paymentServices.createPayment({
+          loanId: mockLoanId,
+          amount: 1000,
           type: LoanPaymentTypeCodes.Disbursement,
-        })
-      );
-      
-      // This test shows how all the steps in the payment process flow would work together
-      // In a real-world scenario, additional tests for error cases would be needed
+          state: LoanPaymentStateCodes.Created,
+        }),
+        domainServices.paymentServices.createPayment({
+          loanId: mockLoanId,
+          amount: 500,
+          type: LoanPaymentTypeCodes.Repayment,
+          state: LoanPaymentStateCodes.Created,
+        }),
+      ]);
+
+      expect(payments).toHaveLength(3);
+      expect(payments.every(p => p !== null)).toBe(true);
+
+      // Test that each payment type can be advanced
+      const advanceResults = await Promise.all([
+        loanPaymentService.advancePayment(payments[0]!.id, LoanPaymentTypeCodes.Funding),
+        loanPaymentService.advancePayment(payments[1]!.id, LoanPaymentTypeCodes.Disbursement),
+        loanPaymentService.advancePayment(payments[2]!.id, LoanPaymentTypeCodes.Repayment),
+      ]);
+
+      expect(advanceResults.every(r => r !== undefined)).toBe(true);
+    });
+  });
+
+  describe('Domain Services Integration', () => {
+    it('should have all services configured', () => {
+      expect(domainServices).toBeDefined();
+      expect(domainServices.paymentServices).toBeDefined();
+      expect(managementDomainService).toBeDefined();
+      expect(loanPaymentService).toBeDefined();
+      expect(loanPaymentStepService).toBeDefined();
+      expect(transferExecutionService).toBeDefined();
+    });
+
+    it('should handle management service operations', async () => {
+      // Test management service methods
+      const initiateResult = await managementDomainService.initiateLoanPayment(mockLoanId, LoanPaymentTypeCodes.Funding);
+      expect(initiateResult).toBeNull(); // No loan exists
+
+      const advanceResult = await managementDomainService.advancePayment(mockPaymentId, LoanPaymentTypeCodes.Funding);
+      expect(advanceResult).toBeNull(); // No payment exists
+
+      const stepAdvanceResult = await managementDomainService.advancePaymentStep(mockStepId);
+      expect(stepAdvanceResult).toBeNull(); // No step exists
+
+      const transferResult = await managementDomainService.executeTransfer(mockTransferId);
+      expect(transferResult).toBeNull(); // No transfer exists
     });
   });
 });

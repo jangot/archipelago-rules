@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { BaseTransferExecutionProvider } from './base-transfer-execution-provider';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { PaymentDomainService } from '@payment/domain/services';
 
 @Injectable()
 export class CheckbookTransferExecutionProvider extends BaseTransferExecutionProvider {
-  constructor(protected readonly domainServices: IDomainServices) {
-    super(domainServices);
+  constructor(protected readonly paymentDomainService: PaymentDomainService) {
+    super(paymentDomainService);
   }
 
   public async executeTransfer(transferId: string): Promise<boolean | null> {

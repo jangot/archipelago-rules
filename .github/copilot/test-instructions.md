@@ -6,8 +6,10 @@ You are a senior TypeScript test engineer with expertise in the NestJS framework
 
 ZNG tests are written in TypeScript using Jest as the testing framework. The project includes three main types of tests:
 - Unit tests for testing isolated components
-- Integration tests for testing interactions between components
-- End-to-end (E2E) tests for testing complete API flows
+- Integration tests for testing interactions between components (preferring real service implementations where possible)
+- End-to-end (E2E) tests for testing complete API flows (using real service implementations with minimal mocking)
+
+ZNG highly encourages using real service implementations rather than mocks in integration and E2E tests wherever possible, especially within 2-3 levels of dependency injection. This approach ensures tests validate actual service interactions and behaviors while maintaining good test isolation.
 
 ---
 
@@ -201,70 +203,126 @@ Integration tests verify that different components work together correctly.
 ### Principles
 
 - Test the interaction between multiple components.
-- Mock external dependencies (databases, APIs) when necessary.
+- Prefer using real service implementations rather than mocks for up to 2-3 levels of injected dependencies.
+- Only mock external dependencies (databases, APIs, third-party services) when necessary.
 - Focus on testing complete use cases and workflows.
-- Verify that components integrate correctly.
+- Verify that components integrate correctly with their real dependencies.
+- Ensure that the test environment is isolated and repeatable despite using real service implementations.
 
 ### Service Integration Testing
 
-- Test interactions between multiple services.
-- Mock external dependencies but use real implementations of internal services.
-- Verify that data flows correctly between services.
+- Test interactions between multiple services using real service implementations wherever possible.
+- For optimal integration testing, use real implementations of all internal services that are within 2-3 dependency levels.
+- Only mock repositories, external APIs, infrastructure services, and cross-boundary dependencies.
+- Verify that data flows correctly between real service implementations.
+- Use the actual dependency injection container to resolve services rather than manually creating instances.
 
 ```typescript
-describe('Authentication Flow', () => {
+// Example using mocked repository but real service implementations
+describe('Authentication Flow with Real Services', () => {
   let authService: AuthService;
   let userService: UserService;
   let jwtService: JwtService;
   let userRepositoryMock: MockType<IUserRepository>;
+  let emailService: EmailService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
     
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          load: [authConfig],
+        }),
+        JwtModule.registerAsync({
+          imports: [ConfigModule],
+          useFactory: async (configService: ConfigService) => ({
+            secret: configService.get<string>('auth.jwtSecret'),
+            signOptions: { expiresIn: '1h' },
+          }),
+          inject: [ConfigService],
+        }),
+      ],
       providers: [
+        // Real service implementations for up to 3 levels of dependency
         AuthService,
         UserService,
-        JwtService,
+        EmailService,
+        UserMapper,
+        TokenService,
+        // Mock only repositories and external services
         {
           provide: IUserRepository,
           useFactory: mockRepositoryFactory
-        }
+        },
+        {
+          provide: IExternalNotificationService,
+          useFactory: () => ({
+            sendNotification: jest.fn().mockResolvedValue(true),
+          }),
+        },
       ]
     }).compile();
 
+    // Get real service instances from the DI container
     authService = module.get<AuthService>(AuthService);
     userService = module.get<UserService>(UserService);
     jwtService = module.get<JwtService>(JwtService);
+    emailService = module.get<EmailService>(EmailService);
+    
+    // Get mocked repositories
     userRepositoryMock = module.get(IUserRepository);
   });
 
-  it('should authenticate user and return JWT token', async () => {
+  it('should authenticate user and return JWT token using real service implementations', async () => {
     // Arrange
     const loginRequest = { email: 'user@example.com', password: 'password123' };
     const user: IApplicationUser = {
       id: '123',
       email: loginRequest.email,
-      passwordHash: 'hashed_password',
+      passwordHash: await bcrypt.hash('password123', 10), // Use real bcrypt for better integration testing
+      isActive: true,
       // ...other properties
     };
-    const expectedToken = 'jwt_token';
     
     userRepositoryMock.findOneBy.mockReturnValue(Promise.resolve(user));
-    jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
-    jest.spyOn(jwtService, 'sign').mockReturnValue(expectedToken);
     
     // Act
     const result = await authService.validateUserAndGenerateToken(loginRequest);
     
     // Assert
     expect(userRepositoryMock.findOneBy).toHaveBeenCalledWith({ email: loginRequest.email });
-    expect(bcrypt.compare).toHaveBeenCalledWith(loginRequest.password, user.passwordHash);
-    expect(jwtService.sign).toHaveBeenCalledWith({ sub: user.id, email: user.email });
-    expect(result).toEqual({ 
-      accessToken: expectedToken,
-      user: expect.objectContaining({ id: user.id, email: user.email })
-    });
+    expect(result).toHaveProperty('accessToken');
+    expect(result.accessToken).toBeDefined();
+    expect(result.user).toHaveProperty('id', user.id);
+    expect(result.user).toHaveProperty('email', user.email);
+  });
+  
+  it('should use real EmailService implementation when sending password reset', async () => {
+    // Arrange
+    const email = 'user@example.com';
+    const user: IApplicationUser = {
+      id: '123',
+      email: email,
+      // ...other properties
+    };
+    const resetToken = 'reset-token-123';
+    
+    userRepositoryMock.findOneBy.mockReturnValue(Promise.resolve(user));
+    jest.spyOn(TokenService.prototype, 'generateResetToken').mockReturnValue(resetToken);
+    jest.spyOn(emailService, 'sendPasswordResetEmail');
+    
+    // Act
+    await authService.initiatePasswordReset(email);
+    
+    // Assert
+    expect(userRepositoryMock.findOneBy).toHaveBeenCalledWith({ email });
+    // Verify that the real EmailService was called with correct parameters
+    expect(emailService.sendPasswordResetEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ email, id: user.id }),
+      resetToken
+    );
   });
 });
 ```
@@ -274,6 +332,24 @@ describe('Authentication Flow', () => {
 - Test repositories with a test database or in-memory database.
 - Focus on testing complex queries and transactions.
 - Verify that database operations work correctly.
+
+### Real Service Implementation Approach
+
+- Use a layered approach to mocking based on test type and dependency depth:
+  - **Level 1**: Core business services - Use real implementations in both integration and E2E tests
+  - **Level 2**: Supporting services - Use real implementations in integration and E2E tests
+  - **Level 3**: Infrastructure services - Use real implementations in E2E tests, mock in integration tests
+  - **External dependencies**: Always mock in integration tests, consider mocking in E2E tests
+
+- In integration tests:
+  - Create a dedicated test module with real service implementations for the service under test and its immediate dependencies
+  - Only mock repositories, external APIs, and cross-boundary services
+  - Configure the test module to use the actual NestJS dependency injection system
+
+- In E2E tests:
+  - Use the complete application configuration with minimal overrides
+  - Only mock true external dependencies (third-party services, payment processors, etc.)
+  - Use a dedicated test database to ensure test isolation
 
 ```typescript
 describe('LoanRepository Integration', () => {
@@ -344,16 +420,20 @@ E2E tests verify that the entire application works correctly from the user's per
 
 ### Principles
 
-- Test complete user flows through the API.
-- Use a test database or in-memory database.
-- Focus on testing endpoints and their responses.
-- Verify that authentication, validation, and business logic work correctly together.
+- Test complete user flows through the API using the actual application with real service implementations.
+- Avoid mocking internal services in E2E tests - use the complete dependency chain to test the full system integration.
+- Use a dedicated test database (preferably in-memory) to ensure test isolation.
+- Focus on testing endpoints and their responses in real-world scenarios.
+- Verify that authentication, validation, and business logic work correctly together within the full application context.
+- Test the application configuration, middleware, pipes, guards, and interceptors as they would run in production.
 
 ### Controller E2E Testing
 
-- Test API endpoints with real HTTP requests.
-- Verify request validation, authentication, and authorization.
-- Test success and error responses.
+- Test API endpoints with real HTTP requests against a fully configured application.
+- Use real service implementations throughout the dependency chain whenever possible.
+- Verify request validation, authentication, and authorization with actual middleware, guards, and pipes.
+- Test success and error responses in real-world scenarios.
+- Only mock true external dependencies that would connect to third-party systems.
 
 ```typescript
 describe('AuthController (e2e)', () => {
@@ -435,9 +515,185 @@ describe('AuthController (e2e)', () => {
 
 ### Complex Flow E2E Testing
 
-- Test multi-step user flows.
-- Verify that state is correctly maintained between requests.
-- Test that business rules are enforced correctly.
+- Test multi-step user flows with real service implementations throughout the dependency chain.
+- Verify that state is correctly maintained between requests using the actual service implementations.
+- Test that business rules are enforced correctly across the entire application.
+- Use real services to validate cross-cutting concerns like notifications, validations, and access control.
+
+#### Example of a Comprehensive E2E Test with Real Services
+
+```typescript
+// Example of a comprehensive E2E test with real service implementations
+describe('Loan Application and Approval Flow (e2e with real services)', () => {
+  let app: INestApplication;
+  let jwtService: JwtService;
+  let connection: Connection;
+  let userService: UserService;
+  let loanService: LoanService;
+  
+  // Test users and tokens
+  let borrowerToken: string;
+  let lenderToken: string;
+  const testBorrowerId = 'test-borrower-id';
+  const testLenderId = 'test-lender-id';
+
+  beforeAll(async () => {
+    // Create the complete application with almost no mocks
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        // Import the entire application module including all its dependencies
+        AppModule, 
+        
+        // Override database connection to use in-memory SQLite
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          useFactory: () => ({
+            type: 'sqlite',
+            database: ':memory:',
+            entities: [
+              ApplicationUser, 
+              UserProfile, 
+              Loan, 
+              Payment, 
+              LoanTerms,
+              NotificationDefinition
+            ],
+            synchronize: true,
+            logging: false,
+          }),
+          inject: [ConfigService],
+        }),
+      ],
+    })
+      // Only mock external services that would connect to third-party systems
+      .overrideProvider(IPaymentGatewayService)
+      .useValue({
+        processPayment: jest.fn().mockResolvedValue({ 
+          id: 'test-payment-id',
+          status: 'completed'
+        }),
+        refundPayment: jest.fn().mockResolvedValue(true),
+      })
+      .overrideProvider(INotificationDistributionService)
+      .useValue({
+        sendNotification: jest.fn().mockResolvedValue(true),
+      })
+      .compile();
+
+    // Create full application including pipes, guards, interceptors
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalFilters(new HttpExceptionFilter());
+    await app.init();
+    
+    // Get services directly from the application's DI container
+    connection = moduleFixture.get<Connection>(Connection);
+    jwtService = moduleFixture.get<JwtService>(JwtService);
+    userService = moduleFixture.get<UserService>(UserService);
+    loanService = moduleFixture.get<LoanService>(LoanService);
+    
+    // Seed test data using the actual services (not SQL queries)
+    // This exercises the real service implementations
+    const passwordHash = await bcrypt.hash('Password123', 10);
+    
+    // Create borrower user
+    const borrower = await userService.createUser({
+      id: testBorrowerId,
+      email: 'borrower@example.com',
+      passwordHash,
+      firstName: 'Test',
+      lastName: 'Borrower',
+      role: UserRole.BORROWER,
+      isActive: true,
+    });
+    
+    // Create lender user
+    const lender = await userService.createUser({
+      id: testLenderId,
+      email: 'lender@example.com',
+      passwordHash,
+      firstName: 'Test',
+      lastName: 'Lender',
+      role: UserRole.LENDER,
+      isActive: true,
+    });
+    
+    // Generate real JWT tokens
+    borrowerToken = jwtService.sign({ 
+      sub: borrower.id, 
+      email: borrower.email,
+      role: UserRole.BORROWER
+    });
+    
+    lenderToken = jwtService.sign({ 
+      sub: lender.id, 
+      email: lender.email,
+      role: UserRole.LENDER
+    });
+  });
+
+  afterAll(async () => {
+    await connection.close();
+    await app.close();
+  });
+
+  it('should complete full loan lifecycle with real service implementations', async () => {
+    // Step 1: Borrower creates loan request
+    const createLoanResponse = await request(app.getHttpServer())
+      .post('/loans/request')
+      .set('Authorization', `Bearer ${borrowerToken}`)
+      .send({
+        amount: 1000,
+        purpose: 'Home repair',
+        termMonths: 12,
+      })
+      .expect(201);
+    
+    const loanId = createLoanResponse.body.id;
+    
+    // Verify real service state after request creation
+    const loanAfterCreation = await loanService.getLoanById(loanId);
+    expect(loanAfterCreation.status).toBe(LoanStatus.PENDING);
+    expect(loanAfterCreation.borrowingUserId).toBe(testBorrowerId);
+
+    // Step 2: Lender approves loan request
+    await request(app.getHttpServer())
+      .patch(`/loans/${loanId}/approve`)
+      .set('Authorization', `Bearer ${lenderToken}`)
+      .expect(200);
+    
+    // Step 3: Verify loan status was updated using real service implementation
+    const loanAfterApproval = await loanService.getLoanById(loanId);
+    expect(loanAfterApproval.status).toBe(LoanStatus.APPROVED);
+    expect(loanAfterApproval.lendingUserId).toBe(testLenderId);
+    
+    // Step 4: Lender funds the approved loan
+    await request(app.getHttpServer())
+      .post(`/loans/${loanId}/fund`)
+      .set('Authorization', `Bearer ${lenderToken}`)
+      .send({
+        paymentMethodId: 'test-payment-method',
+      })
+      .expect(200);
+    
+    // Step 5: Borrower makes a payment
+    const paymentResponse = await request(app.getHttpServer())
+      .post(`/loans/${loanId}/payments`)
+      .set('Authorization', `Bearer ${borrowerToken}`)
+      .send({
+        amount: 100,
+        paymentMethodId: 'test-payment-method',
+      })
+      .expect(201);
+    
+    // Step 6: Verify final state using real service implementation
+    const payments = await loanService.getLoanPaymentsByLoanId(loanId);
+    expect(payments).toHaveLength(1);
+    expect(payments[0].amount).toBe(100);
+    expect(payments[0].status).toBe(PaymentStatus.COMPLETED);
+  });
+});
+```
 
 ```typescript
 describe('Loan Application Flow (e2e)', () => {
@@ -649,20 +905,116 @@ export const createTestLoan = (overrides: Partial<ILoan> = {}): ILoan => ({
 
 ### In-Memory Database Setup
 
-Set up an in-memory database for testing to avoid relying on external databases.
+ZNG uses `pg-mem` for in-memory PostgreSQL database testing. Use the `memoryDataSourceForTests` utility function to set up test databases with proper schema isolation.
+
+#### Basic Database Setup for Integration Tests
 
 ```typescript
-// Create a testing database connection
-export const createTestingConnection = async (entities: any[]) => {
-  return await createConnection({
-    type: 'sqlite',
-    database: ':memory:',
-    entities,
-    dropSchema: true,
-    synchronize: true,
-    logging: false,
+import { IBackup } from 'pg-mem';
+import { DataSource } from 'typeorm';
+import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
+import { Test, TestingModule } from '@nestjs/testing';
+import { memoryDataSourceForTests } from '@library/shared/tests/postgress-memory-datasource';
+import { AllEntities } from '@library/shared/domain/entities';
+import { DbSchemaCodes } from '@library/shared/common/data';
+
+describe('Service Integration Tests', () => {
+  let module: TestingModule;
+  let service: YourService;
+  let databaseBackup: IBackup;
+
+  beforeAll(async () => {
+    // Create in-memory database with appropriate schema
+    const memoryDBinstance = await memoryDataSourceForTests({ 
+      entities: [...AllEntities], 
+      schema: DbSchemaCodes.Core // Use appropriate schema: Core, Payment, or Notification
+    });
+    const { dataSource, database } = memoryDBinstance;
+    
+    // Initialize transactional context
+    initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
+
+    // Create test module with real database connection
+    module = await Test.createTestingModule({ 
+      imports: [YourModule] // Import the actual module
+    })
+      .overrideProvider(DataSource)
+      .useValue(addTransactionalDataSource(dataSource))
+      .compile();
+
+    service = module.get<YourService>(YourService);
+    databaseBackup = database.backup();
   });
-};
+
+  afterAll(async () => {
+    await module.close();
+  });
+
+  beforeEach(() => {
+    // Restore database to clean state before each test
+    databaseBackup.restore();
+  });
+
+  // Your tests here
+});
+```
+
+#### Schema Selection Guidelines
+
+- **Core API tests**: Use `DbSchemaCodes.Core`
+- **Payment API tests**: Use `DbSchemaCodes.Payment` 
+- **Notification API tests**: Use `DbSchemaCodes.Notification`
+
+#### Database Backup and Restore Pattern
+
+Use the backup/restore pattern to ensure test isolation:
+- Create a backup after initial database setup in `beforeAll`
+- Restore the backup in `beforeEach` to reset database state
+- This is much faster than recreating the database for each test
+
+#### Real Service Implementation with Database
+
+```typescript
+// Example for Payment domain integration test
+describe('PaymentDomainService Integration', () => {
+  let module: TestingModule;
+  let paymentDomainService: PaymentDomainService;
+  let databaseBackup: IBackup;
+
+  beforeAll(async () => {
+    const memoryDBinstance = await memoryDataSourceForTests({ 
+      entities: [...AllEntities], 
+      schema: DbSchemaCodes.Payment // Payment entities use Payment schema
+    });
+    const { dataSource, database } = memoryDBinstance;
+    initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
+
+    module = await Test.createTestingModule({ 
+      imports: [DomainModule, DataModule] // Use real modules
+    })
+      .overrideProvider(DataSource)
+      .useValue(addTransactionalDataSource(dataSource))
+      .compile();
+
+    paymentDomainService = module.get<PaymentDomainService>(PaymentDomainService);
+    databaseBackup = database.backup();
+  });
+
+  beforeEach(() => {
+    databaseBackup.restore();
+  });
+
+  it('should create and retrieve payment with real database', async () => {
+    // Test with actual database operations
+    const payment = await paymentDomainService.createPayment(mockPaymentData);
+    const retrieved = await paymentDomainService.getPaymentById(payment.id);
+    
+    expect(retrieved).toEqual(expect.objectContaining({
+      id: payment.id,
+      amount: mockPaymentData.amount
+    }));
+  });
+});
 ```
 
 ---
@@ -675,11 +1027,19 @@ export const createTestingConnection = async (entities: any[]) => {
 - Use Jest's coverage reports to identify areas that need more testing.
 - Focus on quality over quantity—ensure tests are meaningful and cover edge cases.
 
+### Real Service Implementation Testing
+
+- Prefer testing with real service implementations for up to 2-3 levels of dependency.
+- Only mock repositories, external APIs, and cross-boundary services.
+- Use in-memory databases for integration and E2E tests to ensure test isolation and performance.
+- Separate tests that use real service implementations from pure unit tests to maintain clear test organization.
+- When using real service implementations, test cross-cutting concerns like validation and error handling.
+
 ### Performance
 
-- Keep tests fast by using mocks and in-memory databases.
+- Keep tests fast by using in-memory databases and selective mocking of expensive operations.
 - Use `beforeAll` and `afterAll` hooks for expensive setup/teardown operations.
-- Avoid unnecessary database operations in tests.
+- For tests with real service implementations, reuse the test fixture across related test cases.
 
 ### Maintainability
 
@@ -692,6 +1052,165 @@ export const createTestingConnection = async (entities: any[]) => {
 - Group tests logically by feature or component.
 - Use descriptive test names that clearly indicate what is being tested.
 - Include both positive and negative test cases.
+
+### Real Service Testing Strategy for ZNG
+
+Below is a comprehensive guide on applying real service implementations in integration and E2E tests specifically for the ZNG architecture:
+
+#### Applying Real Service Testing to ZNG's Architecture
+
+ZNG's architecture is designed with a clear separation of concerns and dependency injection principles, making it ideal for integration and E2E testing with real service implementations. Follow these guidelines when implementing real service tests in the ZNG project:
+
+#### Core Business Domains
+
+In the ZNG architecture, core business domains include:
+
+1. **Lending Domain** (`apps/core/src/lending`):
+   - Contains LoanService, PaymentService, and other loan-related services
+   - Always use real implementations in integration and E2E tests
+
+2. **User Domain** (`apps/core/src/users`):
+   - Contains UserService, AuthService, and user-related services
+   - Always use real implementations in integration and E2E tests
+
+3. **Notification Domain** (`apps/notification/src/domain`):
+   - Contains NotificationService and notification-related services
+   - Always use real implementations in integration and E2E tests
+
+4. **Payment Domain** (`apps/payment/src/domain`):
+   - Contains TransferService, AccountService, and payment-related services
+   - Always use real implementations in integration and E2E tests
+
+#### Service Testing Layering Strategy for ZNG
+
+1. **Domain Services** (e.g., `LoanService`, `UserService`):
+   - Use real implementations in both integration and E2E tests
+   - Example: When testing `AuthService`, use the real `UserService` implementation
+
+2. **Infrastructure Services** (e.g., `EmailService`, `LoggingService`):
+   - Use real implementations in E2E tests
+   - May mock in unit/integration tests if they have external dependencies
+   - Example: Mock `EmailService` in integration tests but use real implementation in E2E tests
+
+3. **External Services** (e.g., `PaymentGatewayService`, third-party APIs):
+   - Always mock in both integration and E2E tests
+   - Example: Mock `PaymentGatewayService` that would connect to Stripe or PayPal
+
+#### Repository Tests in ZNG
+
+For ZNG's repository testing strategy:
+
+1. **Standard Repository Methods**:
+   - Provided by `RepositoryBase<T>` - no need to test extensively
+   - Focus on testing custom repository methods
+
+2. **Custom Repository Methods**:
+   - Test with real TypeORM connections using in-memory SQLite database
+   - Use the actual entity models rather than mocks
+
+#### Practical Implementation in ZNG
+
+##### Creating Test Modules for Integration Tests
+
+For ZNG integration tests, create test modules that:
+
+1. Import related domain modules
+2. Use real services for 2-3 dependency levels
+3. Mock only repositories and external dependencies
+
+Example for LoanService integration tests:
+
+```typescript
+// Test module for loan domain integration tests
+const createTestModule = async () => {
+  return await Test.createTestingModule({
+    imports: [
+      // Import domain modules with real service implementations
+      LoanDomainModule,
+      UserDomainModule,
+      NotificationModule,
+      
+      // Configure in-memory database
+      TypeOrmModule.forRoot({
+        type: 'sqlite',
+        database: ':memory:',
+        entities: [ApplicationUser, Loan, Payment, LoanTerms, UserProfile],
+        synchronize: true,
+      }),
+    ],
+    providers: [
+      // Additional providers if needed
+    ],
+  })
+  // Mock repositories and external services only
+  .overrideProvider(IExternalPaymentGatewayService)
+  .useValue(mockPaymentGateway)
+  .compile();
+};
+```
+
+##### E2E Test Structure for ZNG
+
+For ZNG E2E tests, use the test fixtures in the respective `/test` directories:
+
+1. **Core API**:
+   - Test files in `apps/core/test/` 
+   - Tests should exercise full API flows with real services
+   - Example: Complete loan application process from request to payment
+
+2. **Notification API**:
+   - Test files in `apps/notification/test/`
+   - Tests should verify notification delivery flows with real service implementations
+   - Mock only external notification channels
+
+3. **Payment API**:
+   - Test files in `apps/payment/test/`
+   - Tests should verify payment processing with real service implementations
+   - Mock only external payment gateways
+
+##### Example Test Implementation for ZNG Architecture
+
+For example, when testing the loan approval flow:
+
+```typescript
+// apps/core/test/lending/loan-approval.e2e-spec.ts
+describe('Loan Approval E2E', () => {
+  let app: INestApplication;
+  let loanService: LoanService;
+  let userService: UserService;
+  let notificationService: NotificationService;
+  
+  beforeAll(async () => {
+    // Create test module with real implementations
+    const moduleFixture = await Test.createTestingModule({
+      imports: [CoreModule], // Import entire core module
+    })
+    .overrideProvider(IPaymentGatewayService)
+    .useValue(mockPaymentGateway)
+    .compile();
+    
+    // Configure app with all middleware, pipes, guards
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalFilters(new HttpExceptionFilter());
+    await app.init();
+    
+    // Get real service implementations from DI container
+    loanService = moduleFixture.get<LoanService>(LoanService);
+    userService = moduleFixture.get<UserService>(UserService);
+    notificationService = moduleFixture.get<NotificationService>(NotificationService);
+    
+    // Rest of the setup...
+  });
+  
+  it('should approve and fund a loan with real service interactions', async () => {
+    // Test implementation that uses real services
+    // ...
+  });
+});
+```
+
+By following these guidelines, ZNG's tests will validate real service interactions while maintaining test isolation and reliability.
 
 ---
 
@@ -911,3 +1430,8 @@ To guide GitHub Copilot effectively when writing tests, include inline comments 
 - `// Mock external dependencies but use real implementations for internal services`
 - `// Use the test database connection from the test helpers module`
 - `// Verify transaction rollback behavior by forcing a failure`
+- `// Use real service implementations for this integration test (2-3 levels deep)`
+- `// Only mock repositories and external APIs, use real service implementations for everything else`
+- `// Create a comprehensive E2E test with real services to validate the entire flow`
+- `// Use TestingModule to get actual service implementations from the DI container`
+- `// This is a cross-cutting test - use real service implementations to validate interactions`

@@ -1,6 +1,6 @@
 import { LoanPaymentType, PaymentAccountProvider, PaymentStepState } from '@library/entity/enum';
 import { ILoanPayment } from '@library/entity/interface';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ILoanPaymentFactory } from '@payment/loan-payments';
 import { ILoanPaymentStepFactory } from '@payment/loan-payment-steps/interfaces';
 import { isArray } from 'lodash';
@@ -15,9 +15,9 @@ export class ManagementDomainService {
   protected readonly logger = new Logger(ManagementDomainService.name);
 
   constructor(
-    private readonly loanPaymentFactory: ILoanPaymentFactory,
-    private readonly loanPaymentStepFactory: ILoanPaymentStepFactory,
-    private readonly transferExecutionFactory: ITransferExecutionFactory
+    @Inject(ILoanPaymentFactory) private readonly loanPaymentFactory: ILoanPaymentFactory,
+    @Inject(ILoanPaymentStepFactory) private readonly loanPaymentStepFactory: ILoanPaymentStepFactory,
+    @Inject(ITransferExecutionFactory) private readonly transferExecutionFactory: ITransferExecutionFactory
   ) {}
 
   /**

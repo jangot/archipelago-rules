@@ -1,6 +1,6 @@
 import { PaymentAccountProvider } from '@library/entity/enum';
 import { Injectable, Logger } from '@nestjs/common';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { ManagementDomainService } from '@payment/domain/services';
 
 /**
  * Service responsible for executing and monitoring transfers for loan payment steps
@@ -9,7 +9,7 @@ import { IDomainServices } from '@payment/domain/idomain.services';
 export class TransferExecutionService {
   private readonly logger: Logger = new Logger(TransferExecutionService.name);
 
-  constructor(private readonly domainServices: IDomainServices) {}
+  constructor(private readonly managementDomainService: ManagementDomainService) {}
 
   /**
    * Executes a transfer by its ID, optionally specifying the provider type.
@@ -23,7 +23,7 @@ export class TransferExecutionService {
   public async executeTransfer(transferId: string, providerType: PaymentAccountProvider): Promise<boolean | null>;
   public async executeTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
     this.logger.debug(`Executing transfer ${transferId} ${providerType ? `with provider ${providerType}` : ''}`);
-    return this.domainServices.management.executeTransfer(transferId, providerType);
+    return this.managementDomainService.executeTransfer(transferId, providerType);
   }
 
 }

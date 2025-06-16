@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BasePaymentStepManager } from './base-payment-step-manager';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { PaymentDomainService } from '@payment/domain/services';
 import { PaymentStepStateCodes } from '@library/entity/enum';
 import { PaymentStepStateIsOutOfSyncException } from '@payment/domain/exceptions';
 
@@ -8,8 +8,8 @@ import { PaymentStepStateIsOutOfSyncException } from '@payment/domain/exceptions
 export class FailedStepManager extends BasePaymentStepManager {
 
 
-  constructor(protected readonly domainServices: IDomainServices) {
-    super(domainServices, PaymentStepStateCodes.Failed);
+  constructor(protected readonly paymentDomainService: PaymentDomainService) {
+    super(paymentDomainService, PaymentStepStateCodes.Failed);
   }
 
   /**

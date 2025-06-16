@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BasePaymentStepManager } from './base-payment-step-manager';
 import { PaymentStepStateCodes } from '@library/entity/enum';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { PaymentDomainService } from '@payment/domain/services';
 import { PaymentStepStateIsOutOfSyncException } from '@payment/domain/exceptions';
 import { Transactional } from 'typeorm-transactional';
 
@@ -9,8 +9,8 @@ import { Transactional } from 'typeorm-transactional';
 export class CreatedStepManager extends BasePaymentStepManager {
 
 
-  constructor(protected readonly domainServices: IDomainServices) {
-    super(domainServices, PaymentStepStateCodes.Created);
+  constructor(protected readonly paymentDomainService: PaymentDomainService) {
+    super(paymentDomainService, PaymentStepStateCodes.Created);
   }
 
   /**
@@ -22,7 +22,7 @@ export class CreatedStepManager extends BasePaymentStepManager {
    */
   protected async onTransferCreated(stepId: string, transferId: string): Promise<boolean | null> {
     this.logger.debug(`Step: ${stepId} is in Created state, Transfer: ${transferId} is Created. Updating Step state to Pending.`);
-    return this.domainServices.paymentServices.updatePaymentStepState(stepId, PaymentStepStateCodes.Pending);
+    return this.paymentDomainService.updatePaymentStepState(stepId, PaymentStepStateCodes.Pending);
   }
 
   /**
@@ -70,8 +70,8 @@ export class CreatedStepManager extends BasePaymentStepManager {
   @Transactional()
   protected async onTransferNotFound(stepId: string): Promise<boolean | null> {
     this.logger.debug(`Step: ${stepId} is in Created state, Transfer not found. Creating a new Transfer.`);
-    const transfer = await this.domainServices.paymentServices.createTransferForStep(stepId);
-    const stepUpdate = await this.domainServices.paymentServices.updatePaymentStepState(stepId, PaymentStepStateCodes.Pending);
+    const transfer = await this.paymentDomainService.createTransferForStep(stepId);
+    const stepUpdate = await this.paymentDomainService.updatePaymentStepState(stepId, PaymentStepStateCodes.Pending);
     if (!transfer) {
       this.logger.error(`Failed to create a transfer for step ${stepId}`);
       return false;

@@ -1,6 +1,6 @@
 import { PaymentAccountProvider, PaymentAccountProviderCodes } from '@library/entity/enum';
 import { ITransferExecutionFactory, ITransferExecutionProvider } from './interface';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { PaymentDomainService } from '@payment/domain/services';
 import { TRANSFER_RELATIONS } from '@library/shared/domain/entities/relations';
 import { ITransfer } from '@library/entity/interface';
 import { Injectable } from '@nestjs/common';
@@ -9,7 +9,7 @@ import { CheckbookTransferExecutionProvider, FiservTransferExecutionProvider, Mo
 @Injectable()
 export class TransferExecutionFactory implements ITransferExecutionFactory {
   constructor(
-    private readonly domainServices: IDomainServices,
+    private readonly paymentDomainService: PaymentDomainService,
     private readonly mockedProvider: MockTransferExecutionProvider,
     private readonly checkbookProvider: CheckbookTransferExecutionProvider,
     private readonly fiservProvider: FiservTransferExecutionProvider,
@@ -18,7 +18,7 @@ export class TransferExecutionFactory implements ITransferExecutionFactory {
 
   public async getProvider(transferId: string, providerType?: PaymentAccountProvider): Promise<ITransferExecutionProvider> {
     if (providerType) return this.getProviderByType(providerType);
-    const transfer = await this.domainServices.paymentServices.getTransferById(
+    const transfer = await this.paymentDomainService.getTransferById(
       transferId, 
       [TRANSFER_RELATIONS.SourceAccount, TRANSFER_RELATIONS.DestinationAccount]
     );

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { LoanPaymentStepFactory } from './loan-payment-step.factory';
+import { ILoanPaymentStepFactory } from './interfaces';
 import { 
   CreatedStepManager,
   PendingStepManager,
@@ -7,15 +9,17 @@ import {
   CompletedStepManager,
 } from './managers';
 import { DataModule } from '../data/data.module';
-import { DomainModule } from '../domain/domain.module';
+import { PaymentDomainService } from '../domain/services';
 
 /**
  * Module for handling loan payment step operations
  */
 @Module({
-  imports: [DataModule, DomainModule],
+  imports: [ConfigModule, DataModule],
   providers: [
+    PaymentDomainService,
     LoanPaymentStepFactory,
+    { provide: ILoanPaymentStepFactory, useClass: LoanPaymentStepFactory },
     CreatedStepManager,
     PendingStepManager,
     FailedStepManager,
@@ -23,6 +27,7 @@ import { DomainModule } from '../domain/domain.module';
   ],
   exports: [
     LoanPaymentStepFactory,
+    ILoanPaymentStepFactory,
   ],
 })
 export class LoanPaymentStepModule {}

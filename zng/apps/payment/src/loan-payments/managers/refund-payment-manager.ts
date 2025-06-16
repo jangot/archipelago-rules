@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
 import { ILoan, ILoanPayment } from '@library/entity/interface';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { PaymentDomainService } from '@payment/domain/services';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
 
 /**
@@ -9,8 +9,8 @@ import { LoanPaymentTypeCodes } from '@library/entity/enum';
  */
 @Injectable()
 export class RefundPaymentManager extends BaseLoanPaymentManager {
-  constructor(protected readonly domainServices: IDomainServices) {
-    super(domainServices, LoanPaymentTypeCodes.Refund);
+  constructor(protected readonly paymentDomainService: PaymentDomainService) {
+    super(paymentDomainService, LoanPaymentTypeCodes.Refund);
   }
 
   /**

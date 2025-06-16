@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
 import { ILoan, ILoanPayment, ILoanPaymentStep } from '@library/entity/interface';
 import { Loan } from '@library/shared/domain/entities';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { PaymentDomainService } from '@payment/domain/services';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
 import { LOAN_PAYMENT_RELATIONS, LOAN_RELATIONS } from '@library/shared/domain/entities/relations';
 import { DeepPartial } from 'typeorm';
@@ -13,8 +13,8 @@ import { ScheduleService } from '@library/shared/services';
  */
 @Injectable()
 export class RepaymentPaymentManager extends BaseLoanPaymentManager {
-  constructor(protected readonly domainServices: IDomainServices) {
-    super(domainServices, LoanPaymentTypeCodes.Repayment);
+  constructor(protected readonly paymentDomainService: PaymentDomainService) {
+    super(paymentDomainService, LoanPaymentTypeCodes.Repayment);
   }
 
   /**
@@ -56,7 +56,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
     });
 
     // Create payments from the repayment plan
-    const repayments = await this.domainServices.paymentServices.saveRepaymentPlan(repaymentPlan, loanId);
+    const repayments = await this.paymentDomainService.saveRepaymentPlan(repaymentPlan, loanId);
 
     if (!repayments || !repayments.length) {
       this.logger.error(`Failed to create repayment payments for loan ${loanId}`);
@@ -75,8 +75,8 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
     });
 
     // Save steps and return payments with their steps
-    await this.domainServices.paymentServices.createPaymentSteps(generatedSteps);
-    return this.domainServices.paymentServices.getPaymentsByIds(
+    await this.paymentDomainService.createPaymentSteps(generatedSteps);
+    return this.paymentDomainService.getPaymentsByIds(
       repayments.map(r => r.id), 
       [LOAN_PAYMENT_RELATIONS.Steps]
     );

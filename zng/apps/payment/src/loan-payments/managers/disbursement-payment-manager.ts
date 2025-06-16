@@ -2,15 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
 import { ILoan, ILoanPayment, IPaymentsRouteStep } from '@library/entity/interface';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { PaymentDomainService } from '@payment/domain/services';
 
 /**
  * Handles loan disbursement payments
  */
 @Injectable()
 export class DisbursementPaymentManager extends BaseLoanPaymentManager {
-  constructor(protected readonly domainServices: IDomainServices) {
-    super(domainServices, LoanPaymentTypeCodes.Disbursement);
+  constructor(protected readonly paymentDomainService: PaymentDomainService) {
+    super(paymentDomainService, LoanPaymentTypeCodes.Disbursement);
   }
 
   /**

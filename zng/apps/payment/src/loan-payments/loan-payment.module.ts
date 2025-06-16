@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { 
   FundingPaymentManager, 
   DisbursementPaymentManager, 
@@ -7,16 +8,19 @@ import {
   RefundPaymentManager, 
 } from './managers';
 import { LoanPaymentFactory } from './loan-payment.factory';
+import { ILoanPaymentFactory } from './interfaces';
 import { DataModule } from '@payment/data/data.module';
-import { DomainModule } from '../domain/domain.module';
+import { PaymentDomainService } from '@payment/domain/services';
 
 /**
  * Module for handling loan payment operations
  */
 @Module({
-  imports: [DataModule, DomainModule],
+  imports: [ConfigModule, DataModule],
   providers: [
+    PaymentDomainService,
     LoanPaymentFactory,
+    { provide: ILoanPaymentFactory, useClass: LoanPaymentFactory },
     FundingPaymentManager,
     DisbursementPaymentManager,
     RepaymentPaymentManager,
@@ -25,6 +29,7 @@ import { DomainModule } from '../domain/domain.module';
   ],
   exports: [
     LoanPaymentFactory,
+    ILoanPaymentFactory,
   ],
 })
 export class LoanPaymentModule {}

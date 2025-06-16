@@ -13,3 +13,5 @@ export interface ILoanPaymentFactory {
    */
   getManager(paymentType: LoanPaymentType): ILoanPaymentManager;
 }
+
+export const ILoanPaymentFactory = Symbol('ILoanPaymentFactory');

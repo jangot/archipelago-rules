@@ -1,12 +1,12 @@
 import { LoanPaymentType } from '@library/entity/enum';
 import { Injectable, Logger } from '@nestjs/common';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { ManagementDomainService } from '@payment/domain/services';
 
 @Injectable()
 export class LoanPaymentService {
   private readonly logger: Logger = new Logger(LoanPaymentService.name);
 
-  constructor(private readonly domainServices: IDomainServices) {}
+  constructor(private readonly managementDomainService: ManagementDomainService) {}
 
   /**
    * Initiates a payment for a specified loan
@@ -20,7 +20,7 @@ export class LoanPaymentService {
    */
   public async initiatePayment(loanId: string, paymentType: LoanPaymentType): Promise<boolean | null> {
     this.logger.debug(`Initiating payment for loan ${loanId} with type ${paymentType}`);
-    return this.domainServices.management.initiateLoanPayment(loanId, paymentType);
+    return this.managementDomainService.initiateLoanPayment(loanId, paymentType);
   }
 
   /**
@@ -36,6 +36,6 @@ export class LoanPaymentService {
    */
   public async advancePayment(paymentId: string, paymentType: LoanPaymentType): Promise<boolean | null> {
     this.logger.debug(`Advancing payment ${paymentId} of type ${paymentType}`);
-    return this.domainServices.management.advancePayment(paymentId, paymentType);
+    return this.managementDomainService.advancePayment(paymentId, paymentType);
   }
 }

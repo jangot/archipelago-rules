@@ -1,12 +1,12 @@
 import { PaymentStepState } from '@library/entity/enum';
 import { Injectable, Logger } from '@nestjs/common';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { ManagementDomainService } from '@payment/domain/services';
 
 @Injectable()
 export class LoanPaymentStepService {
   private readonly logger = new Logger(LoanPaymentStepService.name);
 
-  constructor(private readonly domainServices: IDomainServices) {}
+  constructor(private readonly managementDomainService: ManagementDomainService) {}
 
   /**
    * Advances a payment step to its next state in the payment flow.
@@ -21,6 +21,6 @@ export class LoanPaymentStepService {
   public async advanceStep(stepId: string, stepState: PaymentStepState): Promise<boolean | null>;
   public async advanceStep(stepId: string, stepState?: PaymentStepState): Promise<boolean | null> {
     this.logger.debug(`Advancing step ${stepId} ${stepState ? `with state ${stepState}` : ''}`);
-    return this.domainServices.management.advancePaymentStep(stepId, stepState);
+    return this.managementDomainService.advancePaymentStep(stepId, stepState);
   }
 }

@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ITransferExecutionProvider } from '../interface';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { PaymentDomainService } from '@payment/domain/services';
 
 @Injectable()
 export abstract class BaseTransferExecutionProvider implements ITransferExecutionProvider {
   protected readonly logger: Logger;
-  constructor(protected readonly domainServices: IDomainServices) {
+  constructor(protected readonly paymentDomainService: PaymentDomainService) {
     this.logger = new Logger(this.constructor.name);
   }
   

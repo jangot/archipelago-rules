@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ILoanPaymentStepFactory, ILoanPaymentStepManager } from './interfaces';
 import { CompletedStepManager, CreatedStepManager, FailedStepManager, PendingStepManager } from './managers';
 import { PaymentStepState, PaymentStepStateCodes } from '@library/entity/enum';
-import { IDomainServices } from '@payment/domain/idomain.services';
+import { PaymentDomainService } from '@payment/domain/services';
 
 @Injectable()
 export class LoanPaymentStepFactory implements ILoanPaymentStepFactory {
@@ -11,12 +11,12 @@ export class LoanPaymentStepFactory implements ILoanPaymentStepFactory {
     private readonly pendingManager: PendingStepManager,
     private readonly completedManager: CompletedStepManager,
     private readonly failedManager: FailedStepManager,
-    private readonly domainServices: IDomainServices
+    private readonly paymentDomainService: PaymentDomainService
   ) {}
 
   public async getManager(stepId: string, stepState?: PaymentStepState): Promise<ILoanPaymentStepManager> {
     if (stepState) return this.getManagerByState(stepState);
-    const step = await this.domainServices.paymentServices.getLoanPaymentStepById(stepId);
+    const step = await this.paymentDomainService.getLoanPaymentStepById(stepId);
     return this.getManagerByState(step.state);
   }
 
