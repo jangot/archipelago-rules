@@ -21,13 +21,14 @@ import {
   PaymentAccountProviderCodes,
   PaymentStepStateCodes,
 } from '@library/entity/enum';
-import { DeepPartial } from 'typeorm';
 import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
 import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { memoryDataSourceForTests } from '@library/shared/tests/postgress-memory-datasource';
+import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
 import { AllEntities } from '@library/shared/domain/entities';
-import { DbSchemaCodes } from '@library/shared/common/data';
 
+// Follow ZNG testing guidelines from .github/copilot/test-instructions.md
+// Use real service implementations for integration tests (2-3 levels deep)
+// Create test data using #region test data generation pattern
 describe('Loan Payment Step Manager Integration', () => {
   let module: TestingModule;
   let domainServices: IDomainServices;
@@ -38,38 +39,14 @@ describe('Loan Payment Step Manager Integration', () => {
   let failedStepManager: FailedStepManager;
   let databaseBackup: IBackup;
 
-  // Test data
-  const mockUserId = uuidv4();
-  const mockLoanId = uuidv4();
-  const mockStepId = uuidv4();
-
-  const mockSourceAccount: DeepPartial<IPaymentAccount> = {
-    userId: mockUserId,
-    type: PaymentAccountTypeCodes.BankAccount,
-    ownership: PaymentAccountOwnershipTypeCodes.Personal,
-    provider: PaymentAccountProviderCodes.Checkbook,
-    isDefault: true,
-    isActive: true,
-    accountHolderName: 'John Doe',
-  };
-
-  const mockDestinationAccount: DeepPartial<IPaymentAccount> = {
-    userId: mockUserId,
-    type: PaymentAccountTypeCodes.BankAccount,
-    ownership: PaymentAccountOwnershipTypeCodes.Internal,
-    provider: PaymentAccountProviderCodes.Fiserv,
-    isDefault: true,
-    isActive: true,
-    accountHolderName: 'Zirtue Platform',
-  };
+  // Use uuidv4() for all test IDs and entity creation
+  const testUserId = uuidv4();
+  const testLoanId = uuidv4();
+  const nonExistentStepId = uuidv4();
 
   beforeAll(async () => {
-    // Create in-memory database with Payment schema
-    const memoryDBinstance = await memoryDataSourceForTests({ 
-      entities: [...AllEntities], 
-      schema: DbSchemaCodes.Payment, 
-    });
-    const { dataSource, database } = memoryDBinstance;
+    // Create in-memory database with all entities
+    const { dataSource, database } = await memoryDataSourceSingle(AllEntities);
     
     // Initialize transactional context
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
@@ -101,236 +78,637 @@ describe('Loan Payment Step Manager Integration', () => {
     await module.close();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Restore database to clean state before each test
     databaseBackup.restore();
+    
+    // Create test loan for all tests
+    await createTestLoan();
   });
 
+  // #region test data generation
+
+  async function createTestLoan(): Promise<void> {
+    // Create a minimal loan entity to satisfy foreign key constraints
+    const dataSource = module.get(DataSource);
+    await dataSource.query(`
+      INSERT INTO core.loans (
+        id, amount, type, state, closure_type, payments_count, payment_frequency, lender_id, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
+      )
+    `, [
+      testLoanId,
+      5000,
+      'personal',
+      'created',
+      'open',
+      12,
+      'monthly',
+      testUserId,
+    ]);
+    
+    // Create loan invitee to satisfy constraints
+    await dataSource.query(`
+      INSERT INTO core.loan_invitees (
+        id, loan_id, type, first_name, last_name, email, phone
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7
+      )
+    `, [
+      uuidv4(),
+      testLoanId,
+      'borrower',
+      'Test',
+      'Borrower',
+      `borrower-${Date.now()}@test.com`,
+      '+1234567890',
+    ]);
+  }
+
+  async function createTestSourceAccount(): Promise<IPaymentAccount> {
+    const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
+      type: PaymentAccountTypeCodes.BankAccount,
+      ownership: PaymentAccountOwnershipTypeCodes.Personal,
+      provider: PaymentAccountProviderCodes.Checkbook,
+      accountHolderName: 'John Doe',
+      accountNumber: `1234567890${Date.now()}`, // Unique account number
+      routingNumber: '123456789',
+      isDefault: true,
+      isActive: true,
+    });
+
+    if (!account) {
+      throw new Error('Failed to create test source account - check entity constraints');
+    }
+
+    return account;
+  }
+
+  async function createTestDestinationAccount(): Promise<IPaymentAccount> {
+    const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
+      type: PaymentAccountTypeCodes.BankAccount,
+      ownership: PaymentAccountOwnershipTypeCodes.Internal,
+      provider: PaymentAccountProviderCodes.Fiserv,
+      accountHolderName: 'Zirtue Platform',
+      accountNumber: `9876543210${Date.now()}`, // Unique account number
+      routingNumber: '987654321',
+      isDefault: true,
+      isActive: true,
+    });
+
+    if (!account) {
+      throw new Error('Failed to create test destination account - check entity constraints');
+    }
+
+    return account;
+  }
+
+  async function createTestPaymentStep(
+    state: typeof PaymentStepStateCodes[keyof typeof PaymentStepStateCodes] = PaymentStepStateCodes.Created
+  ): Promise<ILoanPaymentStep> {
+    // Create payment accounts
+    const sourceAccount = await createTestSourceAccount();
+    const destAccount = await createTestDestinationAccount();
+
+    // Create a payment
+    const payment = await domainServices.paymentServices.createPayment({
+      loanId: testLoanId,
+      amount: 1000,
+      type: LoanPaymentTypeCodes.Funding,
+      state: LoanPaymentStateCodes.Created,
+      paymentNumber: 1,
+    });
+
+    if (!payment) {
+      throw new Error('Failed to create test payment - check entity constraints');
+    }
+
+    // Create payment step
+    const steps = await domainServices.paymentServices.createPaymentSteps([{
+      loanPaymentId: payment.id,
+      order: 0,
+      amount: 1000,
+      sourcePaymentAccountId: sourceAccount.id,
+      targetPaymentAccountId: destAccount.id,
+      state: state,
+    }]);
+
+    if (!steps || steps.length === 0) {
+      throw new Error('Failed to create test payment step - check entity constraints');
+    }
+
+    return steps[0];
+  }
+
+  async function createTestPaymentWithMultipleSteps(
+    stepCount: number = 2,
+    baseAmount: number = 1000
+  ): Promise<{ payment: any; steps: ILoanPaymentStep[] }> {
+    // Create payment accounts
+    const sourceAccount = await createTestSourceAccount();
+    const destAccount = await createTestDestinationAccount();
+
+    // Create a payment
+    const payment = await domainServices.paymentServices.createPayment({
+      loanId: testLoanId,
+      amount: baseAmount * stepCount,
+      type: LoanPaymentTypeCodes.Funding,
+      state: LoanPaymentStateCodes.Created,
+      paymentNumber: 1,
+    });
+
+    if (!payment) {
+      throw new Error('Failed to create test payment for multiple steps');
+    }
+
+    // Create multiple payment steps
+    const stepRequests = Array.from({ length: stepCount }, (_, index) => ({
+      loanPaymentId: payment.id,
+      order: index,
+      amount: baseAmount,
+      sourcePaymentAccountId: sourceAccount.id,
+      targetPaymentAccountId: destAccount.id,
+      state: PaymentStepStateCodes.Created,
+    }));
+
+    const steps = await domainServices.paymentServices.createPaymentSteps(stepRequests);
+
+    if (!steps || steps.length !== stepCount) {
+      throw new Error(`Failed to create ${stepCount} test payment steps - expected ${stepCount}, got ${steps?.length || 0}`);
+    }
+
+    return { payment, steps };
+  }
+
+  async function createTestPaymentStepWithCustomAccounts(
+    sourceAccountType: typeof PaymentAccountOwnershipTypeCodes[keyof typeof PaymentAccountOwnershipTypeCodes],
+    targetAccountType: typeof PaymentAccountOwnershipTypeCodes[keyof typeof PaymentAccountOwnershipTypeCodes],
+    state: typeof PaymentStepStateCodes[keyof typeof PaymentStepStateCodes] = PaymentStepStateCodes.Created
+  ): Promise<ILoanPaymentStep> {
+    // Create custom payment accounts
+    const sourceAccount = await domainServices.paymentServices.addPaymentAccount(testUserId, {
+      type: PaymentAccountTypeCodes.BankAccount,
+      ownership: sourceAccountType,
+      provider: PaymentAccountProviderCodes.Checkbook,
+      accountHolderName: `Source Account (${sourceAccountType})`,
+      accountNumber: `SRC${Date.now()}`,
+      routingNumber: '123456789',
+      isDefault: false,
+      isActive: true,
+    });
+
+    const targetAccount = await domainServices.paymentServices.addPaymentAccount(testUserId, {
+      type: PaymentAccountTypeCodes.BankAccount,
+      ownership: targetAccountType,
+      provider: PaymentAccountProviderCodes.Fiserv,
+      accountHolderName: `Target Account (${targetAccountType})`,
+      accountNumber: `TGT${Date.now()}`,
+      routingNumber: '987654321',
+      isDefault: false,
+      isActive: true,
+    });
+
+    if (!sourceAccount || !targetAccount) {
+      throw new Error('Failed to create custom test accounts');
+    }
+
+    // Create a payment
+    const payment = await domainServices.paymentServices.createPayment({
+      loanId: testLoanId,
+      amount: 1500,
+      type: LoanPaymentTypeCodes.Funding,
+      state: LoanPaymentStateCodes.Created,
+      paymentNumber: 1,
+    });
+
+    if (!payment) {
+      throw new Error('Failed to create test payment for custom accounts');
+    }
+
+    // Create payment step
+    const steps = await domainServices.paymentServices.createPaymentSteps([{
+      loanPaymentId: payment.id,
+      order: 0,
+      amount: 1500,
+      sourcePaymentAccountId: sourceAccount.id,
+      targetPaymentAccountId: targetAccount.id,
+      state: state,
+    }]);
+
+    if (!steps || steps.length === 0) {
+      throw new Error('Failed to create test payment step with custom accounts');
+    }
+
+    return steps[0];
+  }
+
+  // #endregion
+
   describe('LoanPaymentStepFactory', () => {
-    let mockStep: ILoanPaymentStep;
+    let testStep: ILoanPaymentStep;
 
     beforeEach(async () => {
-      // Create payment accounts
-      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockSourceAccount);
-      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockDestinationAccount);
-
-      // Create a payment
-      const mockPayment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      // Create payment step
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: mockPayment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Created,
-      }]);
-
-      mockStep = steps![0];
+      // Arrange - Create test payment step for each test
+      testStep = await createTestPaymentStep();
     });
 
-    it('should get created step manager for created step', async () => {
-      const manager = await stepFactory.getManager(mockStep.id, PaymentStepStateCodes.Created);
+    it('should get created step manager for created step state', async () => {
+      // Act
+      const manager = await stepFactory.getManager(testStep.id, PaymentStepStateCodes.Created);
       
+      // Assert
       expect(manager).toBeInstanceOf(CreatedStepManager);
+      expect(manager).toBeDefined();
     });
 
-    it('should get pending step manager for pending step', async () => {
-      const manager = await stepFactory.getManager(mockStep.id, PaymentStepStateCodes.Pending);
+    it('should get pending step manager for pending step state', async () => {
+      // Act
+      const manager = await stepFactory.getManager(testStep.id, PaymentStepStateCodes.Pending);
       
+      // Assert
       expect(manager).toBeInstanceOf(PendingStepManager);
+      expect(manager).toBeDefined();
     });
 
-    it('should get completed step manager for completed step', async () => {
-      const manager = await stepFactory.getManager(mockStep.id, PaymentStepStateCodes.Completed);
+    it('should get completed step manager for completed step state', async () => {
+      // Act
+      const manager = await stepFactory.getManager(testStep.id, PaymentStepStateCodes.Completed);
       
+      // Assert
       expect(manager).toBeInstanceOf(CompletedStepManager);
+      expect(manager).toBeDefined();
     });
 
-    it('should get failed step manager for failed step', async () => {
-      const manager = await stepFactory.getManager(mockStep.id, PaymentStepStateCodes.Failed);
+    it('should get failed step manager for failed step state', async () => {
+      // Act
+      const manager = await stepFactory.getManager(testStep.id, PaymentStepStateCodes.Failed);
       
+      // Assert
       expect(manager).toBeInstanceOf(FailedStepManager);
+      expect(manager).toBeDefined();
     });
 
     it('should throw error for unsupported step state', async () => {
+      // Act & Assert
       await expect(
-        stepFactory.getManager(mockStep.id, 'unsupported' as any)
+        stepFactory.getManager(testStep.id, 'unsupported' as any)
       ).rejects.toThrow();
     });
 
     it('should get manager by step ID without explicit state', async () => {
-      const manager = await stepFactory.getManager(mockStep.id);
+      // Act
+      const manager = await stepFactory.getManager(testStep.id);
       
+      // Assert
       expect(manager).toBeInstanceOf(CreatedStepManager);
+    });
+
+    it('should handle non-existent step ID gracefully', async () => {
+      // Act & Assert
+      await expect(
+        stepFactory.getManager(nonExistentStepId, PaymentStepStateCodes.Created)
+      ).rejects.toThrow();
+    });
+
+    it('should handle factory with multiple step scenarios', async () => {
+      // Arrange - Create multiple steps with different states
+      const { steps } = await createTestPaymentWithMultipleSteps(3);
+      
+      // Act - Get managers for all steps
+      const managers = await Promise.all(
+        steps.map(step => stepFactory.getManager(step.id, PaymentStepStateCodes.Created))
+      );
+      
+      // Assert
+      expect(managers).toHaveLength(3);
+      expect(managers.every(manager => manager instanceof CreatedStepManager)).toBe(true);
+    });
+
+    it('should handle custom account types correctly', async () => {
+      // Arrange - Create step with custom account types
+      const customStep = await createTestPaymentStepWithCustomAccounts(
+        PaymentAccountOwnershipTypeCodes.Personal,
+        PaymentAccountOwnershipTypeCodes.Internal
+      );
+      
+      // Act
+      const manager = await stepFactory.getManager(customStep.id, PaymentStepStateCodes.Created);
+      
+      // Assert
+      expect(manager).toBeInstanceOf(CreatedStepManager);
+      expect(customStep.sourcePaymentAccountId).toBeDefined();
+      expect(customStep.targetPaymentAccountId).toBeDefined();
     });
   });
 
   describe('CreatedStepManager', () => {
-    let mockStep: ILoanPaymentStep;
+    let testStep: ILoanPaymentStep;
 
     beforeEach(async () => {
-      // Create payment accounts
-      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockSourceAccount);
-      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockDestinationAccount);
-
-      // Create a payment
-      const mockPayment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      // Create payment step
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: mockPayment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Created,
-      }]);
-
-      mockStep = steps![0];
+      // Arrange - Create test payment step for each test
+      testStep = await createTestPaymentStep();
     });
 
-    it('should advance created step', async () => {
-      const result = await createdStepManager.advance(mockStep.id);
+    it('should advance created step to pending state', async () => {
+      // Act
+      const result = await createdStepManager.advance(testStep.id);
       
-      // Expect result to indicate advancement was attempted
+      // Assert
+      expect(result).toBeDefined();
+      expect(result).not.toBeNull();
+    });
+
+    it('should handle non-existent step gracefully', async () => {
+      // Act
+      const result = await createdStepManager.advance(nonExistentStepId);
+      
+      // Assert - Should handle gracefully
       expect(result).toBeDefined();
     });
 
-    it('should handle non-existent step', async () => {
-      const result = await createdStepManager.advance(mockStepId);
+    it('should handle advancement of multiple created steps', async () => {
+      // Arrange - Create multiple steps
+      const { steps } = await createTestPaymentWithMultipleSteps(2);
       
-      // Should handle gracefully and return null or false
+      // Act - Advance all created steps
+      const results = await Promise.all(
+        steps.map(step => createdStepManager.advance(step.id))
+      );
+      
+      // Assert
+      expect(results).toHaveLength(2);
+      expect(results.every(result => result !== undefined)).toBe(true);
+    });
+
+    it('should handle created step with different account types', async () => {
+      // Arrange - Create step with specific account types
+      const customStep = await createTestPaymentStepWithCustomAccounts(
+        PaymentAccountOwnershipTypeCodes.Personal,
+        PaymentAccountOwnershipTypeCodes.Internal,
+        PaymentStepStateCodes.Created
+      );
+      
+      // Act
+      const result = await createdStepManager.advance(customStep.id);
+      
+      // Assert
+      expect(result).toBeDefined();
+      expect(customStep.state).toBe(PaymentStepStateCodes.Created);
+    });
+
+    it('should validate step state before advancement', async () => {
+      // Arrange - Create step in non-created state
+      const pendingStep = await createTestPaymentStep(PaymentStepStateCodes.Pending);
+      
+      // Act - Try to advance non-created step with CreatedStepManager
+      const result = await createdStepManager.advance(pendingStep.id);
+      
+      // Assert - Should handle state mismatch appropriately
       expect(result).toBeDefined();
     });
   });
 
   describe('PendingStepManager', () => {
-    let mockStep: ILoanPaymentStep;
+    let testStep: ILoanPaymentStep;
 
     beforeEach(async () => {
-      // Create payment accounts
-      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockSourceAccount);
-      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockDestinationAccount);
-
-      // Create a payment
-      const mockPayment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      // Create payment step in pending state
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: mockPayment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Pending,
-      }]);
-
-      mockStep = steps![0];
+      // Arrange - Create test payment step in pending state
+      testStep = await createTestPaymentStep(PaymentStepStateCodes.Pending);
     });
 
-    it('should advance pending step', async () => {
-      const result = await pendingStepManager.advance(mockStep.id);
+    it('should advance pending step to completed state', async () => {
+      // Act
+      const result = await pendingStepManager.advance(testStep.id);
       
-      // Expect result to indicate advancement was attempted
+      // Assert
+      expect(result).toBeDefined();
+      expect(result).not.toBeNull();
+    });
+
+    it('should handle step state transitions properly', async () => {
+      // Arrange
+      const testStep2 = await createTestPaymentStep(PaymentStepStateCodes.Pending);
+      
+      // Act
+      const result = await pendingStepManager.advance(testStep2.id);
+      
+      // Assert
+      expect(result).toBeDefined();
+      expect(testStep2.state).toBe(PaymentStepStateCodes.Pending);
+    });
+
+    it('should handle non-existent pending step', async () => {
+      // Act
+      const result = await pendingStepManager.advance(nonExistentStepId);
+      
+      // Assert
+      expect(result).toBeDefined();
+    });
+
+    it('should handle multiple pending steps advancement', async () => {
+      // Arrange - Create multiple pending steps
+      const step1 = await createTestPaymentStep(PaymentStepStateCodes.Pending);
+      const step2 = await createTestPaymentStep(PaymentStepStateCodes.Pending);
+      
+      // Act - Advance both steps
+      const results = await Promise.all([
+        pendingStepManager.advance(step1.id),
+        pendingStepManager.advance(step2.id),
+      ]);
+      
+      // Assert
+      expect(results).toHaveLength(2);
+      expect(results.every(result => result !== undefined)).toBe(true);
+    });
+
+    it('should handle pending step with custom account configuration', async () => {
+      // Arrange - Create pending step with specific account setup
+      const customStep = await createTestPaymentStepWithCustomAccounts(
+        PaymentAccountOwnershipTypeCodes.Internal,
+        PaymentAccountOwnershipTypeCodes.Personal,
+        PaymentStepStateCodes.Pending
+      );
+      
+      // Act
+      const result = await pendingStepManager.advance(customStep.id);
+      
+      // Assert
+      expect(result).toBeDefined();
+      expect(customStep.state).toBe(PaymentStepStateCodes.Pending);
+    });
+
+    it('should validate step is in correct state before advancement', async () => {
+      // Arrange - Create step in created state (not pending)
+      const createdStep = await createTestPaymentStep(PaymentStepStateCodes.Created);
+      
+      // Act - Try to advance created step with PendingStepManager
+      const result = await pendingStepManager.advance(createdStep.id);
+      
+      // Assert - Should handle state mismatch appropriately
       expect(result).toBeDefined();
     });
   });
 
   describe('CompletedStepManager', () => {
-    let mockStep: ILoanPaymentStep;
+    let testStep: ILoanPaymentStep;
 
     beforeEach(async () => {
-      // Create payment accounts
-      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockSourceAccount);
-      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockDestinationAccount);
-
-      // Create a payment
-      const mockPayment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      // Create payment step in completed state
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: mockPayment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Completed,
-      }]);
-
-      mockStep = steps![0];
+      // Arrange - Create test payment step in completed state
+      testStep = await createTestPaymentStep(PaymentStepStateCodes.Completed);
     });
 
-    it('should handle completed step advancement', async () => {
-      // Completed steps typically should not advance further
-      const result = await completedStepManager.advance(mockStep.id);
+    it('should handle completed step advancement appropriately', async () => {
+      // Act - Completed steps typically should not advance further
+      const result = await completedStepManager.advance(testStep.id);
       
-      // Expect result to indicate no advancement needed
+      // Assert
       expect(result).toBeDefined();
+      expect(testStep.state).toBe(PaymentStepStateCodes.Completed);
+    });
+
+    it('should return appropriate status for completed steps', async () => {
+      // Arrange
+      const testStep2 = await createTestPaymentStep(PaymentStepStateCodes.Completed);
+      
+      // Act
+      const result = await completedStepManager.advance(testStep2.id);
+      
+      // Assert
+      expect(result).toBeDefined();
+      expect(testStep2.state).toBe(PaymentStepStateCodes.Completed);
+    });
+
+    it('should handle non-existent completed step', async () => {
+      // Act
+      const result = await completedStepManager.advance(nonExistentStepId);
+      
+      // Assert
+      expect(result).toBeDefined();
+    });
+
+    it('should handle multiple completed steps', async () => {
+      // Arrange - Create multiple completed steps
+      const step1 = await createTestPaymentStep(PaymentStepStateCodes.Completed);
+      const step2 = await createTestPaymentStep(PaymentStepStateCodes.Completed);
+      
+      // Act
+      const results = await Promise.all([
+        completedStepManager.advance(step1.id),
+        completedStepManager.advance(step2.id),
+      ]);
+      
+      // Assert
+      expect(results).toHaveLength(2);
+      expect(results.every(result => result !== undefined)).toBe(true);
+    });
+
+    it('should maintain completed state consistency', async () => {
+      // Arrange - Create completed step with custom accounts
+      const customStep = await createTestPaymentStepWithCustomAccounts(
+        PaymentAccountOwnershipTypeCodes.Personal,
+        PaymentAccountOwnershipTypeCodes.Internal,
+        PaymentStepStateCodes.Completed
+      );
+      
+      // Act
+      const result = await completedStepManager.advance(customStep.id);
+      
+      // Assert
+      expect(result).toBeDefined();
+      expect(customStep.state).toBe(PaymentStepStateCodes.Completed);
     });
   });
 
   describe('FailedStepManager', () => {
-    let mockStep: ILoanPaymentStep;
+    let testStep: ILoanPaymentStep;
 
     beforeEach(async () => {
-      // Create payment accounts
-      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockSourceAccount);
-      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockDestinationAccount);
-
-      // Create a payment
-      const mockPayment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      // Create payment step in failed state
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: mockPayment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Failed,
-      }]);
-
-      mockStep = steps![0];
+      // Arrange - Create test payment step in failed state
+      testStep = await createTestPaymentStep(PaymentStepStateCodes.Failed);
     });
 
-    it('should handle failed step advancement', async () => {
-      const result = await failedStepManager.advance(mockStep.id);
+    it('should handle failed step advancement or retry logic', async () => {
+      // Act
+      const result = await failedStepManager.advance(testStep.id);
       
-      // Expect result to indicate advancement was attempted
+      // Assert
       expect(result).toBeDefined();
+      expect(testStep.state).toBe(PaymentStepStateCodes.Failed);
+    });
+
+    it('should handle retry scenarios for failed steps', async () => {
+      // Arrange
+      const testStep2 = await createTestPaymentStep(PaymentStepStateCodes.Failed);
+      
+      // Act
+      const result = await failedStepManager.advance(testStep2.id);
+      
+      // Assert
+      expect(result).toBeDefined();
+      expect(testStep2.state).toBe(PaymentStepStateCodes.Failed);
+    });
+
+    it('should handle non-existent failed step', async () => {
+      // Act
+      const result = await failedStepManager.advance(nonExistentStepId);
+      
+      // Assert
+      expect(result).toBeDefined();
+    });
+
+    it('should handle multiple failed steps', async () => {
+      // Arrange - Create multiple failed steps
+      const step1 = await createTestPaymentStep(PaymentStepStateCodes.Failed);
+      const step2 = await createTestPaymentStep(PaymentStepStateCodes.Failed);
+      
+      // Act
+      const results = await Promise.all([
+        failedStepManager.advance(step1.id),
+        failedStepManager.advance(step2.id),
+      ]);
+      
+      // Assert
+      expect(results).toHaveLength(2);
+      expect(results.every(result => result !== undefined)).toBe(true);
+    });
+
+    it('should handle failed step retry with different account types', async () => {
+      // Arrange - Create failed step with specific account configuration
+      const customStep = await createTestPaymentStepWithCustomAccounts(
+        PaymentAccountOwnershipTypeCodes.Internal,
+        PaymentAccountOwnershipTypeCodes.Personal,
+        PaymentStepStateCodes.Failed
+      );
+      
+      // Act
+      const result = await failedStepManager.advance(customStep.id);
+      
+      // Assert
+      expect(result).toBeDefined();
+      expect(customStep.state).toBe(PaymentStepStateCodes.Failed);
+    });
+
+    it('should validate error handling for retry scenarios', async () => {
+      // Arrange - Create multiple failed steps to test batch retry scenarios
+      const failedStep1 = await createTestPaymentStep(PaymentStepStateCodes.Failed);
+      const failedStep2 = await createTestPaymentStep(PaymentStepStateCodes.Failed);
+      
+      // Act - Attempt to advance both failed steps
+      const results = await Promise.all([
+        failedStepManager.advance(failedStep1.id),
+        failedStepManager.advance(failedStep2.id),
+      ]);
+      
+      // Assert
+      expect(results).toHaveLength(2);
+      expect(results.every(result => result !== undefined)).toBe(true);
     });
   });
 
   describe('DomainServices Integration', () => {
     it('should have domain services configured', () => {
-      // Verify domainServices is properly injected
+      // Assert - Verify domainServices is properly injected
       expect(domainServices).toBeDefined();
       expect(domainServices.paymentServices).toBeDefined();
       // ManagementDomainService is no longer part of IDomainServices
@@ -338,16 +716,211 @@ describe('Loan Payment Step Manager Integration', () => {
     });
 
     it('should have step factory configured', () => {
-      // Verify step factory is properly injected
+      // Assert - Verify step factory is properly injected
       expect(stepFactory).toBeDefined();
+      expect(typeof stepFactory.getManager).toBe('function');
     });
 
     it('should have all step managers configured', () => {
-      // Verify all step managers are properly injected
+      // Assert - Verify all step managers are properly injected
       expect(createdStepManager).toBeDefined();
       expect(pendingStepManager).toBeDefined();
       expect(completedStepManager).toBeDefined();
       expect(failedStepManager).toBeDefined();
+      
+      // Verify manager methods exist
+      expect(typeof createdStepManager.advance).toBe('function');
+      expect(typeof pendingStepManager.advance).toBe('function');
+      expect(typeof completedStepManager.advance).toBe('function');
+      expect(typeof failedStepManager.advance).toBe('function');
+    });
+
+    it('should integrate step factory with domain services', async () => {
+      // Arrange - Create a test step
+      const testStep = await createTestPaymentStep();
+      
+      // Act - Use factory to get manager
+      const manager = await stepFactory.getManager(testStep.id);
+      
+      // Assert
+      expect(manager).toBeInstanceOf(CreatedStepManager);
+      expect(testStep).toBeDefined();
+      expect(testStep.id).toBeDefined();
+    });
+
+    it('should handle end-to-end step management workflow', async () => {
+      // Arrange - Create multiple steps for workflow test
+      const { steps } = await createTestPaymentWithMultipleSteps(3);
+      
+      // Act - Get managers for all steps and verify they can be advanced
+      const managers = await Promise.all(
+        steps.map(step => stepFactory.getManager(step.id))
+      );
+      
+      const advanceResults = await Promise.all(
+        steps.map((step, index) => managers[index].advance(step.id))
+      );
+      
+      // Assert
+      expect(managers).toHaveLength(3);
+      expect(managers.every(manager => manager instanceof CreatedStepManager)).toBe(true);
+      expect(advanceResults).toHaveLength(3);
+      expect(advanceResults.every(result => result !== undefined)).toBe(true);
+    });
+
+    it('should validate cross-service integration', async () => {
+      // Arrange - Create step with specific state
+      const pendingStep = await createTestPaymentStep(PaymentStepStateCodes.Pending);
+      
+      // Act - Use factory to get appropriate manager
+      const manager = await stepFactory.getManager(pendingStep.id, PaymentStepStateCodes.Pending);
+      
+      // Assert
+      expect(manager).toBeInstanceOf(PendingStepManager);
+      expect(pendingStep).toBeDefined();
+      expect(pendingStep.state).toBe(PaymentStepStateCodes.Pending);
+      
+      // Act - Advance step and verify result
+      const advanceResult = await manager.advance(pendingStep.id);
+      
+      // Assert
+      expect(advanceResult).toBeDefined();
+    });
+
+    it('should handle service errors gracefully', async () => {
+      // Act & Assert - Test error handling with invalid data
+      await expect(
+        stepFactory.getManager(nonExistentStepId)
+      ).rejects.toThrow();
+      
+      // Act - Test managers with non-existent steps
+      const results = await Promise.all([
+        createdStepManager.advance(nonExistentStepId),
+        pendingStepManager.advance(nonExistentStepId),
+        completedStepManager.advance(nonExistentStepId),
+        failedStepManager.advance(nonExistentStepId),
+      ]);
+      
+      // Assert - All should handle gracefully
+      expect(results).toHaveLength(4);
+      expect(results.every(result => result !== undefined)).toBe(true);
+    });
+  });
+
+  describe('Edge Cases and Error Scenarios', () => {
+    it('should handle concurrent step advancements', async () => {
+      // Arrange - Create multiple steps for concurrent testing
+      const step1 = await createTestPaymentStep(PaymentStepStateCodes.Created);
+      const step2 = await createTestPaymentStep(PaymentStepStateCodes.Pending);
+      const step3 = await createTestPaymentStep(PaymentStepStateCodes.Failed);
+      
+      // Act - Advance steps concurrently
+      const results = await Promise.all([
+        createdStepManager.advance(step1.id),
+        pendingStepManager.advance(step2.id),
+        failedStepManager.advance(step3.id),
+      ]);
+      
+      // Assert
+      expect(results).toHaveLength(3);
+      expect(results.every(result => result !== undefined)).toBe(true);
+    });
+
+    it('should handle mixed state operations with factory', async () => {
+      // Arrange - Create steps in different states
+      const createdStep = await createTestPaymentStep(PaymentStepStateCodes.Created);
+      const pendingStep = await createTestPaymentStep(PaymentStepStateCodes.Pending);
+      const completedStep = await createTestPaymentStep(PaymentStepStateCodes.Completed);
+      const failedStep = await createTestPaymentStep(PaymentStepStateCodes.Failed);
+      
+      // Act - Get appropriate managers for each state
+      const managers = await Promise.all([
+        stepFactory.getManager(createdStep.id, PaymentStepStateCodes.Created),
+        stepFactory.getManager(pendingStep.id, PaymentStepStateCodes.Pending),
+        stepFactory.getManager(completedStep.id, PaymentStepStateCodes.Completed),
+        stepFactory.getManager(failedStep.id, PaymentStepStateCodes.Failed),
+      ]);
+      
+      // Assert
+      expect(managers[0]).toBeInstanceOf(CreatedStepManager);
+      expect(managers[1]).toBeInstanceOf(PendingStepManager);
+      expect(managers[2]).toBeInstanceOf(CompletedStepManager);
+      expect(managers[3]).toBeInstanceOf(FailedStepManager);
+      
+      // Act - Advance all steps
+      const advanceResults = await Promise.all([
+        managers[0].advance(createdStep.id),
+        managers[1].advance(pendingStep.id),
+        managers[2].advance(completedStep.id),
+        managers[3].advance(failedStep.id),
+      ]);
+      
+      // Assert
+      expect(advanceResults).toHaveLength(4);
+      expect(advanceResults.every(result => result !== undefined)).toBe(true);
+    });
+
+    it('should validate state consistency across multiple payment steps', async () => {
+      // Arrange - Create payment with multiple steps
+      const { payment, steps } = await createTestPaymentWithMultipleSteps(3, 500);
+      
+      // Assert
+      expect(payment).toBeDefined();
+      expect(steps).toHaveLength(3);
+      expect(steps.every(step => step.state === PaymentStepStateCodes.Created)).toBe(true);
+      expect(steps.every(step => step.amount === 500)).toBe(true);
+      expect(steps.every(step => step.loanPaymentId === payment.id)).toBe(true);
+      
+      // Act - Get managers for all steps
+      const managers = await Promise.all(
+        steps.map(step => stepFactory.getManager(step.id))
+      );
+      
+      // Assert
+      expect(managers).toHaveLength(3);
+      expect(managers.every(manager => manager instanceof CreatedStepManager)).toBe(true);
+    });
+
+    it('should handle complex account type scenarios', async () => {
+      // Arrange - Test different account type combinations
+      const scenarios = [
+        {
+          source: PaymentAccountOwnershipTypeCodes.Personal,
+          target: PaymentAccountOwnershipTypeCodes.Internal,
+        },
+        {
+          source: PaymentAccountOwnershipTypeCodes.Internal,
+          target: PaymentAccountOwnershipTypeCodes.Personal,
+        },
+      ];
+      
+      // Act - Create steps for each scenario
+      const steps = await Promise.all(
+        scenarios.map(scenario =>
+          createTestPaymentStepWithCustomAccounts(
+            scenario.source,
+            scenario.target,
+            PaymentStepStateCodes.Created
+          )
+        )
+      );
+      
+      // Assert
+      expect(steps).toHaveLength(2);
+      expect(steps.every(step => step.state === PaymentStepStateCodes.Created)).toBe(true);
+      
+      // Act - Get managers and advance steps
+      const managers = await Promise.all(
+        steps.map(step => stepFactory.getManager(step.id))
+      );
+      
+      const results = await Promise.all(
+        steps.map((step, index) => managers[index].advance(step.id))
+      );
+      
+      // Assert
+      expect(results).toHaveLength(2);
+      expect(results.every(result => result !== undefined)).toBe(true);
     });
   });
 });

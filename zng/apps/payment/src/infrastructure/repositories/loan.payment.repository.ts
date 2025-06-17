@@ -30,7 +30,7 @@ export class LoanPaymentRepository extends RepositoryBase<LoanPayment> implement
   }
 
   public async createPayment(input: DeepPartial<LoanPayment>): Promise<LoanPayment | null> {
-    return this.repository.create(input);
+    return this.insert(input, true);
   }
 
   public async createPayments(payments: DeepPartial<LoanPayment>[]): Promise<LoanPayment[] | null> {

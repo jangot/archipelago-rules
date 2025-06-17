@@ -37,7 +37,7 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
   public async createLoan(loan: DeepPartial<Loan>): Promise<Loan | null> {
     this.logger.debug('createLoan:', loan);
 
-    return this.repository.create({ ...loan, state: LoanStateCodes.Created });
+    return this.insert({ ...loan, state: LoanStateCodes.Created }, true);
   }
 
   public async assignUserToLoans(input: LoansSetTargetUserInput): Promise<void> {

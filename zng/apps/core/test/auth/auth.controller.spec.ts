@@ -28,8 +28,7 @@ import { UserDomainService } from '@core/domain/services/user.domain.service';
 
 import { REGISTERED_USER_DUMP_1 } from './data-dump';
 import { generateWrongCode } from './test.helper';
-import { DbSchemaCodes } from '@library/shared/common/data';
-import { memoryDataSourceForTests } from '@library/shared/tests/postgress-memory-datasource';
+import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
 import { AllEntities } from '@library/shared/domain/entities';
 
 describe('AuthController - Negative Test Cases', () => {
@@ -47,8 +46,7 @@ describe('AuthController - Negative Test Cases', () => {
   let loginInitiateHandlerSpy: jest.SpyInstance;
 
   beforeAll(async () => {
-    const memoryDBinstance = await memoryDataSourceForTests({ entities: [...AllEntities], schema: DbSchemaCodes.Core });
-    const { dataSource, database } = memoryDBinstance;
+    const { dataSource, database } = await memoryDataSourceSingle(AllEntities);
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
     
     // Build the complete copy of AuthModule

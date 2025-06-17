@@ -20,10 +20,12 @@ export const DbSchemaCodes = {
 
 export type DbSchemaType = (typeof DbSchemaCodes)[keyof typeof DbSchemaCodes];
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export type DatabaseConfigEntities = MixedList<Function | string | EntitySchema>;
+
 export interface DatabaseConfigOptions {
   configService: ConfigService;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  entities?: MixedList<Function | string | EntitySchema>;
+  entities?: DatabaseConfigEntities;
   schema?: DbSchemaType;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   migrations?: MixedList<Function | string>;
@@ -50,7 +52,6 @@ export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOp
     entities: options.entities,
     schema: options.schema, // Default schema to use for all entities defined here
     migrations: options.migrations,
-    name: options.schema || 'default', // Use schema as the connection name
   };
 }
 
@@ -64,12 +65,13 @@ export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOp
  * 
  * @param options - The database configuration options
  * @param options.entities - The entity classes to be included in the connection
- * @param options.schema - The database schema to use
+ * @param options.schema - The database schema to use (optional for single connection)
  * @returns TypeOrmModuleAsyncOptions configured for dependency injection with transaction support
  * @throws Error if no datasource options are provided during initialization
  */
 export function TypeOrmModuleConfiguration(options: BaseDatabaseConfigOptions): TypeOrmModuleAsyncOptions {
   const { entities, schema } = options;
+  
   return {
     imports: [ConfigModule],
     inject: [ConfigService],
@@ -80,7 +82,33 @@ export function TypeOrmModuleConfiguration(options: BaseDatabaseConfigOptions): 
         throw new Error('No Datasource options for TypeOrmModule provided');
       }
     
-      return addTransactionalDataSource(new DataSource({ ...options, name: schema }));
+      return addTransactionalDataSource(new DataSource(options));
+    },
+  };
+}
+
+/**
+ * Generates TypeORM module configuration for multiple schemas in a single connection.
+ * This is the recommended approach for PostgreSQL with multiple schemas.
+ * 
+ * @param allEntities - All entity classes from all schemas
+ * @returns TypeOrmModuleAsyncOptions configured for dependency injection with transaction support
+ */
+ 
+export function SingleDataSourceConfiguration(allEntities: DatabaseConfigEntities): TypeOrmModuleAsyncOptions {
+  return {
+    imports: [ConfigModule],
+    inject: [ConfigService],
+    useFactory: (configService: ConfigService) => DbConfiguration({ 
+      configService, 
+      entities: allEntities, 
+    }),
+    async dataSourceFactory(options) {
+      if (!options) {
+        throw new Error('No Datasource options for TypeOrmModule provided');
+      }
+    
+      return addTransactionalDataSource(new DataSource(options));
     },
   };
 }

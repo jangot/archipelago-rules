@@ -3,14 +3,14 @@ import { PaymentDataService } from './data.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
 import { CustomPaymentRepositories } from '../infrastructure/repositories';
-import { AllEntities, CoreEntities, PaymentEntities } from '@library/shared/domain/entities';
-import { DbSchemaCodes, TypeOrmModuleConfiguration } from '@library/shared/common/data';
+import { CoreEntities, PaymentEntities } from '@library/shared/domain/entities';
+import { SingleDataSourceConfiguration } from '@library/shared/common/data';
 import { SharedCoreRepositories } from '@library/shared/infrastructure/repositories';
 
 @Module({
   imports: [
-    // schema: payment
-    TypeOrmModule.forRootAsync(TypeOrmModuleConfiguration({ entities: AllEntities, schema: DbSchemaCodes.Payment })),
+    // Single connection that can access all schemas
+    TypeOrmModule.forRootAsync(SingleDataSourceConfiguration([...CoreEntities, ...PaymentEntities])),
   ],
   providers: [
     PaymentDataService, 

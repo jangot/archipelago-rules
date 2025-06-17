@@ -4,13 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
 import { CustomCoreRepositories } from '../infrastructure/repositories';
 import { AllEntities, CoreEntities, PaymentEntities } from '@library/shared/domain/entities';
-import { DbSchemaCodes, TypeOrmModuleConfiguration } from '@library/shared/common/data';
+import { SingleDataSourceConfiguration } from '@library/shared/common/data';
 import { SharedCoreRepositories } from '@library/shared/infrastructure/repositories';
 
 @Module({
   imports: [
-    // schema: core
-    TypeOrmModule.forRootAsync(TypeOrmModuleConfiguration({ entities: AllEntities, schema: DbSchemaCodes.Core })),
+    // Single connection that can access all schemas
+    TypeOrmModule.forRootAsync(SingleDataSourceConfiguration(AllEntities)),
   ],
   providers: [
     CoreDataService, 

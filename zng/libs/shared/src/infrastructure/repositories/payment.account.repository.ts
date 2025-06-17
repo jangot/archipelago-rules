@@ -15,7 +15,7 @@ export class PaymentAccountRepository extends RepositoryBase<PaymentAccount> imp
   }
 
   public async createPaymentAccount(input: DeepPartial<PaymentAccount>): Promise<PaymentAccount | null> {
-    return this.repository.create(input);
+    return this.insert(input, true);
   }
 
   public getPaymentAccountById(paymentAccountId: string, relations?: PaymentAccountRelation[]): Promise<PaymentAccount | null> {

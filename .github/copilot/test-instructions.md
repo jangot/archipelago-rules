@@ -209,6 +209,187 @@ Integration tests verify that different components work together correctly.
 - Verify that components integrate correctly with their real dependencies.
 - Ensure that the test environment is isolated and repeatable despite using real service implementations.
 
+### Test Data Generation Requirements
+
+- **All required entities must be created in advance**: Before running any test, ensure all necessary entities (users, loans, accounts, etc.) exist in the database.
+- **Group test data generation functions**: All test data creation functions must be placed together within a test file, enclosed by region markers:
+  ```typescript
+  // #region test data generation
+  
+  async function createTestUser(): Promise<void> {
+    // User creation logic
+  }
+  
+  async function createTestLoan(): Promise<void> {
+    // Loan creation logic
+  }
+  
+  async function createFullTestData(): Promise<void> {
+    // Complete test data setup
+  }
+  
+  // #endregion
+  ```
+- **Use descriptive function names**: Name data creation functions clearly (e.g., `createTestUser`, `createPaymentWithAccount`, `createFullTestData`).
+- **Handle dependencies properly**: Ensure functions create dependencies in the correct order and validate successful creation.
+- **Throw descriptive errors**: If entity creation fails, throw clear error messages to aid debugging.
+
+### Test Entity Creation Requirements
+
+When creating test entities, you must ensure all entity constraints are properly satisfied:
+
+#### Mandatory Field Validation
+- **Non-nullable fields**: All required fields must have meaningful and realistic values
+- **Foreign key constraints**: Referenced entities must exist before creating dependent entities
+- **Unique constraints**: Ensure unique fields (emails, usernames, etc.) use unique values across tests
+- **Data type constraints**: Provide values that match the expected data types (strings, numbers, dates, etc.)
+- **Enum constraints**: Use valid enum values as defined in the entity interfaces
+
+#### Entity Creation Best Practices
+
+```typescript
+// #region test data generation
+
+async function createTestUser(): Promise<IApplicationUser> {
+  // Ensure all non-nullable fields are provided with realistic values
+  const userData = {
+    id: uuidv4(),
+    email: `test-${uuidv4()}@example.com`, // Unique email to avoid constraint violations
+    firstName: 'John',
+    lastName: 'Doe',
+    passwordHash: await bcrypt.hash('Password123', 10), // Properly hashed password
+    isActive: true, // Boolean field with explicit value
+    role: UserRole.BORROWER, // Valid enum value
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    // Ensure no required fields are missing
+  };
+
+  const user = await userService.createUser(userData);
+  
+  if (!user) {
+    throw new Error('Failed to create test user - check entity constraints');
+  }
+  
+  return user;
+}
+
+async function createTestLoan(): Promise<ILoan> {
+  // Create dependent entities first
+  const lender = await createTestUser();
+  const borrower = await createTestUser();
+  
+  // Provide all required fields with valid values
+  const loanData = {
+    id: uuidv4(),
+    amount: 5000, // Positive number
+    lenderId: lender.id, // Valid foreign key
+    borrowerId: borrower.id, // Valid foreign key
+    interestRate: 5.5, // Decimal number
+    termMonths: 12, // Positive integer
+    status: LoanStatus.PENDING, // Valid enum value
+    purpose: 'Home improvement', // Non-empty string
+    requestedDate: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    // Include all required fields to avoid constraint violations
+  };
+
+  const loan = await loanService.createLoan(loanData);
+  
+  if (!loan) {
+    throw new Error('Failed to create test loan - verify all constraints are satisfied');
+  }
+  
+  return loan;
+}
+
+async function createTestPaymentAccount(): Promise<IPaymentAccount> {
+  // Create owner first
+  const owner = await createTestUser();
+  
+  const accountData = {
+    id: uuidv4(),
+    userId: owner.id, // Valid foreign key
+    type: PaymentAccountTypeCodes.BankAccount, // Valid enum
+    provider: PaymentAccountProviderCodes.Checkbook, // Valid enum
+    ownership: PaymentAccountOwnershipTypeCodes.Personal, // Valid enum
+    accountHolderName: 'John Doe Smith', // Non-empty string
+    accountNumber: '1234567890123456', // Valid format
+    routingNumber: '123456789', // Valid format
+    state: PaymentAccountStateCodes.Verified, // Valid enum
+    isActive: true, // Boolean field
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    // Ensure all validation rules are met
+  };
+
+  const account = await paymentService.addPaymentAccount(owner.id, accountData);
+  
+  if (!account) {
+    throw new Error('Failed to create payment account - check field validations');
+  }
+  
+  return account;
+}
+
+// #endregion
+```
+
+#### Common Entity Constraint Patterns
+
+1. **User Entities**:
+   - Email must be unique and valid format
+   - Password must be hashed (never plain text)
+   - Role must be a valid enum value
+   - Active status must be boolean
+
+2. **Loan Entities**:
+   - Amount must be positive number
+   - Interest rate must be valid decimal
+   - Term months must be positive integer
+   - Status must be valid enum
+   - Lender and borrower must exist
+
+3. **Payment Entities**:
+   - Amount must be positive
+   - Associated loan/account must exist
+   - Provider codes must be valid enums
+   - Account numbers must meet format requirements
+
+4. **Date Fields**:
+   - CreatedAt/UpdatedAt should be realistic dates
+   - Future dates only where business logic requires
+   - Use consistent timezone handling
+
+#### Error Handling for Constraint Violations
+
+```typescript
+async function createTestEntityWithValidation(): Promise<IEntity> {
+  try {
+    const entityData = {
+      // Provide all required fields
+      id: uuidv4(),
+      requiredField: 'meaningful_value',
+      numericField: 100, // Positive where required
+      enumField: ValidEnum.VALUE,
+      foreignKeyId: existingEntityId,
+      // ... all other required fields
+    };
+
+    const entity = await service.createEntity(entityData);
+    
+    if (!entity) {
+      throw new Error('Entity creation returned null - constraint validation failed');
+    }
+    
+    return entity;
+  } catch (error) {
+    throw new Error(`Failed to create test entity: ${error.message}. Check entity constraints and required fields.`);
+  }
+}
+```
+
 ### Service Integration Testing
 
 - Test interactions between multiple services using real service implementations wherever possible.
@@ -427,6 +608,30 @@ E2E tests verify that the entire application works correctly from the user's per
 - Verify that authentication, validation, and business logic work correctly together within the full application context.
 - Test the application configuration, middleware, pipes, guards, and interceptors as they would run in production.
 
+### Test Data Generation Requirements for E2E Tests
+
+- **All required entities must be created in advance**: Before running any E2E test, ensure all necessary entities (users, loans, accounts, etc.) exist in the database.
+- **Group test data generation functions**: All test data creation functions must be placed together within a test file, enclosed by region markers:
+  ```typescript
+  // #region test data generation
+  
+  async function createTestUser(): Promise<void> {
+    // User creation logic using real services
+  }
+  
+  async function createTestLoanWithBorrower(): Promise<void> {
+    // Complete loan setup with borrower
+  }
+  
+  async function seedCompleteTestData(): Promise<void> {
+    // Full E2E test data setup
+  }
+  
+  // #endregion
+  ```
+- **Use real service implementations for data creation**: In E2E tests, use actual services rather than raw SQL queries when possible.
+- **Handle authentication tokens**: Generate and store authentication tokens for different user roles as needed for E2E tests.
+
 ### Controller E2E Testing
 
 - Test API endpoints with real HTTP requests against a fully configured application.
@@ -459,10 +664,12 @@ describe('AuthController (e2e)', () => {
     connection = moduleFixture.get<Connection>(Connection);
     
     // Seed test user
+    // Seed test user with realistic ID
+    const testUserId = uuidv4();
     const passwordHash = await bcrypt.hash('Password123', 10);
     await connection.query(`
       INSERT INTO users (id, email, password_hash, is_active)
-      VALUES ('test-user-id', 'test@example.com', '${passwordHash}', true)
+      VALUES ('${testUserId}', 'test@example.com', '${passwordHash}', true)
     `);
   });
 
@@ -524,6 +731,8 @@ describe('AuthController (e2e)', () => {
 
 ```typescript
 // Example of a comprehensive E2E test with real service implementations
+import { v4 as uuidv4 } from 'uuid';
+
 describe('Loan Application and Approval Flow (e2e with real services)', () => {
   let app: INestApplication;
   let jwtService: JwtService;
@@ -534,8 +743,8 @@ describe('Loan Application and Approval Flow (e2e with real services)', () => {
   // Test users and tokens
   let borrowerToken: string;
   let lenderToken: string;
-  const testBorrowerId = 'test-borrower-id';
-  const testLenderId = 'test-lender-id';
+  const testBorrowerId = uuidv4();
+  const testLenderId = uuidv4();
 
   beforeAll(async () => {
     // Create the complete application with almost no mocks
@@ -569,7 +778,7 @@ describe('Loan Application and Approval Flow (e2e with real services)', () => {
       .overrideProvider(IPaymentGatewayService)
       .useValue({
         processPayment: jest.fn().mockResolvedValue({ 
-          id: 'test-payment-id',
+          id: uuidv4(),
           status: 'completed'
         }),
         refundPayment: jest.fn().mockResolvedValue(true),
@@ -672,7 +881,7 @@ describe('Loan Application and Approval Flow (e2e with real services)', () => {
       .post(`/loans/${loanId}/fund`)
       .set('Authorization', `Bearer ${lenderToken}`)
       .send({
-        paymentMethodId: 'test-payment-method',
+        paymentMethodId: uuidv4(),
       })
       .expect(200);
     
@@ -682,7 +891,7 @@ describe('Loan Application and Approval Flow (e2e with real services)', () => {
       .set('Authorization', `Bearer ${borrowerToken}`)
       .send({
         amount: 100,
-        paymentMethodId: 'test-payment-method',
+        paymentMethodId: uuidv4(),
       })
       .expect(201);
     
@@ -786,7 +995,7 @@ describe('Loan Application Flow (e2e)', () => {
       .post(`/loans/${loanId}/fund`)
       .set('Authorization', `Bearer ${lenderToken}`)
       .send({
-        paymentMethodId: 'test-payment-method',
+        paymentMethodId: uuidv4(),
       })
       .expect(200);
     
@@ -805,7 +1014,7 @@ describe('Loan Application Flow (e2e)', () => {
       .set('Authorization', `Bearer ${borrowerToken}`)
       .send({
         amount: 100,
-        paymentMethodId: 'test-payment-method',
+        paymentMethodId: uuidv4(),
       })
       .expect(201);
     
@@ -872,12 +1081,14 @@ export type MockType<T> = {
 
 ### Test Data Factories
 
-Create utility functions to generate test data for common entities.
+Create utility functions to generate test data for common entities. All IDs must be generated using `uuid.v4()` to ensure realistic test data.
 
 ```typescript
+import { v4 as uuidv4 } from 'uuid';
+
 // User test data factory
 export const createTestUser = (overrides: Partial<IApplicationUser> = {}): IApplicationUser => ({
-  id: 'test-id',
+  id: uuidv4(),
   email: 'test@example.com',
   firstName: 'Test',
   lastName: 'User',
@@ -890,11 +1101,11 @@ export const createTestUser = (overrides: Partial<IApplicationUser> = {}): IAppl
 
 // Loan test data factory
 export const createTestLoan = (overrides: Partial<ILoan> = {}): ILoan => ({
-  id: 'loan-test-id',
+  id: uuidv4(),
   amount: 1000,
   status: 'pending',
-  lendingUserId: 'lender-id',
-  borrowingUserId: 'borrower-id',
+  lendingUserId: uuidv4(),
+  borrowingUserId: uuidv4(),
   termMonths: 12,
   interestRate: 5.0,
   createdAt: new Date(),
@@ -903,40 +1114,71 @@ export const createTestLoan = (overrides: Partial<ILoan> = {}): ILoan => ({
 });
 ```
 
+### Test ID Management
+
+- **Always use `uuidv4()` for generating test IDs**: Never use hardcoded strings like `'test-id'` or `'user-123'`. All IDs should look realistic.
+- **Store frequently used IDs in variables**: When the same ID is needed across multiple test cases, declare it at the test suite level.
+- **Generate non-existent IDs for error testing**: Create separate `uuidv4()` IDs specifically for testing error conditions.
+
+```typescript
+describe('UserService Integration', () => {
+  // Test data IDs - generated once, used across multiple tests
+  const validUserId = uuidv4();
+  const validLoanId = uuidv4();
+  const validAccountId = uuidv4();
+  
+  // Non-existent IDs for error testing
+  const nonExistentUserId = uuidv4();
+  const nonExistentLoanId = uuidv4();
+  
+  // Test implementation...
+});
+```
+
 ### In-Memory Database Setup
 
-ZNG uses `pg-mem` for in-memory PostgreSQL database testing. Use the `memoryDataSourceForTests` utility function to set up test databases with proper schema isolation.
+ZNG uses `pg-mem` for in-memory PostgreSQL database testing. Use the `memoryDataSourceSingle` utility function to set up test databases with all entities.
 
-#### Basic Database Setup for Integration Tests
+#### Recommended Database Setup for Integration and E2E Tests
 
 ```typescript
 import { IBackup } from 'pg-mem';
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
+import { v4 as uuidv4 } from 'uuid';
 import { Test, TestingModule } from '@nestjs/testing';
-import { memoryDataSourceForTests } from '@library/shared/tests/postgress-memory-datasource';
+import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
 import { AllEntities } from '@library/shared/domain/entities';
-import { DbSchemaCodes } from '@library/shared/common/data';
 
 describe('Service Integration Tests', () => {
   let module: TestingModule;
   let service: YourService;
   let databaseBackup: IBackup;
 
+  // Test data IDs - use uuidv4() for realistic test data
+  const mockUserId = uuidv4();
+  const mockLoanId = uuidv4();
+  let mockAccountId: string;
+  let mockPaymentId: string;
+
+  // Non-existent IDs for error testing
+  const nonExistentUserId = uuidv4();
+  const nonExistentLoanId = uuidv4();
+
   beforeAll(async () => {
-    // Create in-memory database with appropriate schema
-    const memoryDBinstance = await memoryDataSourceForTests({ 
-      entities: [...AllEntities], 
-      schema: DbSchemaCodes.Core // Use appropriate schema: Core, Payment, or Notification
-    });
-    const { dataSource, database } = memoryDBinstance;
+    // Create in-memory database with all entities
+    const { dataSource, database } = await memoryDataSourceSingle(AllEntities);
     
     // Initialize transactional context
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
 
-    // Create test module with real database connection
-    module = await Test.createTestingModule({ 
-      imports: [YourModule] // Import the actual module
+    // Create test module with real service implementations
+    module = await Test.createTestingModule({
+      imports: [
+        DataModule, // Real data module with repositories
+        DomainModule, // Real domain module with services
+        YourModule, // Your specific module
+      ],
     })
       .overrideProvider(DataSource)
       .useValue(addTransactionalDataSource(dataSource))
@@ -950,20 +1192,73 @@ describe('Service Integration Tests', () => {
     await module.close();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Restore database to clean state before each test
     databaseBackup.restore();
   });
+
+  // #region test data generation
+  
+  async function createTestUser(): Promise<void> {
+    // Create test user using real service implementations
+    const user = await userService.createUser({
+      id: mockUserId,
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      passwordHash: 'hashed_password',
+    });
+    
+    if (!user) {
+      throw new Error('Failed to create test user');
+    }
+  }
+
+  async function createTestLoan(): Promise<void> {
+    // Create dependencies first
+    await createTestUser();
+    
+    // Create test loan
+    const loan = await loanService.createLoan({
+      id: mockLoanId,
+      amount: 5000,
+      lenderId: mockUserId,
+      // ... other required fields
+    });
+    
+    if (!loan) {
+      throw new Error('Failed to create test loan');
+    }
+  }
+
+  async function createFullTestData(): Promise<void> {
+    // Create all required entities for complex test scenarios
+    await createTestUser();
+    await createTestLoan();
+    // Add other entities as needed
+  }
+  
+  // #endregion
 
   // Your tests here
 });
 ```
 
-#### Schema Selection Guidelines
+#### Key Principles for Database Setup
 
-- **Core API tests**: Use `DbSchemaCodes.Core`
-- **Payment API tests**: Use `DbSchemaCodes.Payment` 
-- **Notification API tests**: Use `DbSchemaCodes.Notification`
+1. **Use `memoryDataSourceSingle(AllEntities)`**: This provides a complete database with all entities, avoiding schema-specific setup complexity. This replaces the older `memoryDataSourceForTests` approach that required schema selection.
+
+2. **Import real modules**: Use actual `DataModule`, `DomainModule`, and specific modules to get real service implementations.
+
+3. **Override only the DataSource**: Replace the DataSource with the in-memory version while keeping all services real.
+
+4. **Use backup/restore pattern**: Create a backup after setup and restore before each test for optimal performance and isolation.
+
+#### Migration from Legacy Approach
+
+- **Replace `memoryDataSourceForTests`**: The newer `memoryDataSourceSingle(AllEntities)` approach is simpler and more reliable.
+- **Remove schema-specific imports**: No need to import `DbSchemaCodes` or specify schemas manually.
+- **Simplify entity imports**: Just use `AllEntities` instead of manually selecting entity arrays.
 
 #### Database Backup and Restore Pattern
 
@@ -981,12 +1276,16 @@ describe('PaymentDomainService Integration', () => {
   let paymentDomainService: PaymentDomainService;
   let databaseBackup: IBackup;
 
+  // Test data IDs
+  const mockUserId = uuidv4();
+  const mockLoanId = uuidv4();
+  let mockPaymentId: string;
+
   beforeAll(async () => {
-    const memoryDBinstance = await memoryDataSourceForTests({ 
-      entities: [...AllEntities], 
-      schema: DbSchemaCodes.Payment // Payment entities use Payment schema
-    });
-    const { dataSource, database } = memoryDBinstance;
+    // Create in-memory database with all entities
+    const { dataSource, database } = await memoryDataSourceSingle(AllEntities);
+    
+    // Initialize transactional context
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
 
     module = await Test.createTestingModule({ 
@@ -1004,10 +1303,32 @@ describe('PaymentDomainService Integration', () => {
     databaseBackup.restore();
   });
 
+  // #region test data generation
+  
+  async function createTestPayment(): Promise<void> {
+    // Create payment using real service
+    const payment = await paymentDomainService.createPayment({
+      id: uuidv4(),
+      loanId: mockLoanId,
+      amount: 1000,
+      // ... other required fields
+    });
+    
+    if (!payment) {
+      throw new Error('Failed to create test payment');
+    }
+    
+    mockPaymentId = payment.id;
+  }
+  
+  // #endregion
+
   it('should create and retrieve payment with real database', async () => {
+    // Create test data first
+    await createTestPayment();
+    
     // Test with actual database operations
-    const payment = await paymentDomainService.createPayment(mockPaymentData);
-    const retrieved = await paymentDomainService.getPaymentById(payment.id);
+    const retrieved = await paymentDomainService.getPaymentById(mockPaymentId);
     
     expect(retrieved).toEqual(expect.objectContaining({
       id: payment.id,
@@ -1435,3 +1756,35 @@ To guide GitHub Copilot effectively when writing tests, include inline comments 
 - `// Create a comprehensive E2E test with real services to validate the entire flow`
 - `// Use TestingModule to get actual service implementations from the DI container`
 - `// This is a cross-cutting test - use real service implementations to validate interactions`
+
+---
+
+## Summary of Key Testing Updates
+
+### Database Setup Changes
+- **New approach**: Use `memoryDataSourceSingle(AllEntities)` instead of `memoryDataSourceForTests`
+- **Simplified setup**: No need for schema-specific configuration or `DbSchemaCodes`
+- **Import real modules**: Use actual `DataModule`, `DomainModule`, and service modules
+- **Override only DataSource**: Replace database connection while keeping all services real
+
+### Test ID Management
+- **Always use `uuidv4()`**: Replace all hardcoded test IDs like `'test-id'` with realistic UUIDs
+- **Store frequently used IDs**: Declare test IDs at suite level for reuse across test cases
+- **Generate realistic error test IDs**: Use separate `uuidv4()` calls for non-existent entity testing
+
+### Test Data Generation
+- **Mandatory test data regions**: All test data creation functions must be grouped within:
+  ```typescript
+  // #region test data generation
+  // All test data creation functions here
+  // #endregion
+  ```
+- **Create entities in advance**: Ensure all required entities exist before running tests
+- **Use descriptive function names**: Name functions clearly (e.g., `createTestUser`, `createPaymentWithAccount`)
+- **Handle dependencies properly**: Create entities in correct order and validate creation success
+
+### Real Service Implementation Strategy
+- **Integration tests**: Use real service implementations 2-3 levels deep, mock only repositories and external APIs
+- **E2E tests**: Use complete application with real services, mock only true external dependencies
+- **Database isolation**: Use backup/restore pattern for optimal performance and test isolation
+```

@@ -22,7 +22,7 @@ export class BillerRepository extends RepositoryBase<Biller> implements IBillerR
   public async createBiller(biller: DeepPartial<Biller>): Promise<Biller | null> {
     this.logger.debug('createBiller:', biller);
 
-    return this.repository.create(biller);
+    return this.insert(biller, true);
   }
 
 }

@@ -9,9 +9,8 @@ import { IUserRepository } from '@core/shared/interfaces/repositories';
 import { AllEntities, ApplicationUser, Loan } from '@library/shared/domain/entities';
 import { CoreDataService } from '@core/data/data.service';
 import { DataModule } from '@core/data';
-import { memoryDataSource } from '@library/shared/tests/postgress-memory-datasource';
+import { memoryDataSourceSimple } from '@library/shared/tests/postgress-memory-datasource';
 import { ILoanRepository } from '@library/shared/interfaces/repositories';
-import { DbSchemaCodes } from '@library/shared/common/data';
 
 
 describe('DataModule Integration Tests', () => {
@@ -21,7 +20,7 @@ describe('DataModule Integration Tests', () => {
   let userRepository: IUserRepository;
 
   beforeAll(async () => {
-    const memoryDB = await memoryDataSource({ entities: [...AllEntities], schema: DbSchemaCodes.Core });
+    const memoryDB = await memoryDataSourceSimple(AllEntities);
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
 
     module = await Test.createTestingModule({ imports: [DataModule] })

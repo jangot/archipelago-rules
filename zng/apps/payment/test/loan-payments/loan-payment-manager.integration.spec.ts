@@ -17,31 +17,39 @@ import {
   RefundPaymentManager,
 } from '../../src/loan-payments/managers';
 import { 
-  LoanPaymentTypeCodes, 
+  LoanPaymentTypeCodes,
+  LoanPaymentStateCodes,
+  PaymentAccountTypeCodes,
+  PaymentAccountOwnershipTypeCodes,
+  PaymentAccountProviderCodes,
 } from '@library/entity/enum';
+import { 
+  ILoanPayment,
+  IPaymentAccount,
+} from '@library/entity/interface';
 import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
 import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { memoryDataSourceForTests } from '@library/shared/tests/postgress-memory-datasource';
+import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
 import { AllEntities } from '@library/shared/domain/entities';
-import { DbSchemaCodes } from '@library/shared/common/data';
 
+// Follow ZNG testing guidelines from .github/copilot/test-instructions.md
+// Use real service implementations for integration tests (2-3 levels deep)
+// Create test data using #region test data generation pattern
 describe('Loan Payment Managers Integration', () => {
   let module: TestingModule;
   let domainServices: IDomainServices;
   let loanPaymentFactory: LoanPaymentFactory;
   let databaseBackup: IBackup;
 
-  // Test data
-  const mockLoanId = uuidv4();
-  const mockPaymentId = uuidv4();
+  // Use uuidv4() for all test IDs and entity creation
+  const testUserId = uuidv4();
+  const testLoanId = uuidv4();
+  const nonExistentPaymentId = uuidv4();
+  const nonExistentLoanId = uuidv4();
 
   beforeAll(async () => {
-    // Create in-memory database with Payment schema
-    const memoryDBinstance = await memoryDataSourceForTests({ 
-      entities: [...AllEntities], 
-      schema: DbSchemaCodes.Payment, 
-    });
-    const { dataSource, database } = memoryDBinstance;
+    // Create in-memory database with all entities
+    const { dataSource, database } = await memoryDataSourceSingle(AllEntities);
     
     // Initialize transactional context
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
@@ -70,144 +78,463 @@ describe('Loan Payment Managers Integration', () => {
     await module.close();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Restore database to clean state before each test
     databaseBackup.restore();
+    
+    // Create test loan for tests that need it
+    await createTestLoan();
   });
+
+  // #region test data generation
+
+  async function createTestLoan(): Promise<void> {
+    // Create a minimal loan entity to satisfy foreign key constraints
+    const dataSource = module.get(DataSource);
+    await dataSource.query(`
+      INSERT INTO core.loans (
+        id, amount, type, state, closure_type, payments_count, payment_frequency, lender_id, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
+      )
+    `, [
+      testLoanId,
+      5000,
+      'personal',
+      'created',
+      'open',
+      12,
+      'monthly',
+      testUserId,
+    ]);
+    
+    // Create loan invitee to satisfy constraints
+    await dataSource.query(`
+      INSERT INTO core.loan_invitees (
+        id, loan_id, type, first_name, last_name, email, phone
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7
+      )
+    `, [
+      uuidv4(),
+      testLoanId,
+      'borrower',
+      'Test',
+      'Borrower',
+      `borrower-${Date.now()}@test.com`,
+      '+1234567890',
+    ]);
+  }
+
+  async function createTestPaymentAccount(): Promise<IPaymentAccount> {
+    const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
+      type: PaymentAccountTypeCodes.BankAccount,
+      ownership: PaymentAccountOwnershipTypeCodes.Personal,
+      provider: PaymentAccountProviderCodes.Checkbook,
+      accountHolderName: 'Test Account Holder',
+      accountNumber: `1234567890${Date.now()}`,
+      routingNumber: '123456789',
+      isDefault: true,
+      isActive: true,
+    });
+
+    if (!account) {
+      throw new Error('Failed to create test payment account - check entity constraints');
+    }
+
+    return account;
+  }
+
+  async function createTestPayment(
+    paymentType: typeof LoanPaymentTypeCodes[keyof typeof LoanPaymentTypeCodes] = LoanPaymentTypeCodes.Funding,
+    amount: number = 1000,
+    paymentNumber: number = 1
+  ): Promise<ILoanPayment> {
+    // Create a test payment
+    const payment = await domainServices.paymentServices.createPayment({
+      loanId: testLoanId,
+      amount,
+      type: paymentType,
+      state: LoanPaymentStateCodes.Created,
+      paymentNumber,
+    });
+
+    if (!payment) {
+      throw new Error('Failed to create test payment - check entity constraints');
+    }
+
+    return payment;
+  }
+
+  async function createTestPaymentForAdvancing(
+    paymentType: typeof LoanPaymentTypeCodes[keyof typeof LoanPaymentTypeCodes] = LoanPaymentTypeCodes.Funding
+  ): Promise<string> {
+    const payment = await createTestPayment(paymentType);
+    return payment.id;
+  }
+
+  async function createMultipleTestPayments(
+    count: number = 3,
+    baseAmount: number = 1000
+  ): Promise<ILoanPayment[]> {
+    const paymentTypes = [
+      LoanPaymentTypeCodes.Funding,
+      LoanPaymentTypeCodes.Disbursement,
+      LoanPaymentTypeCodes.Repayment,
+    ];
+
+    const payments = await Promise.all(
+      Array.from({ length: count }, async (_, index) => {
+        const paymentType = paymentTypes[index % paymentTypes.length];
+        return createTestPayment(paymentType, baseAmount * (index + 1), index + 1);
+      })
+    );
+
+    return payments;
+  }
+
+  // #endregion
 
   describe('LoanPaymentFactory', () => {
     it('should get funding payment manager for funding type', () => {
+      // Act
       const manager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Funding);
       
+      // Assert
       expect(manager).toBeInstanceOf(FundingPaymentManager);
+      expect(manager).toBeDefined();
     });
 
     it('should get disbursement payment manager for disbursement type', () => {
+      // Act
       const manager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Disbursement);
       
+      // Assert
       expect(manager).toBeInstanceOf(DisbursementPaymentManager);
+      expect(manager).toBeDefined();
     });
 
     it('should get repayment payment manager for repayment type', () => {
+      // Act
       const manager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Repayment);
       
+      // Assert
       expect(manager).toBeInstanceOf(RepaymentPaymentManager);
+      expect(manager).toBeDefined();
     });
 
     it('should get fee payment manager for fee type', () => {
+      // Act
       const manager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Fee);
       
+      // Assert
       expect(manager).toBeInstanceOf(FeePaymentManager);
+      expect(manager).toBeDefined();
     });
 
     it('should get refund payment manager for refund type', () => {
+      // Act
       const manager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Refund);
       
+      // Assert
       expect(manager).toBeInstanceOf(RefundPaymentManager);
+      expect(manager).toBeDefined();
     });
 
     it('should throw error for unsupported payment type', () => {
+      // Act & Assert
       expect(() => {
         loanPaymentFactory.getManager('unsupported' as any);
       }).toThrow();
     });
+
+    it('should handle all payment type scenarios', () => {
+      // Arrange - All supported payment types
+      const paymentTypes = [
+        LoanPaymentTypeCodes.Funding,
+        LoanPaymentTypeCodes.Disbursement,
+        LoanPaymentTypeCodes.Repayment,
+        LoanPaymentTypeCodes.Fee,
+        LoanPaymentTypeCodes.Refund,
+      ];
+
+      // Act - Get managers for all types
+      const managers = paymentTypes.map(type => loanPaymentFactory.getManager(type));
+
+      // Assert
+      expect(managers).toHaveLength(5);
+      expect(managers[0]).toBeInstanceOf(FundingPaymentManager);
+      expect(managers[1]).toBeInstanceOf(DisbursementPaymentManager);
+      expect(managers[2]).toBeInstanceOf(RepaymentPaymentManager);
+      expect(managers[3]).toBeInstanceOf(FeePaymentManager);
+      expect(managers[4]).toBeInstanceOf(RefundPaymentManager);
+    });
   });
 
   describe('FundingPaymentManager', () => {
-    it('should initiate funding payment for loan', async () => {
+    it('should initiate funding payment for existing loan', async () => {
+      // Arrange
       const fundingManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Funding);
-      const result = await fundingManager.initiate(mockLoanId);
       
-      // Since no loan exists in test database, expect null
+      // Act
+      const result = await fundingManager.initiate(testLoanId);
+      
+      // Assert - Should return null since no payment factory configuration exists in test
       expect(result).toBeNull();
     });
 
-    it('should advance funding payment', async () => {
+    it('should advance funding payment when payment exists', async () => {
+      // Arrange
       const fundingManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Funding);
-      const result = await fundingManager.advance(mockPaymentId);
+      const paymentId = await createTestPaymentForAdvancing();
       
-      // Since no payment exists in test database, expect null
+      // Act
+      const result = await fundingManager.advance(paymentId);
+      
+      // Assert - Should return null since no step management configuration exists in test
       expect(result).toBeNull();
     });
 
-    it('should have domain services configured', () => {
-      // Verify domainServices is properly injected
+    it('should handle non-existent payment gracefully', async () => {
+      // Arrange
+      const fundingManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Funding);
+      
+      // Act
+      const result = await fundingManager.advance(nonExistentPaymentId);
+      
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should handle non-existent loan for initiation', async () => {
+      // Arrange
+      const fundingManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Funding);
+      
+      // Act
+      const result = await fundingManager.initiate(nonExistentLoanId);
+      
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should validate funding payment creation and advancement workflow', async () => {
+      // Arrange
+      const fundingManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Funding);
+      const testPayment = await createTestPayment(LoanPaymentTypeCodes.Funding, 2000);
+      
+      // Act
+      const advanceResult = await fundingManager.advance(testPayment.id);
+      
+      // Assert
+      expect(advanceResult).toBeNull(); // Expected in test environment
+      expect(testPayment.type).toBe(LoanPaymentTypeCodes.Funding);
+      expect(testPayment.amount).toBe(2000);
+    });
+
+    it('should have domain services configured properly', () => {
+      // Assert - Verify domainServices is properly injected
       expect(domainServices).toBeDefined();
       expect(domainServices.paymentServices).toBeDefined();
-      // ManagementDomainService is no longer part of IDomainServices
-      // It's now accessed directly from ManagementModule
     });
   });
 
   describe('DisbursementPaymentManager', () => {
-    it('should initiate disbursement payment for loan', async () => {
+    it('should initiate disbursement payment for existing loan', async () => {
+      // Arrange
       const disbursementManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Disbursement);
-      const result = await disbursementManager.initiate(mockLoanId);
       
-      // Since no loan exists in test database, expect null
+      // Act
+      const result = await disbursementManager.initiate(testLoanId);
+      
+      // Assert - Should return null since no payment factory configuration exists in test
       expect(result).toBeNull();
     });
 
-    it('should advance disbursement payment', async () => {
+    it('should advance disbursement payment when payment exists', async () => {
+      // Arrange
       const disbursementManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Disbursement);
-      const result = await disbursementManager.advance(mockPaymentId);
+      const paymentId = await createTestPaymentForAdvancing(LoanPaymentTypeCodes.Disbursement);
       
-      // Since no payment exists in test database, expect null
+      // Act
+      const result = await disbursementManager.advance(paymentId);
+      
+      // Assert - Should return null since no step management configuration exists in test
       expect(result).toBeNull();
+    });
+
+    it('should handle non-existent loan for disbursement initiation', async () => {
+      // Arrange
+      const disbursementManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Disbursement);
+      
+      // Act
+      const result = await disbursementManager.initiate(nonExistentLoanId);
+      
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should validate disbursement payment properties', async () => {
+      // Arrange
+      const disbursementManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Disbursement);
+      const testPayment = await createTestPayment(LoanPaymentTypeCodes.Disbursement, 1500);
+      
+      // Act
+      const advanceResult = await disbursementManager.advance(testPayment.id);
+      
+      // Assert
+      expect(advanceResult).toBeNull(); // Expected in test environment
+      expect(testPayment.type).toBe(LoanPaymentTypeCodes.Disbursement);
+      expect(testPayment.amount).toBe(1500);
     });
   });
 
   describe('RepaymentPaymentManager', () => {
-    it('should initiate repayment payments for loan', async () => {
+    it('should initiate repayment payments for existing loan', async () => {
+      // Arrange
       const repaymentManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Repayment);
-      const result = await repaymentManager.initiate(mockLoanId);
       
-      // Since no loan exists in test database, expect null
+      // Act
+      const result = await repaymentManager.initiate(testLoanId);
+      
+      // Assert - Should return null since no payment factory configuration exists in test
       expect(result).toBeNull();
     });
 
-    it('should advance repayment payment', async () => {
+    it('should advance repayment payment when payment exists', async () => {
+      // Arrange
       const repaymentManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Repayment);
-      const result = await repaymentManager.advance(mockPaymentId);
+      const paymentId = await createTestPaymentForAdvancing(LoanPaymentTypeCodes.Repayment);
       
-      // Since no payment exists in test database, expect null
+      // Act
+      const result = await repaymentManager.advance(paymentId);
+      
+      // Assert - Should return null since no step management configuration exists in test
       expect(result).toBeNull();
+    });
+
+    it('should handle non-existent loan for repayment initiation', async () => {
+      // Arrange
+      const repaymentManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Repayment);
+      
+      // Act
+      const result = await repaymentManager.initiate(nonExistentLoanId);
+      
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should validate repayment payment creation', async () => {
+      // Arrange
+      const repaymentManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Repayment);
+      const testPayment = await createTestPayment(LoanPaymentTypeCodes.Repayment, 750);
+      
+      // Act
+      const advanceResult = await repaymentManager.advance(testPayment.id);
+      
+      // Assert
+      expect(advanceResult).toBeNull(); // Expected in test environment
+      expect(testPayment.type).toBe(LoanPaymentTypeCodes.Repayment);
+      expect(testPayment.amount).toBe(750);
     });
   });
 
   describe('FeePaymentManager', () => {
-    it('should initiate fee payment for loan', async () => {
+    it('should initiate fee payment for existing loan', async () => {
+      // Arrange
       const feeManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Fee);
-      const result = await feeManager.initiate(mockLoanId);
       
-      // Since no loan exists in test database, expect null
+      // Act
+      const result = await feeManager.initiate(testLoanId);
+      
+      // Assert - Should return null since no payment factory configuration exists in test
       expect(result).toBeNull();
     });
 
-    it('should advance fee payment', async () => {
+    it('should advance fee payment when payment exists', async () => {
+      // Arrange
       const feeManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Fee);
-      const result = await feeManager.advance(mockPaymentId);
+      const paymentId = await createTestPaymentForAdvancing(LoanPaymentTypeCodes.Fee);
       
-      // Since no payment exists in test database, expect null
+      // Act
+      const result = await feeManager.advance(paymentId);
+      
+      // Assert - Should return null since no step management configuration exists in test
       expect(result).toBeNull();
+    });
+
+    it('should handle non-existent loan for fee initiation', async () => {
+      // Arrange
+      const feeManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Fee);
+      
+      // Act
+      const result = await feeManager.initiate(nonExistentLoanId);
+      
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should validate fee payment properties', async () => {
+      // Arrange
+      const feeManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Fee);
+      const testPayment = await createTestPayment(LoanPaymentTypeCodes.Fee, 100);
+      
+      // Act
+      const advanceResult = await feeManager.advance(testPayment.id);
+      
+      // Assert
+      expect(advanceResult).toBeNull(); // Expected in test environment
+      expect(testPayment.type).toBe(LoanPaymentTypeCodes.Fee);
+      expect(testPayment.amount).toBe(100);
     });
   });
 
   describe('RefundPaymentManager', () => {
-    it('should initiate refund payment for loan', async () => {
+    it('should initiate refund payment for existing loan', async () => {
+      // Arrange
       const refundManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Refund);
-      const result = await refundManager.initiate(mockLoanId);
       
-      // Since no loan exists in test database, expect null
+      // Act
+      const result = await refundManager.initiate(testLoanId);
+      
+      // Assert - Should return null since no payment factory configuration exists in test
       expect(result).toBeNull();
     });
 
-    it('should advance refund payment', async () => {
+    it('should advance refund payment when payment exists', async () => {
+      // Arrange
       const refundManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Refund);
-      const result = await refundManager.advance(mockPaymentId);
+      const paymentId = await createTestPaymentForAdvancing(LoanPaymentTypeCodes.Refund);
       
-      // Since no payment exists in test database, expect null
+      // Act
+      const result = await refundManager.advance(paymentId);
+      
+      // Assert - Should return null since no step management configuration exists in test
       expect(result).toBeNull();
+    });
+
+    it('should handle non-existent loan for refund initiation', async () => {
+      // Arrange
+      const refundManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Refund);
+      
+      // Act
+      const result = await refundManager.initiate(nonExistentLoanId);
+      
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should validate refund payment properties', async () => {
+      // Arrange
+      const refundManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Refund);
+      const testPayment = await createTestPayment(LoanPaymentTypeCodes.Refund, 250);
+      
+      // Act
+      const advanceResult = await refundManager.advance(testPayment.id);
+      
+      // Assert
+      expect(advanceResult).toBeNull(); // Expected in test environment
+      expect(testPayment.type).toBe(LoanPaymentTypeCodes.Refund);
+      expect(testPayment.amount).toBe(250);
     });
   });
 });

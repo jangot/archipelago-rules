@@ -20,7 +20,7 @@ export class TransferRepository extends RepositoryBase<Transfer> implements ITra
   }
 
   public async createTransferForStep(transferData: DeepPartial<Transfer>): Promise<Transfer | null> {
-    return this.repository.create(transferData);
+    return this.insert(transferData, true);
   }
 
   public async getTransferById(transferId: string, relations?: TransferRelation[]): Promise<Transfer | null> {

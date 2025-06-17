@@ -28,11 +28,12 @@ import {
   LoanPaymentStateCodes,
   LoanPaymentTypeCodes,
 } from '@library/entity/enum';
-import { DeepPartial } from 'typeorm';
-import { memoryDataSourceForTests } from '@library/shared/tests/postgress-memory-datasource';
+import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
 import { AllEntities } from '@library/shared/domain/entities';
-import { DbSchemaCodes } from '@library/shared/common/data';
 
+// Follow ZNG testing guidelines from .github/copilot/test-instructions.md
+// Use real service implementations for integration tests (2-3 levels deep)
+// Create test data using #region test data generation pattern
 describe('Transfer Execution Integration', () => {
   let module: TestingModule;
   let domainServices: IDomainServices;
@@ -43,38 +44,14 @@ describe('Transfer Execution Integration', () => {
   let tabapayProvider: TabapayTransferExecutionProvider;
   let databaseBackup: IBackup;
 
-  // Test data
-  const mockUserId = uuidv4();
-  const mockLoanId = uuidv4();
-  const mockTransferId = uuidv4();
-
-  const mockCheckbookAccount: DeepPartial<IPaymentAccount> = {
-    userId: mockUserId,
-    type: PaymentAccountTypeCodes.BankAccount,
-    ownership: PaymentAccountOwnershipTypeCodes.Personal,
-    provider: PaymentAccountProviderCodes.Checkbook,
-    isDefault: true,
-    isActive: true,
-    accountHolderName: 'John Doe',
-  };
-
-  const mockFiservAccount: DeepPartial<IPaymentAccount> = {
-    userId: mockUserId,
-    type: PaymentAccountTypeCodes.BankAccount,
-    ownership: PaymentAccountOwnershipTypeCodes.Internal,
-    provider: PaymentAccountProviderCodes.Fiserv,
-    isDefault: true,
-    isActive: true,
-    accountHolderName: 'Zirtue Platform',
-  };
+  // Use uuidv4() for all test IDs and entity creation
+  const testUserId = uuidv4();
+  const testLoanId = uuidv4();
+  const nonExistentTransferId = uuidv4();
 
   beforeAll(async () => {
-    // Create in-memory database with Payment schema
-    const memoryDBinstance = await memoryDataSourceForTests({ 
-      entities: [...AllEntities], 
-      schema: DbSchemaCodes.Payment, 
-    });
-    const { dataSource, database } = memoryDBinstance;
+    // Create in-memory database with all entities
+    const { dataSource, database } = await memoryDataSourceSingle(AllEntities);
     
     // Initialize transactional context
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
@@ -105,273 +82,335 @@ describe('Transfer Execution Integration', () => {
     await module.close();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Restore database to clean state before each test
     databaseBackup.restore();
+    
+    // Create test loan for all tests
+    await createTestLoan();
   });
 
+  // #region test data generation
+
+  async function createTestLoan(): Promise<void> {
+    // Create a minimal loan entity to satisfy foreign key constraints
+    const dataSource = module.get(DataSource);
+    await dataSource.query(`
+      INSERT INTO core.loans (
+        id, amount, type, state, closure_type, payments_count, payment_frequency, lender_id, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
+      )
+    `, [
+      testLoanId,
+      5000,
+      'personal',
+      'created',
+      'open',
+      12,
+      'monthly',
+      testUserId,
+    ]);
+    
+    // Create loan invitee
+    await dataSource.query(`
+      INSERT INTO core.loan_invitees (
+        id, loan_id, type, first_name, last_name, email, phone
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7
+      )
+    `, [
+      uuidv4(),
+      testLoanId,
+      'borrower',
+      'Test',
+      'Borrower',
+      `borrower-${Date.now()}@test.com`,
+      '+1234567890',
+    ]);
+  }
+
+  async function createTestCheckbookAccount(): Promise<IPaymentAccount> {
+    const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
+      type: PaymentAccountTypeCodes.BankAccount,
+      ownership: PaymentAccountOwnershipTypeCodes.Personal,
+      provider: PaymentAccountProviderCodes.Checkbook,
+      accountHolderName: 'John Doe',
+      accountNumber: `1234567890${Date.now()}`, // Unique account number
+      routingNumber: '123456789',
+      isDefault: true,
+      isActive: true,
+    });
+
+    if (!account) {
+      throw new Error('Failed to create Checkbook test account - check entity constraints');
+    }
+
+    return account;
+  }
+
+  async function createTestFiservAccount(): Promise<IPaymentAccount> {
+    const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
+      type: PaymentAccountTypeCodes.BankAccount,
+      ownership: PaymentAccountOwnershipTypeCodes.Internal,
+      provider: PaymentAccountProviderCodes.Fiserv,
+      accountHolderName: 'Zirtue Platform',
+      accountNumber: `9876543210${Date.now()}`, // Unique account number
+      routingNumber: '987654321',
+      isDefault: true,
+      isActive: true,
+    });
+
+    if (!account) {
+      throw new Error('Failed to create Fiserv test account - check entity constraints');
+    }
+
+    return account;
+  }
+
+  async function createTestTransfer(sourceAccount: IPaymentAccount, destAccount: IPaymentAccount): Promise<ITransfer> {
+    const payment = await domainServices.paymentServices.createPayment({
+      loanId: testLoanId,
+      amount: 1000,
+      type: LoanPaymentTypeCodes.Funding,
+      state: LoanPaymentStateCodes.Created,
+      paymentNumber: 1,
+    });
+
+    if (!payment) {
+      throw new Error('Failed to create test payment - check entity constraints');
+    }
+
+    const steps = await domainServices.paymentServices.createPaymentSteps([{
+      loanPaymentId: payment.id,
+      order: 0,
+      amount: 1000,
+      sourcePaymentAccountId: sourceAccount.id,
+      targetPaymentAccountId: destAccount.id,
+      state: PaymentStepStateCodes.Created,
+    }]);
+
+    if (!steps || steps.length === 0) {
+      throw new Error('Failed to create test payment steps - check entity constraints');
+    }
+
+    const transfer = await domainServices.paymentServices.createTransferForStep(steps[0].id);
+
+    if (!transfer) {
+      throw new Error('Failed to create test transfer - check entity constraints');
+    }
+
+    return transfer;
+  }
+
+  // #endregion
+
   describe('TransferExecutionFactory', () => {
-    it('should get Checkbook provider for Checkbook accounts', async () => {
-      // Use factory method with transferId parameter as it requires an actual transfer
-      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockCheckbookAccount);
-      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockFiservAccount);
+    it('should get Checkbook provider for Checkbook accounts when transfer exists', async () => {
+      // Arrange
+      const sourceAccount = await createTestCheckbookAccount();
+      const destAccount = await createTestFiservAccount();
+      const transfer = await createTestTransfer(sourceAccount, destAccount);
       
-      const payment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: payment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Created,
-      }]);
-
-      const transfer = await domainServices.paymentServices.createTransferForStep(steps![0].id);
+      // Act
+      const provider = await transferExecutionFactory.getProvider(transfer.id, PaymentAccountProviderCodes.Checkbook);
       
-      const provider = await transferExecutionFactory.getProvider(transfer!.id, PaymentAccountProviderCodes.Checkbook);
-      
+      // Assert
       expect(provider).toBeInstanceOf(CheckbookTransferExecutionProvider);
     });
 
-    it('should get Fiserv provider for Fiserv accounts', async () => {
-      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockCheckbookAccount);
-      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockFiservAccount);
+    it('should get Fiserv provider for Fiserv accounts when transfer exists', async () => {
+      // Arrange
+      const sourceAccount = await createTestCheckbookAccount();
+      const destAccount = await createTestFiservAccount();
+      const transfer = await createTestTransfer(sourceAccount, destAccount);
       
-      const payment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: payment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Created,
-      }]);
-
-      const transfer = await domainServices.paymentServices.createTransferForStep(steps![0].id);
+      // Act
+      const provider = await transferExecutionFactory.getProvider(transfer.id, PaymentAccountProviderCodes.Fiserv);
       
-      const provider = await transferExecutionFactory.getProvider(transfer!.id, PaymentAccountProviderCodes.Fiserv);
-      
+      // Assert
       expect(provider).toBeInstanceOf(FiservTransferExecutionProvider);
     });
 
-    it('should get Tabapay provider for Tabapay accounts', async () => {
-      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockCheckbookAccount);
-      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockFiservAccount);
+    it('should get Tabapay provider for Tabapay accounts when transfer exists', async () => {
+      // Arrange
+      const sourceAccount = await createTestCheckbookAccount();
+      const destAccount = await createTestFiservAccount();
+      const transfer = await createTestTransfer(sourceAccount, destAccount);
       
-      const payment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: payment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Created,
-      }]);
-
-      const transfer = await domainServices.paymentServices.createTransferForStep(steps![0].id);
+      // Act
+      const provider = await transferExecutionFactory.getProvider(transfer.id, PaymentAccountProviderCodes.Tabapay);
       
-      const provider = await transferExecutionFactory.getProvider(transfer!.id, PaymentAccountProviderCodes.Tabapay);
-      
+      // Assert
       expect(provider).toBeInstanceOf(TabapayTransferExecutionProvider);
     });
 
     it('should handle unsupported provider by returning mock provider', async () => {
-      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockCheckbookAccount);
-      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockFiservAccount);
+      // Arrange
+      const sourceAccount = await createTestCheckbookAccount();
+      const destAccount = await createTestFiservAccount();
+      const transfer = await createTestTransfer(sourceAccount, destAccount);
       
-      const payment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: payment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Created,
-      }]);
-
-      const transfer = await domainServices.paymentServices.createTransferForStep(steps![0].id);
+      // Act - Factory currently returns mock provider for any request without specific provider
+      const provider = await transferExecutionFactory.getProvider(transfer.id);
       
-      // Factory currently returns mock provider for any request
-      const provider = await transferExecutionFactory.getProvider(transfer!.id);
-      
+      // Assert
       expect(provider).toBeInstanceOf(MockTransferExecutionProvider);
     });
   });
 
   describe('Transfer Execution Providers', () => {
-    let mockTransfer: ITransfer | null;
-    let sourceAccount: IPaymentAccount | null;
-    let destAccount: IPaymentAccount | null;
+    let testTransfer: ITransfer;
+    let sourceAccount: IPaymentAccount;
+    let destAccount: IPaymentAccount;
 
     beforeEach(async () => {
-      // Create payment accounts
-      sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockCheckbookAccount);
-      destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockFiservAccount);
-
-      // Create a payment and step
-      const payment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: payment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Created,
-      }]);
-
-      // Create transfer for the step
-      mockTransfer = await domainServices.paymentServices.createTransferForStep(steps![0].id);
+      // Arrange - Create test data for each test
+      sourceAccount = await createTestCheckbookAccount();
+      destAccount = await createTestFiservAccount();
+      testTransfer = await createTestTransfer(sourceAccount, destAccount);
     });
 
     describe('CheckbookTransferExecutionProvider', () => {
-      it('should execute transfer successfully', async () => {
-        const result = await checkbookProvider.executeTransfer(mockTransfer!.id);
+      it('should execute transfer successfully when transfer exists', async () => {
+        // Act
+        const result = await checkbookProvider.executeTransfer(testTransfer.id);
         
+        // Assert
         expect(result).toBe(true);
         
         // Verify transfer still exists with created state since providers don't update state
-        const updatedTransfer = await domainServices.paymentServices.getTransferById(mockTransfer!.id);
+        const updatedTransfer = await domainServices.paymentServices.getTransferById(testTransfer.id);
         expect(updatedTransfer!.state).toBe(TransferStateCodes.Created);
       });
 
       it('should handle transfer execution for non-existent transfer', async () => {
-        const result = await checkbookProvider.executeTransfer(mockTransferId);
+        // Act
+        const result = await checkbookProvider.executeTransfer(nonExistentTransferId);
         
-        expect(result).toBe(true); // Mock provider returns true regardless
+        // Assert - Mock provider returns true regardless
+        expect(result).toBe(true);
       });
     });
 
     describe('FiservTransferExecutionProvider', () => {
-      it('should execute transfer successfully', async () => {
-        const result = await fiservProvider.executeTransfer(mockTransfer!.id);
+      it('should execute transfer successfully when transfer exists', async () => {
+        // Act
+        const result = await fiservProvider.executeTransfer(testTransfer.id);
         
+        // Assert
         expect(result).toBe(true);
         
         // Verify transfer still exists with created state since providers don't update state
-        const updatedTransfer = await domainServices.paymentServices.getTransferById(mockTransfer!.id);
+        const updatedTransfer = await domainServices.paymentServices.getTransferById(testTransfer.id);
         expect(updatedTransfer!.state).toBe(TransferStateCodes.Created);
       });
 
       it('should handle transfer execution for non-existent transfer', async () => {
-        const result = await fiservProvider.executeTransfer(mockTransferId);
+        // Act
+        const result = await fiservProvider.executeTransfer(nonExistentTransferId);
         
-        expect(result).toBe(true); // Mock provider returns true regardless
+        // Assert - Mock provider returns true regardless
+        expect(result).toBe(true);
       });
     });
 
     describe('MockTransferExecutionProvider', () => {
-      it('should execute transfer successfully', async () => {
-        const result = await mockProvider.executeTransfer(mockTransfer!.id);
+      it('should execute transfer successfully when transfer exists', async () => {
+        // Act
+        const result = await mockProvider.executeTransfer(testTransfer.id);
         
+        // Assert
         expect(result).toBe(true);
         
         // Verify transfer still exists with created state since providers don't update state
-        const updatedTransfer = await domainServices.paymentServices.getTransferById(mockTransfer!.id);
+        const updatedTransfer = await domainServices.paymentServices.getTransferById(testTransfer.id);
         expect(updatedTransfer!.state).toBe(TransferStateCodes.Created);
       });
 
       it('should handle transfer execution for non-existent transfer', async () => {
-        const result = await mockProvider.executeTransfer(mockTransferId);
+        // Act
+        const result = await mockProvider.executeTransfer(nonExistentTransferId);
         
-        expect(result).toBe(true); // Mock provider returns true regardless
+        // Assert - Mock provider returns true regardless
+        expect(result).toBe(true);
       });
     });
 
     describe('TabapayTransferExecutionProvider', () => {
-      it('should execute transfer successfully', async () => {
-        const result = await tabapayProvider.executeTransfer(mockTransfer!.id);
+      it('should execute transfer successfully when transfer exists', async () => {
+        // Act
+        const result = await tabapayProvider.executeTransfer(testTransfer.id);
         
+        // Assert
         expect(result).toBe(true);
         
         // Verify transfer still exists with created state since providers don't update state
-        const updatedTransfer = await domainServices.paymentServices.getTransferById(mockTransfer!.id);
+        const updatedTransfer = await domainServices.paymentServices.getTransferById(testTransfer.id);
         expect(updatedTransfer!.state).toBe(TransferStateCodes.Created);
       });
 
       it('should handle transfer execution for non-existent transfer', async () => {
-        const result = await tabapayProvider.executeTransfer(mockTransferId);
+        // Act
+        const result = await tabapayProvider.executeTransfer(nonExistentTransferId);
         
-        expect(result).toBe(true); // Mock provider returns true regardless
+        // Assert - Mock provider returns true regardless
+        expect(result).toBe(true);
       });
     });
   });
 
   describe('Transfer State Management', () => {
-    let mockTransfer: ITransfer | null;
+    let testTransfer: ITransfer;
 
     beforeEach(async () => {
-      // Create payment accounts
-      const sourceAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockCheckbookAccount);
-      const destAccount = await domainServices.paymentServices.addPaymentAccount(mockUserId, mockFiservAccount);
-
-      // Create a payment and step
-      const payment = await domainServices.paymentServices.createPayment({
-        loanId: mockLoanId,
-        amount: 1000,
-        type: LoanPaymentTypeCodes.Funding,
-        state: LoanPaymentStateCodes.Created,
-      });
-
-      const steps = await domainServices.paymentServices.createPaymentSteps([{
-        loanPaymentId: payment!.id,
-        order: 0,
-        amount: 1000,
-        sourcePaymentAccountId: sourceAccount!.id,
-        targetPaymentAccountId: destAccount!.id,
-        state: PaymentStepStateCodes.Created,
-      }]);
-
-      // Create transfer for the step
-      mockTransfer = await domainServices.paymentServices.createTransferForStep(steps![0].id);
+      // Arrange - Create test data for transfer state tests
+      const sourceAccount = await createTestCheckbookAccount();
+      const destAccount = await createTestFiservAccount();
+      testTransfer = await createTestTransfer(sourceAccount, destAccount);
     });
 
-    it('should create transfer with initial state', async () => {
-      const transfer = await domainServices.paymentServices.getTransferById(mockTransfer!.id);
+    it('should create transfer with initial state and proper amount', async () => {
+      // Act
+      const transfer = await domainServices.paymentServices.getTransferById(testTransfer.id);
       
+      // Assert
       expect(transfer).toBeDefined();
       expect(transfer!.state).toBe(TransferStateCodes.Created);
       expect(transfer!.amount).toBe(1000);
+      expect(transfer!.id).toBe(testTransfer.id);
     });
 
-    it('should execute transfer through provider', async () => {
-      const result = await checkbookProvider.executeTransfer(mockTransfer!.id);
+    it('should execute transfer through provider without changing state', async () => {
+      // Act
+      const result = await checkbookProvider.executeTransfer(testTransfer.id);
       
+      // Assert
       expect(result).toBe(true);
       
-      // Transfer state remains created since providers don't update state in this implementation
-      const updatedTransfer = await domainServices.paymentServices.getTransferById(mockTransfer!.id);
+      // Verify transfer state remains created since providers don't update state in this implementation
+      const updatedTransfer = await domainServices.paymentServices.getTransferById(testTransfer.id);
       expect(updatedTransfer).toBeDefined();
       expect(updatedTransfer!.state).toBe(TransferStateCodes.Created);
+      expect(updatedTransfer!.amount).toBe(1000);
+    });
+
+    it('should maintain transfer consistency across multiple provider executions', async () => {
+      // Act - Execute with multiple providers
+      const checkbookResult = await checkbookProvider.executeTransfer(testTransfer.id);
+      const fiservResult = await fiservProvider.executeTransfer(testTransfer.id);
+      const mockResult = await mockProvider.executeTransfer(testTransfer.id);
+      
+      // Assert
+      expect(checkbookResult).toBe(true);
+      expect(fiservResult).toBe(true);
+      expect(mockResult).toBe(true);
+      
+      // Verify transfer remains consistent
+      const finalTransfer = await domainServices.paymentServices.getTransferById(testTransfer.id);
+      expect(finalTransfer).toBeDefined();
+      expect(finalTransfer!.state).toBe(TransferStateCodes.Created);
+      expect(finalTransfer!.amount).toBe(1000);
     });
   });
 });
