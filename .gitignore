@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# localstack cache
+/local/volume
+
 # Logs
 logs
 *.log
