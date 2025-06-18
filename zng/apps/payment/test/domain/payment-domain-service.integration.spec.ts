@@ -28,18 +28,23 @@ import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-d
 import { AllEntities } from '@library/shared/domain/entities';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
+// Verify entity interfaces first - check libs/entity/src/interface/ for actual field names  
 // Use real service implementations for integration tests (2-3 levels deep)
+// Test ONLY PaymentDomainService methods - do NOT test ManagementDomainService methods here
 // Create test data using #region test data generation pattern
+// Use uuidv4() for all test IDs and entity creation
 /**
  * Integration tests for PaymentDomainService
  * 
- * These tests verify the PaymentDomainService functionality using real service implementations
- * with an in-memory database. The tests follow ZNG testing guidelines by:
- * - Using real service implementations for 2-3 levels of dependency injection
- * - Only mocking repositories and external APIs
- * - Using uuidv4() for all test IDs
- * - Grouping test data generation functions in #region markers
- * - Following AAA (Arrange-Act-Assert) pattern consistently
+ * PaymentDomainService handles data operations like:
+ * - addPaymentAccount, getPaymentAccountById, getLoanById
+ * - createPayment, getPaymentById, updatePaymentState, completePayment, failPayment
+ * - createPaymentSteps, getPaymentStepsForPayment  
+ * - createTransferForStep, getTransferById
+ * 
+ * These tests verify PaymentDomainService functionality using real service implementations
+ * with an in-memory database. Tests follow ZNG guidelines by using real services for 2-3 
+ * levels of dependency injection and only mocking repositories and external APIs.
  */
 describe('PaymentDomainService Integration', () => {
   let module: TestingModule;
@@ -86,7 +91,7 @@ describe('PaymentDomainService Integration', () => {
   // #region test data generation
 
   /**
-   * Creates a test payment account with personal ownership and Checkbook provider
+   * Creates a test payment account with correct IPaymentAccount structure using provider-specific details
    * @param userId - Optional user ID to assign the account to, defaults to testUserId
    * @returns Promise resolving to the created payment account
    * @throws Error if account creation fails due to constraint violations
@@ -98,10 +103,18 @@ describe('PaymentDomainService Integration', () => {
       type: PaymentAccountTypeCodes.BankAccount,
       provider: PaymentAccountProviderCodes.Checkbook,
       ownership: PaymentAccountOwnershipTypeCodes.Personal,
-      accountHolderName: 'John Smith',
-      accountNumber: `1234567890${Date.now()}${Math.random().toString(36).substring(2, 7)}`, // Unique account number
-      routingNumber: '123456789',
       state: PaymentAccountStateCodes.Verified,
+      // Provider-specific details go in the details object
+      details: {
+        type: 'checkbook_ach',
+        displayName: 'John Smith Account',
+        key: 'test_key_123',
+        secret: 'test_secret_456', 
+        accountId: `acc_${Date.now()}${Math.random().toString(36).substring(2, 5)}`,
+        institution: 'Test Bank',
+        redactedAccountNumber: '****7890',
+        routingNumber: '123456789',
+      },
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -117,7 +130,7 @@ describe('PaymentDomainService Integration', () => {
   }
 
   /**
-   * Creates a test internal payment account with Fiserv provider
+   * Creates a test internal payment account with correct IPaymentAccount structure using Fiserv provider
    * @param userId - Optional user ID to assign the account to, defaults to testUserId
    * @returns Promise resolving to the created internal payment account
    * @throws Error if account creation fails due to constraint violations
@@ -129,10 +142,15 @@ describe('PaymentDomainService Integration', () => {
       type: PaymentAccountTypeCodes.BankAccount,
       provider: PaymentAccountProviderCodes.Fiserv,
       ownership: PaymentAccountOwnershipTypeCodes.Internal,
-      accountHolderName: 'Internal Platform Account',
-      accountNumber: `9876543210${Date.now()}${Math.random().toString(36).substring(2, 7)}`, // Unique account number
-      routingNumber: '987654321',
       state: PaymentAccountStateCodes.Verified,
+      // Provider-specific details go in the details object
+      details: {
+        type: 'fiserv_debit',
+        displayName: 'Internal Platform Account',
+        cardToken: `token_${Date.now()}`,
+        cardExpiration: '12/26',
+        last4Digits: `${Math.floor(1000 + Math.random() * 9000)}`, // Random 4 digits
+      },
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),

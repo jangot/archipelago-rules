@@ -44,7 +44,7 @@ export class LoanPayment implements ILoanPayment {
   @Column({ type: 'timestamp with time zone', nullable: true })
   scheduledAt: Date | null;
 
-  @OneToMany(() => LoanPaymentStep, (step) => step.loanPaymentId, { nullable: true })
+  @OneToMany(() => LoanPaymentStep, (step) => step.loanPayment, { nullable: true })
   steps: LoanPaymentStep[] | null;
 
   @Column({ type: 'timestamp with time zone', nullable: true })

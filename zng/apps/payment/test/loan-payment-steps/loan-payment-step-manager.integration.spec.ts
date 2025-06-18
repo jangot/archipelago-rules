@@ -19,6 +19,7 @@ import {
   PaymentAccountTypeCodes,
   PaymentAccountOwnershipTypeCodes,
   PaymentAccountProviderCodes,
+  PaymentAccountStateCodes,
   PaymentStepStateCodes,
 } from '@library/entity/enum';
 import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
@@ -27,8 +28,22 @@ import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-d
 import { AllEntities } from '@library/shared/domain/entities';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
+// Verify entity interfaces first - check libs/entity/src/interface/ for actual field names
 // Use real service implementations for integration tests (2-3 levels deep)
+// Test LoanPaymentStepFactory and step managers with real factory implementations
 // Create test data using #region test data generation pattern
+// Use uuidv4() for all test IDs and entity creation
+
+/**
+ * Integration tests for Loan Payment Step Manager
+ * 
+ * Tests LoanPaymentStepFactory and related step managers:
+ * - CreatedStepManager, PendingStepManager, CompletedStepManager, FailedStepManager
+ * 
+ * These tests verify step factory functionality using real service implementations
+ * with proper entity state dependencies. Step managers handle state-specific operations
+ * based on payment step states (Created, Pending, Completed, Failed).
+ */
 describe('Loan Payment Step Manager Integration', () => {
   let module: TestingModule;
   let domainServices: IDomainServices;
@@ -131,9 +146,17 @@ describe('Loan Payment Step Manager Integration', () => {
       type: PaymentAccountTypeCodes.BankAccount,
       ownership: PaymentAccountOwnershipTypeCodes.Personal,
       provider: PaymentAccountProviderCodes.Checkbook,
-      accountHolderName: 'John Doe',
-      accountNumber: `1234567890${Date.now()}`, // Unique account number
-      routingNumber: '123456789',
+      state: PaymentAccountStateCodes.Verified,
+      details: {
+        type: 'checkbook_ach',
+        displayName: 'John Doe',
+        key: 'source_key_123',
+        secret: 'source_secret_456',
+        accountId: `source_acc_${Date.now()}`,
+        institution: 'Source Bank',
+        redactedAccountNumber: '****7890',
+        routingNumber: '123456789',
+      },
       isDefault: true,
       isActive: true,
     });
@@ -150,9 +173,14 @@ describe('Loan Payment Step Manager Integration', () => {
       type: PaymentAccountTypeCodes.BankAccount,
       ownership: PaymentAccountOwnershipTypeCodes.Internal,
       provider: PaymentAccountProviderCodes.Fiserv,
-      accountHolderName: 'Zirtue Platform',
-      accountNumber: `9876543210${Date.now()}`, // Unique account number
-      routingNumber: '987654321',
+      state: PaymentAccountStateCodes.Verified,
+      details: {
+        type: 'fiserv_debit',
+        displayName: 'Zirtue Platform',
+        cardToken: `dest_token_${Date.now()}`,
+        cardExpiration: '12/29',
+        last4Digits: '9876',
+      },
       isDefault: true,
       isActive: true,
     });

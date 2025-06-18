@@ -17,7 +17,7 @@ export class LoanPaymentStepRepository extends RepositoryBase<LoanPaymentStep> i
   }
 
   public async createPaymentSteps(steps: DeepPartial<LoanPaymentStep>[]): Promise<LoanPaymentStep[] | null> {
-    return this.repository.create(steps);
+    return this.insertMany(steps, true);
   }
 
   public async getStepById(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<ILoanPaymentStep | null> {

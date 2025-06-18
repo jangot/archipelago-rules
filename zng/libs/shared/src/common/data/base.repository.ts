@@ -85,6 +85,42 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return insertResult.generatedMaps[0] as Entity;
   }
 
+  public async insertMany(items: DeepPartial<Entity>[], returnResult: false): Promise<Entity['id'][] | null>;
+  public async insertMany(items: DeepPartial<Entity>[], returnResult: true): Promise<Entity[] | null>;
+  public async insertMany(items: DeepPartial<Entity>[], returnResult: boolean = false): Promise<Entity['id'][] | Entity[] | null> {
+    if (items.length === 0) {
+      return null;
+    }
+
+    if (returnResult) {
+      return this.insertManyWithResult(items);
+    }
+
+    const insertResult = await this.repository.insert(items);
+    const ids = insertResult.identifiers.map(identifier => identifier.id);
+    return ids;
+  }
+
+  public async insertManyWithResult(items: DeepPartial<Entity>[]): Promise<Entity[]> {
+    if (items.length === 0) {
+      return [];
+    }
+
+    const insertResult = await this.repository
+      .createQueryBuilder()
+      .insert()
+      .into(this.repository.metadata.target)
+      .values(items)
+      .returning('*')
+      .execute();
+
+    if (!insertResult.generatedMaps || insertResult.generatedMaps.length === 0) {
+      throw new Error('Insert failed: no entities were returned');
+    }
+    // generatedMaps will have keys matching entity's properties (camelCased)
+    return insertResult.generatedMaps as Entity[];
+  }
+
   public async create(item: DeepPartial<Entity>): Promise<Entity> {
     return this.repository.save(item);
   }

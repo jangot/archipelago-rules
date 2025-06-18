@@ -23,17 +23,38 @@ import {
   PaymentAccountTypeCodes,
   PaymentAccountOwnershipTypeCodes,
   PaymentAccountProviderCodes,
+  PaymentAccountStateCodes,
   PaymentStepStateCodes,
 } from '@library/entity/enum';
 import { LoanPaymentModule } from '../../src/loan-payments/loan-payment.module';
 import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
 import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
+import { 
+  memoryDataSourceSingle, 
+  TestDataSeeder, 
+  FOUNDATION_TEST_IDS, 
+  ITestDataRegistry,
+  TestPaymentAccountFactory, 
+} from '@library/shared/tests';
 import { AllEntities } from '@library/shared/domain/entities';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
+// Verify entity interfaces first - check libs/entity/src/interface/ for actual field names
 // Use real service implementations for integration tests (2-3 levels deep)
+// Test complete payment process flows using actual service implementations
 // Create test data using #region test data generation pattern
+// Use uuidv4() for all test IDs and entity creation
+
+/**
+ * Integration tests for Payment Process Flow
+ * 
+ * These tests verify end-to-end payment processing flows using real service implementations.
+ * Tests coordinate multiple services: LoanPaymentService, LoanPaymentStepService, 
+ * TransferExecutionService, and ManagementDomainService with real factory implementations.
+ * 
+ * Only repositories and external APIs are mocked. All business logic services use
+ * real implementations to test actual integration behavior.
+ */
 describe('Payment Process Flow Integration', () => {
   let module: TestingModule;
   let domainServices: IDomainServices;
@@ -139,9 +160,17 @@ describe('Payment Process Flow Integration', () => {
       type: PaymentAccountTypeCodes.BankAccount,
       ownership: PaymentAccountOwnershipTypeCodes.Personal,
       provider: PaymentAccountProviderCodes.Checkbook,
-      accountHolderName: 'John Doe (Lender)',
-      accountNumber: `1234567890${Date.now()}`, // Unique account number
-      routingNumber: '123456789',
+      state: PaymentAccountStateCodes.Verified,
+      details: {
+        type: 'checkbook_ach',
+        displayName: 'John Doe (Lender)',
+        key: 'lender_key_123',
+        secret: 'lender_secret_456',
+        accountId: `lender_acc_${Date.now()}`,
+        institution: 'Lender Bank',
+        redactedAccountNumber: '****7890',
+        routingNumber: '123456789',
+      },
       isDefault: true,
       isActive: true,
     });
@@ -158,9 +187,14 @@ describe('Payment Process Flow Integration', () => {
       type: PaymentAccountTypeCodes.BankAccount,
       ownership: PaymentAccountOwnershipTypeCodes.Personal,
       provider: PaymentAccountProviderCodes.Fiserv,
-      accountHolderName: 'Jane Smith (Borrower)',
-      accountNumber: `0987654321${Date.now()}`, // Unique account number
-      routingNumber: '987654321',
+      state: PaymentAccountStateCodes.Verified,
+      details: {
+        type: 'fiserv_debit',
+        displayName: 'Jane Smith (Borrower)',
+        cardToken: `borrower_token_${Date.now()}`,
+        cardExpiration: '12/27',
+        last4Digits: '1234',
+      },
       isDefault: true,
       isActive: true,
     });
@@ -177,9 +211,14 @@ describe('Payment Process Flow Integration', () => {
       type: PaymentAccountTypeCodes.BankAccount,
       ownership: PaymentAccountOwnershipTypeCodes.Internal,
       provider: PaymentAccountProviderCodes.Fiserv,
-      accountHolderName: 'Zirtue Platform',
-      accountNumber: `5555555555${Date.now()}`, // Unique account number
-      routingNumber: '555555555',
+      state: PaymentAccountStateCodes.Verified,
+      details: {
+        type: 'fiserv_debit',
+        displayName: 'Zirtue Platform',
+        cardToken: `platform_token_${Date.now()}`,
+        cardExpiration: '12/28',
+        last4Digits: '5555',
+      },
       isDefault: true,
       isActive: true,
     });

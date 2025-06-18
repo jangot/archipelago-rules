@@ -23,6 +23,7 @@ import {
   PaymentAccountProviderCodes,
   PaymentAccountTypeCodes,
   PaymentAccountOwnershipTypeCodes,
+  PaymentAccountStateCodes,
   TransferStateCodes,
   PaymentStepStateCodes,
   LoanPaymentStateCodes,
@@ -32,8 +33,23 @@ import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-d
 import { AllEntities } from '@library/shared/domain/entities';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
+// Verify entity interfaces first - check libs/entity/src/interface/ for actual field names
 // Use real service implementations for integration tests (2-3 levels deep)
+// Test TransferExecutionFactory and execution providers with real implementations
 // Create test data using #region test data generation pattern
+// Use uuidv4() for all test IDs and entity creation
+
+/**
+ * Integration tests for Transfer Execution
+ * 
+ * Tests TransferExecutionFactory and related execution providers:
+ * - CheckbookTransferExecutionProvider, FiservTransferExecutionProvider
+ * - MockTransferExecutionProvider, TabapayTransferExecutionProvider
+ * 
+ * These tests verify transfer execution functionality using real service implementations
+ * with proper entity state management. Transfer providers handle payment-specific execution
+ * based on provider types (Checkbook, Fiserv, Tabapay, Mock).
+ */
 describe('Transfer Execution Integration', () => {
   let module: TestingModule;
   let domainServices: IDomainServices;
@@ -135,9 +151,17 @@ describe('Transfer Execution Integration', () => {
       type: PaymentAccountTypeCodes.BankAccount,
       ownership: PaymentAccountOwnershipTypeCodes.Personal,
       provider: PaymentAccountProviderCodes.Checkbook,
-      accountHolderName: 'John Doe',
-      accountNumber: `1234567890${Date.now()}`, // Unique account number
-      routingNumber: '123456789',
+      state: PaymentAccountStateCodes.Verified,
+      details: {
+        type: 'checkbook_ach',
+        displayName: 'John Doe',
+        key: 'checkbook_key_123',
+        secret: 'checkbook_secret_456',
+        accountId: `checkbook_acc_${Date.now()}`,
+        institution: 'Checkbook Bank',
+        redactedAccountNumber: '****7890',
+        routingNumber: '123456789',
+      },
       isDefault: true,
       isActive: true,
     });
@@ -154,9 +178,14 @@ describe('Transfer Execution Integration', () => {
       type: PaymentAccountTypeCodes.BankAccount,
       ownership: PaymentAccountOwnershipTypeCodes.Internal,
       provider: PaymentAccountProviderCodes.Fiserv,
-      accountHolderName: 'Zirtue Platform',
-      accountNumber: `9876543210${Date.now()}`, // Unique account number
-      routingNumber: '987654321',
+      state: PaymentAccountStateCodes.Verified,
+      details: {
+        type: 'fiserv_debit',
+        displayName: 'Zirtue Platform',
+        cardToken: `fiserv_token_${Date.now()}`,
+        cardExpiration: '12/30',
+        last4Digits: '9876',
+      },
       isDefault: true,
       isActive: true,
     });

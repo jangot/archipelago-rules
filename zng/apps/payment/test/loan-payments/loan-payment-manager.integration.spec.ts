@@ -19,31 +19,41 @@ import {
 import { 
   LoanPaymentTypeCodes,
   LoanPaymentStateCodes,
-  PaymentAccountTypeCodes,
-  PaymentAccountOwnershipTypeCodes,
-  PaymentAccountProviderCodes,
 } from '@library/entity/enum';
 import { 
   ILoanPayment,
-  IPaymentAccount,
 } from '@library/entity/interface';
 import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
 import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
+import { memoryDataSourceSingle, TestDataSeeder, FOUNDATION_TEST_IDS, ITestDataRegistry } from '@library/shared/tests';
 import { AllEntities } from '@library/shared/domain/entities';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
+// Verify entity interfaces first - check libs/entity/src/interface/ for actual field names
 // Use real service implementations for integration tests (2-3 levels deep)
+// Test LoanPaymentFactory and payment managers with real factory implementations
 // Create test data using #region test data generation pattern
+// Use uuidv4() for all test IDs and entity creation
+
+/**
+ * Integration tests for Loan Payment Managers
+ * 
+ * Tests LoanPaymentFactory and related payment managers:
+ * - FundingPaymentManager, DisbursementPaymentManager, RepaymentPaymentManager
+ * - FeePaymentManager, RefundPaymentManager
+ * 
+ * These tests verify payment factory functionality using real service implementations
+ * with proper entity dependency management. Payment managers handle type-specific operations
+ * based on loan payment types (Funding, Disbursement, Repayment, Fee, Refund).
+ */
 describe('Loan Payment Managers Integration', () => {
   let module: TestingModule;
   let domainServices: IDomainServices;
   let loanPaymentFactory: LoanPaymentFactory;
   let databaseBackup: IBackup;
+  let foundationData: ITestDataRegistry;
 
-  // Use uuidv4() for all test IDs and entity creation
-  const testUserId = uuidv4();
-  const testLoanId = uuidv4();
+  // Test-specific IDs for non-existent entities
   const nonExistentPaymentId = uuidv4();
   const nonExistentLoanId = uuidv4();
 
@@ -71,6 +81,8 @@ describe('Loan Payment Managers Integration', () => {
     domainServices = module.get<IDomainServices>(IDomainServices);
     loanPaymentFactory = module.get<LoanPaymentFactory>(LoanPaymentFactory);
     
+    // Seed foundation data before creating backup
+    foundationData = await TestDataSeeder.seedFoundationData(dataSource);
     databaseBackup = database.backup();
   });
 
@@ -79,80 +91,20 @@ describe('Loan Payment Managers Integration', () => {
   });
 
   beforeEach(async () => {
-    // Restore database to clean state before each test
+    // Restore database to clean state before each test (includes foundation data)
     databaseBackup.restore();
-    
-    // Create test loan for tests that need it
-    await createTestLoan();
   });
 
   // #region test data generation
-
-  async function createTestLoan(): Promise<void> {
-    // Create a minimal loan entity to satisfy foreign key constraints
-    const dataSource = module.get(DataSource);
-    await dataSource.query(`
-      INSERT INTO core.loans (
-        id, amount, type, state, closure_type, payments_count, payment_frequency, lender_id, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
-      )
-    `, [
-      testLoanId,
-      5000,
-      'personal',
-      'created',
-      'open',
-      12,
-      'monthly',
-      testUserId,
-    ]);
-    
-    // Create loan invitee to satisfy constraints
-    await dataSource.query(`
-      INSERT INTO core.loan_invitees (
-        id, loan_id, type, first_name, last_name, email, phone
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7
-      )
-    `, [
-      uuidv4(),
-      testLoanId,
-      'borrower',
-      'Test',
-      'Borrower',
-      `borrower-${Date.now()}@test.com`,
-      '+1234567890',
-    ]);
-  }
-
-  async function createTestPaymentAccount(): Promise<IPaymentAccount> {
-    const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
-      type: PaymentAccountTypeCodes.BankAccount,
-      ownership: PaymentAccountOwnershipTypeCodes.Personal,
-      provider: PaymentAccountProviderCodes.Checkbook,
-      accountHolderName: 'Test Account Holder',
-      accountNumber: `1234567890${Date.now()}`,
-      routingNumber: '123456789',
-      isDefault: true,
-      isActive: true,
-    });
-
-    if (!account) {
-      throw new Error('Failed to create test payment account - check entity constraints');
-    }
-
-    return account;
-  }
 
   async function createTestPayment(
     paymentType: typeof LoanPaymentTypeCodes[keyof typeof LoanPaymentTypeCodes] = LoanPaymentTypeCodes.Funding,
     amount: number = 1000,
     paymentNumber: number = 1
   ): Promise<ILoanPayment> {
-    // Create a test payment
+    // Use foundation loan for payment creation
     const payment = await domainServices.paymentServices.createPayment({
-      loanId: testLoanId,
+      loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
       amount,
       type: paymentType,
       state: LoanPaymentStateCodes.Created,
@@ -171,26 +123,6 @@ describe('Loan Payment Managers Integration', () => {
   ): Promise<string> {
     const payment = await createTestPayment(paymentType);
     return payment.id;
-  }
-
-  async function createMultipleTestPayments(
-    count: number = 3,
-    baseAmount: number = 1000
-  ): Promise<ILoanPayment[]> {
-    const paymentTypes = [
-      LoanPaymentTypeCodes.Funding,
-      LoanPaymentTypeCodes.Disbursement,
-      LoanPaymentTypeCodes.Repayment,
-    ];
-
-    const payments = await Promise.all(
-      Array.from({ length: count }, async (_, index) => {
-        const paymentType = paymentTypes[index % paymentTypes.length];
-        return createTestPayment(paymentType, baseAmount * (index + 1), index + 1);
-      })
-    );
-
-    return payments;
   }
 
   // #endregion
@@ -276,8 +208,8 @@ describe('Loan Payment Managers Integration', () => {
       // Arrange
       const fundingManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Funding);
       
-      // Act
-      const result = await fundingManager.initiate(testLoanId);
+      // Act - Test with foundation loan
+      const result = await fundingManager.initiate(FOUNDATION_TEST_IDS.loans.activeLoan);
       
       // Assert - Should return null since no payment factory configuration exists in test
       expect(result).toBeNull();
@@ -343,8 +275,8 @@ describe('Loan Payment Managers Integration', () => {
       // Arrange
       const disbursementManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Disbursement);
       
-      // Act
-      const result = await disbursementManager.initiate(testLoanId);
+      // Act - Test with foundation loan
+      const result = await disbursementManager.initiate(FOUNDATION_TEST_IDS.loans.activeLoan);
       
       // Assert - Should return null since no payment factory configuration exists in test
       expect(result).toBeNull();
@@ -393,8 +325,8 @@ describe('Loan Payment Managers Integration', () => {
       // Arrange
       const repaymentManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Repayment);
       
-      // Act
-      const result = await repaymentManager.initiate(testLoanId);
+      // Act - Test with foundation loan
+      const result = await repaymentManager.initiate(FOUNDATION_TEST_IDS.loans.activeLoan);
       
       // Assert - Should return null since no payment factory configuration exists in test
       expect(result).toBeNull();
@@ -443,8 +375,8 @@ describe('Loan Payment Managers Integration', () => {
       // Arrange
       const feeManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Fee);
       
-      // Act
-      const result = await feeManager.initiate(testLoanId);
+      // Act - Test with foundation loan
+      const result = await feeManager.initiate(FOUNDATION_TEST_IDS.loans.activeLoan);
       
       // Assert - Should return null since no payment factory configuration exists in test
       expect(result).toBeNull();
@@ -493,8 +425,8 @@ describe('Loan Payment Managers Integration', () => {
       // Arrange
       const refundManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Refund);
       
-      // Act
-      const result = await refundManager.initiate(testLoanId);
+      // Act - Test with foundation loan
+      const result = await refundManager.initiate(FOUNDATION_TEST_IDS.loans.activeLoan);
       
       // Assert - Should return null since no payment factory configuration exists in test
       expect(result).toBeNull();
