@@ -3,6 +3,7 @@ import { MessagePayloadSqs } from './interfaces/message-payload';
 import { Injectable, Logger } from '@nestjs/common';
 import { BaseMessagePublisher } from './base.message-publisher';
 import { ConfigService } from '@nestjs/config';
+import { getSqsClient } from './aws/sqs-client';
 
 @Injectable()
 export class SqsMessagePublisher extends BaseMessagePublisher<SendMessageCommand> {
@@ -16,18 +17,10 @@ export class SqsMessagePublisher extends BaseMessagePublisher<SendMessageCommand
   // Lazily create the SQS client
   private getSqsClient(): SQSClient {
     if (!this.sqsClient) {
-      this.sqsClient = new SQSClient({
-        region: this.configService.getOrThrow<string>('AWS_REGION'),
-        profile: this.getSqsCredentials(),
-      });
+      this.sqsClient = getSqsClient(this.configService);
     }
 
     return this.sqsClient;
-  }
-
-  // Credentials are only needed for localstack (local development)
-  private getSqsCredentials(): string | undefined {
-    return this.configService.get('IS_LOCAL') === '1' ? this.configService.get<string>('AWS_PROFILE') || 'localstack' : undefined;
   }
 
   protected async createMessagePayload(payload: MessagePayloadSqs, message: string): Promise<SendMessageCommand> {
