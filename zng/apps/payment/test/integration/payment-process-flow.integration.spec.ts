@@ -29,13 +29,7 @@ import {
 import { LoanPaymentModule } from '../../src/loan-payments/loan-payment.module';
 import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
 import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { 
-  memoryDataSourceSingle, 
-  TestDataSeeder, 
-  FOUNDATION_TEST_IDS, 
-  ITestDataRegistry,
-  TestPaymentAccountFactory, 
-} from '@library/shared/tests';
+import { memoryDataSourceSingle } from '@library/shared/tests';
 import { AllEntities } from '@library/shared/domain/entities';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md

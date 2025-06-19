@@ -51,6 +51,7 @@ describe('Loan Payment Managers Integration', () => {
   let domainServices: IDomainServices;
   let loanPaymentFactory: LoanPaymentFactory;
   let databaseBackup: IBackup;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let foundationData: ITestDataRegistry;
 
   // Test-specific IDs for non-existent entities

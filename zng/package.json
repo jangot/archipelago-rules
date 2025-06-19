@@ -10,6 +10,7 @@
   "scripts": {
     "build": "nest build",
     "build:all": "./scripts/build-all.sh",
+    "build:all-win": "powershell -ExecutionPolicy Bypass -File ./scripts/build-all.ps1",
     "clean": "node -e \"require('fs').rmSync('./dist', { recursive: true, force: true });\"",
     "clean:modules": "rimraf node_modules package-lock.json",
     "generate:queries": "pgtyped --config ./pgtyped.config.json",

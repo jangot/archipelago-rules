@@ -42,6 +42,7 @@ export class TransferExecutionFactory implements ITransferExecutionFactory {
   }
 
   // TODO: Implement
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private getProviderByTransfer(transfer: ITransfer): ITransferExecutionProvider {
     return this.mockedProvider;
   }

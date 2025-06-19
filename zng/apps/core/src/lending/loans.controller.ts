@@ -29,6 +29,7 @@ export class LoansController {
   // TODO: paging / infinite scroll
   @Get('/all')
   @ApiOperation({ summary: 'List all user loans', description: 'List all user loans' })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async getAllUserLoans(@Req() request: IRequest): Promise<Array<unknown>> {
     this.logger.debug('Getting all user loans');
     return [];

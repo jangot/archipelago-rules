@@ -50,6 +50,7 @@ describe('ManagementDomainService Integration', () => {
   let domainServices: IDomainServices;
   let managementDomainService: ManagementDomainService;
   let databaseBackup: IBackup;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let foundationData: ITestDataRegistry;
 
   // Test-specific IDs for entities created during tests

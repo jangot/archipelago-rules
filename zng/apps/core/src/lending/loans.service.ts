@@ -2,7 +2,7 @@ import { LoanCreateRequestDto, LoanResponseDto } from '@core/dto';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
-import { LoanAssignIntentCodes, LoanInviteeTypeCodes, LoanStateCodes, LoanTypeCodes, RegistrationStatus } from '@library/entity/enum';
+import { LoanInviteeTypeCodes, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
 import { IDomainServices } from '@core/domain/idomain.services';
 import { ConfigService } from '@nestjs/config';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
