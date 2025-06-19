@@ -3,10 +3,10 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { IRefreshTokenPayload } from '../../domain/interfaces/irefresh-token-payload';
-import { IDomainServices } from '../../domain/idomain.services';
 import { ConfigurationVariableNotFoundException } from '@library/shared/common/exceptions/domain';
 import { IRefreshTokenUser } from '@library/shared/types';
+import { IDomainServices } from '@core/domain/idomain.services';
+import { IRefreshTokenPayload } from '@core/domain/interfaces/irefresh-token-payload';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {

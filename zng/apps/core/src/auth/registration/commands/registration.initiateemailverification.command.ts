@@ -2,11 +2,11 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { InitiateEmailVerificationCommand } from './registration.commands';
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
-import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
-import { ContactTakenException, RegistrationNotFoundException } from '../../../domain/exceptions';
+import { ContactTakenException, RegistrationNotFoundException } from '@core/domain/exceptions';
+import { VerificationEvent } from '@core/auth/verification';
 
 @CommandHandler(InitiateEmailVerificationCommand)
 export class InitiateEmailVerificationCommandHandler

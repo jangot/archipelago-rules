@@ -7,7 +7,7 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import { IApplicationUser, ILogin, IUserRegistration } from '@library/entity/interface';
+import { IApplicationUser, ILogin, IPaymentAccount, IUserRegistration } from '@library/entity/interface';
 import { Transactional } from 'typeorm-transactional';
 import { DeepPartial } from 'typeorm';
 import { ContactType } from '@library/entity/enum';
@@ -22,7 +22,8 @@ import { generateCRC32String } from '@library/shared/common/helpers/crc32.helper
 import { IPaging, PagingOptionsDto } from '@library/shared/common/paging';
 import { SearchFilterDto } from '@library/shared/common/search';
 import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
-import { CoreDataService } from '../../data/data.service';
+import { CoreDataService } from '@core/data/data.service';
+import { PaymentAccountRelation } from '@library/shared/domain/entities/relations';
 @Injectable()
 export class UserDomainService extends BaseDomainServices {
   protected readonly logger = new Logger(UserDomainService.name);
@@ -213,4 +214,16 @@ export class UserDomainService extends BaseDomainServices {
   }
 
   //#endregion
+
+  // #region Payment Accounts
+  public async addPaymentAccount(userId: string, input: DeepPartial<IPaymentAccount>): Promise<IPaymentAccount | null> {
+    this.logger.debug(`Adding payment account for user ${userId}`, { input });
+    return this.data.paymentAccounts.createPaymentAccount({ ...input, userId: userId });
+  }
+  
+  public async getPaymentAccountById(paymentAccountId: string, relations?: PaymentAccountRelation[]): Promise<IPaymentAccount | null> {
+    this.logger.debug(`Fetching payment account by ID ${paymentAccountId}`, relations);
+    return this.data.paymentAccounts.getPaymentAccountById(paymentAccountId, relations);
+  }
+  // #endregion
 }

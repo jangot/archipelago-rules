@@ -3,10 +3,10 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { IDomainServices } from '../../domain/idomain.services';
-import { IJwtPayload } from '../../domain/interfaces/ijwt-payload';
 import { ConfigurationVariableNotFoundException } from '@library/shared/common/exceptions/domain';
 import { ILogoutUser } from '@library/shared/types';
+import { IDomainServices } from '@core/domain/idomain.services';
+import { IJwtPayload } from '@core/domain/interfaces/ijwt-payload';
 
 @Injectable()
 export class JwtLogoutStrategy extends PassportStrategy(Strategy, 'jwt-logout') {

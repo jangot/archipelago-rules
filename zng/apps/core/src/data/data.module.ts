@@ -1,31 +1,24 @@
 import { Module } from '@nestjs/common';
 import { CoreDataService } from './data.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { addTransactionalDataSource } from 'typeorm-transactional';
-import { DataSource } from 'typeorm';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
-import { DbConfiguration } from '@library/shared/common/data/dbcommon.config';
-import { CoreEntities } from '../domain/entities';
 import { CustomCoreRepositories } from '../infrastructure/repositories';
+import { AllEntities, CoreEntities, PaymentEntities } from '@library/shared/domain/entities';
+import { SingleDataSourceConfiguration } from '@library/shared/common/data';
+import { SharedCoreRepositories } from '@library/shared/infrastructure/repositories';
 
 @Module({
   imports: [
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => DbConfiguration({ configService, entities: CoreEntities, schema: 'core' }),
-      // TypeORM Transactional DataSource initialization
-      async dataSourceFactory(options) {
-        if (!options) {
-          throw new Error('No Datasource options for TypeOrmModule provided');
-        }
-
-        return addTransactionalDataSource(new DataSource(options));
-      },
-    }),
+    // Single connection that can access all schemas
+    TypeOrmModule.forRootAsync(SingleDataSourceConfiguration(AllEntities)),
   ],
-  providers: [CoreDataService, ...registerCustomRepositoryProviders(CoreEntities), ...CustomCoreRepositories],
+  providers: [
+    CoreDataService, 
+    ...registerCustomRepositoryProviders(CoreEntities), 
+    ...registerCustomRepositoryProviders(PaymentEntities),  
+    ...CustomCoreRepositories,
+    ...SharedCoreRepositories,
+  ],
   exports: [CoreDataService],
 })
 export class DataModule {}

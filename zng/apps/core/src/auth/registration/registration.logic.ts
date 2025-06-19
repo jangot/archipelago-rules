@@ -1,5 +1,5 @@
+import { UnexpectedRegistrationStatusException } from '@core/domain/exceptions';
 import { LoginType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
-import { UnexpectedRegistrationStatusException } from '../../domain/exceptions';
 
 
 export class RegistrationLogic {

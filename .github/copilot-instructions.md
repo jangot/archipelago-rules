@@ -227,3 +227,43 @@ To guide GitHub Copilot effectively in your IDE, include inline comments referen
 - `// Follow NestJS and TypeORM best practices to define this repository method`
 - `// Implement SOLID principles and prefer composition over inheritance here`
 - `// Maintain loose coupling and high cohesion in this service implementation`
+
+---
+
+## Testing Guidelines
+
+When generating, modifying, or working with any test files (*.spec.ts, *.e2e-spec.ts, or test directories), always follow the comprehensive testing guidelines located in `.github/copilot/test-instructions.md`. These guidelines include:
+
+- ZNG-specific testing patterns and best practices
+- Real service implementation strategies for integration and E2E tests
+- Database setup with memoryDataSourceSingle
+- Test data generation requirements with #region markers
+- Entity constraint validation patterns
+- Proper test ID management using uuidv4()
+- Mock factories and test utilities
+- Comprehensive examples for unit, integration, and E2E tests
+
+For any test-related work, refer to and follow the detailed guidelines in the test-instructions.md file. The test instructions provide specific patterns for:
+
+### Test File Types
+- **Unit tests** (*.spec.ts): Isolated component testing with mocked dependencies
+- **Integration tests** (*.spec.ts): Component interaction testing with real service implementations (2-3 levels deep)
+- **E2E tests** (*.e2e-spec.ts): Complete API flow testing with minimal mocking
+
+### Key Testing Requirements
+- Always use `uuidv4()` for generating test IDs (never hardcoded strings)
+- Group test data creation functions within `// #region test data generation` markers
+- Use `memoryDataSourceSingle(AllEntities)` for database setup
+- Prefer real service implementations over mocks in integration and E2E tests
+- Create all required entities before running tests to satisfy constraints
+- Follow AAA (Arrange-Act-Assert) pattern consistently
+
+### Copilot Comments for Tests
+Include these inline comments when working with test files:
+
+- `// Follow ZNG testing guidelines from .github/copilot/test-instructions.md`
+- `// Use real service implementations for integration tests (2-3 levels deep)`
+- `// Create test data using #region test data generation pattern`
+- `// Use uuidv4() for all test IDs and entity creation`
+- `// Follow memoryDataSourceSingle pattern for database setup`
+- `// Mock only repositories and external APIs, use real services for everything else`

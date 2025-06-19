@@ -4,9 +4,9 @@ import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ContactType } from '@library/entity/enum';
 import { getUserDetailById, IGetUserDetailByIdResult } from '../sql_generated/get-user-detail.queries';
-import { ApplicationUser } from '../../domain/entities';
-import { IUserRepository } from '../../shared/interfaces/repositories';
 import { IApplicationUser } from '@library/entity/interface';
+import { ApplicationUser } from '@library/shared/domain/entities';
+import { IUserRepository } from '@core/shared/interfaces/repositories';
 
 @Injectable()
 export class UserRepository extends RepositoryBase<ApplicationUser> implements IUserRepository {

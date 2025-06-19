@@ -5,8 +5,8 @@ import { ContactType } from '@library/entity/enum';
 import { generateCRC32String } from '@library/shared/common/helpers/crc32.helpers';
 import { LoginLogic } from '../login.logic';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
-import { UserLoginPayloadDto } from '../../../dto';
-import { LoginSessionNotInitiatedException, LoginSessionExpiredException, VerificationCodeMismatchException, WrongVerificationTypeException, UserNotRegisteredException, UnableToGenerateLoginPayloadException } from '../../../domain/exceptions';
+import { UserLoginPayloadDto } from '@core/dto';
+import { LoginSessionExpiredException, LoginSessionNotInitiatedException, UnableToGenerateLoginPayloadException, UserNotRegisteredException, VerificationCodeMismatchException, WrongVerificationTypeException } from '@core/domain/exceptions';
 
 @CommandHandler(LoginVerifyCommand)
 export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVerifyCommand> implements ICommandHandler<LoginVerifyCommand> {

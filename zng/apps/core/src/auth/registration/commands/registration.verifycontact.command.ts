@@ -2,13 +2,13 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { VerifyContactCommand } from './registration.commands';
 import { RegistrationStatus } from '@library/entity/enum';
-import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
 import { RegistrationLogic } from '../registration.logic';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
 import { ILogin } from '@library/entity/interface';
-import { RegistrationSecretExpiredException, RegistrationSecretNotFoundException, RegistrationSessionNotInitiatedException, RegistrationSessionNotWaitingForVerificationException, UnableToCreateLoginOnRegistrationException, VerificationCodeMismatchException } from '../../../domain/exceptions';
+import { VerificationEvent } from '@core/auth/verification';
+import { RegistrationSecretExpiredException, RegistrationSecretNotFoundException, RegistrationSessionNotInitiatedException, RegistrationSessionNotWaitingForVerificationException, UnableToCreateLoginOnRegistrationException, VerificationCodeMismatchException } from '@core/domain/exceptions';
 @CommandHandler(VerifyContactCommand)
 export class VerifyContactCommandHandler
   extends RegistrationBaseCommandHandler<VerifyContactCommand>

@@ -1,4 +1,4 @@
-import { ScheduleService } from '@core/lending/schedule.service';
+import { ScheduleService } from '@library/shared/services/schedule.service';
 import { LoanFeeModeCodes, LoanPaymentFrequencyCodes } from '@library/entity/enum';
 import { addMonths, addWeeks } from 'date-fns';
 

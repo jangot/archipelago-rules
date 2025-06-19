@@ -7,8 +7,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { DeepPartial } from 'typeorm';
-import { LOAN_INVITEE_RELATIONS, LOAN_RELATIONS, LoanRelation } from '../entities/relations';
 import { EntityFailedToUpdateException } from '@library/shared/common/exceptions/domain';
+import { LOAN_INVITEE_RELATIONS, LOAN_RELATIONS, LoanRelation } from '@library/shared/domain/entities/relations';
 
 @Injectable()
 export class LoanDomainService extends BaseDomainServices {

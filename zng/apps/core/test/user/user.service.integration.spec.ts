@@ -9,8 +9,9 @@ import { ContactType } from '@library/entity/enum';
 import { UserCreateRequestDto, UserUpdateRequestDto } from '@core/dto';
 import { UsersService } from '@core/users/users.service';
 import { UsersModule } from '@core/users';
+import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
+import { AllEntities } from '@library/shared/domain/entities';
 
-import { memoryDataSourceForTests } from '../postgress-memory-datasource';
 
 describe('UsersService Integration Tests', () => {
   let module: TestingModule;
@@ -18,8 +19,7 @@ describe('UsersService Integration Tests', () => {
   let databaseBackup: IBackup;
 
   beforeAll(async () => {
-    const memoryDBinstance = await memoryDataSourceForTests();
-    const { dataSource, database } = memoryDBinstance;
+    const { dataSource, database } = await memoryDataSourceSingle(AllEntities);
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
 
     module = await Test.createTestingModule({ imports: [UsersModule] })

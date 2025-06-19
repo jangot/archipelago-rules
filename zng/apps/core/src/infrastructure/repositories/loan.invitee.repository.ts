@@ -1,5 +1,5 @@
-import { LoanInvitee } from '@core/domain/entities';
-import { LoanInviteeRelation } from '@core/domain/entities/relations';
+import { LoanInvitee } from '@library/shared/domain/entities';
+import { LoanInviteeRelation } from '@library/shared/domain/entities/relations';
 import { ILoanInviteeRepository } from '@core/shared/interfaces/repositories';
 import { ContactType } from '@library/entity/enum';
 import { ILoanInvitee } from '@library/entity/interface';

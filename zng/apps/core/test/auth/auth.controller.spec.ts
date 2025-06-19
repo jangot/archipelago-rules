@@ -26,9 +26,10 @@ import { RegistrationCommandHandlers } from '@core/auth/registration/commands';
 import { LoginInitiateCommandHandler } from '@core/auth/login/commands/login.initiate.command';
 import { UserDomainService } from '@core/domain/services/user.domain.service';
 
-import { memoryDataSourceForTests } from '../postgress-memory-datasource';
 import { REGISTERED_USER_DUMP_1 } from './data-dump';
 import { generateWrongCode } from './test.helper';
+import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
+import { AllEntities } from '@library/shared/domain/entities';
 
 describe('AuthController - Negative Test Cases', () => {
   let app: INestApplication;
@@ -45,8 +46,7 @@ describe('AuthController - Negative Test Cases', () => {
   let loginInitiateHandlerSpy: jest.SpyInstance;
 
   beforeAll(async () => {
-    const memoryDBinstance = await memoryDataSourceForTests();
-    const { dataSource, database } = memoryDBinstance;
+    const { dataSource, database } = await memoryDataSourceSingle(AllEntities);
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
     
     // Build the complete copy of AuthModule
@@ -75,7 +75,7 @@ describe('AuthController - Negative Test Cases', () => {
     loginInitiateHandler = module.get<LoginInitiateCommandHandler>(LoginInitiateCommandHandler);
 
     // Initiate data in database before backup
-    database.getSchema('core').none(REGISTERED_USER_DUMP_1);
+    database.getSchema(DbSchemaCodes.Core).none(REGISTERED_USER_DUMP_1);
 
     databaseBackup = database.backup();
     app = module.createNestApplication();

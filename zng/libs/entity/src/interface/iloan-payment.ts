@@ -35,9 +35,9 @@ export interface ILoanPayment extends EntityId<string> {
   /** What date Loan Payment was executed last time. 
      * Should be the same with `originalExecutionDate` if it is first execution attempt, 
      * otherwise - should contain the date of latest re-attempt */
-  initiatedAt: Date;
+  initiatedAt: Date | null;
   /** Date for which Loan Payment was originally scheduled */
-  scheduledAt: Date;
+  scheduledAt: Date | null;
   /** Date when Payment was completed.*/
   completedAt: Date | null;
   /**

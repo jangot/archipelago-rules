@@ -2,7 +2,7 @@ import { LoanCreateRequestDto, LoanResponseDto } from '@core/dto';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
-import { LoanAssignIntentCodes, LoanInviteeTypeCodes, LoanStateCodes, LoanTypeCodes, RegistrationStatus } from '@library/entity/enum';
+import { LoanInviteeTypeCodes, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
 import { IDomainServices } from '@core/domain/idomain.services';
 import { ConfigService } from '@nestjs/config';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
@@ -11,7 +11,7 @@ import { DeepPartial } from 'typeorm';
 import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/interface';
 import { LendingLogic } from './lending.logic';
 import { LoanAssignToContactInput } from '@library/shared/types/lending';
-import { LOAN_RELATIONS } from '@core/domain/entities/relations';
+import { LOAN_RELATIONS } from '@library/shared/domain/entities/relations';
 
 @Injectable()
 export class LoansService {
@@ -100,7 +100,7 @@ export class LoansService {
   }
 
   private async getPaymentAccount(accountId: string, ownerId?: string): Promise<IPaymentAccount> {
-    const paymentAccount = await this.domainServices.paymentServices.getPaymentAccountById(accountId);
+    const paymentAccount = await this.domainServices.userServices.getPaymentAccountById(accountId);
     if (!paymentAccount) {
       throw new EntityNotFoundException('Payment account not found');
     }

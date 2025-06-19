@@ -2,10 +2,10 @@ import { LoginCommand } from './login.commands';
 import { JwtService } from '@nestjs/jwt';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
-import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dto';
 import { ContactType, LoginType } from '@library/entity/enum';
-import { IDomainServices } from '../../../domain/idomain.services';
 import { ConfigService } from '@nestjs/config';
+import { UserLoginPayloadDto } from '@core/dto';
+import { IDomainServices } from '@core/domain/idomain.services';
 
 @Injectable()
 export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = LoginCommand> {

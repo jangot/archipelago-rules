@@ -7,12 +7,11 @@ import { LoansController } from './loans.controller';
 import { ScheduleController } from './schedule.controller';
 import { BillersService } from './billers.service';
 import { LoansService } from './loans.service';
-import { ScheduleService } from './schedule.service';
+import { ScheduleService } from '../../../../libs/shared/src/services/schedule.service';
 import { CqrsModule } from '@nestjs/cqrs';
-import { LoanPaymentModule } from './loan-payment/loan-payment.module';
 
 @Module({
-  imports: [JwtModule, ConfigModule, DomainModule, CqrsModule, LoanPaymentModule],
+  imports: [JwtModule, ConfigModule, DomainModule, CqrsModule],
   controllers: [BillersController, LoansController, ScheduleController],
   providers: [Logger, BillersService, LoansService, ScheduleService],
 })

@@ -11,11 +11,11 @@ import { Transactional } from 'typeorm-transactional';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VerificationCompleteCommand } from './registration.commands';
-import { VerificationEvent } from '../../verification';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helpers';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
-import { UnexpectedRegistrationStatusException } from '../../../domain/exceptions';
+import { UnexpectedRegistrationStatusException } from '@core/domain/exceptions';
+import { VerificationEvent } from '@core/auth/verification';
 
 @CommandHandler(VerificationCompleteCommand)
 export class VerificationCompleteCommandHandler

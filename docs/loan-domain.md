@@ -1212,6 +1212,82 @@ flowchart TD
     class InternalNotification,ResolveError,CreateNewTransfer,ContinueProcess action
 ```
 
+## Loan Payment Steps States
+
+### Step and Transfer State Interaction Matrix
+
+The following table shows the actions that occur at each intersection of Step State and Transfer State:
+
+<table>
+  <thead>
+    <tr>
+      <th colspan="2" rowspan="2"></th>
+      <th colspan="5" style="text-align:center;font-weight:bold;">Transfer States</th>
+    </tr>
+    <tr>
+      <th style="font-weight:bold;">Created</th>
+      <th style="font-weight:bold;">Completed</th>
+      <th style="font-weight:bold;">Failed</th>
+      <th style="font-weight:bold;">Pending</th>
+      <th style="font-weight:bold;">Not Found</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="4" style="writing-mode:vertical-lr;transform:rotate(180deg);font-weight:bold;">Step States</th>
+      <th style="font-weight:bold;">Created</th>
+      <td>Update step to Pending state</td>
+      <td>Out-of-sync exception</td>
+      <td>Out-of-sync exception</td>
+      <td>No action required (state polling)</td>
+      <td>Create new transfer & update step to Pending state</td>
+    </tr>
+    <tr>
+      <th style="font-weight:bold;">Pending</th>
+      <td>Validate if previous transfer failed, otherwise throw out-of-sync exception</td>
+      <td>Update step to Completed state</td>
+      <td>Update step to Failed state</td>
+      <td>No action required (state polling)</td>
+      <td>Out-of-sync exception</td>
+    </tr>
+    <tr>
+      <th style="font-weight:bold;">Completed</th>
+      <td>Out-of-sync exception</td>
+      <td>Out-of-sync exception (already completed)</td>
+      <td>Out-of-sync exception</td>
+      <td>Out-of-sync exception</td>
+      <td>Out-of-sync exception (no transfers)</td>
+    </tr>
+    <tr>
+      <th style="font-weight:bold;">Failed</th>
+      <td>Out-of-sync exception</td>
+      <td>Out-of-sync exception</td>
+      <td>Out-of-sync exception (already failed)</td>
+      <td>Out-of-sync exception</td>
+      <td>Out-of-sync exception (no transfers)</td>
+    </tr>
+  </tbody>
+</table>
+
+Based on the analysis of the step manager code, we can see that:
+
+1. **Step: Created**
+   - When it receives a created transfer, it updates the step to Pending state
+   - When no transfer is found, it creates a new transfer and updates to Pending state
+   - For other transfer states, it throws out-of-sync exceptions
+
+2. **Step: Pending**
+   - When it receives a completed transfer, it moves the step to Completed state
+   - When it receives a failed transfer, it moves the step to Failed state
+   - When it receives a created transfer, it validates if it's a retry scenario with previously failed transfers
+   - For pending transfers, no action is required (polling)
+
+3. **Step: Completed & Failed**
+   - These are terminal states that throw out-of-sync exceptions for any transfer state changes
+   
+This state machine ensures proper progression through the payment process while maintaining data consistency.
+
+
 ## Loan Payment Events
 
 ### Why Payment Events?

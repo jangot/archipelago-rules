@@ -1,0 +1,15 @@
+import { LoanPaymentRelation } from '@library/shared/domain/entities/relations';
+import { ILoanPayment } from '@library/entity/interface/iloan-payment';
+import { IRepositoryBase } from '@library/shared/common/data';
+import { DeepPartial } from 'typeorm';
+
+ 
+export interface ILoanPaymentRepository extends IRepositoryBase<ILoanPayment> {
+  getPaymentById(id: string, relations?: LoanPaymentRelation[]): Promise<ILoanPayment | null>;
+  getPaymentsByIds(paymentIds: string[], relations: LoanPaymentRelation[] | undefined): Promise<ILoanPayment[] | null>;
+  updatePayment(id: string, updates: DeepPartial<ILoanPayment>): Promise<boolean | null>;
+  createPayment(input: DeepPartial<ILoanPayment>): Promise<ILoanPayment | null>;
+  createPayments(payments: DeepPartial<ILoanPayment>[]): Promise<ILoanPayment[] | null>;
+}
+
+export const ILoanPaymentRepository = Symbol('ILoanPaymentRepository');

@@ -27,6 +27,12 @@ export interface ITransfer extends EntityId<string> {
   destinationAccountId: string;
   destinationAccount: IPaymentAccount;
 
+  /**
+   * Order of the Transfer for multi-transfer containers (e.g. Loan Payment Step).
+   * Default is 0;
+   */
+  order: number;
+
   loanPaymentStepId: string | null;
   loanPaymentStep: ILoanPaymentStep | null;
 

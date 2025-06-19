@@ -8,13 +8,13 @@
 
 import { RegistrationStatus } from '@library/entity/enum';
 import { Injectable, Logger } from '@nestjs/common';
-import { RegistrationDto } from '../../../dto';
 import { RegistrationBaseCommand } from './registration.commands';
 import { CommandBus, EventBus } from '@nestjs/cqrs';
 import { IApplicationUser } from '@library/entity/interface';
-import { VerificationEvent, VerificationEventFactory } from '../../verification';
-import { IDomainServices } from '../../../domain/idomain.services';
 import { RegistrationTransitionResult } from '@library/shared/types';
+import { RegistrationDto } from '@core/dto';
+import { IDomainServices } from '@core/domain/idomain.services';
+import { VerificationEvent, VerificationEventFactory } from '@core/auth/verification';
 
 export interface RegistrationExecuteParams {
   id: string | null;

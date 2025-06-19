@@ -1,8 +1,8 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LogoutCommand } from './login.commands';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
-import { UserLoginPayloadDto } from '../../../dto/response/user-login-payload.dto';
 import { MissingInputException } from '@library/shared/common/exceptions/domain';
+import { UserLoginPayloadDto } from '@core/dto';
 
 @CommandHandler(LogoutCommand)
 export class LogoutCommandHandler extends LoginBaseCommandHandler<LogoutCommand> implements ICommandHandler<LogoutCommand> {

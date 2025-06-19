@@ -1,4 +1,4 @@
-import { Biller } from '@core/domain/entities';
+import { Biller } from '@library/shared/domain/entities';
 import { IBillerRepository } from '@core/shared/interfaces/repositories';
 import { BillerTypeCodes } from '@library/entity/enum';
 import { IBiller } from '@library/entity/interface';
@@ -22,7 +22,7 @@ export class BillerRepository extends RepositoryBase<Biller> implements IBillerR
   public async createBiller(biller: DeepPartial<Biller>): Promise<Biller | null> {
     this.logger.debug('createBiller:', biller);
 
-    return this.repository.create(biller);
+    return this.insert(biller, true);
   }
 
 }

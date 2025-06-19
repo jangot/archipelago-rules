@@ -7,16 +7,16 @@
  */
 
 import { ContactType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
-import { RegistrationDto } from '../../../dto';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegistrationInitiatedCommand } from './registration.commands';
-import { VerificationEvent } from '../../verification';
 import { IApplicationUser } from '@library/entity/interface';
 import { RegistrationTransitionResult } from '@library/shared/types';
 import { logSafeRegistration, logSafeUser, safeTrim } from '@library/shared/common/helpers';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
-import { ContactTakenException, UnableToCreateUserException } from '../../../domain/exceptions';
+import { ContactTakenException, UnableToCreateUserException } from '@core/domain/exceptions';
+import { VerificationEvent } from '@core/auth/verification';
+import { RegistrationDto } from '@core/dto';
 
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler
