@@ -6,6 +6,11 @@ import { LoggerModule, Params } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MiddlewareConfigProxy } from '@nestjs/common/interfaces';
 import { getPinoTransports } from './pino.transport.config';
+import { IMessagePublisher } from './common/messages/interfaces/imessagepublisher';
+import { SqsMessagePublisher } from './common/messages/sqs-message-publisher';
+import { SqsModule, SqsService } from '@ssut/nestjs-sqs';
+import { SqsOptions } from '@ssut/nestjs-sqs/dist/sqs.types';
+import { getSqsClient } from './common/messages/aws/sqs-client';
 
 @Global()
 export class SharedModule {
@@ -18,6 +23,26 @@ export class SharedModule {
       module: SharedModule,
       imports: [
         CqrsModule,
+        SqsModule.registerAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: async (configService: ConfigService): Promise<SqsOptions> => {
+            return {
+              consumers: [{
+                sqs: getSqsClient(configService),
+                name: 'ZNG_Consumer',
+                queueUrl: configService.get('AWS_QUEUE_URL') || 'http://localhost:4566/000000000000/test-queue',
+              }],
+              producers: [
+                {
+                  sqs: getSqsClient(configService),
+                  name: 'ZNG_Producer',
+                  queueUrl: configService.get('AWS_QUEUE_URL') || 'http://localhost:4566/000000000000/test-queue',
+                },
+              ],
+            };
+          },
+        }),
         LoggerModule.forRootAsync({
           imports: [ConfigModule],
           inject: [ConfigService],
@@ -39,11 +64,13 @@ export class SharedModule {
         EventBus,
         Logger,        
         SharedService,
+        { provide: IMessagePublisher, useClass: SqsMessagePublisher },
       ],
       exports: [
         EventBus,
         LoggerModule,
         SharedService,
+        IMessagePublisher,
       ],
     };
   }
