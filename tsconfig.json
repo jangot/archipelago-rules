@@ -1,0 +1,69 @@
+{
+  "ts-node": {
+    "transpileOnly": true,
+    "require": [
+      "tsconfig-paths/register"
+    ]
+  },
+  "compilerOptions": {
+    "module": "CommonJS",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2022",
+    "lib": [
+      "ES2022"
+    ],
+    "sourceMap": true,
+    "inlineSources": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@core": [
+        "apps/core/src"
+      ],
+      "@core/*": [
+        "apps/core/src/*"
+      ],
+      "@payment": [
+        "apps/payment/src"
+      ],
+      "@payment/*": [
+        "apps/payment/src/*"
+      ],
+      "@notification": [
+        "apps/notification/src"
+      ],
+      "@notification/*": [
+        "apps/notification/src/*"
+      ],
+      "@library/entity": [
+        "libs/entitity/src"
+      ],
+      "@library/entity/*": [
+        "libs/entitity/src/*"
+      ],
+      "@library/extensions": [
+        "libs/extensions/src"
+      ],
+      "@library/extensions/*": [
+        "libs/extensions/src/*"
+      ],
+      "@library/shared": [
+        "libs/shared/src"
+      ],
+      "@library/shared/*": [
+        "libs/shared/src/*"
+      ]
+    }
+  }
+}

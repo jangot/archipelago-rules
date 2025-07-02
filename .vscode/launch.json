@@ -8,7 +8,7 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Core API",
-      "cwd": "${workspaceFolder}/zng",
+      "cwd": "${workspaceFolder}",
       "runtimeExecutable": "npx",
       "runtimeArgs": [
         "nest",
@@ -27,7 +27,7 @@
     "type": "node",
     "request": "launch",
     "name": "Launch Notification API",
-    "cwd": "${workspaceFolder}/zng",
+    "cwd": "${workspaceFolder}",
     "runtimeExecutable": "npx",
     "runtimeArgs": [
       "nest",
@@ -46,7 +46,7 @@
     "type": "node",
     "request": "launch",
     "name": "Launch Payment API",
-    "cwd": "${workspaceFolder}/zng",
+    "cwd": "${workspaceFolder}",
     "runtimeExecutable": "npx",
     "runtimeArgs": [
       "nest",

@@ -10,22 +10,22 @@
 
 ## Structure
 ### Shared Library
-Folder: `/zng/libs/shared`
+Folder: `/libs/shared`
 
 Description: Shared code that is common to all of the following 3 services
 
 ### Core Service
-Folder: `/zng/apps/core`
+Folder: `/apps/core`
 
 Description: Core functionality (Auth, Users, Organizations, Loans, Public endpoints for use by Mobile and Web Apps)
 
 ### Notifications Service
-Folder: `/zng/apps/notification`
+Folder: `/apps/notification`
 
 Description: Internal facing App used to schedule and fire `Notifications` to other systems (e.g. MailChimp, Twilio, Amplitude, etc.). May be exposed to external WebHook callbacks for Notification providers (e.g. Mailchimp and Twilio)
 
 ### Financial Payment Service
-Folder: `/zng/apps/payment`
+Folder: `/apps/payment`
 
 Description: Internal facing App used to manage Loan Funding, Disbursement, and Repayment. May be exposed to external WebHook callbacks for Payment providers.
 
