@@ -12,24 +12,25 @@ import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filter';
 import { RegistrationStatus } from '@library/entity/enum';
 import { BaseDomainExceptionCodes } from '@library/shared/common/exception/domain';
-import { CoreDomainExceptionCodes } from '@core/domain/exceptions';
-import { AuthController } from '@core/auth/auth.controller';
-import { AuthService } from '@core/auth/auth.service';
-import { RegistrationService } from '@core/auth/registration.service';
-import { LoginCommandHandlers } from '@core/auth/login/commands';
+import { AuthDomainExceptionCodes } from '@core/modules/auth/exceptions/auth-domain-exception.code';
+import { AuthController } from '@core/modules/auth/auth.controller';
+import { AuthService } from '@core/modules/auth/auth.service';
+import { RegistrationService } from '@core/modules/auth/registration.service';
+import { LoginCommandHandlers } from '@core/modules/auth/login/commands';
 import { UsersModule } from '@core/modules/users';
 import { DataModule } from '@core/modules/data';
-import { DomainModule } from '@core/domain/domain.module';
-import { CustomAuthStrategies } from '@core/auth/strategies';
-import { CustomAuthGuards, JwtAuthGuard, LogoutAuthGuard, RefreshTokenAuthGuard } from '@core/auth/guards';
-import { RegistrationCommandHandlers } from '@core/auth/registration/commands';
-import { LoginInitiateCommandHandler } from '@core/auth/login/commands/login.initiate.command';
-import { UserDomainService } from '@core/domain/services/user.domain.service';
+import { DomainModule } from '@core/modules/domain/domain.module';
+import { CustomAuthStrategies } from '@core/modules/auth/strategies';
+import { CustomAuthGuards, JwtAuthGuard, LogoutAuthGuard, RefreshTokenAuthGuard } from '@core/modules/auth/guards';
+import { RegistrationCommandHandlers } from '@core/modules/auth/registration/commands';
+import { LoginInitiateCommandHandler } from '@core/modules/auth/login/commands/login.initiate.command';
+import { UserDomainService } from '@core/modules/domain/services/user.domain.service';
 
 import { REGISTERED_USER_DUMP_1 } from './data-dump';
 import { generateWrongCode } from './test.helper';
 import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
 import { AllEntities } from '@library/shared/domain/entity';
+import { DbSchemaCodes } from '@library/shared/common/data';
 
 describe('AuthController - Negative Test Cases', () => {
   let app: INestApplication;
@@ -193,7 +194,7 @@ describe('AuthController - Negative Test Cases', () => {
 
       expect(response.body).toEqual(expect.objectContaining({
         statusCode: 403,
-        errorCode: CoreDomainExceptionCodes.LoginSessionNotInitiated,
+        errorCode: AuthDomainExceptionCodes.LoginSessionNotInitiated,
         message: 'Login session is not initiated',
       }));
     });
@@ -216,7 +217,7 @@ describe('AuthController - Negative Test Cases', () => {
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
         statusCode: 400,
-        errorCode: CoreDomainExceptionCodes.VerificationCodeMismatch,
+        errorCode: AuthDomainExceptionCodes.VerificationCodeMismatch,
         message: 'Verification code mismatch',
       }));
     });
@@ -244,7 +245,7 @@ describe('AuthController - Negative Test Cases', () => {
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
         statusCode: 400,
-        errorCode: CoreDomainExceptionCodes.WrongVerificationType,
+        errorCode: AuthDomainExceptionCodes.WrongVerificationType,
         message: 'User has a different verification type',
       }));
     });
@@ -327,7 +328,7 @@ describe('AuthController - Negative Test Cases', () => {
       expect(response.body).toEqual(expect.objectContaining({
         statusCode: 409,
         message: `Email already taken: ${takenEmail}`,
-        errorCode: CoreDomainExceptionCodes.ContactTaken,
+        errorCode: AuthDomainExceptionCodes.ContactTaken,
       }));
     });
 
@@ -412,7 +413,7 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(400);
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
-        errorCode: CoreDomainExceptionCodes.VerificationCodeMismatch,
+        errorCode: AuthDomainExceptionCodes.VerificationCodeMismatch,
         message: `Verification code mismatch for user ${id}`,
         statusCode: 400,
       }));
@@ -436,7 +437,7 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(400);
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
-        errorCode: CoreDomainExceptionCodes.VerificationCodeMismatch,
+        errorCode: AuthDomainExceptionCodes.VerificationCodeMismatch,
         message: `Verification code mismatch for user ${id}`,
         statusCode: 400,
       }));
@@ -494,7 +495,7 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(400);
 
       expect(secondVerifyResponse.body).toEqual(expect.objectContaining({
-        errorCode: CoreDomainExceptionCodes.VerificationCodeMismatch,
+        errorCode: AuthDomainExceptionCodes.VerificationCodeMismatch,
         message: `Verification code mismatch for user ${id}`,
         statusCode: 400,
       }));
@@ -532,7 +533,7 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(400);
 
       expect(secondVerifyResponse.body).toEqual(expect.objectContaining({
-        errorCode: CoreDomainExceptionCodes.VerificationCodeMismatch,
+        errorCode: AuthDomainExceptionCodes.VerificationCodeMismatch,
         message: `Verification code mismatch for user ${id}`,
         statusCode: 400,
       }));
@@ -607,7 +608,7 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(403);
 
       expect(lockedLoginIntitateResponse.body).toEqual(expect.objectContaining({
-        errorCode: CoreDomainExceptionCodes.LoginTemporaryLocked,
+        errorCode: AuthDomainExceptionCodes.LoginTemporaryLocked,
         message: 'User is temporary locked out of verification',
         statusCode: 403,
       }));

@@ -10,8 +10,8 @@ import { AllEntities, ApplicationUser, Loan } from '@library/shared/domain/entit
 import { CoreDataService } from '@core/modules/data/data.service';
 import { DataModule } from '@core/modules/data';
 import { memoryDataSourceSimple } from '@library/shared/tests/postgress-memory-datasource';
-import { ILoanRepository } from '@library/shared/interface/repository';
-
+import { ILoanRepository } from '@library/shared/infrastructure/interface';
+import { ILoan } from '@library/entity/entity-interface';
 
 describe('DataModule Integration Tests', () => {
   let module: TestingModule;
@@ -74,8 +74,8 @@ describe('DataModule Integration Tests', () => {
       let lenderGetResult: ApplicationUser | null = {} as ApplicationUser;
       let borrowerResult: ApplicationUser | null = {} as ApplicationUser;
       let borrowerGetResult: ApplicationUser | null = {} as ApplicationUser;
-      let loanResult: Loan | null = {} as Loan;
-      let loanGetResult: Loan | null = {} as Loan;
+      let loanResult: ILoan | null = {} as ILoan;
+      let loanGetResult: ILoan | null = {} as ILoan;
 
       lenderUserId = v4();
       const lenderCreatedAt = new Date();
@@ -232,7 +232,7 @@ describe('DataModule Integration Tests', () => {
 
       // We set existing loan id to be the same as the one we created in previous test
       // This should cause a conflict and rollback the transaction
-      const fakeLoan: Loan = {
+      const fakeLoan: ILoan = {
         id: expectedLoanId,
         amount: 1000,
         borrowerId: fakeBorrowerId,

@@ -1,9 +1,9 @@
-import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto } from 'apps/core/src/dto';
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { UsersController } from '@core/modules/users/users.controller';
 import { UsersService } from '@core/modules/users/users.service';
+import { UserResponseDto } from '@core/modules/users/dto/response';
+import { UserCreateRequestDto, UserUpdateRequestDto } from '@core/modules/users/dto/request';
 
 describe('UserController', () => {
   let controller: UsersController;

@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { UsersService } from '@core/modules/users/users.service';
-import { IDomainServices } from '@core/domain/idomain.services';
-import { UserCreateRequestDto, UserResponseDto, UserUpdateRequestDto, UserDetailsUpdateRequestDto, UserDetailsUpdateResponseDto } from '@core/dto';
+import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { UserCreateRequestDto, UserUpdateRequestDto, UserDetailsUpdateRequestDto } from '@core/modules/users/dto/request';
+import { UserResponseDto, UserDetailsUpdateResponseDto } from '@core/modules/users/dto/response';
 import { ContactType } from '@library/entity/enum';
 import { EntityNotFoundException, EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
 
