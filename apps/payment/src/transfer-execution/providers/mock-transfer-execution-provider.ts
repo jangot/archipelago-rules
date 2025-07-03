@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseTransferExecutionProvider } from './base-transfer-execution-provider';
 import { PaymentDomainService } from '@payment/domain/services';
+import { TransferErrorDetails, TransferErrorPayload } from '@library/shared/types/lending';
 
 @Injectable()
 export class MockTransferExecutionProvider extends BaseTransferExecutionProvider {
@@ -12,5 +13,9 @@ export class MockTransferExecutionProvider extends BaseTransferExecutionProvider
     // Simulate a successful transfer execution
     this.logger.debug(`Mock transfer executed for ID: ${transferId}`);
     return true; // Indicating success
+  }
+
+  protected parseTransferError(error: TransferErrorPayload): TransferErrorDetails {
+    throw new Error('Method not implemented.');
   }
 }

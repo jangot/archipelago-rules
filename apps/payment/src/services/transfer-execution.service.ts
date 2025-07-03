@@ -26,4 +26,16 @@ export class TransferExecutionService {
     return this.managementDomainService.executeTransfer(transferId, providerType);
   }
 
+  // TODO
+  public async completeTransfer(transferId: string): Promise<boolean | null> {
+    this.logger.debug(`Completing transfer ${transferId}`);
+    return null; // Placeholder for actual implementation
+  }
+
+  // TODO
+  public async failTransfer(transferId: string): Promise<boolean | null> {
+    this.logger.debug(`Failing transfer ${transferId}`);
+    return null; // Placeholder for actual implementation
+  }
+
 }

@@ -3,6 +3,7 @@ export const TRANSFER_RELATIONS = {
   SourceAccount: 'sourceAccount',
   DestinationAccount: 'destinationAccount',
   Error: 'error',
+  LoanPayment: 'loanPaymentStep.payment',
 } as const;
 
 /**

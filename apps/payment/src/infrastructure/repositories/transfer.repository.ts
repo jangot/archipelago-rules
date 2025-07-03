@@ -4,8 +4,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import { ITransferRepository } from '@payment/shared/interfaces/repositories';
-import { ITransfer } from '@library/entity/entity-interface';
-import { TransferRelation } from '@library/shared/domain/entity/relation';
+import { ITransfer } from '@library/entity/interface';
+import { TransferRelation } from '@library/shared/domain/entities/relations';
+import { TransferStateCodes } from '@library/entity/enum';
 
 @Injectable()
 export class TransferRepository extends RepositoryBase<Transfer> implements ITransferRepository {
@@ -25,5 +26,16 @@ export class TransferRepository extends RepositoryBase<Transfer> implements ITra
 
   public async getTransferById(transferId: string, relations?: TransferRelation[]): Promise<Transfer | null> {
     return this.repository.findOne({ where: { id: transferId }, relations });
+  }
+
+  public async completeTransfer(transferId: string): Promise<boolean | null> {
+    const result = await this.repository.update({ id: transferId }, { state: TransferStateCodes.Completed });
+    return this.actionResult(result);
+  }
+
+  public async failTransfer(transferId: string): Promise<boolean | null> {
+    const result = await this.repository.update({ id: transferId }, { state: TransferStateCodes.Failed });
+    return this.actionResult(result);
+
   }
 }
