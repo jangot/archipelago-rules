@@ -1,12 +1,12 @@
-import { ScheduleService } from '@library/shared/service/schedule.service';
 import { LoanFeeModeCodes, LoanPaymentFrequencyCodes } from '@library/entity/enum';
+import { ScheduleService } from '@library/shared/service/schedule.service';
 import { addMonths, addWeeks } from 'date-fns';
 
 describe('ScheduleService - previewRepaymentPlan', () => {
   let service: ScheduleService;
 
   beforeEach(() => {
-    service = new ScheduleService({} as any); // Mock domainServices as it's not used in this method
+    service = new ScheduleService(); // Mock domainServices as it's not used in this method
   });
 
   it('should return an empty array for invalid input', async () => {
@@ -37,7 +37,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
     ];
 
     for (const input of invalidInputs) {
-      const result = await service.previewRepaymentPlan(input);
+      const result = ScheduleService.previewRepaymentPlan(input);
       expect(result).toEqual([]);
     }
   });
@@ -52,7 +52,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
       repaymentStartDate: null,
     };
 
-    const result = await service.previewRepaymentPlan(input);
+    const result = ScheduleService.previewRepaymentPlan(input);
 
     expect(result).toHaveLength(3);
     expect(result[0].amount).toBeCloseTo(343.33, 2);
@@ -72,7 +72,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
       repaymentStartDate,
     };
 
-    const result = await service.previewRepaymentPlan(input);
+    const result = ScheduleService.previewRepaymentPlan(input);
 
     expect(result).toHaveLength(4);
     expect(result[0].paymentDate).toEqual(repaymentStartDate);
@@ -93,7 +93,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
       repaymentStartDate,
     };
 
-    const result = await service.previewRepaymentPlan(input);
+    const result = ScheduleService.previewRepaymentPlan(input);
 
     expect(result).toHaveLength(5);
     expect(result[0].paymentDate).toEqual(repaymentStartDate);
@@ -114,7 +114,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
       repaymentStartDate,
     };
 
-    const result = await service.previewRepaymentPlan(input);
+    const result = ScheduleService.previewRepaymentPlan(input);
 
     expect(result).toHaveLength(3);
     expect(result[0].paymentDate).toEqual(repaymentStartDate);
@@ -133,7 +133,7 @@ describe('ScheduleService - previewRepaymentPlan', () => {
       repaymentStartDate: null,
     };
 
-    const result = await service.previewRepaymentPlan(input);
+    const result = ScheduleService.previewRepaymentPlan(input);
 
     expect(result).toHaveLength(3);
     expect(result[0].amount).toBeCloseTo(333.33, 2);

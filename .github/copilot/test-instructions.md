@@ -139,7 +139,7 @@ beforeEach(async () => {
 it('should process payment for existing loan', async () => {
   // Use pre-seeded entities (no creation needed)
   const userId = FOUNDATION_TEST_IDS.users.primaryUser;
-  const loanId = FOUNDATION_TEST_IDS.loans.activeLoan;
+  const loanId = FOUNDATION_TEST_IDS.loans.disbursedLoan;
   
   // Create domain-specific entities via services
   const account = await domainServices.paymentServices.addPaymentAccount(

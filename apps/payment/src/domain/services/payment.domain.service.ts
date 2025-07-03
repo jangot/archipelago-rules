@@ -5,10 +5,10 @@ import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
 import { LoanPaymentStateCodes, LoanPaymentType, LoanPaymentTypeCodes, LoanType, PaymentStepState, TransferStateCodes } from '@library/entity/enum';
 import { PaymentDataService } from '@payment/data/data.service';
-import {  LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
-import { PlanPreviewOutputItem } from '@library/shared/type/lending';
 import { v4 } from 'uuid';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
+import { PlanPreviewOutputItem, TransferErrorDetails } from '@library/shared/type/lending';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -188,6 +188,32 @@ export class PaymentDomainService extends BaseDomainServices {
       throw new EntityNotFoundException('Transfer not found');
     }
     return transfer;
+  }
+
+  public async completeTransfer(transferId: string): Promise<boolean | null> {
+    this.logger.debug(`Completing transfer ${transferId}`);
+    return this.data.transfers.completeTransfer(transferId);
+  }
+
+  public async failTransfer(transferId: string, error: TransferErrorDetails): Promise<boolean | null> {
+    this.logger.debug(`Failing transfer ${transferId}`, { error });
+    // Check transfer existence and state (prevent double-fail)
+    // Get Loan Id attached to Transfer if any
+    const transfer = await this.data.transfers.getTransferById(transferId, [TRANSFER_RELATIONS.LoanPayment, TRANSFER_RELATIONS.Error]);
+    if (!transfer) {
+      throw new EntityNotFoundException('Transfer not found');
+    }
+    const storedError = transfer.error;
+    if (storedError) {
+      this.logger.error(`Transfer ${transferId} already has an error: ${storedError.displayMessage}`, { storedError });
+      return null; // Transfer already failed, no action needed
+    }
+
+    const loanId = transfer.loanPaymentStep?.loanPayment.loanId;
+    // Save TransferError
+    await this.data.transferErrors.createTransferError(transferId, error, loanId || null);
+    // Save Transfer
+    return this.data.transfers.failTransfer(transferId);
   }
 
   // #endregion

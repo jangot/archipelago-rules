@@ -1,6 +1,7 @@
 export * from './contact.type';
 export * from './login.type';
 export * from './verification.status';
+export * from './verification.type';
 
 // #region Registration
 export * from './registration.status';

@@ -1,7 +1,4 @@
 {
-  "jestrunner.debugOptions": {
-    "runtimeExecutable": "${workspaceRoot}/zng/scripts/run-jest.sh"
-  },
   "markdown.styles": [
     "https://use.fontawesome.com/releases/v5.15.4/css/all.css"
   ],
@@ -36,4 +33,15 @@
     }
   ],
   "eslint.quiet": false,
+  "[!{windows}]": {
+    "jestrunner.debugOptions": {
+      "runtimeExecutable": "${workspaceRoot}/zng/scripts/run-jest.sh"
+    }
+  },
+  "[windows]": {
+    "jestrunner.debugOptions": {
+      "runtimeExecutable": "${workspaceRoot}/zng/scripts/run-jest.ps1"
+    }
+  }
+}
 }

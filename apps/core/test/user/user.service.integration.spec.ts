@@ -6,11 +6,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ValueOperator } from '@library/shared/common/search';
 import { ContactType } from '@library/entity/enum';
-import { UserCreateRequestDto, UserUpdateRequestDto } from '@core/dto';
 import { UsersService } from '@core/modules/users/users.service';
 import { UsersModule } from '@core/modules/users';
 import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
 import { AllEntities } from '@library/shared/domain/entity';
+import { UserCreateRequestDto, UserUpdateRequestDto } from '@core/modules/users/dto/request';
 
 
 describe('UsersService Integration Tests', () => {

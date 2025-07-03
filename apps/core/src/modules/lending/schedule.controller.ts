@@ -1,5 +1,4 @@
 import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common';
-import { ScheduleService } from './schedule.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@core/modules/auth/guards';
 import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
@@ -11,7 +10,7 @@ import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
 export class ScheduleController {
   private readonly logger: Logger = new Logger(ScheduleController.name);
     
-  constructor(private readonly scheduleService: ScheduleService) {}
+  constructor() {}
     
   // to review a schedule for existing loan
   // TODO: including completed/failed payments?

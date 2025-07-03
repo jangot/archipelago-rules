@@ -1,12 +1,11 @@
 import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { LoansService } from './loans.service';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@core/modules/auth/guards';
 import { IRequest } from '@library/shared/type';
+import { JwtAuthGuard } from '../auth/guards';
 import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
-import { LoanCreateRequestDto } from './dto/request/loan.create.request.dto';
-import { LoanProposeRequestDto } from './dto/request/loan.propose.request.dto';
-import { LoanResponseDto } from './dto/response/loan.response.dto';
+import { LoanResponseDto } from './dto/response';
+import { LoanAcceptRequestDto, LoanCreateRequestDto, LoanProposeRequestDto } from './dto/request';
 
 @Controller('loans')
 @ApiTags('loans')
@@ -63,9 +62,13 @@ export class LoansController {
   // Accept loan and provide details required (target payment method, etc.)
   @Patch('accept/:id')
   @ApiOperation({ summary: 'Accept a loan and provide required details (e.g. target payment method)', description: 'Accept a loan and provide required details (e.g. target payment method)' })
-  public async acceptLoan(@UUIDParam('id') id: string, @Body() input: string): Promise<unknown> {
+  public async acceptLoan(@UUIDParam('id') id: string, @Req() request: IRequest, @Body() input: LoanAcceptRequestDto): Promise<unknown> {
+    const userId = request.user?.id;
+    if (!userId) {
+      throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
+    }
     this.logger.debug(`Accepting loan with ID: ${id}`, { input });
-    return;
+    return this.loansService.acceptLoan(userId, id, input.paymentAccountId);
   }
 
   // Close loan and provide details required (closure reason, etc.)

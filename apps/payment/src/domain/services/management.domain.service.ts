@@ -5,6 +5,7 @@ import { ILoanPaymentFactory } from '@payment/loan-payments';
 import { ILoanPaymentStepFactory } from '@payment/loan-payment-steps/interfaces';
 import { isArray } from 'lodash';
 import { ITransferExecutionFactory } from '@payment/transfer-execution/interface';
+import { TransferErrorPayload } from '@library/shared/type/lending';
 
 /**
  * Service to manage states of Loan, Loan Payment, Loan Payment Steps by aggregating their managers.
@@ -143,5 +144,17 @@ export class ManagementDomainService {
     
     const transferExecutionProvider = await this.transferExecutionFactory.getProvider(transferId, providerType);
     return transferExecutionProvider.executeTransfer(transferId);
+  }
+
+  public async completeTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
+    this.logger.debug(`Completing transfer ${transferId}`);
+    const transferExecutionProvider = await this.transferExecutionFactory.getProvider(transferId, providerType);
+    return transferExecutionProvider.completeTransfer(transferId);
+  }
+
+  public async failTransfer(transferId: string, error: TransferErrorPayload, providerType?: PaymentAccountProvider): Promise<boolean | null> {
+    this.logger.debug(`Failing transfer ${transferId}`);
+    const transferExecutionProvider = await this.transferExecutionFactory.getProvider(transferId, providerType);
+    return transferExecutionProvider.failTransfer(transferId, error);
   }
 }

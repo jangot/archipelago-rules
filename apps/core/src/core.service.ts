@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { v4 } from 'uuid';
 import { Transactional } from 'typeorm-transactional';
 import { random } from 'lodash';
+import { LoanTypeCodes, LoanStateCodes, LoanPaymentFrequencyCodes, LoanClosureCodes } from '@library/entity/enum';
 import { CoreDataService } from './modules/data/data.service';
 @Injectable()
 export class CoreService {
@@ -40,6 +41,11 @@ export class CoreService {
         lenderId: borrowerId,
         lender: lender!,
         borrower: borrower!,
+        type: LoanTypeCodes.Personal,
+        state: LoanStateCodes.Created,
+        paymentsCount: 12,
+        paymentFrequency: LoanPaymentFrequencyCodes.Monthly,
+        closureType: LoanClosureCodes.Open,
       });
 
       // Do something after the transaction is committed
