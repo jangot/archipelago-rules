@@ -3,16 +3,17 @@ import { LoanResponseDto } from './dto/response/loan.response.dto';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
-import { LoanInviteeTypeCodes, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
-import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { LoanInviteeTypeCodes, LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
+import { IDomainServices } from '@core/domain/idomain.services';
 import { ConfigService } from '@nestjs/config';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { ActionNotAllowedException, UnableToCreatePersonalBillerException } from './exceptions/loan-domain.exceptions';
 import { DeepPartial } from 'typeorm';
 import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/entity-interface';
 import { LendingLogic } from './lending.logic';
-import { LoanAssignToContactInput } from '@library/shared/type/lending';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { LoanAssignToContactInput } from '@library/shared/types/lending';
+import { LOAN_RELATIONS } from '@library/shared/domain/entities/relations';
+import { ILoanStateManagersFactory } from './interfaces';
 
 @Injectable()
 export class LoansService {
@@ -21,7 +22,8 @@ export class LoansService {
   constructor(
     private readonly domainServices: IDomainServices, 
     private readonly eventBus: EventBus,
-    private readonly config: ConfigService,) {}
+    private readonly config: ConfigService,
+    private readonly stateManagerFactory: ILoanStateManagersFactory) {}
     
   @MapToDto(LoanResponseDto)
   public async createLoan(userId: string, input: LoanCreateRequestDto): Promise<LoanResponseDto | null> {
@@ -88,6 +90,37 @@ export class LoansService {
     }
     const result = await this.domainServices.loanServices.acceptLoan(loanId, userId, targetPaymentAccountId);
     return result as unknown as LoanResponseDto | null;
+  }
+
+  /**
+   * Advances a loan through its state machine lifecycle by delegating to the appropriate state manager.
+   * 
+   * This method uses the State Pattern to handle loan state transitions. It retrieves the correct
+   * state manager instance from the factory based on the loan ID and optional current state,
+   * then delegates the advancement logic to that manager. Each state manager is responsible for
+   * validating if a transition is possible and executing the appropriate business logic.
+   * 
+   * The method supports the following state transitions:
+   *  - `accepted` -> `funding`
+   *  - `funding` -> `funded`
+   *  - `funded` -> `disbursing`
+   *  - `disbursing` -> `disbursed`
+   *  - `disbursed` -> `repaying`
+   *  - `repaying` -> `repaid`
+   *  - `repaid` -> `closed`
+   *  - Plus all related error/paused states (e.g., `funding_paused`, `disbursing_paused`)
+   * 
+   * @param loanId - The unique identifier of the loan to advance
+   * @param currentState - Optional current state to optimize manager selection. If not provided,
+   *                      the factory will retrieve the current state from the database
+   * @returns Promise<boolean | null> - true if the loan was successfully advanced to the next state,
+   *                                   false if no advancement was possible/needed, null if an error occurred
+   */
+  public async advanceLoan(loanId: string): Promise<boolean | null>;
+  public async advanceLoan(loanId: string, currentState: LoanState): Promise<boolean | null>;
+  public async advanceLoan(loanId: string, currentState?: LoanState): Promise<boolean | null> {
+    const manager = await this.stateManagerFactory.getManager(loanId, currentState);
+    return manager.advance(loanId);
   }
 
   private async createPersonalBiller(invitee: DeepPartial<ILoanInvitee>, createdById: string): Promise<IBiller> {
