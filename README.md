@@ -29,3 +29,5 @@ Folder: `/apps/payment`
 
 Description: Internal facing App used to manage Loan Funding, Disbursement, and Repayment. May be exposed to external WebHook callbacks for Payment providers.
 
+## Getting started Running Services locally
+[Running locally](./docs/getting-started.md)

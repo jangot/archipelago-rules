@@ -1,12 +1,12 @@
-import { HttpAdapterHost, NestFactory } from '@nestjs/core';
-import { PaymentModule } from './payment.module';
-import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
-import { ValidationPipe } from '@nestjs/common';
-import { setupGracefulShutdown } from 'nestjs-graceful-shutdown';
-import { ConfigService } from '@nestjs/config';
-import { initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filter';
+import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/swagger';
+import { setupGracefulShutdown } from 'nestjs-graceful-shutdown';
+import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
+import { initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
+import { PaymentModule } from './payment.module';
 
 async function bootstrap() {
   // Initialize TypeORM Transactional Context
@@ -14,7 +14,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(PaymentModule, { abortOnError: true });
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 3000);
+  const port = configService.get<number>('PORT', 3002);
 
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapter), new DomainExceptionsFilter(httpAdapter));
