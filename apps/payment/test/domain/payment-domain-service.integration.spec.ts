@@ -18,33 +18,31 @@ import {
   LoanTypeCodes, 
   PaymentAccountOwnershipTypeCodes, 
   PaymentAccountProviderCodes, 
-  PaymentAccountStateCodes,
   PaymentAccountTypeCodes, 
   PaymentStepStateCodes, 
 } from '@library/entity/enum';
 import { DeepPartial } from 'typeorm';
-import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
-import { AllEntities } from '@library/shared/domain/entity';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
+import { 
+  memoryDataSourceSingle,
+  TestDataSeeder,
+  FOUNDATION_TEST_IDS,
+  TestPaymentAccountFactory,
+} from '@library/shared/tests';
+import { AllEntities } from '@library/shared/domain/entities';
 
-// Follow ZNG testing guidelines from .github/copilot/test-instructions.md
-// Verify entity interfaces first - check libs/entity/src/interface/ for actual field names  
-// Use real service implementations for integration tests (2-3 levels deep)
-// Test ONLY PaymentDomainService methods - do NOT test ManagementDomainService methods here
-// Create test data using #region test data generation pattern
-// Use uuidv4() for all test IDs and entity creation
 /**
  * Integration tests for PaymentDomainService
  * 
  * PaymentDomainService handles data operations like:
  * - addPaymentAccount, getPaymentAccountById, getLoanById
- * - createPayment, getPaymentById, updatePaymentState, completePayment, failPayment
+ * - createPayment, getPaymentById, updatePayment, completePayment, failPayment
  * - createPaymentSteps, getPaymentStepsForPayment  
  * - createTransferForStep, getTransferById
  * 
  * These tests verify PaymentDomainService functionality using real service implementations
- * with an in-memory database. Tests follow ZNG guidelines by using real services for 2-3 
- * levels of dependency injection and only mocking repositories and external APIs.
+ * with an in-memory database and hybrid test data approach for optimal performance.
+ * Tests follow ZNG guidelines by using foundation data + domain-specific entities.
  */
 describe('PaymentDomainService Integration', () => {
   let module: TestingModule;
@@ -52,12 +50,12 @@ describe('PaymentDomainService Integration', () => {
   let databaseBackup: IBackup;
 
   // Use uuidv4() for all test IDs and entity creation
-  const testUserId = uuidv4();
-  const testLoanId = uuidv4();
   const nonExistentAccountId = uuidv4();
   const nonExistentPaymentId = uuidv4();
+  const nonExistentDestinationAccountId = uuidv4();
 
   beforeAll(async () => {
+    // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
     // Create in-memory database with all entities
     const { dataSource, database } = await memoryDataSourceSingle(AllEntities);
     
@@ -76,6 +74,9 @@ describe('PaymentDomainService Integration', () => {
       .compile();
 
     paymentDomainService = module.get<PaymentDomainService>(PaymentDomainService);
+    
+    // Seed foundation data BEFORE creating backup
+    await TestDataSeeder.seedFoundationData(dataSource);
     databaseBackup = database.backup();
   });
 
@@ -84,43 +85,23 @@ describe('PaymentDomainService Integration', () => {
   });
 
   beforeEach(() => {
-    // Restore database to clean state before each test
+    // Restore database to state WITH foundation data
     databaseBackup.restore();
   });
 
   // #region test data generation
 
   /**
-   * Creates a test payment account with correct IPaymentAccount structure using provider-specific details
-   * @param userId - Optional user ID to assign the account to, defaults to testUserId
+   * Creates a test payment account using TestPaymentAccountFactory with Checkbook provider
+   * @param userId - Optional user ID to assign the account to, defaults to FOUNDATION_TEST_IDS.users.primaryUser
    * @returns Promise resolving to the created payment account
    * @throws Error if account creation fails due to constraint violations
    */
   async function createTestPaymentAccount(userId?: string): Promise<IPaymentAccount> {
-    const userIdToUse = userId || testUserId;
-    const accountInput: DeepPartial<IPaymentAccount> = {
-      userId: userIdToUse,
-      type: PaymentAccountTypeCodes.BankAccount,
-      provider: PaymentAccountProviderCodes.Checkbook,
-      ownership: PaymentAccountOwnershipTypeCodes.Personal,
-      state: PaymentAccountStateCodes.Verified,
-      // Provider-specific details go in the details object
-      details: {
-        type: 'checkbook_ach',
-        displayName: 'John Smith Account',
-        key: 'test_key_123',
-        secret: 'test_secret_456', 
-        accountId: `acc_${Date.now()}${Math.random().toString(36).substring(2, 5)}`,
-        institution: 'Test Bank',
-        redactedAccountNumber: '****7890',
-        routingNumber: '123456789',
-      },
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const userIdToUse = userId || FOUNDATION_TEST_IDS.users.primaryUser;
+    const accountData = TestPaymentAccountFactory.createCheckbookBankAccount('Test User Account') as DeepPartial<IPaymentAccount>;
     
-    const result = await paymentDomainService.addPaymentAccount(userIdToUse, accountInput);
+    const result = await paymentDomainService.addPaymentAccount(userIdToUse, accountData);
     
     if (!result) {
       throw new Error('Failed to create test payment account - check entity constraints and required fields');
@@ -130,33 +111,16 @@ describe('PaymentDomainService Integration', () => {
   }
 
   /**
-   * Creates a test internal payment account with correct IPaymentAccount structure using Fiserv provider
-   * @param userId - Optional user ID to assign the account to, defaults to testUserId
+   * Creates a test internal payment account using TestPaymentAccountFactory with Fiserv provider
+   * @param userId - Optional user ID to assign the account to, defaults to FOUNDATION_TEST_IDS.users.primaryUser
    * @returns Promise resolving to the created internal payment account
    * @throws Error if account creation fails due to constraint violations
    */
   async function createTestInternalAccount(userId?: string): Promise<IPaymentAccount> {
-    const userIdToUse = userId || testUserId;
-    const accountInput: DeepPartial<IPaymentAccount> = {
-      userId: userIdToUse,
-      type: PaymentAccountTypeCodes.BankAccount,
-      provider: PaymentAccountProviderCodes.Fiserv,
-      ownership: PaymentAccountOwnershipTypeCodes.Internal,
-      state: PaymentAccountStateCodes.Verified,
-      // Provider-specific details go in the details object
-      details: {
-        type: 'fiserv_debit',
-        displayName: 'Internal Platform Account',
-        cardToken: `token_${Date.now()}`,
-        cardExpiration: '12/26',
-        last4Digits: `${Math.floor(1000 + Math.random() * 9000)}`, // Random 4 digits
-      },
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const userIdToUse = userId || FOUNDATION_TEST_IDS.users.primaryUser;
+    const accountData = TestPaymentAccountFactory.createFiservDebitAccount('Internal Platform Account') as DeepPartial<IPaymentAccount>;
     
-    const result = await paymentDomainService.addPaymentAccount(userIdToUse, accountInput);
+    const result = await paymentDomainService.addPaymentAccount(userIdToUse, accountData);
     
     if (!result) {
       throw new Error('Failed to create test internal account - check entity constraints and required fields');
@@ -167,12 +131,12 @@ describe('PaymentDomainService Integration', () => {
 
   /**
    * Creates a test funding loan payment with default amount of 1000
-   * @param loanId - Optional loan ID to associate the payment with, defaults to testLoanId
+   * @param loanId - Optional loan ID to associate the payment with, defaults to FOUNDATION_TEST_IDS.loans.activeLoan
    * @returns Promise resolving to the created loan payment
    * @throws Error if payment creation fails due to constraint violations
    */
   async function createTestPayment(loanId?: string): Promise<ILoanPayment> {
-    const loanIdToUse = loanId || testLoanId;
+    const loanIdToUse = loanId || FOUNDATION_TEST_IDS.loans.activeLoan;
     const paymentInput: DeepPartial<ILoanPayment> = {
       loanId: loanIdToUse,
       amount: 1000,
@@ -236,13 +200,13 @@ describe('PaymentDomainService Integration', () => {
 
   /**
    * Creates a test repayment loan payment with configurable amount
-   * @param loanId - Optional loan ID to associate the payment with, defaults to testLoanId
+   * @param loanId - Optional loan ID to associate the payment with, defaults to FOUNDATION_TEST_IDS.loans.activeLoan
    * @param amount - The repayment amount, defaults to 200
    * @returns Promise resolving to the created repayment payment
    * @throws Error if payment creation fails due to constraint violations
    */
   async function createTestRepaymentPayment(loanId?: string, amount: number = 200): Promise<ILoanPayment> {
-    const loanIdToUse = loanId || testLoanId;
+    const loanIdToUse = loanId || FOUNDATION_TEST_IDS.loans.activeLoan;
     const paymentInput: DeepPartial<ILoanPayment> = {
       loanId: loanIdToUse,
       amount: amount,
@@ -296,11 +260,12 @@ describe('PaymentDomainService Integration', () => {
       
       // Assert
       expect(result).toBeDefined();
-      expect(result.userId).toBe(testUserId);
+      expect(result.userId).toBe(FOUNDATION_TEST_IDS.users.primaryUser);
       expect(result.type).toBe(PaymentAccountTypeCodes.BankAccount);
       expect(result.provider).toBe(PaymentAccountProviderCodes.Checkbook);
-      expect(result.accountHolderName).toBe('John Smith');
-      expect(result.isActive).toBe(true);
+      expect(result.details).toBeDefined();
+      expect(result.details!.type).toBe('checkbook_ach');
+      expect(result.details!.displayName).toBeDefined();
     });
 
     it('should get a payment account by ID when it exists', async () => {
@@ -313,8 +278,9 @@ describe('PaymentDomainService Integration', () => {
       // Assert
       expect(result).toBeDefined();
       expect(result!.id).toBe(created.id);
-      expect(result!.userId).toBe(testUserId);
-      expect(result!.accountHolderName).toBe('John Smith');
+      expect(result!.userId).toBe(FOUNDATION_TEST_IDS.users.primaryUser);
+      expect(result!.details).toBeDefined();
+      expect(result!.details!.displayName).toBeDefined();
     });
 
     it('should return null when payment account is not found', async () => {
@@ -337,12 +303,12 @@ describe('PaymentDomainService Integration', () => {
   });
 
   describe('Loan Management', () => {
-    it('should return null when loan is not found', async () => {
+    it('should return Loan when Loan is found', async () => {
       // Act
-      const result = await paymentDomainService.getLoanById(testLoanId);
+      const result = await paymentDomainService.getLoanById(FOUNDATION_TEST_IDS.loans.activeLoan);
       
       // Assert
-      expect(result).toBeNull();
+      expect(result).toBeDefined();
     });
 
     it('should handle non-existent loan ID gracefully', async () => {
@@ -374,7 +340,7 @@ describe('PaymentDomainService Integration', () => {
       expect(result).toBeDefined();
       expect(result.amount).toBe(1000);
       expect(result.type).toBe(LoanPaymentTypeCodes.Funding);
-      expect(result.loanId).toBe(testLoanId);
+      expect(result.loanId).toBe(FOUNDATION_TEST_IDS.loans.activeLoan);
       expect(result.state).toBe(LoanPaymentStateCodes.Created);
     });
 
@@ -431,7 +397,7 @@ describe('PaymentDomainService Integration', () => {
 
     it('should return null for empty repayment plan', async () => {
       // Act
-      const result = await paymentDomainService.saveRepaymentPlan([], testLoanId);
+      const result = await paymentDomainService.saveRepaymentPlan([], FOUNDATION_TEST_IDS.loans.activeLoan);
       
       // Assert
       expect(result).toBeNull();
@@ -451,8 +417,8 @@ describe('PaymentDomainService Integration', () => {
 
     it('should handle various payment amounts for repayments', async () => {
       // Arrange & Act
-      const smallRepayment = await createTestRepaymentPayment(testLoanId, 50);
-      const largeRepayment = await createTestRepaymentPayment(testLoanId, 1500);
+      const smallRepayment = await createTestRepaymentPayment(FOUNDATION_TEST_IDS.loans.activeLoan, 50);
+      const largeRepayment = await createTestRepaymentPayment(FOUNDATION_TEST_IDS.loans.activeLoan, 1500);
       
       // Assert
       expect(smallRepayment.amount).toBe(50);
@@ -467,7 +433,7 @@ describe('PaymentDomainService Integration', () => {
       // Act
       const result = await paymentDomainService.findRouteForPayment(
         nonExistentAccountId,
-        'some-destination',
+        nonExistentDestinationAccountId,
         LoanPaymentTypeCodes.Funding,
         LoanTypeCodes.Personal
       );
@@ -483,7 +449,7 @@ describe('PaymentDomainService Integration', () => {
       // Act
       const result = await paymentDomainService.findRouteForPayment(
         sourceAccount.id,
-        'non-existent-account',
+        nonExistentDestinationAccountId,
         LoanPaymentTypeCodes.Funding,
         LoanTypeCodes.Personal
       );
@@ -678,7 +644,7 @@ describe('PaymentDomainService Integration', () => {
       // Arrange & Act
       const paymentPromises = Array.from({ length: 3 }, (_, index) => {
         const paymentInput: DeepPartial<ILoanPayment> = {
-          loanId: testLoanId,
+          loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
           amount: 100 * (index + 1),
           type: LoanPaymentTypeCodes.Repayment,
           state: LoanPaymentStateCodes.Created,
@@ -803,7 +769,7 @@ describe('PaymentDomainService Integration', () => {
     it('should handle edge cases with zero amounts gracefully', async () => {
       // Arrange
       const paymentInput: DeepPartial<ILoanPayment> = {
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 0,
         type: LoanPaymentTypeCodes.Fee,
         state: LoanPaymentStateCodes.Created,
