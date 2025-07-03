@@ -5,7 +5,7 @@ import { ILoanPaymentFactory } from '@payment/loan-payments';
 import { ILoanPaymentStepFactory } from '@payment/loan-payment-steps/interfaces';
 import { isArray } from 'lodash';
 import { ITransferExecutionFactory } from '@payment/transfer-execution/interface';
-import { TransferErrorPayload } from '@library/shared/types/lending';
+import { TransferErrorPayload } from '@library/shared/type/lending';
 
 /**
  * Service to manage states of Loan, Loan Payment, Loan Payment Steps by aggregating their managers.

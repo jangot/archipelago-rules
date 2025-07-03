@@ -1,15 +1,15 @@
-import { CoreDataService } from '@core/data/data.service';
+import { CoreDataService } from '@core/modules/data';
+import { ActionNotAllowedException } from '@core/modules/lending/exceptions';
+import { IApplicationUser, IBiller, ILoan, ILoanInvitee } from '@library/entity/entity-interface';
 import { BillerTypeCodes, ContactType, LoanAssignIntent, LoanAssignIntentCodes, LoanInviteeTypeCodes, LoanStateCodes, RegistrationStatus } from '@library/entity/enum';
-import { IApplicationUser, IBiller, ILoan, ILoanInvitee } from '@library/entity/interface';
-import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
-import { LoanAssignToContactInput, LoansSetTargetUserInput, LoanTargetUserInput } from '@library/shared/types/lending';
+import { BaseDomainServices } from '@library/shared/common/domainservice';
+import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { LOAN_INVITEE_RELATIONS, LOAN_RELATIONS, LoanRelation } from '@library/shared/domain/entity/relation';
+import { LoanAssignToContactInput, LoansSetTargetUserInput, LoanTargetUserInput } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { DeepPartial } from 'typeorm';
-import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exceptions/domain';
-import { LOAN_INVITEE_RELATIONS, LOAN_RELATIONS, LoanRelation } from '@library/shared/domain/entities/relations';
-import { ActionNotAllowedException } from '../exceptions/loan-domain.exceptions';
 
 @Injectable()
 export class LoanDomainService extends BaseDomainServices {

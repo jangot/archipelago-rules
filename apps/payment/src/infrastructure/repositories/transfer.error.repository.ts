@@ -4,8 +4,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ITransferErrorRepository } from '@payment/shared/interfaces/repositories';
-import { ITransferError } from '@library/entity/interface';
-import { TransferErrorDetails } from '@library/shared/types/lending';
+import { TransferErrorDetails } from '@library/shared/type/lending';
+import { ITransferError } from '@library/entity/entity-interface';
 
 @Injectable()
 export class TransferErrorRepository extends RepositoryBase<TransferError> implements ITransferErrorRepository {

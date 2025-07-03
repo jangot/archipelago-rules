@@ -47,10 +47,10 @@
         "apps/notification/src/*"
       ],
       "@library/entity": [
-        "libs/entitity/src"
+        "libs/entity/src"
       ],
       "@library/entity/*": [
-        "libs/entitity/src/*"
+        "libs/entity/src/*"
       ],
       "@library/extensions": [
         "libs/extensions/src"

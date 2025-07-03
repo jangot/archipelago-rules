@@ -32,8 +32,8 @@ import {
   FOUNDATION_TEST_IDS,
   TestPaymentAccountFactory,
 } from '@library/shared/tests';
-import { AllEntities } from '@library/shared/domain/entities';
-import { EntityNotFoundException } from '@library/shared/common/exceptions/domain';
+import { AllEntities } from '@library/shared/domain/entity';
+import { EntityNotFoundException } from '@library/shared/common/exception/domain';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
 // Verify entity interfaces first - check libs/entity/src/interface/ for actual field names
@@ -172,7 +172,7 @@ describe('Payment Process Flow Integration', () => {
   describe('Payment Service Integration', () => {
     it('should initiate loan payment for existing loan', async () => {
       // Act
-      const result = await loanPaymentService.initiatePayment(FOUNDATION_TEST_IDS.loans.activeLoan, LoanPaymentTypeCodes.Funding);
+      const result = await loanPaymentService.initiatePayment(FOUNDATION_TEST_IDS.loans.disbursedLoan, LoanPaymentTypeCodes.Funding);
       
       // Assert
       expect(result).toBeDefined();
@@ -188,7 +188,7 @@ describe('Payment Process Flow Integration', () => {
     it('should advance loan payment when payment exists', async () => {
       // Arrange - Create a payment first
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -224,7 +224,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Create a payment
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -281,7 +281,7 @@ describe('Payment Process Flow Integration', () => {
       const destAccount = await createTestInternalAccount();
 
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -322,7 +322,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Create a payment and step
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -383,7 +383,7 @@ describe('Payment Process Flow Integration', () => {
       const destAccount = await createTestInternalAccount();
 
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -438,7 +438,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Act - Create funding payment
       const fundingPayment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -463,7 +463,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Act - Create disbursement payment
       const disbursementPayment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Disbursement,
         state: LoanPaymentStateCodes.Created,
@@ -488,7 +488,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Act - Create repayment payment
       const repaymentPayment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 500,
         type: LoanPaymentTypeCodes.Repayment,
         state: LoanPaymentStateCodes.Created,
@@ -510,7 +510,7 @@ describe('Payment Process Flow Integration', () => {
     it('should handle payment steps workflow', async () => {
       // Arrange - Create a payment
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -560,7 +560,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Act - Create payment that involves multiple account types
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 2000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -617,21 +617,21 @@ describe('Payment Process Flow Integration', () => {
       // Act - Create multiple payment types
       const payments = await Promise.all([
         domainServices.paymentServices.createPayment({
-          loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+          loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
           amount: 1000,
           type: LoanPaymentTypeCodes.Funding,
           state: LoanPaymentStateCodes.Created,
           paymentNumber: paymentNumber++,
         }),
         domainServices.paymentServices.createPayment({
-          loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+          loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
           amount: 1000,
           type: LoanPaymentTypeCodes.Disbursement,
           state: LoanPaymentStateCodes.Created,
           paymentNumber: paymentNumber++,
         }),
         domainServices.paymentServices.createPayment({
-          loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+          loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
           amount: 500,
           type: LoanPaymentTypeCodes.Repayment,
           state: LoanPaymentStateCodes.Created,
@@ -691,7 +691,7 @@ describe('Payment Process Flow Integration', () => {
       const targetAccount = await createTestInternalAccount();
       
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -704,7 +704,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Act - Test initiate loan payment with existing loan
       const initiateResult = await managementDomainService.initiateLoanPayment(
-        FOUNDATION_TEST_IDS.loans.activeLoan, 
+        FOUNDATION_TEST_IDS.loans.disbursedLoan, 
         LoanPaymentTypeCodes.Disbursement
       );
       

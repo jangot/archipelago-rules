@@ -16,9 +16,9 @@ export interface ITestDataRegistry {
     inactiveUser: string;
   };
   loans: {
-    activeLoan: string;
-    pendingLoan: string;
-    completedLoan: string;
+    disbursedLoan: string; // was activeLoan - funds transferred to borrower
+    requestedLoan: string; // was pendingLoan - loan request created
+    repaidLoan: string; // was completedLoan - loan fully repaid
   };
 }
 
@@ -34,9 +34,9 @@ export const FOUNDATION_TEST_IDS = {
     inactiveUser: '55555555-5555-5555-5555-555555555555',
   },
   loans: {
-    activeLoan: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-    pendingLoan: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-    completedLoan: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+    disbursedLoan: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', // was activeLoan - funds transferred to borrower
+    requestedLoan: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', // was pendingLoan - loan request created
+    repaidLoan: 'cccccccc-cccc-cccc-cccc-cccccccccccc', // was completedLoan - loan fully repaid
   },
 } as const;
 
@@ -171,7 +171,7 @@ export class TestDataSeeder {
   private static async createFoundationLoans(dataSource: DataSource): Promise<void> {
     const timestamp = new Date();
     
-    // Active loan - most commonly used
+    // Disbursed loan - most commonly used (funds transferred to borrower)
     await dataSource.query(`
       INSERT INTO core.loans (
         id, borrower_id, lender_id, amount, type, state, closure_type,
@@ -180,7 +180,7 @@ export class TestDataSeeder {
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
       ) ON CONFLICT (id) DO NOTHING
     `, [
-      FOUNDATION_TEST_IDS.loans.activeLoan,
+      FOUNDATION_TEST_IDS.loans.disbursedLoan,
       FOUNDATION_TEST_IDS.users.borrowerUser,
       FOUNDATION_TEST_IDS.users.lenderUser,
       1000.00,
@@ -192,7 +192,7 @@ export class TestDataSeeder {
       timestamp,
     ]);
 
-    // Pending loan - for initiation testing
+    // Requested loan - for initiation testing (loan request created)
     await dataSource.query(`
       INSERT INTO core.loans (
         id, borrower_id, lender_id, amount, type, state, closure_type,
@@ -201,7 +201,7 @@ export class TestDataSeeder {
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
       ) ON CONFLICT (id) DO NOTHING
     `, [
-      FOUNDATION_TEST_IDS.loans.pendingLoan,
+      FOUNDATION_TEST_IDS.loans.requestedLoan,
       FOUNDATION_TEST_IDS.users.borrowerUser,
       FOUNDATION_TEST_IDS.users.lenderUser,
       2000.00,
@@ -213,7 +213,7 @@ export class TestDataSeeder {
       timestamp,
     ]);
 
-    // Completed loan - for historical testing
+    // Repaid loan - for historical testing (loan fully repaid)
     await dataSource.query(`
       INSERT INTO core.loans (
         id, borrower_id, lender_id, amount, type, state, closure_type,
@@ -222,7 +222,7 @@ export class TestDataSeeder {
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
       ) ON CONFLICT (id) DO NOTHING
     `, [
-      FOUNDATION_TEST_IDS.loans.completedLoan,
+      FOUNDATION_TEST_IDS.loans.repaidLoan,
       FOUNDATION_TEST_IDS.users.borrowerUser,
       FOUNDATION_TEST_IDS.users.lenderUser,
       500.00,

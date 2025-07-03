@@ -22,14 +22,14 @@ import {
   PaymentStepStateCodes, 
 } from '@library/entity/enum';
 import { DeepPartial } from 'typeorm';
-import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exceptions/domain';
 import { 
   memoryDataSourceSingle,
   TestDataSeeder,
   FOUNDATION_TEST_IDS,
   TestPaymentAccountFactory,
 } from '@library/shared/tests';
-import { AllEntities } from '@library/shared/domain/entities';
+import { AllEntities } from '@library/shared/domain/entity';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 
 /**
  * Integration tests for PaymentDomainService
@@ -131,12 +131,12 @@ describe('PaymentDomainService Integration', () => {
 
   /**
    * Creates a test funding loan payment with default amount of 1000
-   * @param loanId - Optional loan ID to associate the payment with, defaults to FOUNDATION_TEST_IDS.loans.activeLoan
+   * @param loanId - Optional loan ID to associate the payment with, defaults to FOUNDATION_TEST_IDS.loans.disbursedLoan
    * @returns Promise resolving to the created loan payment
    * @throws Error if payment creation fails due to constraint violations
    */
   async function createTestPayment(loanId?: string): Promise<ILoanPayment> {
-    const loanIdToUse = loanId || FOUNDATION_TEST_IDS.loans.activeLoan;
+    const loanIdToUse = loanId || FOUNDATION_TEST_IDS.loans.disbursedLoan;
     const paymentInput: DeepPartial<ILoanPayment> = {
       loanId: loanIdToUse,
       amount: 1000,
@@ -200,13 +200,13 @@ describe('PaymentDomainService Integration', () => {
 
   /**
    * Creates a test repayment loan payment with configurable amount
-   * @param loanId - Optional loan ID to associate the payment with, defaults to FOUNDATION_TEST_IDS.loans.activeLoan
+   * @param loanId - Optional loan ID to associate the payment with, defaults to FOUNDATION_TEST_IDS.loans.disbursedLoan
    * @param amount - The repayment amount, defaults to 200
    * @returns Promise resolving to the created repayment payment
    * @throws Error if payment creation fails due to constraint violations
    */
   async function createTestRepaymentPayment(loanId?: string, amount: number = 200): Promise<ILoanPayment> {
-    const loanIdToUse = loanId || FOUNDATION_TEST_IDS.loans.activeLoan;
+    const loanIdToUse = loanId || FOUNDATION_TEST_IDS.loans.disbursedLoan;
     const paymentInput: DeepPartial<ILoanPayment> = {
       loanId: loanIdToUse,
       amount: amount,
@@ -305,7 +305,7 @@ describe('PaymentDomainService Integration', () => {
   describe('Loan Management', () => {
     it('should return Loan when Loan is found', async () => {
       // Act
-      const result = await paymentDomainService.getLoanById(FOUNDATION_TEST_IDS.loans.activeLoan);
+      const result = await paymentDomainService.getLoanById(FOUNDATION_TEST_IDS.loans.disbursedLoan);
       
       // Assert
       expect(result).toBeDefined();
@@ -340,7 +340,7 @@ describe('PaymentDomainService Integration', () => {
       expect(result).toBeDefined();
       expect(result.amount).toBe(1000);
       expect(result.type).toBe(LoanPaymentTypeCodes.Funding);
-      expect(result.loanId).toBe(FOUNDATION_TEST_IDS.loans.activeLoan);
+      expect(result.loanId).toBe(FOUNDATION_TEST_IDS.loans.disbursedLoan);
       expect(result.state).toBe(LoanPaymentStateCodes.Created);
     });
 
@@ -397,7 +397,7 @@ describe('PaymentDomainService Integration', () => {
 
     it('should return null for empty repayment plan', async () => {
       // Act
-      const result = await paymentDomainService.saveRepaymentPlan([], FOUNDATION_TEST_IDS.loans.activeLoan);
+      const result = await paymentDomainService.saveRepaymentPlan([], FOUNDATION_TEST_IDS.loans.disbursedLoan);
       
       // Assert
       expect(result).toBeNull();
@@ -417,8 +417,8 @@ describe('PaymentDomainService Integration', () => {
 
     it('should handle various payment amounts for repayments', async () => {
       // Arrange & Act
-      const smallRepayment = await createTestRepaymentPayment(FOUNDATION_TEST_IDS.loans.activeLoan, 50);
-      const largeRepayment = await createTestRepaymentPayment(FOUNDATION_TEST_IDS.loans.activeLoan, 1500);
+      const smallRepayment = await createTestRepaymentPayment(FOUNDATION_TEST_IDS.loans.disbursedLoan, 50);
+      const largeRepayment = await createTestRepaymentPayment(FOUNDATION_TEST_IDS.loans.disbursedLoan, 1500);
       
       // Assert
       expect(smallRepayment.amount).toBe(50);
@@ -644,7 +644,7 @@ describe('PaymentDomainService Integration', () => {
       // Arrange & Act
       const paymentPromises = Array.from({ length: 3 }, (_, index) => {
         const paymentInput: DeepPartial<ILoanPayment> = {
-          loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+          loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
           amount: 100 * (index + 1),
           type: LoanPaymentTypeCodes.Repayment,
           state: LoanPaymentStateCodes.Created,
@@ -769,7 +769,7 @@ describe('PaymentDomainService Integration', () => {
     it('should handle edge cases with zero amounts gracefully', async () => {
       // Arrange
       const paymentInput: DeepPartial<ILoanPayment> = {
-        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+        loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 0,
         type: LoanPaymentTypeCodes.Fee,
         state: LoanPaymentStateCodes.Created,

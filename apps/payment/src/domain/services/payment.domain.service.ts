@@ -5,10 +5,10 @@ import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
 import { LoanPaymentStateCodes, LoanPaymentType, LoanPaymentTypeCodes, LoanType, PaymentStepState, TransferStateCodes } from '@library/entity/enum';
 import { PaymentDataService } from '@payment/data/data.service';
-import {  LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entities/relations';
-import { PlanPreviewOutputItem, TransferErrorDetails } from '@library/shared/types/lending';
 import { v4 } from 'uuid';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
+import { PlanPreviewOutputItem, TransferErrorDetails } from '@library/shared/type/lending';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {

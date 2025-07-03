@@ -2,6 +2,7 @@ import { IBackup } from 'pg-mem';
 import { DataSource } from 'typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { v4 as uuidv4 } from 'uuid';
+import { RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 
 import { 
   memoryDataSourceSingle, 
@@ -80,22 +81,22 @@ describe('Hybrid Test Data Approach Example', () => {
     });
 
     it('should have pre-seeded loans available', async () => {
-      // Arrange - Foundation data is already available
-      const activeLoanId = foundationData.loans.activeLoan;
-      const pendingLoanId = foundationData.loans.pendingLoan;
-      const completedLoanId = foundationData.loans.completedLoan;
+      // Arrange - Foundation data is already available with actual loan states
+      const disbursedLoanId = foundationData.loans.disbursedLoan; // 'disbursed' state
+      const requestedLoanId = foundationData.loans.requestedLoan; // 'requested' state  
+      const repaidLoanId = foundationData.loans.repaidLoan; // 'repaid' state
 
       // Act - Query the database to verify loans exist
       const loans = await dataSource.query(
-        'SELECT id, status, principal_amount FROM core.loans WHERE id IN ($1, $2, $3)',
-        [activeLoanId, pendingLoanId, completedLoanId]
+        'SELECT id, state, amount FROM core.loans WHERE id IN ($1, $2, $3)',
+        [disbursedLoanId, requestedLoanId, repaidLoanId]
       );
 
       // Assert - All foundation loans should exist
       expect(loans).toHaveLength(3);
-      expect(loans.find((l: any) => l.id === activeLoanId)?.status).toBe('active');
-      expect(loans.find((l: any) => l.id === pendingLoanId)?.status).toBe('pending');
-      expect(loans.find((l: any) => l.id === completedLoanId)?.status).toBe('completed');
+      expect(loans.find((l: any) => l.id === disbursedLoanId)?.state).toBe('disbursed');
+      expect(loans.find((l: any) => l.id === requestedLoanId)?.state).toBe('requested');
+      expect(loans.find((l: any) => l.id === repaidLoanId)?.state).toBe('repaid');
     });
   });
 
@@ -103,7 +104,7 @@ describe('Hybrid Test Data Approach Example', () => {
     it('should use foundation data for base entities and service calls for domain-specific data', async () => {
       // Arrange - Use foundation user (no need to create)
       const userId = FOUNDATION_TEST_IDS.users.primaryUser;
-      const loanId = FOUNDATION_TEST_IDS.loans.activeLoan;
+      const loanId = FOUNDATION_TEST_IDS.loans.disbursedLoan;
 
       // Create domain-specific data using service calls (payment accounts)
       // In a real test, this would use domainServices.paymentServices.addPaymentAccount
@@ -135,8 +136,8 @@ describe('Hybrid Test Data Approach Example', () => {
         firstName: 'Custom',
         lastName: 'TestUser',
         email: 'custom.user@test.scenario.com',
-        registrationStatus: 'pending', // Different from foundation users
-        verificationStatus: 'unverified',
+        registrationStatus: RegistrationStatus.EmailVerifying, // Different from foundation users
+        verificationStatus: VerificationStatus.NotVerified,
       });
 
       // Create test-specific loan
@@ -146,10 +147,9 @@ describe('Hybrid Test Data Approach Example', () => {
         FOUNDATION_TEST_IDS.users.lenderUser, // Use foundation lender
         undefined,
         {
-          principalAmount: 25000, // Different from foundation loans
-          interestRate: 8.5,
-          termMonths: 60,
-          status: 'draft',
+          amount: 25000, // Different from foundation loans
+          type: 'personal',
+          state: 'draft',
         }
       );
 
@@ -160,11 +160,11 @@ describe('Hybrid Test Data Approach Example', () => {
       // Assert - Custom entities should exist with specified properties
       expect(customUser).toHaveLength(1);
       expect(customUser[0].first_name).toBe('Custom');
-      expect(customUser[0].registration_status).toBe('pending');
+      expect(customUser[0].registration_status).toBe('emailVerifying');
       
       expect(customLoan).toHaveLength(1);
-      expect(customLoan[0].principal_amount).toBe(25000);
-      expect(customLoan[0].status).toBe('draft');
+      expect(customLoan[0].amount).toBe(25000);
+      expect(customLoan[0].state).toBe('draft');
     });
   });
 
@@ -175,7 +175,7 @@ describe('Hybrid Test Data Approach Example', () => {
 
       // Act - Use foundation data (no creation time)
       const userId = FOUNDATION_TEST_IDS.users.primaryUser;
-      const loanId = FOUNDATION_TEST_IDS.loans.activeLoan;
+      const loanId = FOUNDATION_TEST_IDS.loans.disbursedLoan;
       
       // Simulate business logic that uses the data
       const user = await dataSource.query('SELECT * FROM core.users WHERE id = $1', [userId]);

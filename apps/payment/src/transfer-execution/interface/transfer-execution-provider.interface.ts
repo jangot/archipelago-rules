@@ -1,4 +1,4 @@
-import { TransferErrorPayload } from '@library/shared/types/lending';
+import { TransferErrorPayload } from '@library/shared/type/lending';
 
 export interface ITransferExecutionProvider {
   /**

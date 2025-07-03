@@ -10,8 +10,8 @@ import { LoansService } from './loans.service';
 import { CqrsModule } from '@nestjs/cqrs';
 import { ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
 import { LoanStateManagers } from './loan-state-managers/loan-state-managers';
-import { ScheduleService } from '@library/shared/services';
 import { LoanStateManagersFactory } from './loan-state-manager-factory';
+import { ScheduleService } from '@library/shared/service';
 
 @Module({
   imports: [JwtModule, ConfigModule, DomainModule, CqrsModule],

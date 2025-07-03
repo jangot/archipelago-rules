@@ -4,7 +4,7 @@ import { v4 } from 'uuid';
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { withTransactionHandler } from '@library/shared/common/data/withtransaction.handler';
-import { RegistrationStatus, VerificationStatus } from '@library/entity/enum';
+import { RegistrationStatus, VerificationStatus, LoanTypeCodes, LoanStateCodes, LoanPaymentFrequencyCodes, LoanClosureCodes } from '@library/entity/enum';
 import { IUserRepository } from '@core/shared/interfaces/repositories';
 import { AllEntities, ApplicationUser, Loan } from '@library/shared/domain/entity';
 import { CoreDataService } from '@core/modules/data/data.service';
@@ -137,10 +137,15 @@ describe('DataModule Integration Tests', () => {
       const expectedLoan: DeepPartial<Loan> = {
         id: expectedLoanId,
         amount: 1000,
+        type: LoanTypeCodes.Personal,
+        state: LoanStateCodes.Created,
         borrowerId: borrowerUserId,
         lenderId: lenderUserId,
         lender: lenderUser,
         borrower: borrowerUser,
+        paymentsCount: 12,
+        paymentFrequency: LoanPaymentFrequencyCodes.Monthly,
+        closureType: LoanClosureCodes.Open,
       };
 
       await withTransactionHandler(async () => {
@@ -232,13 +237,18 @@ describe('DataModule Integration Tests', () => {
 
       // We set existing loan id to be the same as the one we created in previous test
       // This should cause a conflict and rollback the transaction
-      const fakeLoan: ILoan = {
+      const fakeLoan: DeepPartial<ILoan> = {
         id: expectedLoanId,
         amount: 1000,
         borrowerId: fakeBorrowerId,
         lenderId: fakeLenderId,
         lender: fakeLender,
         borrower: fakeBorrower,
+        paymentsCount: 12,
+        paymentFrequency: LoanPaymentFrequencyCodes.Monthly,
+        closureType: LoanClosureCodes.Open,
+        type: LoanTypeCodes.Personal,
+        state: LoanStateCodes.Created,
       };
 
       // Do not await this transaction, as we want to test the rejection with async expect

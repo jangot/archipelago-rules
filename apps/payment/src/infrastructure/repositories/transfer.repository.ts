@@ -4,9 +4,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import { ITransferRepository } from '@payment/shared/interfaces/repositories';
-import { ITransfer } from '@library/entity/interface';
-import { TransferRelation } from '@library/shared/domain/entities/relations';
 import { TransferStateCodes } from '@library/entity/enum';
+import { ITransfer } from '@library/entity/entity-interface';
+import { TransferRelation } from '@library/shared/domain/entity/relation';
 
 @Injectable()
 export class TransferRepository extends RepositoryBase<Transfer> implements ITransferRepository {

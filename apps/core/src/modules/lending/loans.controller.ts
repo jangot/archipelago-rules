@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param
 import { LoansService } from './loans.service';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@core/auth/guards';
-import { IRequest } from '@library/shared/types';
+import { IRequest } from '@library/shared/type';
 import { UUIDParam } from '@library/shared/common/pipes/uuidparam';
 import { LoanAcceptRequestDto, LoanCreateRequestDto, LoanProposeRequestDto, LoanResponseDto } from '@core/dto';
 

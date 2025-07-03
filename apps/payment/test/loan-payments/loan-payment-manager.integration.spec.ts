@@ -113,7 +113,7 @@ describe('Loan Payment Managers Integration', () => {
   ): Promise<ILoanPayment> {
     // Use foundation loan for payment creation
     const payment = await domainServices.paymentServices.createPayment({
-      loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+      loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
       amount,
       type: paymentType,
       state: LoanPaymentStateCodes.Created,
@@ -226,7 +226,7 @@ describe('Loan Payment Managers Integration', () => {
       const fundingManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Funding);
       
       // Act - Test with foundation loan
-      const result = await fundingManager.initiate(FOUNDATION_TEST_IDS.loans.activeLoan);
+      const result = await fundingManager.initiate(FOUNDATION_TEST_IDS.loans.disbursedLoan);
       
       // Assert - Should return null since payment accounts are not configured in foundation data
       expect(result).toBeNull();
@@ -287,7 +287,7 @@ describe('Loan Payment Managers Integration', () => {
       const disbursementManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Disbursement);
       
       // Act - Test with foundation loan
-      const result = await disbursementManager.initiate(FOUNDATION_TEST_IDS.loans.activeLoan);
+      const result = await disbursementManager.initiate(FOUNDATION_TEST_IDS.loans.disbursedLoan);
       
       // Assert - Should return null since payment accounts are not configured in foundation data
       expect(result).toBeNull();
@@ -334,7 +334,7 @@ describe('Loan Payment Managers Integration', () => {
       const repaymentManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Repayment);
       
       // Act - Test with foundation loan
-      const result = await repaymentManager.initiate(FOUNDATION_TEST_IDS.loans.activeLoan);
+      const result = await repaymentManager.initiate(FOUNDATION_TEST_IDS.loans.disbursedLoan);
       
       // Assert - Should return null since payment accounts are not configured in foundation data
       expect(result).toBeNull();
@@ -381,7 +381,7 @@ describe('Loan Payment Managers Integration', () => {
       const feeManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Fee);
       
       // Act - Test with foundation loan
-      const result = await feeManager.initiate(FOUNDATION_TEST_IDS.loans.activeLoan);
+      const result = await feeManager.initiate(FOUNDATION_TEST_IDS.loans.disbursedLoan);
       
       // Assert - Should return null since payment accounts are not configured in foundation data
       expect(result).toBeNull();
@@ -428,7 +428,7 @@ describe('Loan Payment Managers Integration', () => {
       const refundManager = loanPaymentFactory.getManager(LoanPaymentTypeCodes.Refund);
       
       // Act - Test with foundation loan
-      const result = await refundManager.initiate(FOUNDATION_TEST_IDS.loans.activeLoan);
+      const result = await refundManager.initiate(FOUNDATION_TEST_IDS.loans.disbursedLoan);
       
       // Assert - Should return null since payment accounts are not configured in foundation data
       expect(result).toBeNull();

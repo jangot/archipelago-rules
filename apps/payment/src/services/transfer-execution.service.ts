@@ -1,5 +1,5 @@
 import { PaymentAccountProvider } from '@library/entity/enum';
-import { TransferErrorPayload } from '@library/shared/types/lending';
+import { TransferErrorPayload } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ManagementDomainService } from '@payment/domain/services';
 

@@ -27,10 +27,10 @@ import {
   LoanPaymentTypeCodes,
 } from '@library/entity/enum';
 import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
-import { AllEntities } from '@library/shared/domain/entities';
 import { TestDataSeeder, FOUNDATION_TEST_IDS } from '@library/shared/tests/test-data-seeder';
 import { TestPaymentAccountFactory } from '@library/shared/tests/test-payment-account-factory';
-import { EntityNotFoundException } from '@library/shared/common/exceptions/domain';
+import { AllEntities } from '@library/shared/domain/entity';
+import { EntityNotFoundException } from '@library/shared/common/exception/domain';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
 // Use real service implementations for integration tests (2-3 levels deep)
@@ -134,7 +134,7 @@ describe('Transfer Execution Integration', () => {
 
   async function createTestTransfer(sourceAccount: IPaymentAccount, destAccount: IPaymentAccount): Promise<ITransfer> {
     const payment = await domainServices.paymentServices.createPayment({
-      loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
+      loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
       amount: 1000,
       type: LoanPaymentTypeCodes.Funding,
       state: LoanPaymentStateCodes.Created,

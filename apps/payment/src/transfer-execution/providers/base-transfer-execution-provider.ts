@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ITransferExecutionProvider } from '../interface';
 import { PaymentDomainService } from '@payment/domain/services';
-import { TransferErrorDetails, TransferErrorPayload } from '@library/shared/types/lending';
+import { TransferErrorDetails, TransferErrorPayload } from '@library/shared/type/lending';
 
 @Injectable()
 export abstract class BaseTransferExecutionProvider implements ITransferExecutionProvider {

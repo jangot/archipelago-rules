@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseTransferExecutionProvider } from './base-transfer-execution-provider';
 import { PaymentDomainService } from '@payment/domain/services';
-import { TransferErrorDetails, TransferErrorPayload } from '@library/shared/types/lending';
+import { TransferErrorDetails, TransferErrorPayload } from '@library/shared/type/lending';
 
 @Injectable()
 export class MockTransferExecutionProvider extends BaseTransferExecutionProvider {

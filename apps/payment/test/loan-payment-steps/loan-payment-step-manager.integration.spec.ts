@@ -10,7 +10,6 @@ import { IDomainServices } from '../../src/domain/idomain.services';
 import { LoanPaymentStepFactory } from '../../src/loan-payment-steps/loan-payment-step.factory';
 import { CreatedStepManager, PendingStepManager, CompletedStepManager, FailedStepManager } from '../../src/loan-payment-steps/managers';
 import { PaymentStepStateIsOutOfSyncException } from '../../src/domain/exceptions/payment-domain.exceptions';
-import { EntityNotFoundException } from '@library/shared/common/exceptions/domain';
 import { 
   ILoanPaymentStep,
   IPaymentAccount,
@@ -31,7 +30,8 @@ import {
   TestDataSeeder, 
   FOUNDATION_TEST_IDS,
 } from '@library/shared/tests';
-import { AllEntities } from '@library/shared/domain/entities';
+import { AllEntities } from '@library/shared/domain/entity';
+import { EntityNotFoundException } from '@library/shared/common/exception/domain';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
 // Verify entity interfaces first - check libs/entity/src/interface/ for actual field names
@@ -62,7 +62,7 @@ describe('Loan Payment Step Manager Integration', () => {
 
   // Use foundation data IDs instead of generated ones
   const testUserId = FOUNDATION_TEST_IDS.users.primaryUser;
-  const testLoanId = FOUNDATION_TEST_IDS.loans.activeLoan;
+  const testLoanId = FOUNDATION_TEST_IDS.loans.disbursedLoan;
   const nonExistentStepId = uuidv4();
 
   beforeAll(async () => {

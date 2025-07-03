@@ -107,7 +107,7 @@ describe('ManagementDomainService Integration', () => {
   async function createTestData(): Promise<void> {
     // Use foundation data for basic entities (users and loans already exist)
     const primaryUserId = FOUNDATION_TEST_IDS.users.primaryUser;
-    const activeLoanId = FOUNDATION_TEST_IDS.loans.activeLoan;
+    const disbursedLoanId = FOUNDATION_TEST_IDS.loans.disbursedLoan;
 
     // Create payment accounts for source and destination with proper PaymentAccountDetails
     const sourceAccount = await domainServices.paymentServices.addPaymentAccount(primaryUserId, {
@@ -147,7 +147,7 @@ describe('ManagementDomainService Integration', () => {
 
     // Create a loan payment using foundation loan
     const payment = await domainServices.paymentServices.createPayment({
-      loanId: activeLoanId,
+      loanId: disbursedLoanId,
       amount: 1000,
       type: LoanPaymentTypeCodes.Funding,
       state: LoanPaymentStateCodes.Created,
@@ -197,7 +197,7 @@ describe('ManagementDomainService Integration', () => {
       await createTestData();
       
       // Act - Test actual ManagementDomainService.initiateLoanPayment method using foundation loan
-      const result = await managementDomainService.initiateLoanPayment(FOUNDATION_TEST_IDS.loans.activeLoan, LoanPaymentTypeCodes.Funding);
+      const result = await managementDomainService.initiateLoanPayment(FOUNDATION_TEST_IDS.loans.disbursedLoan, LoanPaymentTypeCodes.Funding);
       
       // Assert - Method returns boolean | null based on actual implementation
       expect(typeof result === 'boolean' || result === null).toBe(true);
@@ -208,7 +208,7 @@ describe('ManagementDomainService Integration', () => {
       await createTestData();
       
       // Act
-      const result = await managementDomainService.initiateLoanPayment(FOUNDATION_TEST_IDS.loans.activeLoan, LoanPaymentTypeCodes.Disbursement);
+      const result = await managementDomainService.initiateLoanPayment(FOUNDATION_TEST_IDS.loans.disbursedLoan, LoanPaymentTypeCodes.Disbursement);
       
       // Assert - Based on actual return type
       expect(typeof result === 'boolean' || result === null).toBe(true);
@@ -219,7 +219,7 @@ describe('ManagementDomainService Integration', () => {
       await createTestData();
       
       // Act
-      const result = await managementDomainService.initiateLoanPayment(FOUNDATION_TEST_IDS.loans.activeLoan, LoanPaymentTypeCodes.Repayment);
+      const result = await managementDomainService.initiateLoanPayment(FOUNDATION_TEST_IDS.loans.disbursedLoan, LoanPaymentTypeCodes.Repayment);
       
       // Assert - Based on actual return type
       expect(typeof result === 'boolean' || result === null).toBe(true);

@@ -11,7 +11,7 @@ import { ActionNotAllowedException, UnableToCreatePersonalBillerException } from
 import { DeepPartial } from 'typeorm';
 import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/entity-interface';
 import { LendingLogic } from './lending.logic';
-import { LoanAssignToContactInput } from '@library/shared/types/lending';
+import { LoanAssignToContactInput } from '@library/shared/type/lending';
 import { LOAN_RELATIONS } from '@library/shared/domain/entities/relations';
 import { ILoanStateManagersFactory } from './interfaces';
 
