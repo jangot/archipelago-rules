@@ -4,8 +4,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { ContactType, LoginType } from '@library/entity/enum';
 import { ConfigService } from '@nestjs/config';
-import { UserLoginPayloadDto } from '../../dto/response/user-login-payload.dto';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { UserLoginPayloadDto } from '../../dto/response';
 
 @Injectable()
 export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = LoginCommand> {
