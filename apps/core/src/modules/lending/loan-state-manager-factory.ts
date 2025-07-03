@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ILoanStateManager, ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
-import { IDomainServices } from '@core/domain/idomain.services';
 import { LoanState } from '@library/entity/enum';
-import { EntityNotFoundException } from '@library/shared/common/exceptions/domain';
+import { IDomainServices } from '../domain/idomain.services';
+import { EntityNotFoundException } from '@library/shared/common/exception/domain';
 
 @Injectable()
 export class LoanStateManagersFactory implements ILoanStateManagersFactory {

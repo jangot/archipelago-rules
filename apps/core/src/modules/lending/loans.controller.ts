@@ -1,10 +1,11 @@
 import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { LoansService } from './loans.service';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@core/auth/guards';
 import { IRequest } from '@library/shared/type';
-import { UUIDParam } from '@library/shared/common/pipes/uuidparam';
-import { LoanAcceptRequestDto, LoanCreateRequestDto, LoanProposeRequestDto, LoanResponseDto } from '@core/dto';
+import { JwtAuthGuard } from '../auth/guards';
+import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
+import { LoanResponseDto } from './dto/response';
+import { LoanAcceptRequestDto, LoanCreateRequestDto, LoanProposeRequestDto } from './dto/request';
 
 @Controller('loans')
 @ApiTags('loans')

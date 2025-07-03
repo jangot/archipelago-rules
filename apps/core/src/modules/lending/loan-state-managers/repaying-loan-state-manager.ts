@@ -1,7 +1,7 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 import { LoanState, LoanStateCodes } from '@library/entity/enum';
-import { IDomainServices } from '@core/domain/idomain.services';
+import { IDomainServices } from '@core/modules/domain/idomain.services';
 
 /**
  * State manager for loans in the 'Repaying' state.

@@ -9,7 +9,7 @@ import { BillersService } from './billers.service';
 import { LoansService } from './loans.service';
 import { CqrsModule } from '@nestjs/cqrs';
 import { ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
-import { LoanStateManagers } from './loan-state-managers/loan-state-managers';
+import { LoanStateManagers, LOAN_STATE_MANAGERS } from './loan-state-managers';
 import { LoanStateManagersFactory } from './loan-state-manager-factory';
 import { ScheduleService } from '@library/shared/service';
 
@@ -17,7 +17,13 @@ import { ScheduleService } from '@library/shared/service';
   imports: [JwtModule, ConfigModule, DomainModule, CqrsModule],
   controllers: [BillersController, LoansController, ScheduleController],
   providers: [
-    Logger, BillersService, LoansService, ScheduleService, 
+    Logger, 
+    BillersService, 
+    LoansService, 
+    ScheduleService,
+    // Individual state managers (spread from array)
+    ...LOAN_STATE_MANAGERS,
+    // State managers container and factory
     { provide: ILoanStateManagers, useClass: LoanStateManagers },
     { provide: ILoanStateManagersFactory, useClass: LoanStateManagersFactory },
   ],

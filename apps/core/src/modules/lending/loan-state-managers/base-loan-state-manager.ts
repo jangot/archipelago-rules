@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ILoanStateManager } from '../interfaces';
 import { LoanState } from '@library/entity/enum';
-import { IDomainServices } from '@core/domain/idomain.services';
+import { IDomainServices } from '@core/modules/domain/idomain.services';
 
 @Injectable()
 export abstract class BaseLoanStateManager implements ILoanStateManager {

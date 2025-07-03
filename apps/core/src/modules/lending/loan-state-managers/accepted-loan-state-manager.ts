@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 import { LoanState, LoanStateCodes, PaymentAccountStateCodes } from '@library/entity/enum';
-import { IDomainServices } from '@core/domain/idomain.services';
-import { LOAN_RELATIONS } from '@library/shared/domain/entities/relations';
-import { ILoan } from '@library/entity/interface';
+import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { ILoan } from '@library/entity/entity-interface';
 
 /**
  * State manager for loans in the 'Accepted' state.

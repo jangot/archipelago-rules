@@ -1,10 +1,9 @@
 import { LoanCreateRequestDto } from './dto/request/loan.create.request.dto';
 import { LoanResponseDto } from './dto/response/loan.response.dto';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
 import { LoanInviteeTypeCodes, LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
-import { IDomainServices } from '@core/domain/idomain.services';
 import { ConfigService } from '@nestjs/config';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { ActionNotAllowedException, UnableToCreatePersonalBillerException } from './exceptions/loan-domain.exceptions';
@@ -12,8 +11,9 @@ import { DeepPartial } from 'typeorm';
 import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/entity-interface';
 import { LendingLogic } from './lending.logic';
 import { LoanAssignToContactInput } from '@library/shared/type/lending';
-import { LOAN_RELATIONS } from '@library/shared/domain/entities/relations';
 import { ILoanStateManagersFactory } from './interfaces';
+import { IDomainServices } from '../domain/idomain.services';
+import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 
 @Injectable()
 export class LoansService {
@@ -23,6 +23,7 @@ export class LoansService {
     private readonly domainServices: IDomainServices, 
     private readonly eventBus: EventBus,
     private readonly config: ConfigService,
+    @Inject(ILoanStateManagersFactory)
     private readonly stateManagerFactory: ILoanStateManagersFactory) {}
     
   @MapToDto(LoanResponseDto)
