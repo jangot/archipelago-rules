@@ -1,14 +1,15 @@
-import { CoreDataService } from '@core/modules/data/data.service';
-import { BillerTypeCodes, LoanAssignIntentCodes, LoanInviteeTypeCodes, LoanStateCodes, RegistrationStatus } from '@library/entity/enum';
-import { IApplicationUser, IBiller, ILoan, ILoanInvitee } from '@library/entity/entity-interface';
-import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
-import { LoanAssignToContactInput, LoansSetTargetUserInput, LoanTargetUserInput } from '@library/shared/type/lending';
+import { CoreDataService } from '@core/data/data.service';
+import { BillerTypeCodes, ContactType, LoanAssignIntent, LoanAssignIntentCodes, LoanInviteeTypeCodes, LoanStateCodes, RegistrationStatus } from '@library/entity/enum';
+import { IApplicationUser, IBiller, ILoan, ILoanInvitee } from '@library/entity/interface';
+import { BaseDomainServices } from '@library/shared/common/domainservices/domain.service.base';
+import { LoanAssignToContactInput, LoansSetTargetUserInput, LoanTargetUserInput } from '@library/shared/types/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { DeepPartial } from 'typeorm';
-import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
-import { LOAN_INVITEE_RELATIONS, LOAN_RELATIONS, LoanRelation } from '@library/shared/domain/entity/relation';
+import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exceptions/domain';
+import { LOAN_INVITEE_RELATIONS, LOAN_RELATIONS, LoanRelation } from '@library/shared/domain/entities/relations';
+import { ActionNotAllowedException } from '../exceptions/loan-domain.exceptions';
 
 @Injectable()
 export class LoanDomainService extends BaseDomainServices {
@@ -34,7 +35,13 @@ export class LoanDomainService extends BaseDomainServices {
     const { id: loanId } = createdLoan;
     const invitee = loan.invitee!;
     invitee.loanId = loanId;
-    await this.data.loanInvitees.create(invitee);
+    const storedInvitee = await this.data.loanInvitees.create(invitee);
+    // Try to set Loan target User
+    const assignInput = this.mapInviteeToAssignInput(loanId, LoanAssignIntentCodes.Propose, storedInvitee);
+    const assignResult = await this.setLoansTarget(assignInput);
+    if (assignResult && assignResult.length) {
+      this.logger.log(`Assigned Target User to Loan ${loanId} with invitee ${invitee.id} during Loan Creation`);
+    }
     return this.getLoanById(loanId);
   }
 
@@ -76,6 +83,80 @@ export class LoanDomainService extends BaseDomainServices {
       this.logger.error(`Failed to assign User ${targetUserId} to Loans: ${error.message}`, { input, error, assignUpdates });
       return [];
     }
+  }
+
+  public async acceptLoan(loanId: string, userId: string, targetPaymentAccountId: string): Promise<ILoan | null> {
+    // Check Loan existance
+    const loan = await this.getLoanById(loanId, [LOAN_RELATIONS.Biller, LOAN_RELATIONS.Invitee]);
+    if (!loan) {
+      this.logger.error(`Loan with ID ${loanId} not found for acceptance`);
+      throw new EntityNotFoundException(`Loan ${loanId} not found`);
+    }
+
+    const { state: loanState, lenderId, borrowerId, invitee, lenderAccountId, borrowerAccountId } = loan;
+    let { biller } = loan;
+    // Check that Loan is in the correct state for acceptance
+    if (loanState !== LoanStateCodes.BorrowerAssigned && loanState !== LoanStateCodes.LenderAssigned) {
+      this.logger.error(`Loan with ID ${loanId} is not in a state that allows acceptance: ${loanState}`);
+      throw new EntityFailedToUpdateException(`Loan ${loanId} is not in a state that allows acceptance`);
+    }
+
+    // Check User existance
+    const user = await this.data.users.getById(userId);
+    if (!user) {
+      this.logger.error(`User with ID ${userId} not found for loan acceptance`);
+      throw new EntityNotFoundException(`User ${userId} not found`);
+    }
+
+    // Check User allowance to accept the Loan
+    if (loanState === LoanStateCodes.BorrowerAssigned && userId !== borrowerId || 
+      loanState === LoanStateCodes.LenderAssigned && userId !== lenderId) {
+      this.logger.error(`User ${userId} is not allowed to accept Loan ${loanId}`);
+      throw new ActionNotAllowedException(`User ${userId} is not allowed to accept Loan ${loanId}`);
+    }
+
+    // Check Payment Account existance
+    const paymentAccount = await this.data.paymentAccounts.getById(targetPaymentAccountId);
+    if (!paymentAccount) {
+      this.logger.error(`Payment Account with ID ${targetPaymentAccountId} not found for loan acceptance`);
+      throw new EntityNotFoundException(`Payment Account ${targetPaymentAccountId} not found`);
+    }
+
+    const sourceUserId = loanState === LoanStateCodes.BorrowerAssigned ? lenderId! : borrowerId!;
+    // Biller is required for acceptance - so if it is not set yet, we create it as Personal Biller
+    if (!biller) {
+      this.logger.warn(`Biller not found for Loan ${loanId}, creating Personal Biller`);
+      const billerCreateResult = await this.createPersonalBiller(invitee, sourceUserId);
+      if (!billerCreateResult) {
+        this.logger.error(`Failed to create Personal Biller for Loan ${loanId} on acceptance`);
+        throw new EntityFailedToUpdateException(`Failed to create Personal Biller for Loan ${loanId}`);
+      }
+      biller = billerCreateResult;
+    }
+    const { type: billerType, paymentAccountId: billerPaymentAccountId, id: billerId } = biller;
+    // If Biller is personal - it means we should set its paymentAccount to the one provided if it is not set yet
+    if (billerType === BillerTypeCodes.Personal && !billerPaymentAccountId) {
+      this.logger.debug(`Setting Payment Account ${targetPaymentAccountId} to Personal Biller ${biller.id}`);
+      await this.data.billers.update(billerId, { paymentAccountId: targetPaymentAccountId });
+    }
+
+    // Set the target Payment Account to the Loan and update the Loan state
+    const updates: DeepPartial<ILoan> = {
+      state: LoanStateCodes.Accepted,
+      lenderAccountId: loanState === LoanStateCodes.BorrowerAssigned ? lenderAccountId : targetPaymentAccountId,
+      borrowerAccountId: loanState === LoanStateCodes.LenderAssigned ? borrowerAccountId : targetPaymentAccountId,
+      billerId: loan.billerId || billerId,
+    };
+
+    this.logger.debug(`Updating Loan ${loanId} with Payment Account ${targetPaymentAccountId} and state ${updates.state}`);
+    const updateResult = await this.updateLoan(loanId, updates);
+
+    if (!updateResult) {
+      this.logger.error(`Failed to accept Loan ${loanId} with Payment Account ${targetPaymentAccountId}`);
+      return null;
+    }
+
+    return this.getLoanById(loanId);
   }
 
   private async getLoanInviteeUser(input: LoanAssignToContactInput): Promise<IApplicationUser | null> {
@@ -139,6 +220,39 @@ export class LoanDomainService extends BaseDomainServices {
 
     return { loanId: loan.id, userType: targetType };
   }
+
+  /**
+   * Maps an ILoanInvitee to LoanAssignToContactInput.
+   * Prioritizes email over phone number when both are available.
+   * 
+   * @param loanId - The loan ID to assign
+   * @param intent - The assignment intent
+   * @param invitee - The loan invitee containing contact information
+   * @returns LoanAssignToContactInput with appropriate contact type and value
+   */
+  private mapInviteeToAssignInput(loanId: string, intent: LoanAssignIntent, invitee: ILoanInvitee): LoanAssignToContactInput {
+    let contactValue: string;
+    let contactType: ContactType;
+
+    // Prioritize email over phone number
+    if (invitee.email) {
+      contactValue = invitee.email;
+      contactType = ContactType.EMAIL;
+    } else if (invitee.phone) {
+      contactValue = invitee.phone;
+      contactType = ContactType.PHONE_NUMBER;
+    } else {
+      this.logger.error('Invitee has neither email nor phone number', { inviteeId: invitee.id, loanId });
+      throw new Error('Invitee must have either email or phone number');
+    }
+
+    return {
+      loanId,
+      intent,
+      contactValue,
+      contactType,
+    };
+  }
   // #endregion
 
   // #region Biller
@@ -156,12 +270,4 @@ export class LoanDomainService extends BaseDomainServices {
     return this.data.billers.getAllCustomBillers(createdById);
   }
   // #endregion
-
-
-
-
-
-
-
-  
 }

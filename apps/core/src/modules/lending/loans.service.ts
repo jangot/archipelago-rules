@@ -36,7 +36,7 @@ export class LoansService {
       loanCreateInput.billerId = personalBiller.id;
     }
 
-    // Link user to lender/borrower
+    // Link user who created a Loan to lender/borrower side
     if (inviteeType === LoanInviteeTypeCodes.Borrower) {
       loanCreateInput.lenderId = userId;
     } else if (inviteeType === LoanInviteeTypeCodes.Lender) {
@@ -48,7 +48,7 @@ export class LoansService {
   }
 
   @MapToDto(LoanResponseDto)
-  public async proposeLoan(userId: string, loanId: string,  sourcePaymentAccountId: string): Promise<LoanResponseDto | null> {
+  public async proposeLoan(userId: string, loanId: string, sourcePaymentAccountId: string): Promise<LoanResponseDto | null> {
 
     const loan = await this.getLoan(loanId);
     LendingLogic.validateLoanProposeInput(userId, loan);
@@ -78,6 +78,16 @@ export class LoansService {
 
   public async setLoansTarget(input: LoanAssignToContactInput): Promise<void> {
     await this.domainServices.loanServices.setLoansTarget(input);
+  }
+
+  @MapToDto(LoanResponseDto)
+  public async acceptLoan(loanId: string, userId: string, targetPaymentAccountId: string): Promise<LoanResponseDto | null> {
+    if (!loanId || !userId || !targetPaymentAccountId) {
+      this.logger.warn('Missing required parameters for accepting loan', { loanId, userId, targetPaymentAccountId });
+      throw new MissingInputException('Some of the required parameters (Loan ID, User ID, Payment Account ID) are missing');
+    }
+    const result = await this.domainServices.loanServices.acceptLoan(loanId, userId, targetPaymentAccountId);
+    return result as unknown as LoanResponseDto | null;
   }
 
   private async createPersonalBiller(invitee: DeepPartial<ILoanInvitee>, createdById: string): Promise<IBiller> {
