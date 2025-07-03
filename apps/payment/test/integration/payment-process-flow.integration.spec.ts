@@ -20,17 +20,20 @@ import {
 import { 
   LoanPaymentTypeCodes,
   LoanPaymentStateCodes,
-  PaymentAccountTypeCodes,
-  PaymentAccountOwnershipTypeCodes,
   PaymentAccountProviderCodes,
-  PaymentAccountStateCodes,
   PaymentStepStateCodes,
 } from '@library/entity/enum';
 import { LoanPaymentModule } from '../../src/loan-payments/loan-payment.module';
 import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
 import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { memoryDataSourceSingle } from '@library/shared/tests';
-import { AllEntities } from '@library/shared/domain/entity';
+import { 
+  memoryDataSourceSingle,
+  TestDataSeeder,
+  FOUNDATION_TEST_IDS,
+  TestPaymentAccountFactory,
+} from '@library/shared/tests';
+import { AllEntities } from '@library/shared/domain/entities';
+import { EntityNotFoundException } from '@library/shared/common/exceptions/domain';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
 // Verify entity interfaces first - check libs/entity/src/interface/ for actual field names
@@ -46,6 +49,7 @@ import { AllEntities } from '@library/shared/domain/entity';
  * Tests coordinate multiple services: LoanPaymentService, LoanPaymentStepService, 
  * TransferExecutionService, and ManagementDomainService with real factory implementations.
  * 
+ * Uses hybrid test data approach with foundation data for optimal performance.
  * Only repositories and external APIs are mocked. All business logic services use
  * real implementations to test actual integration behavior.
  */
@@ -59,13 +63,12 @@ describe('Payment Process Flow Integration', () => {
   let databaseBackup: IBackup;
 
   // Use uuidv4() for all test IDs and entity creation
-  const testUserId = uuidv4();
-  const testLoanId = uuidv4();
   const nonExistentPaymentId = uuidv4();
   const nonExistentStepId = uuidv4();
   const nonExistentTransferId = uuidv4();
 
   beforeAll(async () => {
+    // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
     // Follow memoryDataSourceSingle pattern for database setup
     const { dataSource, database } = await memoryDataSourceSingle(AllEntities);
     
@@ -94,6 +97,8 @@ describe('Payment Process Flow Integration', () => {
     loanPaymentStepService = module.get<LoanPaymentStepService>(LoanPaymentStepService);
     transferExecutionService = module.get<TransferExecutionService>(TransferExecutionService);
     
+    // Seed foundation data BEFORE creating backup
+    await TestDataSeeder.seedFoundationData(dataSource);
     databaseBackup = database.backup();
   });
 
@@ -101,126 +106,64 @@ describe('Payment Process Flow Integration', () => {
     await module.close();
   });
 
-  beforeEach(async () => {
-    // Restore database to clean state before each test
+  beforeEach(() => {
+    // Restore database to state WITH foundation data
     databaseBackup.restore();
-    
-    // Create test loan for tests that need it
-    await createTestLoan();
   });
 
   // #region test data generation
 
-  async function createTestLoan(): Promise<void> {
-    // Create a minimal loan entity to satisfy foreign key constraints
-    const dataSource = module.get(DataSource);
-    await dataSource.query(`
-      INSERT INTO core.loans (
-        id, amount, type, state, closure_type, payments_count, payment_frequency, lender_id, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
-      )
-    `, [
-      testLoanId,
-      10000,
-      'personal',
-      'created',
-      'open',
-      12,
-      'monthly',
-      testUserId,
-    ]);
-    
-    // Create loan invitee to satisfy constraints
-    await dataSource.query(`
-      INSERT INTO core.loan_invitees (
-        id, loan_id, type, first_name, last_name, email, phone
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7
-      )
-    `, [
-      uuidv4(),
-      testLoanId,
-      'borrower',
-      'Test',
-      'Borrower',
-      `borrower-${Date.now()}@test.com`,
-      '+1234567890',
-    ]);
-  }
-
+  /**
+   * Creates a test lender payment account using TestPaymentAccountFactory
+   * @returns Promise resolving to the created payment account
+   */
   async function createTestLenderAccount(): Promise<IPaymentAccount> {
-    const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
-      type: PaymentAccountTypeCodes.BankAccount,
-      ownership: PaymentAccountOwnershipTypeCodes.Personal,
-      provider: PaymentAccountProviderCodes.Checkbook,
-      state: PaymentAccountStateCodes.Verified,
-      details: {
-        type: 'checkbook_ach',
-        displayName: 'John Doe (Lender)',
-        key: 'lender_key_123',
-        secret: 'lender_secret_456',
-        accountId: `lender_acc_${Date.now()}`,
-        institution: 'Lender Bank',
-        redactedAccountNumber: '****7890',
-        routingNumber: '123456789',
-      },
-      isDefault: true,
-      isActive: true,
-    });
-
+    const accountData = TestPaymentAccountFactory.createCheckbookBankAccount('Test Lender Account');
+    const account = await domainServices.paymentServices.addPaymentAccount(
+      FOUNDATION_TEST_IDS.users.lenderUser, 
+      accountData as any
+    );
+    
     if (!account) {
-      throw new Error('Failed to create test lender account - check entity constraints');
+      throw new Error('Failed to create lender account');
     }
-
+    
     return account;
   }
 
+  /**
+   * Creates a test borrower payment account using TestPaymentAccountFactory
+   * @returns Promise resolving to the created payment account
+   */
   async function createTestBorrowerAccount(): Promise<IPaymentAccount> {
-    const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
-      type: PaymentAccountTypeCodes.BankAccount,
-      ownership: PaymentAccountOwnershipTypeCodes.Personal,
-      provider: PaymentAccountProviderCodes.Fiserv,
-      state: PaymentAccountStateCodes.Verified,
-      details: {
-        type: 'fiserv_debit',
-        displayName: 'Jane Smith (Borrower)',
-        cardToken: `borrower_token_${Date.now()}`,
-        cardExpiration: '12/27',
-        last4Digits: '1234',
-      },
-      isDefault: true,
-      isActive: true,
-    });
-
+    const accountData = TestPaymentAccountFactory.createCheckbookBankAccount('Test Borrower Account');
+    const account = await domainServices.paymentServices.addPaymentAccount(
+      FOUNDATION_TEST_IDS.users.borrowerUser, 
+      accountData as any
+    );
+    
     if (!account) {
-      throw new Error('Failed to create test borrower account - check entity constraints');
+      throw new Error('Failed to create borrower account');
     }
-
+    
     return account;
   }
 
-  async function createTestPlatformAccount(): Promise<IPaymentAccount> {
-    const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
-      type: PaymentAccountTypeCodes.BankAccount,
-      ownership: PaymentAccountOwnershipTypeCodes.Internal,
-      provider: PaymentAccountProviderCodes.Fiserv,
-      state: PaymentAccountStateCodes.Verified,
-      details: {
-        type: 'fiserv_debit',
-        displayName: 'Zirtue Platform',
-        cardToken: `platform_token_${Date.now()}`,
-        cardExpiration: '12/28',
-        last4Digits: '5555',
-      },
-      isDefault: true,
-      isActive: true,
-    });
-
+  /**
+   * Creates a test internal payment account using TestPaymentAccountFactory
+   * @returns Promise resolving to the created internal payment account
+   */
+  async function createTestInternalAccount(): Promise<IPaymentAccount> {
+    const accountData = TestPaymentAccountFactory.createFiservDebitAccount('Internal Platform Account');
+    const account = await domainServices.paymentServices.addPaymentAccount(
+      FOUNDATION_TEST_IDS.users.primaryUser, 
+      accountData as any
+    );
+    
     if (!account) {
-      throw new Error('Failed to create test platform account - check entity constraints');
+      throw new Error('Failed to create internal account');
     }
-
+    
     return account;
   }
 
@@ -229,24 +172,23 @@ describe('Payment Process Flow Integration', () => {
   describe('Payment Service Integration', () => {
     it('should initiate loan payment for existing loan', async () => {
       // Act
-      const result = await loanPaymentService.initiatePayment(testLoanId, LoanPaymentTypeCodes.Funding);
+      const result = await loanPaymentService.initiatePayment(FOUNDATION_TEST_IDS.loans.activeLoan, LoanPaymentTypeCodes.Funding);
       
       // Assert
       expect(result).toBeDefined();
     });
 
-    it('should return null when initiating payment for non-existent loan', async () => {
-      // Act
-      const result = await loanPaymentService.initiatePayment(nonExistentPaymentId, LoanPaymentTypeCodes.Funding);
-      
-      // Assert
-      expect(result).toBeNull();
+    it('should throw EntityNotFoundException when initiating payment for non-existent loan', async () => {
+      // Act & Assert
+      await expect(
+        loanPaymentService.initiatePayment(nonExistentPaymentId, LoanPaymentTypeCodes.Funding)
+      ).rejects.toThrow(EntityNotFoundException);
     });
 
     it('should advance loan payment when payment exists', async () => {
       // Arrange - Create a payment first
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -264,12 +206,11 @@ describe('Payment Process Flow Integration', () => {
       expect(result).toBeDefined();
     });
 
-    it('should return null when advancing non-existent payment', async () => {
-      // Act
-      const result = await loanPaymentService.advancePayment(nonExistentPaymentId, LoanPaymentTypeCodes.Funding);
-      
-      // Assert
-      expect(result).toBeNull();
+    it('should throw EntityNotFoundException when advancing non-existent payment', async () => {
+      // Act & Assert
+      await expect(
+        loanPaymentService.advancePayment(nonExistentPaymentId, LoanPaymentTypeCodes.Funding)
+      ).rejects.toThrow(EntityNotFoundException);
     });
   });
 
@@ -279,11 +220,11 @@ describe('Payment Process Flow Integration', () => {
     beforeEach(async () => {
       // Arrange - Create payment accounts using helper functions
       const sourceAccount = await createTestLenderAccount();
-      const destAccount = await createTestPlatformAccount();
+      const destAccount = await createTestInternalAccount();
 
       // Create a payment
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -327,21 +268,20 @@ describe('Payment Process Flow Integration', () => {
       expect(result).toBeDefined();
     });
 
-    it('should handle non-existent step gracefully', async () => {
-      // Act
-      const result = await loanPaymentStepService.advanceStep(nonExistentStepId);
-      
-      // Assert
-      expect(result).toBeDefined();
+    it('should throw EntityNotFoundException when advancing non-existent step', async () => {
+      // Act & Assert
+      await expect(
+        loanPaymentStepService.advanceStep(nonExistentStepId)
+      ).rejects.toThrow(EntityNotFoundException);
     });
 
-    it('should return null when advancing step with invalid state', async () => {
+    it('should throw PaymentStepStateIsOutOfSyncException when advancing step with invalid state transition', async () => {
       // Arrange - Create a step first
       const sourceAccount = await createTestLenderAccount();
-      const destAccount = await createTestPlatformAccount();
+      const destAccount = await createTestInternalAccount();
 
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -365,11 +305,10 @@ describe('Payment Process Flow Integration', () => {
         throw new Error('Failed to create test payment step for invalid state test');
       }
 
-      // Act - Try to advance with an invalid transition state
-      const result = await loanPaymentStepService.advanceStep(steps[0].id, PaymentStepStateCodes.Completed);
-      
-      // Assert
-      expect(result).toBeDefined(); // Service should handle invalid transitions gracefully
+      // Act & Assert - Try to advance with an invalid transition state should throw PaymentStepStateIsOutOfSyncException
+      await expect(
+        loanPaymentStepService.advanceStep(steps[0].id, PaymentStepStateCodes.Completed)
+      ).rejects.toThrow(`Step: ${steps[0].id} is in Completed state, but no Transfers found.`);
     });
   });
 
@@ -379,11 +318,11 @@ describe('Payment Process Flow Integration', () => {
     beforeEach(async () => {
       // Arrange - Create payment accounts using helper functions
       const sourceAccount = await createTestLenderAccount();
-      const destAccount = await createTestPlatformAccount();
+      const destAccount = await createTestInternalAccount();
 
       // Create a payment and step
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -431,21 +370,20 @@ describe('Payment Process Flow Integration', () => {
       expect(result).toBeDefined();
     });
 
-    it('should handle non-existent transfer gracefully', async () => {
-      // Act
-      const result = await transferExecutionService.executeTransfer(nonExistentTransferId);
-      
-      // Assert
-      expect(result).toBeDefined();
+    it('should throw EntityNotFoundException when executing non-existent transfer', async () => {
+      // Act & Assert
+      await expect(
+        transferExecutionService.executeTransfer(nonExistentTransferId)
+      ).rejects.toThrow(EntityNotFoundException);
     });
 
     it('should handle transfer execution with different providers', async () => {
       // Arrange - Create transfer for different provider test
       const sourceAccount = await createTestLenderAccount();
-      const destAccount = await createTestPlatformAccount();
+      const destAccount = await createTestInternalAccount();
 
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -491,7 +429,7 @@ describe('Payment Process Flow Integration', () => {
       // Create all payment accounts using helper functions
       lenderAccount = await createTestLenderAccount();
       borrowerAccount = await createTestBorrowerAccount();
-      platformAccount = await createTestPlatformAccount();
+      platformAccount = await createTestInternalAccount();
     });
 
     it('should create and manage funding payment', async () => {
@@ -500,7 +438,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Act - Create funding payment
       const fundingPayment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -525,7 +463,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Act - Create disbursement payment
       const disbursementPayment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Disbursement,
         state: LoanPaymentStateCodes.Created,
@@ -550,7 +488,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Act - Create repayment payment
       const repaymentPayment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 500,
         type: LoanPaymentTypeCodes.Repayment,
         state: LoanPaymentStateCodes.Created,
@@ -572,7 +510,7 @@ describe('Payment Process Flow Integration', () => {
     it('should handle payment steps workflow', async () => {
       // Arrange - Create a payment
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -622,7 +560,7 @@ describe('Payment Process Flow Integration', () => {
 
       // Act - Create payment that involves multiple account types
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 2000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -679,21 +617,21 @@ describe('Payment Process Flow Integration', () => {
       // Act - Create multiple payment types
       const payments = await Promise.all([
         domainServices.paymentServices.createPayment({
-          loanId: testLoanId,
+          loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
           amount: 1000,
           type: LoanPaymentTypeCodes.Funding,
           state: LoanPaymentStateCodes.Created,
           paymentNumber: paymentNumber++,
         }),
         domainServices.paymentServices.createPayment({
-          loanId: testLoanId,
+          loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
           amount: 1000,
           type: LoanPaymentTypeCodes.Disbursement,
           state: LoanPaymentStateCodes.Created,
           paymentNumber: paymentNumber++,
         }),
         domainServices.paymentServices.createPayment({
-          loanId: testLoanId,
+          loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
           amount: 500,
           type: LoanPaymentTypeCodes.Repayment,
           state: LoanPaymentStateCodes.Created,
@@ -730,26 +668,30 @@ describe('Payment Process Flow Integration', () => {
 
     it('should handle management service operations with non-existent entities', async () => {
       // Act & Assert - Test management service methods with non-existent entities
-      const initiateResult = await managementDomainService.initiateLoanPayment(nonExistentPaymentId, LoanPaymentTypeCodes.Funding);
-      expect(initiateResult).toBeNull(); // No loan exists
+      await expect(
+        managementDomainService.initiateLoanPayment(nonExistentPaymentId, LoanPaymentTypeCodes.Funding)
+      ).rejects.toThrow(EntityNotFoundException);
 
-      const advanceResult = await managementDomainService.advancePayment(nonExistentPaymentId, LoanPaymentTypeCodes.Funding);
-      expect(advanceResult).toBeNull(); // No payment exists
+      await expect(
+        managementDomainService.advancePayment(nonExistentPaymentId, LoanPaymentTypeCodes.Funding)
+      ).rejects.toThrow(EntityNotFoundException);
 
-      const stepAdvanceResult = await managementDomainService.advancePaymentStep(nonExistentStepId);
-      expect(stepAdvanceResult).toBeNull(); // No step exists
+      await expect(
+        managementDomainService.advancePaymentStep(nonExistentStepId)
+      ).rejects.toThrow(EntityNotFoundException);
 
-      const transferResult = await managementDomainService.executeTransfer(nonExistentTransferId);
-      expect(transferResult).toBeNull(); // No transfer exists
+      await expect(
+        managementDomainService.executeTransfer(nonExistentTransferId)
+      ).rejects.toThrow(EntityNotFoundException);
     });
 
     it('should handle management service operations with existing entities', async () => {
       // Arrange - Create payment accounts and payment
       const sourceAccount = await createTestLenderAccount();
-      const targetAccount = await createTestPlatformAccount();
+      const targetAccount = await createTestInternalAccount();
       
       const payment = await domainServices.paymentServices.createPayment({
-        loanId: testLoanId,
+        loanId: FOUNDATION_TEST_IDS.loans.activeLoan,
         amount: 1000,
         type: LoanPaymentTypeCodes.Funding,
         state: LoanPaymentStateCodes.Created,
@@ -761,7 +703,10 @@ describe('Payment Process Flow Integration', () => {
       }
 
       // Act - Test initiate loan payment with existing loan
-      const initiateResult = await managementDomainService.initiateLoanPayment(testLoanId, LoanPaymentTypeCodes.Disbursement);
+      const initiateResult = await managementDomainService.initiateLoanPayment(
+        FOUNDATION_TEST_IDS.loans.activeLoan, 
+        LoanPaymentTypeCodes.Disbursement
+      );
       
       // Assert
       expect(initiateResult).toBeDefined();
