@@ -7,9 +7,13 @@
   ],
   "[typescript]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.tabSize": 2,
     "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.formatOnPaste": true,
     "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit"
+      "source.fixAll.eslint": "always",
+	  "source.organizeImports": "always"
     }
   },
   "[javascript]": {
@@ -19,7 +23,8 @@
     "editor.formatOnType": true,
     "editor.formatOnPaste": true,
     "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit"
+      "source.fixAll.eslint": "always",
+	  "source.organizeImports": "always"
     }
   },
   "eslint.validate": ["javascript", "typescript"],
