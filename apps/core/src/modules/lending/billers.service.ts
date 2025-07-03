@@ -1,7 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { BillerResponseDto } from './dto/response/biller.response.dto';
-import { ArrayOf, MapToDto, MapToDtoArray } from '@library/entity/mapping/maptodto.decorator';
+import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { Injectable, Logger } from '@nestjs/common';
+import { BillerResponseDto } from './dto/response/biller.response.dto';
 
 @Injectable()
 export class BillersService {
@@ -9,17 +9,17 @@ export class BillersService {
 
   constructor(private readonly domainServices: IDomainServices) {}
 
-  @MapToDto(BillerResponseDto)
   public async createCustomBiller(creatorId: string, name: string): Promise<BillerResponseDto | null> {
     this.logger.debug(`createBiller: Creating custom Biller with name: ${name} by request from user: ${creatorId}`);
     const result = await this.domainServices.loanServices.createCustomBiller(creatorId, name);
-    return result as unknown as BillerResponseDto | null;
+
+    return DtoMapper.toDto(result, BillerResponseDto);
   }
 
-  @MapToDtoArray(ArrayOf(BillerResponseDto))
   public async getCustomBillers(creatorId: string): Promise<Array<BillerResponseDto> | null> {
     this.logger.debug(`getCustomBillers: Getting custom billers for user: ${creatorId}`);
     const result = await this.domainServices.loanServices.getCustomBillers(creatorId);
-    return result as unknown as Array<BillerResponseDto> | null;
+
+    return DtoMapper.toDtoArray(result, BillerResponseDto);
   }
 }

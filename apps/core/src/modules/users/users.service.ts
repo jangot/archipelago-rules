@@ -1,15 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { EntityMapper } from '@library/entity/mapping/entity.mapper';
-import { DtoMapper } from '@library/entity/mapping/dto.mapper';
-import { SearchQueryDto } from '@library/shared/common/search';
-import { createPaginationWrapper, PagingDto } from '@library/shared/common/paging';
-import { ContactType } from '@library/entity/enum';
-import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ContactType } from '@library/entity/enum';
+import { DtoMapper } from '@library/entity/mapping/dto.mapper';
+import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { createPaginationWrapper, PagingDto } from '@library/shared/common/paging';
+import { SearchQueryDto } from '@library/shared/common/search';
 import { ApplicationUser } from '@library/shared/domain/entity';
+import { Injectable, Logger } from '@nestjs/common';
 import { UserCreateRequestDto, UserDetailsUpdateRequestDto, UserUpdateRequestDto } from './dto/request';
-import { UserDetailsUpdateResponseDto, UserDetailResponseDto, UserResponseDto } from './dto/response';
+import { UserDetailResponseDto, UserDetailsUpdateResponseDto, UserResponseDto } from './dto/response';
 
 @Injectable()
 export class UsersService {
@@ -18,15 +17,10 @@ export class UsersService {
 
   constructor(private readonly domainServices: IDomainServices) {}
 
-  @MapToDto(UserDetailResponseDto)
   public async getUserDetailById(userId: string): Promise<UserDetailResponseDto | null> {
     const result = await this.domainServices.userServices.getUserById(userId);
 
-    // Custom decorator will do this work automatically.
-    //const dtoResult = DtoMapper.toDto(result, UserDetailResponseDTO);
-
-    // Tell the Typescript compiler to trust us here, the @MapToDto() decorator is doing the DtoMapper.toDto() work automatically
-    return result as unknown as UserDetailResponseDto | null;
+    return DtoMapper.toDto(result, UserDetailResponseDto);
   }
 
   // I don't want the Service classes to throw Exceptions if a User isn't found.
@@ -36,14 +30,12 @@ export class UsersService {
   // We should create a Top level Exception handler that shows different information
   // depending on the environment (dev, prod, etc)
   // We would also want to Log these Errors (but only 'real' errors should be logged as errors)
-  @MapToDto(UserResponseDto)
   public async getUserById(id: string): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserById: Getting User by Id: ${id}`);
 
     const result = await this.domainServices.userServices.getUserById(id);
 
-    // Tell the Typescript compiler to trust us here, the @MapToDto() decorator is doing the DtoMapper.toDto() work automatically
-    return result as unknown as UserResponseDto | null;
+    return DtoMapper.toDto(result, UserResponseDto);
   }
 
   /**
@@ -53,16 +45,13 @@ export class UsersService {
    * @param {ContactType} type - The type of contact information (EMAIL or PHONE_NUMBER).
    * @returns {Promise<UserResponseDto | null>} - A promise that resolves to a UserResponseDto if a user is found, or null if no user is found.
    */
-  @MapToDto(UserResponseDto)
   public async getUserByContact(contact: string, type: ContactType): Promise<UserResponseDto | null> {
     this.logger.debug(`getUserByContact: Getting User by ${type} Contact: ${contact}`);
     const user = await this.domainServices.userServices.getUserByContact(contact, type);
 
-    // Tell the Typescript compiler to trust us here, the @MapToDto() decorator is doing the DtoMapper.toDto() work automatically
-    return user as unknown as UserResponseDto | null;
+    return DtoMapper.toDto(user, UserResponseDto);
   }
 
-  @MapToDto(UserResponseDto)
   public async createUser(input: UserCreateRequestDto): Promise<UserResponseDto | null> {
     this.logger.debug(`createUser: Creating User: ${input.email}`);
 
@@ -70,8 +59,7 @@ export class UsersService {
     const user = EntityMapper.toEntity(input, ApplicationUser);
     const result = await this.domainServices.userServices.createNewUser(user);
 
-    // Tell the Typescript compiler to trust us here, the @MapToDto() decorator is doing the DtoMapper.toDto() work automatically
-    return result as unknown as UserResponseDto | null;
+    return DtoMapper.toDto(result, UserResponseDto);
   }
 
   public async updateUser(input: UserUpdateRequestDto): Promise<boolean | null> {
@@ -96,8 +84,7 @@ export class UsersService {
    * @param updates Updates to apply to the User
    * @returns Updated User details
    */
-  @MapToDto(UserDetailsUpdateResponseDto) 
-  public async updateUserDetails(userId: string, updates: UserDetailsUpdateRequestDto): Promise<UserDetailsUpdateResponseDto> { 
+  public async updateUserDetails(userId: string, updates: UserDetailsUpdateRequestDto): Promise<UserDetailsUpdateResponseDto | null> { 
     const user = await this.domainServices.userServices.getUserById(userId); 
     if (!user) { 
       this.logger.error(`updateDetails: User not found for ID: ${userId}`); 
@@ -113,7 +100,7 @@ export class UsersService {
     } 
  
     const updatedUser = await this.domainServices.userServices.getUserById(userId); 
-    return updatedUser as unknown as UserDetailsUpdateResponseDto; 
+    return DtoMapper.toDto(updatedUser, UserDetailsUpdateResponseDto); 
   } 
 
   public async deleteUser(id: string): Promise<boolean> {
