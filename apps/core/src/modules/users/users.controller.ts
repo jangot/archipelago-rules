@@ -1,6 +1,12 @@
-import { Controller, Delete, HttpException, HttpStatus, Logger, Patch, Query, Req, UseGuards } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { Get, Post, Put, Param, Body } from '@nestjs/common';
+import { JwtAuthGuard } from '@core/modules/auth/guards';
+import { ContactType } from '@library/entity/enum';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { PagingDto, PagingOptionsDto } from '@library/shared/common/paging';
+import { ValidateOptionalQueryParamsPipe } from '@library/shared/common/pipe/optional.params.pipe';
+import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
+import { SearchFilterDto, SearchQueryDto } from '@library/shared/common/search';
+import { IRequest } from '@library/shared/type';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -15,17 +21,10 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { ValidateOptionalQueryParamsPipe } from '@library/shared/common/pipe/optional.params.pipe';
-import { SearchFilterDto, SearchQueryDto } from '@library/shared/common/search';
-import { PagingDto, PagingOptionsDto } from '@library/shared/common/paging';
-import { ContactType } from '@library/entity/enum';
-import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
-import { IRequest } from '@library/shared/type';
 import { UserNotRegisteredException } from '../auth/exceptions/auth-domain.exceptions';
-import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { JwtAuthGuard } from '@core/modules/auth/guards';
-import { UserCreateRequestDto, UserDetailsUpdateRequestDto, UserUpdateRequestDto } from './dto/request';
+import { UserDetailsUpdateRequestDto } from './dto/request';
 import { UserDetailResponseDto, UserDetailsUpdateResponseDto, UserResponseDto } from './dto/response';
+import { UsersService } from './users.service';
 
 @Controller('users')
 @ApiTags('users')
@@ -60,13 +59,13 @@ export class UsersController {
   @Patch('/self')
   @ApiBearerAuth('jwt') 
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ description: 'Update User Details', summary: 'Update User Details' }) 
-  @ApiOkResponse({ description: 'User Details Updated', type: UserDetailsUpdateResponseDto, isArray: false }) 
+  @ApiOperation({ description: 'Update User', summary: 'Update User' }) 
+  @ApiOkResponse({ description: 'User Updated', type: UserDetailsUpdateResponseDto, isArray: false }) 
   @ApiBadRequestResponse({ description: 'User not registered', isArray: false }) 
   @ApiBadRequestResponse({ description: 'Updates can not be empty', isArray: false }) 
   @ApiNotFoundResponse({ description: 'User not found', isArray: false }) 
   @ApiInternalServerErrorResponse({ description: 'Could not apply updates', isArray: false }) 
-  public async updateDetails(@Req() request: IRequest, @Body() body: UserDetailsUpdateRequestDto): Promise<UserDetailsUpdateResponseDto> { 
+  public async updateUser(@Req() request: IRequest, @Body() body: UserDetailsUpdateRequestDto): Promise<UserDetailsUpdateResponseDto> { 
     if (!request.user || !request.user.id) { 
       throw new UserNotRegisteredException('User not registered'); 
     } 
@@ -83,6 +82,8 @@ export class UsersController {
   //#endregion
 
   @Get(':id')
+  @ApiBearerAuth('jwt') 
+  @UseGuards(JwtAuthGuard)
   @ApiParam({ name: 'id', required: true, description: 'User id' })
   @ApiOkResponse({ description: 'Get User by Id', type: UserResponseDto, isArray: false })
   @ApiNoContentResponse({ description: 'User not found', isArray: false })
@@ -98,7 +99,8 @@ export class UsersController {
     return result;
   }
 
-  // Using this to test out pgtyped stuff
+  //#region Test endpoints
+  // TODO: This is a test endpoint, remove it later
   @Get('/test/:id')
   @ApiParam({ name: 'id', required: true, description: 'User id' })
   @ApiOkResponse({ description: 'Get User by Id', type: UserDetailResponseDto, isArray: false })
@@ -115,6 +117,7 @@ export class UsersController {
     return result;
   }
 
+  // TODO: This is a test endpoint, remove it later
   //getUserDetailById
   //GET /users?email=test@mail.com
   //GET /users?phoneNumber=1234567890
@@ -147,28 +150,7 @@ export class UsersController {
 
     return result;
   }
-
-  @ApiBody({ type: UserCreateRequestDto })
-  @ApiOkResponse({ description: 'Created a new User', type: UserResponseDto, isArray: false })
-  @ApiBadRequestResponse({ description: 'Invalid User data payload provided', isArray: false })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  @Post()
-  public async createUser(@Body() user: UserCreateRequestDto): Promise<UserResponseDto | null> {
-    return this.userService.createUser(user);
-  }
-
-  @ApiBody({ type: UserUpdateRequestDto })
-  @ApiOkResponse({ description: 'Updated existing User', type: UserResponseDto, isArray: false })
-  @ApiBadRequestResponse({ description: 'Invalid User data payload provided', isArray: false })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  @Patch()
-  public async updateUser(@Body() user: UserUpdateRequestDto): Promise<boolean> {
-    const updateResult =  await this.userService.updateUser(user);
-    if (!updateResult) {
-      throw new EntityFailedToUpdateException('Failed to update User');
-    }
-    return updateResult;
-  }
+  //#endregion
 
   @ApiParam({ name: 'id', required: true, description: 'User id' })
   @ApiOkResponse({ description: 'Deleted User', type: Boolean, isArray: false })

@@ -1,7 +1,7 @@
-import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { PaymentAccountResponseDto } from '@core/modules/banking/dto/response/payment-account.response.dto';
 import { PaymentMethodCreateRequestDto } from '@core/modules/banking/dto/request/payment-method.create.request.dto';
-import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
+import { PaymentAccountResponseDto } from '@core/modules/banking/dto/response/payment-account.response.dto';
+import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
@@ -10,9 +10,9 @@ export class BankingService {
 
   constructor(private readonly domainServices: IDomainServices) {}
 
-  @MapToDto(PaymentAccountResponseDto)
   public async addPaymentAccount(userId: string, input: PaymentMethodCreateRequestDto): Promise<PaymentAccountResponseDto | null> {
     const result = await this.domainServices.userServices.addPaymentAccount(userId, input);
-    return result as unknown as PaymentAccountResponseDto | null;
+
+    return DtoMapper.toDto(result, PaymentAccountResponseDto);
   }
 }

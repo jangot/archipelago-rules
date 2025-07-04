@@ -21,4 +21,14 @@ export class DtoMapper {
 
     return result;
   }
+
+  public static toDtoArray<Entity extends object, DTO extends object>(entity: Entity[] | null, dtoClass: ClassConstructor<DTO>): DTO[] | null {
+    if (!entity) {
+      return null;
+    }
+
+    const result: DTO[] = plainToInstance(dtoClass, entity, { excludeExtraneousValues: true });
+
+    return result;
+  }
 }

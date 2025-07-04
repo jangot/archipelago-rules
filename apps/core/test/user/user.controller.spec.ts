@@ -1,9 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { UserResponseDto } from '@core/modules/users/dto/response';
 import { UsersController } from '@core/modules/users/users.controller';
 import { UsersService } from '@core/modules/users/users.service';
-import { UserResponseDto } from '@core/modules/users/dto/response';
-import { UserCreateRequestDto, UserUpdateRequestDto } from '@core/modules/users/dto/request';
 import { ContactType, RegistrationStatus } from '@library/entity/enum';
+import { Test, TestingModule } from '@nestjs/testing';
 
 describe('UserController', () => {
   let controller: UsersController;
@@ -58,29 +57,6 @@ describe('UserController', () => {
       const result = await controller.getUserByParameter({ phoneNumber });
       expect(result).toEqual(userResponse);
       expect(service.getUserByContact).toHaveBeenCalledWith(phoneNumber, ContactType.PHONE_NUMBER);
-    });
-  });
-
-  describe('createUser', () => {
-    it('should create a new user', async () => {
-      const userCreateDto: UserCreateRequestDto = { email: 'test@test.com', phoneNumber: '+12124567890', firstName: 'Test', lastName: 'User' };
-      const userResponse: UserResponseDto = { id: '1', email: 'test@test.com', phoneNumber: '+12124567890', firstName: 'Test', lastName: 'User', registrationStatus: RegistrationStatus.NotRegistered };
-      jest.spyOn(service, 'createUser').mockResolvedValue(userResponse);
-
-      const result = await controller.createUser(userCreateDto);
-      expect(result).toEqual(userResponse);
-      expect(service.createUser).toHaveBeenCalledWith(userCreateDto);
-    });
-  });
-
-  describe('updateUser', () => {
-    it('should update an existing user', async () => {
-      const userUpdateDto: UserUpdateRequestDto = { id: '1', email: 'updated@test.com', phoneNumber: '+12124567890' };
-      jest.spyOn(service, 'updateUser').mockResolvedValue(true);
-
-      const result = await controller.updateUser(userUpdateDto);
-      expect(result).toBe(true);
-      expect(service.updateUser).toHaveBeenCalledWith(userUpdateDto);
     });
   });
 });

@@ -1,19 +1,19 @@
+import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/entity-interface';
+import { LoanInviteeTypeCodes, LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
+import { DtoMapper } from '@library/entity/mapping/dto.mapper';
+import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { LoanAssignToContactInput } from '@library/shared/type/lending';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EventBus } from '@nestjs/cqrs';
+import { DeepPartial } from 'typeorm';
+import { IDomainServices } from '../domain/idomain.services';
 import { LoanCreateRequestDto } from './dto/request/loan.create.request.dto';
 import { LoanResponseDto } from './dto/response/loan.response.dto';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { EventBus } from '@nestjs/cqrs';
-import { MapToDto } from '@library/entity/mapping/maptodto.decorator';
-import { LoanInviteeTypeCodes, LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
-import { ConfigService } from '@nestjs/config';
-import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { ActionNotAllowedException, UnableToCreatePersonalBillerException } from './exceptions/loan-domain.exceptions';
-import { DeepPartial } from 'typeorm';
-import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/entity-interface';
-import { LendingLogic } from './lending.logic';
-import { LoanAssignToContactInput } from '@library/shared/type/lending';
 import { ILoanStateManagersFactory } from './interfaces';
-import { IDomainServices } from '../domain/idomain.services';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { LendingLogic } from './lending.logic';
 
 @Injectable()
 export class LoansService {
@@ -26,7 +26,6 @@ export class LoansService {
     @Inject(ILoanStateManagersFactory)
     private readonly stateManagerFactory: ILoanStateManagersFactory) {}
     
-  @MapToDto(LoanResponseDto)
   public async createLoan(userId: string, input: LoanCreateRequestDto): Promise<LoanResponseDto | null> {
     LendingLogic.validateLoanCreateInput(input);
 
@@ -47,10 +46,9 @@ export class LoansService {
     }
 
     const result = await this.domainServices.loanServices.createLoan(loanCreateInput);
-    return result as unknown as LoanResponseDto | null;
+    return DtoMapper.toDto(result, LoanResponseDto);
   }
 
-  @MapToDto(LoanResponseDto)
   public async proposeLoan(userId: string, loanId: string, sourcePaymentAccountId: string): Promise<LoanResponseDto | null> {
 
     const loan = await this.getLoan(loanId);
@@ -76,21 +74,20 @@ export class LoansService {
     }
 
     const result = await this.getLoan(loanId);
-    return result as unknown as LoanResponseDto | null;
+    return DtoMapper.toDto(result, LoanResponseDto);
   }
 
   public async setLoansTarget(input: LoanAssignToContactInput): Promise<void> {
     await this.domainServices.loanServices.setLoansTarget(input);
   }
 
-  @MapToDto(LoanResponseDto)
   public async acceptLoan(loanId: string, userId: string, targetPaymentAccountId: string): Promise<LoanResponseDto | null> {
     if (!loanId || !userId || !targetPaymentAccountId) {
       this.logger.warn('Missing required parameters for accepting loan', { loanId, userId, targetPaymentAccountId });
       throw new MissingInputException('Some of the required parameters (Loan ID, User ID, Payment Account ID) are missing');
     }
     const result = await this.domainServices.loanServices.acceptLoan(loanId, userId, targetPaymentAccountId);
-    return result as unknown as LoanResponseDto | null;
+    return DtoMapper.toDto(result, LoanResponseDto);
   }
 
   /**
