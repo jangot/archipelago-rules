@@ -3,33 +3,33 @@ import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { PaymentDomainService } from '../../src/domain/services/payment.domain.service';
-import { DataModule } from '../../src/data/data.module';
-import { DomainModule } from '../../src/domain/domain.module';
-import { 
-  ILoanPayment, 
-  ILoanPaymentStep, 
-  IPaymentAccount, 
+import {
+  ILoanPayment,
+  ILoanPaymentStep,
+  IPaymentAccount,
 } from '@library/entity/entity-interface';
-import { 
-  LoanPaymentStateCodes, 
-  LoanPaymentTypeCodes, 
-  LoanTypeCodes, 
-  PaymentAccountOwnershipTypeCodes, 
-  PaymentAccountProviderCodes, 
-  PaymentAccountTypeCodes, 
-  PaymentStepStateCodes, 
+import {
+  LoanPaymentStateCodes,
+  LoanPaymentTypeCodes,
+  LoanTypeCodes,
+  PaymentAccountOwnershipTypeCodes,
+  PaymentAccountProviderCodes,
+  PaymentAccountTypeCodes,
+  PaymentStepStateCodes,
 } from '@library/entity/enum';
-import { DeepPartial } from 'typeorm';
-import { 
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { AllEntities } from '@library/shared/domain/entity';
+import {
+  FOUNDATION_TEST_IDS,
   memoryDataSourceSingle,
   TestDataSeeder,
-  FOUNDATION_TEST_IDS,
   TestPaymentAccountFactory,
 } from '@library/shared/tests';
-import { AllEntities } from '@library/shared/domain/entity';
-import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DataModule } from '@payment/modules/data';
+import { DomainModule } from '@payment/modules/domain/domain.module';
+import { PaymentDomainService } from '@payment/modules/domain/services';
+import { DeepPartial } from 'typeorm';
 
 /**
  * Integration tests for PaymentDomainService

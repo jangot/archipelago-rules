@@ -3,37 +3,37 @@ import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { DataModule } from '../../src/data/data.module';
-import { DomainModule } from '../../src/domain/domain.module';
-import { ManagementModule } from '../../src/domain/management.module';
-import { ServicesModule } from '../../src/services/services.module';
-import { IDomainServices } from '../../src/domain/idomain.services';
-import { ManagementDomainService } from '../../src/domain/services';
-import { LoanPaymentService } from '../../src/services/loan-payment.service';
-import { LoanPaymentStepService } from '../../src/services/loan-payment-step.service';
-import { TransferExecutionService } from '../../src/services/transfer-execution.service';
-import { 
+import {
   ILoanPaymentStep,
   IPaymentAccount,
 } from '@library/entity/entity-interface';
-import { 
-  LoanPaymentTypeCodes,
+import {
   LoanPaymentStateCodes,
+  LoanPaymentTypeCodes,
   PaymentAccountProviderCodes,
   PaymentStepStateCodes,
 } from '@library/entity/enum';
-import { LoanPaymentModule } from '../../src/loan-payments/loan-payment.module';
-import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
-import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { 
+import { EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { AllEntities } from '@library/shared/domain/entity';
+import {
+  FOUNDATION_TEST_IDS,
   memoryDataSourceSingle,
   TestDataSeeder,
-  FOUNDATION_TEST_IDS,
   TestPaymentAccountFactory,
 } from '@library/shared/tests';
-import { AllEntities } from '@library/shared/domain/entity';
-import { EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DataModule } from '@payment/modules/data';
+import { DomainModule } from '@payment/modules/domain/domain.module';
+import { IDomainServices } from '@payment/modules/domain/idomain.services';
+import { ManagementModule } from '@payment/modules/domain/management.module';
+import { ManagementDomainService } from '@payment/modules/domain/services';
+import { LoanPaymentStepModule } from '../../src/modules/loan-payment-steps/loan-payment-step.module';
+import { LoanPaymentModule } from '../../src/modules/loan-payments/loan-payment.module';
+import { LoanPaymentStepService } from '../../src/modules/services/loan-payment-step.service';
+import { LoanPaymentService } from '../../src/modules/services/loan-payment.service';
+import { ServicesModule } from '../../src/modules/services/services.module';
+import { TransferExecutionService } from '../../src/modules/services/transfer-execution.service';
+import { TransferExecutionModule } from '../../src/modules/transfer-execution/transfer-execution.module';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
 // Verify entity interfaces first - check libs/entity/src/interface/ for actual field names

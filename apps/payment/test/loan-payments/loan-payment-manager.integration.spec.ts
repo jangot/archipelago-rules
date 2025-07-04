@@ -3,30 +3,30 @@ import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { DataModule } from '../../src/data/data.module';
-import { DomainModule } from '../../src/domain/domain.module';
-import { LoanPaymentModule } from '../../src/loan-payments/loan-payment.module';
-import { IDomainServices } from '../../src/domain/idomain.services';
-import { LoanPaymentFactory } from '../../src/loan-payments/loan-payment.factory';
-import { 
-  FundingPaymentManager,
-  DisbursementPaymentManager,
-  RepaymentPaymentManager,
-  FeePaymentManager,
-  RefundPaymentManager,
-} from '../../src/loan-payments/managers';
-import { 
-  LoanPaymentTypeCodes,
-  LoanPaymentStateCodes,
-} from '@library/entity/enum';
-import { 
+import {
   ILoanPayment,
 } from '@library/entity/entity-interface';
-import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
-import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { memoryDataSourceSingle, TestDataSeeder, FOUNDATION_TEST_IDS, ITestDataRegistry } from '@library/shared/tests';
+import {
+  LoanPaymentStateCodes,
+  LoanPaymentTypeCodes,
+} from '@library/entity/enum';
 import { AllEntities } from '@library/shared/domain/entity';
+import { FOUNDATION_TEST_IDS, ITestDataRegistry, memoryDataSourceSingle, TestDataSeeder } from '@library/shared/tests';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DataModule } from '@payment/modules/data';
+import { DomainModule } from '@payment/modules/domain/domain.module';
+import { IDomainServices } from '@payment/modules/domain/idomain.services';
+import { LoanPaymentStepModule } from '../../src/modules/loan-payment-steps/loan-payment-step.module';
+import { LoanPaymentFactory } from '../../src/modules/loan-payments/loan-payment.factory';
+import { LoanPaymentModule } from '../../src/modules/loan-payments/loan-payment.module';
+import {
+  DisbursementPaymentManager,
+  FeePaymentManager,
+  FundingPaymentManager,
+  RefundPaymentManager,
+  RepaymentPaymentManager,
+} from '../../src/modules/loan-payments/managers';
+import { TransferExecutionModule } from '../../src/modules/transfer-execution/transfer-execution.module';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
 // Verify entity interfaces first - check libs/entity/src/interface/ for actual field names
