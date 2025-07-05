@@ -18,16 +18,16 @@
   "dependencies": {
     "@qdrant/js-client-rest": "^1.14.1",
     "dotenv": "^16.6.0",
+    "node-telegram-bot-api": "^0.64.0",
     "openai": "^5.8.1",
     "pdf-parse": "^1.1.1",
     "qdrant-client": "^0.0.1",
-    "uuid": "^11.1.0",
-    "node-telegram-bot-api": "^0.64.0"
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.4",
-    "@types/pdf-parse": "^1.1.5",
     "@types/node-telegram-bot-api": "^0.64.0",
+    "@types/pdf-parse": "^1.1.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
