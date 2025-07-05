@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \\\"Error: no src/test specified\\\" && exit 1",
+    "test": "tsc && node ./dist/test.js",
     "build": "tsc",
-    "start": "tsc && node ./dist/index.js",
+    "upload-db": "tsc && node ./dist/upload-db.js",
+    "check-qdrant": "tsc && node ./dist/check-qdrant.js",
     "start:search": "tsc && node ./dist/search.js",
     "start:bot": "tsc && node ./dist/telegram-bot.js",
     "test:bot": "tsc && node ./dist/test-bot.js"

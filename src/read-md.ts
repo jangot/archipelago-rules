@@ -41,6 +41,26 @@ export function extractSectionAndChapter(filename: string): { section: string; c
         };
     }
 
+    // Для файлов в формате archipelago-rules: "01-predislovie.md", "02-sozdanie-personazha.md"
+    const archipelagoMatch = filename.match(/^(\d+)-(.+)\.md$/);
+    if (archipelagoMatch) {
+        const [, number, name] = archipelagoMatch;
+        // Определяем раздел по номеру файла
+        let section = 'ОСНОВНЫЕ ПРАВИЛА';
+        if (parseInt(number) >= 1 && parseInt(number) <= 7) {
+            section = 'СОЗДАНИЕ ПЕРСОНАЖА';
+        } else if (parseInt(number) >= 8 && parseInt(number) <= 17) {
+            section = 'АРХЕТИПЫ';
+        } else if (parseInt(number) >= 18 && parseInt(number) <= 30) {
+            section = 'НАВЫКИ И СПОСОБНОСТИ';
+        }
+
+        return {
+            section,
+            chapter: `${number}. ${name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+        };
+    }
+
     // Для файлов без стандартного формата
     return {
         section: 'ДОПОЛНИТЕЛЬНЫЕ МАТЕРИАЛЫ',
