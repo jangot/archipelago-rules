@@ -3,10 +3,31 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \\\"Error: no src/test specified\\\" && exit 1",
+    "build": "tsc",
+    "start": "tsc && node ./dist/index.js",
+    "start:search": "tsc && node ./dist/search.js",
+    "start:bot": "tsc && node ./dist/telegram-bot.js",
+    "test:bot": "tsc && node ./dist/test-bot.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@qdrant/js-client-rest": "^1.14.1",
+    "dotenv": "^16.6.0",
+    "openai": "^5.8.1",
+    "pdf-parse": "^1.1.1",
+    "qdrant-client": "^0.0.1",
+    "uuid": "^11.1.0",
+    "node-telegram-bot-api": "^0.64.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.4",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/node-telegram-bot-api": "^0.64.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
 }
