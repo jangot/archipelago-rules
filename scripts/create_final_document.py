@@ -8,11 +8,11 @@ def create_final_document():
     """Создает финальный документ, объединяя все части"""
 
     # Читаем индексный файл
-    with open("rules/README.md", 'r', encoding='utf-8') as f:
+    with open("../files/README.md", 'r', encoding='utf-8') as f:
         index_content = f.read()
 
     # Читаем текст из изображений
-    with open("rules/extracted_image_text.md", 'r', encoding='utf-8') as f:
+    with open("../files/extracted_image_text.md", 'r', encoding='utf-8') as f:
         image_text = f.read()
 
     # Создаем финальный документ
@@ -23,7 +23,7 @@ def create_final_document():
     final_content.append("## Содержание\n\n")
 
     # Добавляем ссылки на разделы
-    parts_dir = "rules/parts"
+    parts_dir = "../files/parts"
     files = [f for f in os.listdir(parts_dir) if f.endswith('.md')]
     files.sort()
 
@@ -59,7 +59,7 @@ def create_final_document():
     final_content.append(image_text)
 
     # Сохраняем финальный документ
-    with open("rules/archipelago-rules-complete.md", 'w', encoding='utf-8') as f:
+    with open("../files/archipelago-rules-complete.md", 'w', encoding='utf-8') as f:
         f.write(''.join(final_content))
 
     print("Финальный документ создан: rules/archipelago-rules-complete.md")
@@ -127,7 +127,7 @@ rules/
 - Все файлы сохранены в кодировке UTF-8
 """
 
-    with open("TRANSFORMATION_SUMMARY.md", 'w', encoding='utf-8') as f:
+    with open("../TRANSFORMATION_SUMMARY.md", 'w', encoding='utf-8') as f:
         f.write(summary)
 
     print("Резюме создано: TRANSFORMATION_SUMMARY.md")

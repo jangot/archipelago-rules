@@ -94,11 +94,11 @@ def create_index_file(parts_dir, output_file):
 
 if __name__ == "__main__":
     # Разбиваем файл на части
-    input_file = "rules/archipelago-rules.md"
-    parts_dir = "rules/parts"
+    input_file = "../files/archipelago-rules.md"
+    parts_dir = "../files/parts"
 
     created_files = split_markdown_by_headers(input_file, parts_dir)
 
     # Создаем индексный файл
-    index_file = "rules/README.md"
+    index_file = "../files/README.md"
     create_index_file(parts_dir, index_file)

@@ -87,9 +87,9 @@ def create_image_references(images_dir, output_file):
             f.write(f"   - Файл: `{image_file}`\n\n")
 
 if __name__ == "__main__":
-    images_dir = "rules/images"
-    output_file = "rules/extracted_image_text.md"
-    references_file = "rules/image_references.md"
+    images_dir = "../files/images"
+    output_file = "../files/extracted_image_text.md"
+    references_file = "../files/image_references.md"
 
     # Извлекаем текст из изображений
     print("Начинаем извлечение текста из изображений...")

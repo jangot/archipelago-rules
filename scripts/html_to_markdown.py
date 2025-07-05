@@ -47,8 +47,8 @@ def convert_html_to_markdown(html_file_path, output_file_path):
 
 if __name__ == "__main__":
     # Преобразуем HTML в Markdown
-    html_file = "rules/index.html"
-    markdown_file = "rules/archipelago-rules.md"
+    html_file = "../files/index.html"
+    markdown_file = "../files/archipelago-rules.md"
 
     content = convert_html_to_markdown(html_file, markdown_file)
 
