@@ -51,6 +51,7 @@ bot.onText(/\/help/, async (msg) => {
 🎯 Команды:
 /start - Начать работу с ботом
 /help - Показать эту справку
+/roll [количество] - Бросить d20 кубики (по умолчанию 1, максимум 10)
 /users - Управление пользователями (только для админов)
 
 Удачной игры! ⚔️
@@ -275,6 +276,74 @@ bot.onText(/\/unsetadmin (.+)/, async (msg, match) => {
     } else {
         await bot.sendMessage(chatId, `❌ Пользователь @${targetUsername} не найден.`);
     }
+});
+
+// Обработчик команды /roll для бросков d20
+bot.onText(/\/roll(?: (\d+))?/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const userId = String(msg.from?.id || '');
+    const userName = msg.from?.username || '';
+
+    // Проверяем доступ пользователя
+    if (!userAccessManager.hasAccess(userId, userName)) {
+        await bot.sendMessage(chatId, '😿 Извините, ваш аккаунт не может быть обслужен. Пожалуйста свяжитесь с администратором @jangot для получения доступа.');
+        return;
+    }
+
+    // Определяем количество кубиков
+    const diceCount = match && match[1] ? parseInt(match[1]) : 1;
+
+    // Ограничиваем количество кубиков (максимум 10)
+    if (diceCount > 10) {
+        await bot.sendMessage(chatId, '❌ Максимальное количество кубиков: 10');
+        return;
+    }
+
+    if (diceCount < 1) {
+        await bot.sendMessage(chatId, '❌ Минимальное количество кубиков: 1');
+        return;
+    }
+
+    // Бросаем кубики
+    const results: number[] = [];
+    let total = 0;
+
+    for (let i = 0; i < diceCount; i++) {
+        const roll = Math.floor(Math.random() * 20) + 1;
+        results.push(roll);
+        total += roll;
+    }
+
+    // Формируем сообщение с результатами
+    let message = `🎲 **Бросок ${diceCount}d20**\n\n`;
+
+    if (diceCount === 1) {
+        message += `Результат: **${results[0]}**`;
+    } else {
+        message += `Результаты: ${results.join(', ')}\n`;
+        message += `Сумма: **${total}**`;
+    }
+
+    // Добавляем эмодзи для критических результатов
+    if (diceCount === 1) {
+        if (results[0] === 20) {
+            message += ' 🎉 **КРИТИЧЕСКИЙ УСПЕХ!**';
+        } else if (results[0] === 1) {
+            message += ' 💀 **КРИТИЧЕСКИЙ ПРОВАЛ!**';
+        }
+    } else {
+        const critSuccesses = results.filter(r => r === 20).length;
+        const critFails = results.filter(r => r === 1).length;
+
+        if (critSuccesses > 0) {
+            message += `\n🎉 Критических успехов: ${critSuccesses}`;
+        }
+        if (critFails > 0) {
+            message += `\n💀 Критических провалов: ${critFails}`;
+        }
+    }
+
+    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
 });
 
 // Обработчик всех текстовых сообщений
