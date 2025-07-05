@@ -321,25 +321,22 @@ bot.onText(/\/roll(?: (\d+))?/, async (msg, match) => {
         message += `Результат: **${results[0]}**`;
     } else {
         message += `Результаты: ${results.join(', ')}\n`;
-        message += `Сумма: **${total}**`;
     }
 
     // Добавляем эмодзи для критических результатов
     if (diceCount === 1) {
         if (results[0] === 20) {
-            message += ' 🎉 **КРИТИЧЕСКИЙ УСПЕХ!**';
-        } else if (results[0] === 1) {
-            message += ' 💀 **КРИТИЧЕСКИЙ ПРОВАЛ!**';
+            message += ' 💀 **Одно усложнение!**';
         }
     } else {
-        const critSuccesses = results.filter(r => r === 20).length;
-        const critFails = results.filter(r => r === 1).length;
+        const critSuccesses = results.filter(r => r === 1).length;
+        const critFails = results.filter(r => r === 20).length;
 
         if (critSuccesses > 0) {
             message += `\n🎉 Критических успехов: ${critSuccesses}`;
         }
         if (critFails > 0) {
-            message += `\n💀 Критических провалов: ${critFails}`;
+            message += `\n💀 Усложнений: ${critFails}`;
         }
     }
 
