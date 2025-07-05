@@ -7,6 +7,8 @@
     "build": "tsc",
     "upload-db": "tsc && node ./dist/upload-db.js",
     "check-qdrant": "tsc && node ./dist/check-qdrant.js",
+    "migrate-users": "tsc && node ./dist/migrate-users.js",
+    "manage-users": "tsc && node ./dist/manage-users.js",
     "start:search": "tsc && node ./dist/search.js",
     "start:bot": "tsc && node ./dist/telegram-bot.js",
     "test:bot": "tsc && node ./dist/test-bot.js"

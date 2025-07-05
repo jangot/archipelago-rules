@@ -2,6 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import { configuration } from './configuration';
 import { searchRelevantChunks } from './qdrant';
 import { getAIResponse } from './openai-api';
+import { userAccessManager } from './user-access';
 
 // Создаем экземпляр бота
 const bot = new TelegramBot(configuration.telegramToken, { polling: true });
@@ -50,11 +51,230 @@ bot.onText(/\/help/, async (msg) => {
 🎯 Команды:
 /start - Начать работу с ботом
 /help - Показать эту справку
+/users - Управление пользователями (только для админов)
 
 Удачной игры! ⚔️
     `;
 
     await bot.sendMessage(chatId, helpMessage);
+});
+
+// Обработчик команды /users для управления пользователями
+bot.onText(/\/users/, async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = String(msg.from?.id || '');
+    const userName = msg.from?.username || '';
+
+    // Только админ может видеть список
+    if (!userAccessManager.isAdmin(userId, userName)) {
+        await bot.sendMessage(chatId, '❌ Только администратор может использовать эту команду.');
+        return;
+    }
+
+    const stats = userAccessManager.getStats();
+    const activeUsers = userAccessManager.getActiveUsers();
+
+    let userList = '';
+    if (activeUsers.length > 0) {
+        userList = activeUsers.map(user =>
+            `• ${user.username || 'Без username'} (ID: ${user.id}) - добавлен ${new Date(user.addedAt).toLocaleDateString()}`
+        ).join('\n');
+    } else {
+        userList = 'Нет активных пользователей';
+    }
+
+    const adminMessage = `
+👥 **Управление пользователями**
+
+📊 Статистика:
+• Всего пользователей: ${stats.total}
+• Активных: ${stats.active}
+• Неактивных: ${stats.inactive}
+• Последнее обновление: ${new Date(stats.lastUpdated).toLocaleString()}
+
+👤 **Активные пользователи:**
+${userList}
+
+💡 **Команды управления:**
+/adduser @username - Добавить пользователя
+/removeuser @username - Деактивировать пользователя
+/activateuser @username - Активировать пользователя
+/deleteuser @username - Полностью удалить пользователя
+    `;
+
+    await bot.sendMessage(chatId, adminMessage, { parse_mode: 'Markdown' });
+});
+
+// Обработчик команды /adduser
+bot.onText(/\/adduser (.+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const userId = String(msg.from?.id || '');
+    const userName = msg.from?.username || '';
+    if (!userAccessManager.isAdmin(userId, userName)) {
+        await bot.sendMessage(chatId, '❌ Только администратор может добавлять пользователей.');
+        return;
+    }
+
+    if (!match) {
+        await bot.sendMessage(chatId, '❌ Укажите username пользователя: /adduser @username');
+        return;
+    }
+
+    const newUsername = match[1].replace('@', '').trim();
+
+    if (!newUsername) {
+        await bot.sendMessage(chatId, '❌ Укажите username пользователя: /adduser @username');
+        return;
+    }
+
+    const success = userAccessManager.addUser({
+        id: '', // ID будет пустым, будем искать по username
+        username: newUsername,
+        addedBy: userName || userId
+    }, userName || userId);
+
+    if (success) {
+        await bot.sendMessage(chatId, `✅ Пользователь @${newUsername} добавлен!`);
+    } else {
+        await bot.sendMessage(chatId, `❌ Пользователь @${newUsername} уже существует или произошла ошибка.`);
+    }
+});
+
+// Обработчик команды /removeuser
+bot.onText(/\/removeuser (.+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const userId = String(msg.from?.id || '');
+    const userName = msg.from?.username || '';
+    if (!userAccessManager.isAdmin(userId, userName)) {
+        await bot.sendMessage(chatId, '❌ Только администратор может деактивировать пользователей.');
+        return;
+    }
+
+    if (!match) {
+        await bot.sendMessage(chatId, '❌ Укажите username пользователя: /removeuser @username');
+        return;
+    }
+
+    const targetUsername = match[1].replace('@', '').trim();
+
+    if (!targetUsername) {
+        await bot.sendMessage(chatId, '❌ Укажите username пользователя: /removeuser @username');
+        return;
+    }
+
+    const success = userAccessManager.removeUser('', targetUsername);
+
+    if (success) {
+        await bot.sendMessage(chatId, `✅ Пользователь @${targetUsername} деактивирован!`);
+    } else {
+        await bot.sendMessage(chatId, `❌ Пользователь @${targetUsername} не найден или произошла ошибка.`);
+    }
+});
+
+// Обработчик команды /activateuser
+bot.onText(/\/activateuser (.+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const userId = String(msg.from?.id || '');
+    const userName = msg.from?.username || '';
+    if (!userAccessManager.isAdmin(userId, userName)) {
+        await bot.sendMessage(chatId, '❌ Только администратор может активировать пользователей.');
+        return;
+    }
+
+    if (!match) {
+        await bot.sendMessage(chatId, '❌ Укажите username пользователя: /activateuser @username');
+        return;
+    }
+
+    const targetUsername = match[1].replace('@', '').trim();
+
+    if (!targetUsername) {
+        await bot.sendMessage(chatId, '❌ Укажите username пользователя: /activateuser @username');
+        return;
+    }
+
+    const success = userAccessManager.activateUser('', targetUsername);
+
+    if (success) {
+        await bot.sendMessage(chatId, `✅ Пользователь @${targetUsername} активирован!`);
+    } else {
+        await bot.sendMessage(chatId, `❌ Пользователь @${targetUsername} не найден или произошла ошибка.`);
+    }
+});
+
+// Обработчик команды /deleteuser
+bot.onText(/\/deleteuser (.+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const userId = String(msg.from?.id || '');
+    const userName = msg.from?.username || '';
+    if (!userAccessManager.isAdmin(userId, userName)) {
+        await bot.sendMessage(chatId, '❌ Только администратор может удалять пользователей.');
+        return;
+    }
+
+    if (!match) {
+        await bot.sendMessage(chatId, '❌ Укажите username пользователя: /deleteuser @username');
+        return;
+    }
+
+    const targetUsername = match[1].replace('@', '').trim();
+
+    if (!targetUsername) {
+        await bot.sendMessage(chatId, '❌ Укажите username пользователя: /deleteuser @username');
+        return;
+    }
+
+    const success = userAccessManager.deleteUser('', targetUsername);
+
+    if (success) {
+        await bot.sendMessage(chatId, `✅ Пользователь @${targetUsername} полностью удалён!`);
+    } else {
+        await bot.sendMessage(chatId, `❌ Пользователь @${targetUsername} не найден или произошла ошибка.`);
+    }
+});
+
+// Обработчик команды /setadmin
+bot.onText(/\/setadmin (.+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const userId = String(msg.from?.id || '');
+    const userName = msg.from?.username || '';
+    if (!userAccessManager.isAdmin(userId, userName)) {
+        await bot.sendMessage(chatId, '❌ Только администратор может назначать других админов.');
+        return;
+    }
+    if (!match) {
+        await bot.sendMessage(chatId, '❌ Укажите username: /setadmin @username');
+        return;
+    }
+    const targetUsername = match[1].replace('@', '').trim();
+    const success = userAccessManager.setAdmin('', targetUsername, true);
+    if (success) {
+        await bot.sendMessage(chatId, `✅ Пользователь @${targetUsername} теперь администратор!`);
+    } else {
+        await bot.sendMessage(chatId, `❌ Пользователь @${targetUsername} не найден.`);
+    }
+});
+
+// Обработчик команды /unsetadmin
+bot.onText(/\/unsetadmin (.+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const userId = String(msg.from?.id || '');
+    const userName = msg.from?.username || '';
+    if (!userAccessManager.isAdmin(userId, userName)) {
+        await bot.sendMessage(chatId, '❌ Только администратор может снимать права администратора.');
+        return;
+    }
+    if (!match) {
+        await bot.sendMessage(chatId, '❌ Укажите username: /unsetadmin @username');
+        return;
+    }
+    const targetUsername = match[1].replace('@', '').trim();
+    const success = userAccessManager.setAdmin('', targetUsername, false);
+    if (success) {
+        await bot.sendMessage(chatId, `✅ Пользователь @${targetUsername} больше не администратор!`);
+    } else {
+        await bot.sendMessage(chatId, `❌ Пользователь @${targetUsername} не найден.`);
+    }
 });
 
 // Обработчик всех текстовых сообщений
@@ -76,8 +296,9 @@ bot.on('message', async (msg) => {
     const userName = msg.from?.username || '';
     const userId = String(msg.from?.id || '');
     try {
-        if (!configuration.kings.includes(userName) && !configuration.kings.includes(userId) ) {
-            console.log(`No access${userName} | ${userId}`)
+        // Проверяем доступ через новую систему
+        if (!userAccessManager.hasAccess(userId, userName)) {
+            console.log(`No access: ${userName} | ${userId}`)
             await bot.sendMessage(chatId, '😿 Извините, ваш аккаунт не может быть обслужен. Пожалуйста свяжитесь с администратором @jangot для получения доступа.');
             return;
         }
