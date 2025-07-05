@@ -9,4 +9,5 @@ export const configuration = {
     vectorDBName: String(process.env.VECTOR_DB_NAME),
     telegramToken: String(process.env.TELEGRAM_BOT_TOKEN),
     kings: String(process.env.KINGS).split(','),
+    usersDbPath: process.env.USERS_DB_PATH || '',
 }
