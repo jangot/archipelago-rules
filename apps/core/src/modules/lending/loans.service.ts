@@ -1,12 +1,12 @@
 import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/entity-interface';
 import { LoanInviteeTypeCodes, LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
+import { IEventPublisher } from '@library/shared/common/event/interface/ieventpublisher';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { LoanAssignToContactInput } from '@library/shared/type/lending';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EventBus } from '@nestjs/cqrs';
 import { DeepPartial } from 'typeorm';
 import { IDomainServices } from '../domain/idomain.services';
 import { LoanCreateRequestDto } from './dto/request/loan.create.request.dto';
@@ -21,7 +21,8 @@ export class LoansService {
     
   constructor(
     private readonly domainServices: IDomainServices, 
-    private readonly eventBus: EventBus,
+    @Inject(IEventPublisher)
+    private readonly eventPublisher: IEventPublisher,
     private readonly config: ConfigService,
     @Inject(ILoanStateManagersFactory)
     private readonly stateManagerFactory: ILoanStateManagersFactory) {}

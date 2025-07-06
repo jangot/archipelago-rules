@@ -1,16 +1,18 @@
 import { DynamicModule, Global, Logger } from '@nestjs/common';
-import { SharedService } from './shared.service';
-import { CqrsModule, EventBus } from '@nestjs/cqrs';
-import { v4 as uuidv4 } from 'uuid';
-import { LoggerModule, Params } from 'nestjs-pino';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MiddlewareConfigProxy } from '@nestjs/common/interfaces';
-import { getPinoTransports } from './pino.transport.config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CqrsModule, EventBus } from '@nestjs/cqrs';
+import { SqsModule } from '@ssut/nestjs-sqs';
+import { SqsOptions } from '@ssut/nestjs-sqs/dist/sqs.types';
+import { LoggerModule, Params } from 'nestjs-pino';
+import { v4 as uuidv4 } from 'uuid';
+import { EventManager } from './common/event/event-manager';
+import { IEventPublisher } from './common/event/interface/ieventpublisher';
+import { getSqsClient } from './common/message/aws/sqs-client';
 import { IMessagePublisher } from './common/message/interface/imessagepublisher';
 import { SqsMessagePublisher } from './common/message/sqs-message-publisher';
-import { SqsModule, SqsService } from '@ssut/nestjs-sqs';
-import { SqsOptions } from '@ssut/nestjs-sqs/dist/sqs.types';
-import { getSqsClient } from './common/message/aws/sqs-client';
+import { getPinoTransports } from './pino.transport.config';
+import { SharedService } from './shared.service';
 
 @Global()
 export class SharedModule {
@@ -65,12 +67,12 @@ export class SharedModule {
         Logger,        
         SharedService,
         { provide: IMessagePublisher, useClass: SqsMessagePublisher },
+        { provide: IEventPublisher, useClass: EventManager },
       ],
       exports: [
-        EventBus,
         LoggerModule,
         SharedService,
-        IMessagePublisher,
+        IEventPublisher,
       ],
     };
   }

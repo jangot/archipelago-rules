@@ -6,15 +6,15 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { RegistrationStatus } from '@library/entity/enum';
-import { Injectable, Logger } from '@nestjs/common';
-import { RegistrationBaseCommand } from './registration.commands';
-import { CommandBus, EventBus } from '@nestjs/cqrs';
-import { IApplicationUser } from '@library/entity/entity-interface';
-import { RegistrationTransitionResult } from '../registration-transition-result';
-import { RegistrationDto } from '@core/modules/auth/dto/request/registration.request.dto';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { VerificationEvent, VerificationEventFactory } from '@core/modules/auth/verification';
+import { IApplicationUser } from '@library/entity/entity-interface';
+import { RegistrationStatus } from '@library/entity/enum';
+import { IEventPublisher } from '@library/shared/common/event/interface/ieventpublisher';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { RegistrationDto } from '../../dto/request/registration.request.dto';
+import { VerificationEvent, VerificationEventFactory } from '../../verification';
+import { RegistrationTransitionResult } from '../registration-transition-result';
+import { RegistrationBaseCommand } from './registration.commands';
 
 export interface RegistrationExecuteParams {
   id: string | null;
@@ -23,16 +23,9 @@ export interface RegistrationExecuteParams {
 
 @Injectable()
 export abstract class RegistrationBaseCommandHandler<TCommand extends RegistrationBaseCommand = RegistrationBaseCommand> {
-  protected readonly domainServices: IDomainServices;
-  protected readonly logger: Logger;
-  protected readonly commandBus: CommandBus;
-  protected readonly eventBus: EventBus;
-
-  constructor(domainServices: IDomainServices, logger: Logger, commandBus: CommandBus, eventBus: EventBus) {
-    this.domainServices = domainServices;
-    this.logger = logger;
-    this.commandBus = commandBus;
-    this.eventBus = eventBus;
+  
+  constructor(protected readonly domainServices: IDomainServices, protected readonly logger: Logger,
+    @Inject(IEventPublisher) protected readonly eventPublisher: IEventPublisher) {
   }
 
   public abstract execute(command: TCommand): Promise<RegistrationTransitionResult>;
@@ -66,6 +59,6 @@ export abstract class RegistrationBaseCommandHandler<TCommand extends Registrati
     if (!event || !user) return;
     const eventInstance = VerificationEventFactory.create(user, event);
     if (!eventInstance) return;
-    this.eventBus.publish(eventInstance);
+    this.eventPublisher.publish(eventInstance);
   }
 }

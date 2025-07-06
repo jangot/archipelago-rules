@@ -1,26 +1,17 @@
-import { LoginCommand } from './login.commands';
-import { JwtService } from '@nestjs/jwt';
-import { Injectable, Logger } from '@nestjs/common';
-import { EventBus } from '@nestjs/cqrs';
-import { ContactType, LoginType } from '@library/entity/enum';
-import { ConfigService } from '@nestjs/config';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ContactType, LoginType } from '@library/entity/enum';
+import { IEventPublisher } from '@library/shared/common/event/interface/ieventpublisher';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { UserLoginPayloadDto } from '../../dto/response';
+import { LoginCommand } from './login.commands';
 
 @Injectable()
 export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = LoginCommand> {
-  protected readonly domainServices: IDomainServices;
-  protected readonly jwtService: JwtService;
-  protected readonly logger: Logger;
-  protected readonly eventBus: EventBus;
-  protected readonly config: ConfigService;
-
-  constructor(domainServices: IDomainServices, jwtService: JwtService, logger: Logger, eventBus: EventBus, config: ConfigService) {
-    this.domainServices = domainServices;
-    this.jwtService = jwtService;
-    this.logger = logger;
-    this.eventBus = eventBus;
-    this.config = config;
+  
+  constructor(protected readonly domainServices: IDomainServices, protected readonly jwtService: JwtService, protected readonly logger: Logger, 
+    @Inject(IEventPublisher) protected readonly eventPublisher: IEventPublisher, protected readonly config: ConfigService) {
   }
 
   public abstract execute(command: TCommand): Promise<UserLoginPayloadDto>;
