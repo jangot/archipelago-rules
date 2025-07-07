@@ -104,9 +104,11 @@ export class FundingLoanStateManager extends BaseLoanStateManager {
    * @returns True if funding should be marked as completed
    */
   private shouldBeCompleted(loan: ILoan): boolean {
-    const fundingPayments = this.validateAndGetFundingPayments(loan, EVALUATION_CONTEXTS.COMPLETION);
-    if (!fundingPayments) return false;
-    const relevantPayment = this.getRelevantFundingPayment(fundingPayments);
+    const relevantPayment = this.getStateEvaluationPayment(loan, LoanPaymentTypeCodes.Funding, EVALUATION_CONTEXTS.COMPLETION);
+    if (!relevantPayment) {
+      this.logger.warn(`No relevant funding payment found for loan ${loan.id} during completion evaluation.`);
+      return false; // No payment to evaluate
+    }
     const isCompleted = relevantPayment.state === LoanPaymentStateCodes.Completed;
     this.logPaymentEvaluation(loan.id, EVALUATION_CONTEXTS.COMPLETION, relevantPayment, isCompleted);
     return isCompleted;
@@ -119,85 +121,14 @@ export class FundingLoanStateManager extends BaseLoanStateManager {
    * @returns True if funding should be paused
    */
   private shouldBePaused(loan: ILoan): boolean {
-    const fundingPayments = this.validateAndGetFundingPayments(loan, EVALUATION_CONTEXTS.PAUSE);
-    if (!fundingPayments) return false;
-    const relevantPayment = this.getRelevantFundingPayment(fundingPayments);
+    const relevantPayment = this.getStateEvaluationPayment(loan, LoanPaymentTypeCodes.Funding, EVALUATION_CONTEXTS.PAUSE);
+    if (!relevantPayment) {
+      this.logger.warn(`No relevant funding payment found for loan ${loan.id} during pause evaluation.`);
+      return false; // No payment to evaluate
+    }
     const shouldPause = relevantPayment.state === LoanPaymentStateCodes.Failed;
     this.logPaymentEvaluation(loan.id, EVALUATION_CONTEXTS.PAUSE, relevantPayment, shouldPause);
     return shouldPause;
-  }
-
-  /**
-   * Validates loan payments and extracts funding payments.
-   * 
-   * @param loan - The loan to validate
-   * @param context - The evaluation context for logging
-   * @returns Array of funding payments or null if validation fails
-   */
-  private validateAndGetFundingPayments(loan: ILoan, context: string): ILoanPayment[] | null {
-    const { id: loanId, payments } = loan;
-    if (!this.validatePaymentsExist(loan, context)) return null;
-    const fundingPayments = this.getFundingPayments(payments!);
-    if (!this.validateFundingPaymentsExist(loanId, fundingPayments, context)) return null;
-    return fundingPayments;
-  }
-
-  /**
-   * Validates that the loan has payments to evaluate.
-   * 
-   * @param loan - The loan to validate
-   * @param context - The evaluation context for logging
-   * @returns True if payments exist and can be evaluated
-   */
-  private validatePaymentsExist(loan: ILoan, context: string): boolean {
-    const { id: loanId, payments } = loan;
-    if (!payments || !payments.length) {
-      this.logger.warn(`Loan ${loanId} has no payments to evaluate for ${context}.`);
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Filters payments to get only funding-type payments.
-   * 
-   * @param payments - Array of all loan payments
-   * @returns Array of funding payments
-   */
-  private getFundingPayments(payments: ILoanPayment[]): ILoanPayment[] {
-    return payments.filter(payment => payment.type === LoanPaymentTypeCodes.Funding);
-  }
-
-  /**
-   * Validates that funding payments exist for evaluation.
-   * 
-   * @param loanId - The loan identifier for logging
-   * @param fundingPayments - Array of funding payments
-   * @param context - The evaluation context for logging
-   * @returns True if funding payments exist
-   */
-  private validateFundingPaymentsExist(loanId: string, fundingPayments: ILoanPayment[], context: string): boolean {
-    if (!fundingPayments || !fundingPayments.length) {
-      this.logger.warn(`Loan ${loanId} has no funding payments to evaluate for ${context}.`);
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Gets the most relevant funding payment for evaluation.
-   * For single payment, returns that payment. For multiple payments, returns the latest by creation date.
-   * 
-   * @param fundingPayments - Array of funding payments
-   * @returns The most relevant payment for state evaluation
-   */
-  private getRelevantFundingPayment(fundingPayments: ILoanPayment[]): ILoanPayment {
-    if (fundingPayments.length === 1) {
-      return fundingPayments[0];
-    }
-    return fundingPayments.reduce((latest, current) => {
-      return (current.createdAt > latest.createdAt) ? current : latest;
-    });
   }
 
   /**
