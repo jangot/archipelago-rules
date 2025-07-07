@@ -22,6 +22,18 @@ export class LoanPaymentHistory {
   @Column({ type: 'text' })
   toState: LoanPaymentState;
 
+  @Column({ type: 'integer', nullable: true })
+  fromPaymentNumber: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  toPaymentNumber: number | null;
+
+  @Column({ type: 'integer', default: 0 })
+  fromStep: number;
+
+  @Column({ type: 'integer', default: 0 })
+  toStep: number;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 }
