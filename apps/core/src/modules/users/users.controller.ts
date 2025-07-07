@@ -1,12 +1,10 @@
 import { JwtAuthGuard } from '@core/modules/auth/guards';
-import { ContactType } from '@library/entity/enum';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { PagingDto, PagingOptionsDto } from '@library/shared/common/paging';
-import { ValidateOptionalQueryParamsPipe } from '@library/shared/common/pipe/optional.params.pipe';
 import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
 import { SearchFilterDto, SearchQueryDto } from '@library/shared/common/search';
 import { IRequest } from '@library/shared/type';
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -18,7 +16,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { UserNotRegisteredException } from '../auth/exceptions/auth-domain.exceptions';
@@ -99,59 +96,8 @@ export class UsersController {
     return result;
   }
 
-  //#region Test endpoints
-  // TODO: This is a test endpoint, remove it later
-  @Get('/test/:id')
-  @ApiParam({ name: 'id', required: true, description: 'User id' })
-  @ApiOkResponse({ description: 'Get User by Id', type: UserDetailResponseDto, isArray: false })
-  @ApiNoContentResponse({ description: 'User not found', isArray: false })
-  @ApiBadRequestResponse({ description: 'Invalid Id', isArray: false })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  public async getUserDetailById(@UUIDParam('id') id: string): Promise<UserDetailResponseDto> {
-    const result = await this.userService.getUserDetailById(id);
-
-    if (!result) {
-      throw new HttpException('User not found', HttpStatus.NO_CONTENT);
-    }
-
-    return result;
-  }
-
-  // TODO: This is a test endpoint, remove it later
-  //getUserDetailById
-  //GET /users?email=test@mail.com
-  //GET /users?phoneNumber=1234567890
-  @ApiQuery({ name: 'phoneNumber', required: false, description: 'User phone number' })
-  @ApiQuery({ name: 'email', required: false, description: 'User email' })
-  @ApiQuery({ name: 'crash', required: false, description: 'User crashes' })
-  @ApiOkResponse({ description: 'Get User by phone number', type: UserResponseDto, isArray: false })
-  @ApiNoContentResponse({ description: 'User not found', isArray: false })
-  @ApiBadRequestResponse({ description: 'Invalid phone number', isArray: false })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  @Get('/')
-  public async getUserByParameter(@Query(new ValidateOptionalQueryParamsPipe(['phoneNumber', 'email'])) data: any): Promise<UserResponseDto> {
-    const { email, phoneNumber, crash } = data;
-    let result: UserResponseDto | null = null;
-
-    // Some test stuff to try and get the Error logs doing what I want them to
-    if (crash) {
-      throw new Error('Crash!');
-    }
-
-    if (email) {
-      result = await this.userService.getUserByContact(email, ContactType.EMAIL);
-    } else if (phoneNumber) {
-      result = await this.userService.getUserByContact(phoneNumber, ContactType.PHONE_NUMBER);
-    }
-
-    if (!result) {
-      throw new HttpException('User not found', HttpStatus.NO_CONTENT);
-    }
-
-    return result;
-  }
-  //#endregion
-
+  @ApiBearerAuth('jwt') 
+  @UseGuards(JwtAuthGuard)
   @ApiParam({ name: 'id', required: true, description: 'User id' })
   @ApiOkResponse({ description: 'Deleted User', type: Boolean, isArray: false })
   @ApiBadRequestResponse({ description: 'Invalid Id', isArray: false })
@@ -167,6 +113,8 @@ export class UsersController {
     return result;
   }
 
+  @ApiBearerAuth('jwt') 
+  @UseGuards(JwtAuthGuard)
   @ApiParam({ name: 'id', required: true, description: 'User id' })
   @ApiOkResponse({ description: 'Restored User', type: Boolean, isArray: false })
   @ApiBadRequestResponse({ description: 'Invalid Id', isArray: false })
@@ -182,6 +130,8 @@ export class UsersController {
     return result;
   }
 
+  @ApiBearerAuth('jwt') 
+  @UseGuards(JwtAuthGuard)
   @ApiExtraModels(SearchQueryDto, SearchFilterDto, PagingOptionsDto)
   @ApiBody({ type: SearchQueryDto })
   @ApiOkResponse({ description: 'Found Users array with pagination meta', type: PagingDto<UserResponseDto> })

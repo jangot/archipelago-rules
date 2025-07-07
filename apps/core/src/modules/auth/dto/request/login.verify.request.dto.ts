@@ -1,10 +1,9 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { LoginRequestDto } from './login.request.dto';
 import { Expose } from 'class-transformer';
 import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 
 @ApiSchema({ name: 'loginVerifyRequest' })
-export class LoginVerifyRequestDto extends LoginRequestDto {
+export class LoginVerifyRequestDto  {
   @ApiProperty({ description: 'Id of the User', type: String, required: true })
   @Expose()
   @IsString()
