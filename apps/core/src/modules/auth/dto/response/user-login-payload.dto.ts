@@ -14,14 +14,15 @@ export class UserLoginPayloadDto {
   @IsString()
   refreshToken?: string; // Jwt base 64 encoded
 
-  @ApiProperty({ description: 'Access Token Expires In', type: Date, required: true })
+  @ApiProperty({ description: 'Access Token Expires At', type: Date, required: true })
   @Expose()
   @IsString()
-  accessTokenExpiresIn?: Date;
+  accessTokenExpiresAt?: Date;
 
-  @ApiProperty({ description: 'Refresh Token Expires In', type: Date, required: true })
+  @ApiProperty({ description: 'Refresh Token Expires At', type: Date, required: true })
   @Expose()
-  refreshTokenExpiresIn?: Date;
+  @IsString()
+  refreshTokenExpiresAt?: Date;
 
   @ApiProperty({ description: 'User Id', type: String, required: true })
   @Expose()

@@ -51,7 +51,7 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
     user.verificationType = null;
     user.verificationAttempts = 0;
 
-    const { accessToken, refreshToken, refreshTokenExpiresIn } = result;
+    const { accessToken, refreshToken, refreshTokenExpiresAt: refreshTokenExpiresIn } = result;
     if (!accessToken || !refreshToken || !refreshTokenExpiresIn) {
       this.logger.error(`LoginVerifyCommand: Access token, Refresh token or its expiration time is not generated for user ${user.id}`);
       throw new UnableToGenerateLoginPayloadException('Access token, Refresh token or its expiration time is not generated');

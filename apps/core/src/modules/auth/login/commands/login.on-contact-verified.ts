@@ -1,9 +1,9 @@
+import { ContactType, RegistrationStatus } from '@library/entity/enum';
+import { MissingInputException } from '@library/shared/common/exception/domain';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { UserLoginPayloadDto } from '../../dto/response/user-login-payload.dto';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { LoginOnContactVerifiedCommand } from './login.commands';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { MissingInputException } from '@library/shared/common/exception/domain';
-import { ContactType, RegistrationStatus } from '@library/entity/enum';
-import { UserLoginPayloadDto } from '../../dto/response/user-login-payload.dto';
 
 @CommandHandler(LoginOnContactVerifiedCommand)
 export class LoginOnContactVerifiedCommandHandler
@@ -21,7 +21,7 @@ export class LoginOnContactVerifiedCommandHandler
     const result = await this.generateLoginPayload(userId, onboardingStatus, undefined);
     if (loginId) {
       const updatedLogin = { id: loginId, updatedAt: new Date(), secret: result.refreshToken, secretExpiresAt: 
-      result.refreshTokenExpiresIn, sessionId: result.accessToken };
+      result.refreshTokenExpiresAt, sessionId: result.accessToken };
       // Update userLogin secret, secretExpiresAt, and sessionId
       await this.domainServices.userServices.updateLogin(loginId, updatedLogin, true);
     }

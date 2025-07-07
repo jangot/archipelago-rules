@@ -31,8 +31,8 @@ export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = Lo
       onboardingStatus,
       accessToken,
       refreshToken,
-      accessTokenExpiresIn: new Date(payload!.exp! * 1000),
-      refreshTokenExpiresIn: new Date(refreshPayload!.exp! * 1000),
+      accessTokenExpiresAt: new Date(payload!.exp! * 1000),
+      refreshTokenExpiresAt: new Date(refreshPayload!.exp! * 1000),
     };
 
     return result;
