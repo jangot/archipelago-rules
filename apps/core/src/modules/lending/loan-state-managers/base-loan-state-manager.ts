@@ -1,7 +1,9 @@
+import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ILoan } from '@library/entity/entity-interface';
+import { LoanState } from '@library/entity/enum';
+import { LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ILoanStateManager } from '../interfaces';
-import { LoanState } from '@library/entity/enum';
-import { IDomainServices } from '@core/modules/domain/idomain.services';
 
 @Injectable()
 export abstract class BaseLoanStateManager implements ILoanStateManager {
@@ -46,6 +48,15 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
     }
     return this.setNextState(loanId, nextState);
   }
+
+  protected async getLoan(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> { 
+    const loan = await this.domainServices.loanServices.getLoanById(loanId, relations);
+    if (!loan) {
+      this.logger.error(`Loan with ID ${loanId} not found`);
+      return null; // Loan does not exist
+    }
+    return loan;
+  };
 
   /**
    * Determines the next appropriate state for a loan based on current business rules and conditions.

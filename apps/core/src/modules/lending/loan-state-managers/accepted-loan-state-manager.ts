@@ -1,9 +1,9 @@
+import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ILoan } from '@library/entity/entity-interface';
+import { LoanState, LoanStateCodes, PaymentAccountStateCodes } from '@library/entity/enum';
+import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { BaseLoanStateManager } from './base-loan-state-manager';
-import { LoanState, LoanStateCodes, PaymentAccountStateCodes } from '@library/entity/enum';
-import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
-import { ILoan } from '@library/entity/entity-interface';
 
 /**
  * State manager for loans in the 'Accepted' state.
@@ -41,7 +41,7 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
    */
    
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    const loan = await this.domainServices.loanServices.getLoanById(
+    const loan = await this.getLoan(
       loanId, 
       [
         LOAN_RELATIONS.BillerPaymentAccount, 
@@ -50,10 +50,8 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
       ]);
 
     // Loan existance check
-    if (!loan) {
-      this.logger.error(`Loan with ID ${loanId} not found`);
-      return null;
-    }
+    // We logged error in base class, so we can return null here
+    if (!loan) return null;
 
     const { state } = loan;
 
