@@ -10,3 +10,5 @@ import { IZngEvent } from './izng-event';
 export interface IEventPublisher {
   publish<T>(event: IZngEvent): T;
 }
+
+export const IEventPublisher = Symbol('IEventPublisher');

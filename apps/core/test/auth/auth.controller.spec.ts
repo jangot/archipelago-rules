@@ -3,34 +3,35 @@ import * as request from 'supertest';
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigModule } from '@nestjs/config';
-import { INestApplication, Logger } from '@nestjs/common';
-import { CommandBus, CqrsModule } from '@nestjs/cqrs';
-import { JwtModule } from '@nestjs/jwt';
-import { APP_FILTER } from '@nestjs/core';
-import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filter';
-import { RegistrationStatus } from '@library/entity/enum';
-import { BaseDomainExceptionCodes } from '@library/shared/common/exception/domain';
-import { AuthDomainExceptionCodes } from '@core/modules/auth/exceptions/auth-domain-exception.code';
 import { AuthController } from '@core/modules/auth/auth.controller';
 import { AuthService } from '@core/modules/auth/auth.service';
-import { RegistrationService } from '@core/modules/auth/registration.service';
+import { AuthDomainExceptionCodes } from '@core/modules/auth/exceptions/auth-domain-exception.code';
+import { CustomAuthGuards, JwtAuthGuard, LogoutAuthGuard, RefreshTokenAuthGuard } from '@core/modules/auth/guards';
 import { LoginCommandHandlers } from '@core/modules/auth/login/commands';
-import { UsersModule } from '@core/modules/users';
+import { LoginInitiateCommandHandler } from '@core/modules/auth/login/commands/login.initiate.command';
+import { RegistrationService } from '@core/modules/auth/registration.service';
+import { RegistrationCommandHandlers } from '@core/modules/auth/registration/commands';
+import { CustomAuthStrategies } from '@core/modules/auth/strategies';
 import { DataModule } from '@core/modules/data';
 import { DomainModule } from '@core/modules/domain/domain.module';
-import { CustomAuthStrategies } from '@core/modules/auth/strategies';
-import { CustomAuthGuards, JwtAuthGuard, LogoutAuthGuard, RefreshTokenAuthGuard } from '@core/modules/auth/guards';
-import { RegistrationCommandHandlers } from '@core/modules/auth/registration/commands';
-import { LoginInitiateCommandHandler } from '@core/modules/auth/login/commands/login.initiate.command';
 import { UserDomainService } from '@core/modules/domain/services/user.domain.service';
+import { UsersModule } from '@core/modules/users';
+import { RegistrationStatus } from '@library/entity/enum';
+import { BaseDomainExceptionCodes } from '@library/shared/common/exception/domain';
+import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filter';
+import { INestApplication, Logger } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER } from '@nestjs/core';
+import { CommandBus, CqrsModule } from '@nestjs/cqrs';
+import { JwtModule } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
 
+import { SharedModule } from '@library/shared';
+import { DbSchemaCodes } from '@library/shared/common/data';
+import { AllEntities } from '@library/shared/domain/entity';
+import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
 import { REGISTERED_USER_DUMP_1 } from './data-dump';
 import { generateWrongCode } from './test.helper';
-import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
-import { AllEntities } from '@library/shared/domain/entity';
-import { DbSchemaCodes } from '@library/shared/common/data';
 
 describe('AuthController - Negative Test Cases', () => {
   let app: INestApplication;
@@ -52,7 +53,7 @@ describe('AuthController - Negative Test Cases', () => {
     
     // Build the complete copy of AuthModule
     const module: TestingModule = await Test.createTestingModule({
-      imports: [CqrsModule, UsersModule, ConfigModule.forRoot(), DataModule, DomainModule, JwtModule],
+      imports: [CqrsModule, UsersModule, ConfigModule.forRoot({ isGlobal: true }), SharedModule.forRoot(), DataModule, DomainModule, JwtModule],
       controllers: [AuthController],
       providers: [
         Logger,

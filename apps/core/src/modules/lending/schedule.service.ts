@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { EventBus } from '@nestjs/cqrs';
+import { IEventPublisher } from '@library/shared/common/event/interface/ieventpublisher';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -9,6 +9,7 @@ export class ScheduleService {
     
   constructor(
     private readonly domainServices: IDomainServices, 
-    private readonly eventBus: EventBus,
+    @Inject(IEventPublisher)
+    private readonly eventPublisher: IEventPublisher,
     private readonly config: ConfigService,) {}
 }

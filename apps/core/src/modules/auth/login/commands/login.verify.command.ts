@@ -1,12 +1,12 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { LoginBaseCommandHandler } from './login.base.command-handler';
-import { LoginVerifyCommand } from './login.commands';
 import { ContactType } from '@library/entity/enum';
-import { generateCRC32String } from '@library/shared/common/helper/crc32.helpers';
-import { LoginLogic } from '../login.logic';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { generateCRC32String } from '@library/shared/common/helper/crc32.helpers';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UserLoginPayloadDto } from '../../dto/response/user-login-payload.dto';
 import { LoginSessionExpiredException, LoginSessionNotInitiatedException, UnableToGenerateLoginPayloadException, UserNotRegisteredException, VerificationCodeMismatchException, WrongVerificationTypeException } from '../../exceptions/auth-domain.exceptions';
+import { LoginLogic } from '../login.logic';
+import { LoginBaseCommandHandler } from './login.base.command-handler';
+import { LoginVerifyCommand } from './login.commands';
 
 @CommandHandler(LoginVerifyCommand)
 export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVerifyCommand> implements ICommandHandler<LoginVerifyCommand> {
@@ -92,7 +92,7 @@ export class LoginVerifyCommandHandler extends LoginBaseCommandHandler<LoginVeri
     ]);
 
     // TODO: publish event
-    // this.eventBus.publish()
+    // this.eventPublisher.publish()
 
     return result;
   }
