@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: 'postgres:16.6'
+    image: 'postgres:17.5'
     container_name: postgres
     mem_limit: 8g #hard limit
     mem_reservation: 4g #soft limit
