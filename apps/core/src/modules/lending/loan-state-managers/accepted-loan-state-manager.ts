@@ -55,12 +55,7 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
 
     const { state } = loan;
 
-    // Quick return if loan is not in Accepted state
-    // Might be changed later to allow re-evaluation
-    if (state !== LoanStateCodes.Accepted) {
-      this.logger.warn(`Loan ${loanId} is not in Accepted state, current state: ${state}. State advance terminated.`);
-      return null;
-    }
+    if (!this.isActualStateValid(loan)) return null;
 
     const isReadyForFunding = this.canInitiateFunding(loan);
     if (!isReadyForFunding) {

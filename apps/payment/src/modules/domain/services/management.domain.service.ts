@@ -47,7 +47,7 @@ export class ManagementDomainService {
         return null;
       }
       // For repayment type, find the payment with the lowest paymentNumber to initiate first
-      paymentToInitiate = initiatedPayments.reduce((lowest, payment) => {
+      paymentToInitiate = initiatedPayments.reduce((lowest, payment) => { 
         // Safe to use < comparison because we already verified none are null
         return (payment.paymentNumber! < lowest.paymentNumber!) ? payment : lowest;
       }, initiatedPayments[0]);      

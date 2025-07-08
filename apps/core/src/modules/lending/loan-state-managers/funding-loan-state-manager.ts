@@ -52,13 +52,8 @@ export class FundingLoanStateManager extends BaseLoanStateManager {
     const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments]);
 
     if (!loan) return null;
-    const { state } = loan;
 
-    // Avoid usage of Manager for not supported state
-    if (state !== this.loanState) {
-      this.logger.error(`Loan ${loanId} is not in Funding state. Current state: ${state}`);
-      return null; // Loan is not in Funding state, no transition needed
-    }
+    if (!this.isActualStateValid(loan)) return null;
 
     // Check conditions for transition to `LoanStateCodes.Funded`
     const isFundingComplete = this.shouldBeCompleted(loan);

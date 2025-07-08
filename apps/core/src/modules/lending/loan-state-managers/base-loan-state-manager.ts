@@ -148,5 +148,12 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
     });
   }
 
-
+  protected isActualStateValid(loan: ILoan): boolean {
+    const { state, id: loanId } = loan;
+    if (state !== this.loanState) {
+      this.logger.error(`Loan ${loanId} is not in expected state ${this.loanState}. Current state: ${state}`);
+      return false; // Loan is not in the expected state, validation failed
+    }
+    return true; // Loan is in the expected state, validation passed
+  }
 }
