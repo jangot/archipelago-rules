@@ -11,6 +11,7 @@ import { IApplicationUser } from '@library/entity/entity-interface';
 import { RegistrationStatus } from '@library/entity/enum';
 import { IEventPublisher } from '@library/shared/common/event/interface/ieventpublisher';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { RegistrationDto } from '../../dto/request/registration.request.dto';
 import { VerificationEvent, VerificationEventFactory } from '../../verification';
 import { RegistrationTransitionResult } from '../registration-transition-result';
@@ -25,7 +26,7 @@ export interface RegistrationExecuteParams {
 export abstract class RegistrationBaseCommandHandler<TCommand extends RegistrationBaseCommand = RegistrationBaseCommand> {
   
   constructor(protected readonly domainServices: IDomainServices, protected readonly logger: Logger,
-    @Inject(IEventPublisher) protected readonly eventPublisher: IEventPublisher) {
+    @Inject(IEventPublisher) protected readonly eventPublisher: IEventPublisher, protected readonly config: ConfigService) {
   }
 
   public abstract execute(command: TCommand): Promise<RegistrationTransitionResult>;
@@ -60,5 +61,9 @@ export abstract class RegistrationBaseCommandHandler<TCommand extends Registrati
     const eventInstance = VerificationEventFactory.create(user, event);
     if (!eventInstance) return;
     this.eventPublisher.publish(eventInstance);
+  }
+
+  protected isDevelopmentEnvironment(): boolean {
+    return this.config.get<string>('NODE_ENV', 'production') === 'development';
   }
 }

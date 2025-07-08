@@ -1,9 +1,9 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { LoginBaseCommandHandler } from './login.base.command-handler';
-import { RefreshTokenCommand } from './login.commands';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UserLoginPayloadDto } from '../../dto/response/user-login-payload.dto';
 import { UnableToGenerateLoginPayloadException } from '../../exceptions/auth-domain.exceptions';
+import { LoginBaseCommandHandler } from './login.base.command-handler';
+import { RefreshTokenCommand } from './login.commands';
 
 
 
@@ -31,15 +31,15 @@ export class RefreshTokenCommandHandler extends LoginBaseCommandHandler<RefreshT
 
     const result = await this.generateLoginPayload(userId, user.onboardStatus || '');
 
-    const { accessToken: newAccessToken, refreshToken: newRefreshToken, refreshTokenExpiresIn } = result;
-    if (!newAccessToken || !newRefreshToken || !refreshTokenExpiresIn) {
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken, refreshTokenExpiresAt } = result;
+    if (!newAccessToken || !newRefreshToken || !refreshTokenExpiresAt) {
       this.logger.error(`RefreshTokenCommand: Access token, Refresh token or its expiration time is not generated for user ${userId}`);
       throw new UnableToGenerateLoginPayloadException('Access token, Refresh token or its expiration time is not generated');
     }
 
     login.updatedAt = new Date();
     login.secret = newRefreshToken;
-    login.secretExpiresAt = refreshTokenExpiresIn;
+    login.secretExpiresAt = refreshTokenExpiresAt;
     login.sessionId = newAccessToken;
 
     const updateResult = await this.domainServices.userServices.updateLogin(login.id, login, true);

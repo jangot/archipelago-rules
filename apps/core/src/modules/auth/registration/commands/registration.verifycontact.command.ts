@@ -1,14 +1,14 @@
+import { VerificationEvent } from '@core/modules/auth/verification';
+import { ILogin } from '@library/entity/entity-interface';
+import { RegistrationStatus } from '@library/entity/enum';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { logSafeRegistration, logSafeUser } from '@library/shared/common/helper';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { RegistrationSecretExpiredException, RegistrationSecretNotFoundException, RegistrationSessionNotInitiatedException, RegistrationSessionNotWaitingForVerificationException, UnableToCreateLoginOnRegistrationException, VerificationCodeMismatchException } from '../../exceptions/auth-domain.exceptions';
+import { RegistrationTransitionResult } from '../registration-transition-result';
+import { RegistrationLogic } from '../registration.logic';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { VerifyContactCommand } from './registration.commands';
-import { RegistrationStatus } from '@library/entity/enum';
-import { RegistrationTransitionResult } from '../registration-transition-result';
-import { logSafeRegistration, logSafeUser } from '@library/shared/common/helper';
-import { RegistrationLogic } from '../registration.logic';
-import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { ILogin } from '@library/entity/entity-interface';
-import { VerificationEvent } from '@core/modules/auth/verification';
-import { RegistrationSecretExpiredException, RegistrationSecretNotFoundException, RegistrationSessionNotInitiatedException, RegistrationSessionNotWaitingForVerificationException, UnableToCreateLoginOnRegistrationException, VerificationCodeMismatchException } from '../../exceptions/auth-domain.exceptions';
 
 @CommandHandler(VerifyContactCommand)
 export class VerifyContactCommandHandler
@@ -52,7 +52,7 @@ export class VerifyContactCommandHandler
     }
 
     const { code } = input;
-    if (secret !== code) {
+    if (!this.isValidCode(secret, code)) {
       this.logger.debug(`Verification code mismatch for user ${userId}`);
       throw new VerificationCodeMismatchException(`Verification code mismatch for user ${userId}`);
     }
@@ -128,5 +128,13 @@ export class VerifyContactCommandHandler
     );
 
     return this.createTransitionResult(newRegistrationStatus, true, user.id, userLogin?.id);
+  }
+
+  private isValidCode(secret: string, code: string | undefined): boolean {
+    if (this.isDevelopmentEnvironment() && code === '000000') {
+      return true;
+    }
+
+    return secret === code;
   }
 }

@@ -1,12 +1,12 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { LoginVerifyRequestDto } from './dto/request/login.verify.request.dto';
 import { ContactType } from '@library/entity/enum';
-import { UserLoginPayloadDto } from './dto/response/user-login-payload.dto';
-import { LoginRequestDto } from './dto/request/login.request.dto';
-import { CommandBus } from '@nestjs/cqrs';
-import { LoginInitiateCommand, LoginVerifyCommand, LogoutCommand, RefreshTokenCommand } from './login/commands';
 import { safeTrim } from '@library/shared/common/helper';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { CommandBus } from '@nestjs/cqrs';
+import { LoginRequestDto } from './dto/request/login.request.dto';
+import { LoginVerifyRequestDto } from './dto/request/login.verify.request.dto';
+import { UserLoginPayloadDto } from './dto/response/user-login-payload.dto';
 import { UserLoginResponseDTO } from './dto/response/user-login-response.dto';
+import { LoginInitiateCommand, LoginVerifyCommand, LogoutCommand, RefreshTokenCommand } from './login/commands';
 
 @Injectable()
 export class AuthService {
@@ -22,13 +22,10 @@ export class AuthService {
   }
 
   public async verifyLoginSession(request: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
-    const contactInfo = this.extractContactInfo(request);
 
     return this.commandBus.execute(
       new LoginVerifyCommand({
         userId: request.userId ?? undefined,
-        contact: contactInfo.contact,
-        contactType: contactInfo.contactType,
         verificationCode: request.code,
       })
     );
