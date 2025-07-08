@@ -1,7 +1,21 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { BaseLoanStateManager } from './base-loan-state-manager';
-import { LoanState, LoanStateCodes } from '@library/entity/enum';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
+import { LoanPaymentStateCodes, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { Injectable } from '@nestjs/common';
+import { BaseLoanStateManager } from './base-loan-state-manager';
+
+/**
+ * Constants for funded evaluation contexts
+ */
+const EVALUATION_CONTEXTS = {
+  START_DISBURSEMENT: 'Starting disbursement',
+} as const;
+
+const SUPPORTED_NEXT_STATES: LoanState[] = [
+  LoanStateCodes.Accepted,
+  LoanStateCodes.Disbursing,
+];
 
 /**
  * State manager for loans in the 'Funded' state.
@@ -25,14 +39,34 @@ export class FundedLoanStateManager extends BaseLoanStateManager {
    * @param loanId - The unique identifier of the funded loan
    * @returns Promise<LoanState | null> - Returns:
    *   - `LoanStateCodes.Disbursing` if all conditions are met for fund disbursement
-   *   - `LoanStateCodes.DisbursingPaused` if disbursement should be paused for review
    *   - `LoanStateCodes.Funded` if the loan should remain in current state (no change)
    *   - `null` if an error occurs during readiness evaluation
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    // TODO: Implement actual business logic for determining next state
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    const loan = await this.getLoan(
+      loanId, 
+      [
+        LOAN_RELATIONS.Payments,
+        LOAN_RELATIONS.BillerPaymentAccount, 
+        LOAN_RELATIONS.LenderPaymentAccount, 
+        LOAN_RELATIONS.BorrowerPaymentAccount, 
+      ]);
+
+    if (!loan) return null;
+
+    if (!this.isActualStateValid(loan)) return null;
+
+    // Check conditions for `LoanStateCodes.Disbursing`
+    const isDisbursementReady = this.shouldBeDisbursed(loan);
+    if (isDisbursementReady) return LoanStateCodes.Disbursing;
+
+    // Check conditions for `LoanStateCodes.Accepted`
+    const isFundedReturnedToAccepted = this.shouldBeReturnedToAccepted(loan);
+    if (isFundedReturnedToAccepted) return LoanStateCodes.Accepted;
+
+    // If no states above reached - keep the `LoanStateCodes.Funded`
+    return LoanStateCodes.Funded;
   }
 
   /**
@@ -44,9 +78,61 @@ export class FundedLoanStateManager extends BaseLoanStateManager {
    *   - `true` if the state transition and disbursement initiation completed successfully
    *   - `null` if the transition failed or disbursement could not be initiated safely
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    // TODO: Implement actual state transition logic
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    if (!SUPPORTED_NEXT_STATES.includes(nextState)) {
+      this.logger.error(`Unsupported next state ${nextState} for loan ${loanId} in Funded state.`);
+      return null; // Unsupported state transition
+    }
+    this.logger.debug(`Setting next state for loan ${loanId} to ${nextState}.`);
+    return this.domainServices.loanServices.updateLoan(loanId, { state: nextState });
+  }
+
+  /**
+   * Determines if loan funds should be disbursed based on funding payment status.
+   * 
+   * @param loan - The loan to evaluate for disbursement readiness
+   * @returns True if disbursement should be initiated
+   */
+  private shouldBeDisbursed(loan: ILoan): boolean { 
+    const relevantPayment = this.getStateEvaluationPayment(loan, LoanPaymentTypeCodes.Funding, EVALUATION_CONTEXTS.START_DISBURSEMENT);
+    if (!relevantPayment) {
+      this.logger.debug(`No funding payment found for loan ${loan.id} in state ${this.loanState}.`);
+      return false; // No funding payment to evaluate
+    }
+    const isDisbursementReady = relevantPayment.status === LoanPaymentStateCodes.Completed;
+    this.logPaymentEvaluation(loan.id, EVALUATION_CONTEXTS.START_DISBURSEMENT, relevantPayment, isDisbursementReady);
+    return isDisbursementReady;
+  }
+
+  /**
+   * Determines if funding should be returned to Accepted state.
+   * 
+   * Currently not implemented as there are no business requirements
+   * for reverting from Funded to Accepted state.
+   * 
+   * @param loan - The loan to evaluate for reversion
+   * @returns Always returns false in current implementation
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private shouldBeReturnedToAccepted(loan: ILoan): boolean { 
+    // Currently, we do not have a condition to revert Funded to Accepted state
+    // This might be implemented in the future if business rules change
+    return false;
+  }
+
+  /**
+   * Logs the result of payment evaluation with consistent formatting.
+   * 
+   * @param loanId - The loan identifier
+   * @param context - The evaluation context
+   * @param payment - The payment that was evaluated
+   * @param result - The evaluation result
+   */
+  private logPaymentEvaluation(loanId: string, context: string, payment: ILoanPayment, result: boolean): void {
+    const action = 'completed and ready for disbursement';
+    const negativeAction = 'not completed and not ready for disbursement';
+    const resultText = result ? action : negativeAction;
+    this.logger.debug(`Loan ${loanId} funding ${resultText}, payment state: ${payment.state}.`);
   }
 }

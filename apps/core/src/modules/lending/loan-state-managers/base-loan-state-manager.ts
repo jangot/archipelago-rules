@@ -1,6 +1,6 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
-import { LoanPaymentType, LoanState } from '@library/entity/enum';
+import { LoanPaymentType, LoanState, PaymentAccountStateCodes } from '@library/entity/enum';
 import { LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ILoanStateManager } from '../interfaces';
@@ -156,4 +156,52 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
     }
     return true; // Loan is in the expected state, validation passed
   }
+
+  /**
+   * Validates if a loan has valid Payment Accounts connected
+   * 
+   * Checks that all required entities and payment accounts are present and verified.
+   * This includes validation of biller, lender, and borrower accounts with their
+   * respective payment account states.
+   * 
+   * @param loan - The loan entity to validate
+   * @returns boolean - True if all prerequisites are met, false otherwise
+   */
+  protected hasValidAccountsConnected(loan: ILoan): boolean {
+    const { id: loanId, billerId, lenderId, borrowerId, biller, lenderAccountId, borrowerAccountId, lenderAccount, borrowerAccount } = loan;
+  
+    // Validate biller existence
+    if (!biller) {
+      this.logger.warn(`Loan ${loanId} has no associated biller`);
+      return false;
+    }
+  
+    // Validate payment accounts existence
+    if (!lenderAccount || !borrowerAccount || !biller.paymentAccount) {
+      this.logger.warn(`Loan ${loanId} has missing payment accounts for lender, borrower, or biller`);
+      return false;
+    }
+  
+    const { paymentAccountId: billerAccountId } = biller;
+    const requiredIds = [billerId, lenderId, borrowerId, billerAccountId, lenderAccountId, borrowerAccountId];
+      
+    // Check all required IDs are present
+    if (requiredIds.some(id => id === null || id === undefined)) {
+      this.logger.warn(`Loan ${loanId} has missing required entity IDs`);
+      return false;
+    }
+  
+    // Validate payment account states
+    const isLenderAccountVerified = lenderAccount.state === PaymentAccountStateCodes.Verified;
+    const isBorrowerAccountVerified = borrowerAccount.state === PaymentAccountStateCodes.Verified;
+    const isBillerAccountVerified = biller.paymentAccount.state === PaymentAccountStateCodes.Verified;
+  
+    if (!isLenderAccountVerified || !isBorrowerAccountVerified || !isBillerAccountVerified) {
+      this.logger.warn(`Loan ${loanId} has unverified payment accounts - Lender: ${isLenderAccountVerified}, Borrower: ${isBorrowerAccountVerified}, Biller: ${isBillerAccountVerified}`);
+      return false;
+    }
+  
+    return true;
+  }
+  
 }

@@ -17,7 +17,6 @@ const SUPPORTED_NEXT_STATES: LoanState[] = [
   LoanStateCodes.Funded,
   LoanStateCodes.FundingPaused,
   LoanStateCodes.Accepted,
-  LoanStateCodes.Funding,
 ];
 
 /**
