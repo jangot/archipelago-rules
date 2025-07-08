@@ -1,5 +1,6 @@
 import { MapTo } from '@library/entity/mapping/mapping.decorators';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
+import { IsAlphaString } from '@library/shared/common/validator/alpha-string.validator';
 import { IsValidPhoneNumber } from '@library/shared/common/validator/phone-number.validator';
 import { ApiProperty, ApiSchema, OmitType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
@@ -21,6 +22,7 @@ export class RegistrationDto {
   @IsNotEmpty()
   @MaxLength(100)
   @IsOptional()
+  @IsAlphaString()
   firstName?: string;
 
   @ApiProperty({ description: 'User Last Name', type: String, required: false, maxLength: 100, example: 'Doe' })
@@ -29,6 +31,7 @@ export class RegistrationDto {
   @IsNotEmpty()
   @MaxLength(100)
   @IsOptional()
+  @IsAlphaString()
   lastName?: string;
 
   @ApiProperty({ description: 'User email', type: String, required: false, maxLength: 320, example: 'test@email.com' })

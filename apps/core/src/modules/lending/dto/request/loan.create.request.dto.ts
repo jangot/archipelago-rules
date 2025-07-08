@@ -1,6 +1,7 @@
 import { LoanInviteeType, LoanInviteeTypeCodes, LoanPaymentFrequency, LoanPaymentFrequencyCodes, LoanType, LoanTypeCodes } from '@library/entity/enum';
 import { MapTo } from '@library/entity/mapping/mapping.decorators';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
+import { IsAlphaString } from '@library/shared/common/validator/alpha-string.validator';
 import { IsValidPhoneNumber } from '@library/shared/common/validator/phone-number.validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
@@ -19,6 +20,7 @@ export class LoanInviteeCreateRequestDto {
   @Expose()
   @IsString()
   @IsOptional()
+  @IsAlphaString()
   @MaxLength(100)
   firstName: string | null;
 
@@ -26,6 +28,7 @@ export class LoanInviteeCreateRequestDto {
   @Expose()
   @IsString()
   @IsOptional()
+  @IsAlphaString()
   @MaxLength(100)
   lastName: string | null;
 
