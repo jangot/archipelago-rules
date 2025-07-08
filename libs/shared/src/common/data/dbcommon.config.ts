@@ -52,6 +52,8 @@ export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOp
     entities: options.entities,
     schema: options.schema, // Default schema to use for all entities defined here
     migrations: options.migrations,
+    migrationsRun: options.configService.get<string>('NODE_ENV') === 'development',
+    logger: 'advanced-console',
   };
 }
 

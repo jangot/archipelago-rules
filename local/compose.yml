@@ -2,8 +2,20 @@ services:
   postgres:
     image: 'postgres:16.6'
     container_name: postgres
+    mem_limit: 8g #hard limit
+    mem_reservation: 4g #soft limit
     environment:
       POSTGRES_PASSWORD: postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=2GB"
+      - "-c"
+      - "effective_cache_size=6GB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=512MB"
     ports:
       - "5433:5432"
     volumes:

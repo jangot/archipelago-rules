@@ -50,7 +50,14 @@
       "entryFile": "main",
       "sourceRoot": "apps/payment/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/payment/tsconfig.app.json"
+        "tsConfigPath": "apps/payment/tsconfig.app.json",
+        "assets": [
+          {
+            "include": "apps/payment/src/db/migrations/**/*",
+            "outDir": "dist/apps/payment/db/migrations",
+            "watchAssets": true
+          }
+        ]
       }
     },
     "shared": {

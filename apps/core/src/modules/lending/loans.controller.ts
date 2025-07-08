@@ -1,11 +1,11 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
-import { LoansService } from './loans.service';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { IRequest } from '@library/shared/type';
-import { JwtAuthGuard } from '../auth/guards';
 import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
-import { LoanResponseDto } from './dto/response';
+import { IRequest } from '@library/shared/type';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards';
 import { LoanAcceptRequestDto, LoanCreateRequestDto, LoanProposeRequestDto } from './dto/request';
+import { LoanResponseDto } from './dto/response';
+import { LoansService } from './loans.service';
 
 @Controller('loans')
 @ApiTags('loans')
@@ -74,7 +74,7 @@ export class LoansController {
   // Close loan and provide details required (closure reason, etc.)
   @Patch('close/:id')
   @ApiOperation({ summary: 'Close a loan and provide required details (e.g. closure reason)', description: 'Close a loan and provide required details (e.g. closure reason)' })
-  public async clsoeLoan(@UUIDParam('id') id: string, @Body() input: string): Promise<unknown> {
+  public async closeLoan(@UUIDParam('id') id: string, @Body() input: string): Promise<unknown> {
     this.logger.debug(`Closing loan with ID: ${id}`, { input });
     return;
   }
@@ -108,6 +108,4 @@ export class LoansController {
     this.logger.debug(`Deleting loan with ID: ${id}`);
     return;
   }
-
-
 }
