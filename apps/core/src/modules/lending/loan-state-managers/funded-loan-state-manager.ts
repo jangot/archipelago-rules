@@ -100,7 +100,10 @@ export class FundedLoanStateManager extends BaseLoanStateManager {
       this.logger.debug(`No funding payment found for loan ${loan.id} in state ${this.loanState}.`);
       return false; // No funding payment to evaluate
     }
-    const isDisbursementReady = relevantPayment.status === LoanPaymentStateCodes.Completed;
+    const isDisbursementReadyState = relevantPayment.status === LoanPaymentStateCodes.Completed;
+    // To ensure that Loan is ready to hext state transition - also check that accounts are valid
+    const hasValidAccounts = this.hasValidAccountsConnected(loan);
+    const isDisbursementReady = isDisbursementReadyState && hasValidAccounts;
     this.logPaymentEvaluation(loan.id, EVALUATION_CONTEXTS.START_DISBURSEMENT, relevantPayment, isDisbursementReady);
     return isDisbursementReady;
   }
@@ -131,7 +134,7 @@ export class FundedLoanStateManager extends BaseLoanStateManager {
    */
   private logPaymentEvaluation(loanId: string, context: string, payment: ILoanPayment, result: boolean): void {
     const action = 'completed and ready for disbursement';
-    const negativeAction = 'not completed and not ready for disbursement';
+    const negativeAction = 'not completed and / or not ready for disbursement';
     const resultText = result ? action : negativeAction;
     this.logger.debug(`Loan ${loanId} funding ${resultText}, payment state: ${payment.state}.`);
   }
