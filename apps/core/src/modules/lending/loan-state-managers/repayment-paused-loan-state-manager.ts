@@ -1,7 +1,7 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { BaseLoanStateManager } from './base-loan-state-manager';
-import { LoanState, LoanStateCodes } from '@library/entity/enum';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
  * State manager for loans in the 'RepaymentPaused' state.
@@ -56,5 +56,27 @@ export class RepaymentPausedLoanStateManager extends BaseLoanStateManager {
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
     // TODO: Implement actual state transition logic
     throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+  }
+
+  /**
+   * Gets the supported next states for a loan in the RepaymentPaused state.
+   * 
+   * @returns LoanState[] - An array of LoanState values that represent
+   *   the possible next states for the loan
+   */
+  protected getSupportedNextStates(): LoanState[] {
+    // RepaymentPaused loans can resume repaying, be closed, or transition to repaid
+    return [LoanStateCodes.Repaying, LoanStateCodes.Closed, LoanStateCodes.Repaid];
+  }
+
+  /**
+   * Gets the primary payment type applicable to loans in the RepaymentPaused state.
+   * 
+   * @returns LoanPaymentType - The primary LoanPaymentType value that
+   *   represents the type of payments relevant to the loan's current state
+   */
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    // RepaymentPaused state still deals with repayment transactions that were paused
+    return LoanPaymentTypeCodes.Repayment;
   }
 }
