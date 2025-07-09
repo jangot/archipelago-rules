@@ -1,16 +1,17 @@
-import { BadRequestException, Body, Controller, Get, HttpException, HttpStatus, Post, Put, Req, UseGuards } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { RegistrationDto, RegistrationRequestDto, RegistrationVerifyRequestDto, RegistrationUpdateRequestDto } from '@core/modules/auth/dto/request/registration.request.dto';
-import { LoginVerifyRequestDto } from '@core/modules/auth/dto/request/login.verify.request.dto';
-import { UserRegisterResponseDto } from '@core/modules/auth/dto/response/user-register-response.dto';
-import { ApiAcceptedResponse, ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiExtraModels, ApiForbiddenResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse, getSchemaPath } from '@nestjs/swagger';
-import { RegistrationService } from './registration.service';
-import { JwtAuthGuard, LogoutAuthGuard } from './guards';
-import { UserLoginPayloadDto } from '@core/modules/auth/dto/response/user-login-payload.dto';
 import { LoginRequestDto } from '@core/modules/auth/dto/request/login.request.dto';
-import { RefreshTokenAuthGuard } from './guards/jwt-refresh.guard';
-import { ILogoutRequest, IRefreshTokenRequest, IRequest } from '@library/shared/type';
+import { LoginVerifyRequestDto } from '@core/modules/auth/dto/request/login.verify.request.dto';
+import { RegistrationDto, RegistrationRequestDto, RegistrationUpdateRequestDto, RegistrationVerifyRequestDto } from '@core/modules/auth/dto/request/registration.request.dto';
+import { UserLoginPayloadDto } from '@core/modules/auth/dto/response/user-login-payload.dto';
+import { UserRegisterResponseDto } from '@core/modules/auth/dto/response/user-register-response.dto';
 import { ApiStatusResponseDto } from '@library/shared/common/dto/response/api.status.dto';
+import { ILogoutRequest, IRefreshTokenRequest, IRequest } from '@library/shared/type';
+import { BadRequestException, Body, Controller, Get, HttpCode, HttpException, HttpStatus, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { ApiAcceptedResponse, ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiExtraModels, ApiForbiddenResponse, ApiInternalServerErrorResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse, getSchemaPath } from '@nestjs/swagger';
+import { AuthService } from './auth.service';
+import { UserLoginResponseDTO } from './dto/response';
+import { JwtAuthGuard, LogoutAuthGuard } from './guards';
+import { RefreshTokenAuthGuard } from './guards/jwt-refresh.guard';
+import { RegistrationService } from './registration.service';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -23,12 +24,12 @@ export class AuthController {
   //#region Login/Verify/Logout/Refresh
   @Post('login')
   @ApiOperation({ description: 'User Login', summary: 'Begins user login with Phone number or Email, pending successful code verification' })
-  @ApiOkResponse({ description: 'User Login', type: UserLoginPayloadDto, isArray: false })
+  @ApiOkResponse({ description: 'User Login', type: UserLoginResponseDTO, isArray: false })
   @ApiBadRequestResponse({ description: 'Invalid Login Request', isArray: false })
   @ApiNotFoundResponse({ description: 'User not found for contact info', isArray: false })
   @ApiAcceptedResponse({ description: 'User has not completed Registration', isArray: false })
   @ApiBody({ type: LoginRequestDto, schema: { $ref: getSchemaPath(LoginRequestDto) } })
-  async login(@Body() body: LoginRequestDto): Promise<UserLoginPayloadDto> {
+  async login(@Body() body: LoginRequestDto): Promise<UserLoginResponseDTO> {
     if ((!body.email && !body.phoneNumber) || (body.email && body.phoneNumber)) {
       throw new BadRequestException('A valid email or phone number (but not both) must be provided to login.');
     }
@@ -48,22 +49,19 @@ export class AuthController {
   @ApiForbiddenResponse({ description: 'User has not initiated a Login session or code has expired', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
   @ApiExtraModels(LoginVerifyRequestDto, LoginRequestDto)
-  public async verify(@Body() body: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {
-    if ((!body.email && !body.phoneNumber) || (body.email && body.phoneNumber)) {
-      throw new BadRequestException('A valid email or phone number (but not both) must be provided to login.');
-    }
-
+  public async verify(@Body() body: LoginVerifyRequestDto): Promise<UserLoginPayloadDto> {    
     return this.authService.verifyLoginSession(body);
   }
 
   @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ description: 'User Logout', summary: 'Ends user session and invalidates JWT token' })
-  @ApiOkResponse({ description: 'User Logout', type: UserLoginPayloadDto, isArray: false })
+  @ApiNoContentResponse({ description: 'User Logout', isArray: false })
   @ApiBadRequestResponse({ description: 'Invalid Logout Request', isArray: false })
   @ApiUnauthorizedResponse({ description: 'Invalid Access Token / User not Logged in', isArray: false })
   @ApiBearerAuth('jwt')
   @UseGuards(LogoutAuthGuard)
-  public async logout(@Req() request: ILogoutRequest): Promise<UserLoginPayloadDto> {
+  public async logout(@Req() request: ILogoutRequest): Promise<void> {
     if (!request.user) {
       throw new HttpException('Invalid Access Token. Did not pass verification', HttpStatus.UNAUTHORIZED);
     }
@@ -75,7 +73,7 @@ export class AuthController {
       throw new HttpException('Invalid Access Token. Not all data provided', HttpStatus.UNAUTHORIZED);
     }
 
-    return this.authService.logout(userId, accessToken);
+    await this.authService.logout(userId, accessToken);
   }
 
   @Get('refresh')
@@ -148,7 +146,7 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Invalid Registration Verify Request parameters', isArray: false })
   @ApiNotFoundResponse({ description: 'User / secret not found or no Registration found for user', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  @ApiExtraModels(RegistrationVerifyRequestDto, UserLoginPayloadDto)
+  @ApiExtraModels(RegistrationVerifyRequestDto, UserLoginPayloadDto, ApiStatusResponseDto)
   @ApiBody({ type: RegistrationVerifyRequestDto, schema: { $ref: getSchemaPath(RegistrationVerifyRequestDto) } })
   public async verifyRegistration(@Body() body: RegistrationVerifyRequestDto): Promise<UserLoginPayloadDto | ApiStatusResponseDto | null> {
     return this.registrationService.verifyRegistration(body);

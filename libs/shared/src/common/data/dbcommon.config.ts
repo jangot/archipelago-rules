@@ -6,9 +6,9 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { TypeOrmModuleAsyncOptions, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ZngNamingStrategy } from '@library/extensions/typeorm/zng-naming.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModuleAsyncOptions, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource, EntitySchema, MixedList } from 'typeorm';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 
@@ -52,6 +52,8 @@ export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOp
     entities: options.entities,
     schema: options.schema, // Default schema to use for all entities defined here
     migrations: options.migrations,
+    migrationsRun: options.configService.get<string>('NODE_ENV') === 'development',
+    logger: 'advanced-console',
   };
 }
 
@@ -95,13 +97,16 @@ export function TypeOrmModuleConfiguration(options: BaseDatabaseConfigOptions): 
  * @returns TypeOrmModuleAsyncOptions configured for dependency injection with transaction support
  */
  
-export function SingleDataSourceConfiguration(allEntities: DatabaseConfigEntities): TypeOrmModuleAsyncOptions {
+export function SingleDataSourceConfiguration(allEntities: DatabaseConfigEntities,
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  migrations?: MixedList<Function | string>): TypeOrmModuleAsyncOptions {
   return {
     imports: [ConfigModule],
     inject: [ConfigService],
     useFactory: (configService: ConfigService) => DbConfiguration({ 
       configService, 
-      entities: allEntities, 
+      entities: allEntities,
+      migrations: migrations,
     }),
     async dataSourceFactory(options) {
       if (!options) {

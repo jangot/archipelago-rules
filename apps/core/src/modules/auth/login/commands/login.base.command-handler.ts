@@ -1,5 +1,5 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ContactType, LoginType } from '@library/entity/enum';
+import { ContactType, LoginType, VerificationType } from '@library/entity/enum';
 import { IEventPublisher } from '@library/shared/common/event/interface/ieventpublisher';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -31,8 +31,8 @@ export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = Lo
       onboardingStatus,
       accessToken,
       refreshToken,
-      accessTokenExpiresIn: new Date(payload!.exp! * 1000),
-      refreshTokenExpiresIn: new Date(refreshPayload!.exp! * 1000),
+      accessTokenExpiresAt: new Date(payload!.exp! * 1000),
+      refreshTokenExpiresAt: new Date(refreshPayload!.exp! * 1000),
     };
 
     return result;
@@ -49,5 +49,20 @@ export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = Lo
       default:
         return null;
     }
+  }
+
+  protected getLoginTypeByVerificationType(verificationType: VerificationType): LoginType | null {
+    switch (verificationType) {
+      case VerificationType.Email:
+        return LoginType.OneTimeCodeEmail;
+      case VerificationType.PhoneNumber:
+        return LoginType.OneTimeCodePhoneNumber;
+      default:
+        return null;
+    }
+  }
+
+  protected isDevelopmentEnvironment(): boolean {
+    return this.config.get<string>('NODE_ENV', 'production') === 'development';
   }
 }

@@ -1,8 +1,12 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
-import { UserRegisterResponseDto } from '@core/modules/auth/dto/response/user-register-response.dto';
 import { RegistrationDto } from '@core/modules/auth/dto/request/registration.request.dto';
 import { UserLoginPayloadDto } from '@core/modules/auth/dto/response/user-login-payload.dto';
+import { UserRegisterResponseDto } from '@core/modules/auth/dto/response/user-register-response.dto';
+import { ContactType, RegistrationStatus } from '@library/entity/enum';
+import { ApiStatusResponseDto } from '@library/shared/common/dto/response/api.status.dto';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { CommandBus } from '@nestjs/cqrs';
+import { RegistrationProcessingFailedException } from './exceptions/auth-domain.exceptions';
+import { LoginOnContactVerifiedCommand } from './login/commands';
 import {
   InitiateEmailVerificationCommand,
   InitiatePhoneNumberVerificationCommand,
@@ -10,11 +14,7 @@ import {
   VerificationCompleteCommand,
   VerifyContactCommand,
 } from './registration/commands';
-import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { RegistrationTransitionResult } from './registration/registration-transition-result';
-import { LoginOnContactVerifiedCommand } from './login/commands';
-import { ApiStatusResponseDto } from '@library/shared/common/dto/response/api.status.dto';
-import { RegistrationProcessingFailedException } from './exceptions/auth-domain.exceptions';
 
 const COMPLETE_VERIFICATION_ON_STATUS = RegistrationStatus.PhoneNumberVerified;
 @Injectable()
@@ -98,9 +98,9 @@ export class RegistrationService {
       this.logger.warn('handleRegistrationResult: Registration failed', { result, email, phoneNumber });
       throw new RegistrationProcessingFailedException('Registration failed');
     }
-    const { state, userId, code } = result;
+    const { userId, code } = result;
 
-    return { id: userId!, email: email ?? null, phoneNumber: phoneNumber ?? null, verificationState: state!, verificationCode: code! };
+    return { userId: userId!, verificationCode: code! };
     
   }
 

@@ -4,6 +4,6 @@
     "declaration": false,
     "outDir": "../../dist/apps/payment"
   },
-  "include": ["src/**/*", "../../libs/shared/src/types/**/*"],
+  "include": ["src/**/*", "../../libs/shared/src/types/**/*", "src/db/migrations/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }

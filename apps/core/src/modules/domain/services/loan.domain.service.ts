@@ -8,7 +8,6 @@ import { LOAN_INVITEE_RELATIONS, LOAN_RELATIONS, LoanRelation } from '@library/s
 import { LoanAssignToContactInput, LoansSetTargetUserInput, LoanTargetUserInput } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { DeepPartial } from 'typeorm';
 
 @Injectable()
@@ -17,7 +16,6 @@ export class LoanDomainService extends BaseDomainServices {
 
   constructor(
     protected readonly data: CoreDataService,
-    protected readonly jwtService: JwtService,
     protected readonly config: ConfigService
   ) {
     super(data);
