@@ -1,7 +1,7 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { BaseLoanStateManager } from './base-loan-state-manager';
-import { LoanState, LoanStateCodes } from '@library/entity/enum';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
  * State manager for loans in the 'Repaid' state.
@@ -59,5 +59,15 @@ export class RepaidLoanStateManager extends BaseLoanStateManager {
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
     // TODO: Implement actual state transition logic
     throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+  }
+
+  protected getSupportedNextStates(): LoanState[] {
+    // Repaid loans typically transition to Closed
+    return [LoanStateCodes.Closed];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    // Repaid state deals with the final repayment transactions
+    return LoanPaymentTypeCodes.Repayment;
   }
 }

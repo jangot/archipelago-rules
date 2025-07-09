@@ -1,7 +1,11 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { BaseLoanStateManager } from './base-loan-state-manager';
-import { LoanState, LoanStateCodes } from '@library/entity/enum';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ILoan } from '@library/entity/entity-interface';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { Injectable } from '@nestjs/common';
+import { BaseLoanStateManager } from './base-loan-state-manager';
+
+
 
 /**
  * State manager for loans in the 'FundingPaused' state.
@@ -25,14 +29,33 @@ export class FundingPausedLoanStateManager extends BaseLoanStateManager {
    * @param loanId - The unique identifier of the paused loan
    * @returns Promise<LoanState | null> - Returns:
    *   - `LoanStateCodes.Funding` if conditions allow resuming the funding process
+  *    - `LoanStateCodes.Funded` if payment error was fixed and funding can be completed
    *   - `LoanStateCodes.Accepted` if funding should be restarted from the beginning
    *   - `LoanStateCodes.FundingPaused` if the pause should continue (no state change)
    *   - `null` if an error occurs during evaluation or if escalation is required
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    // TODO: Implement actual business logic for determining next state
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments]);
+    
+    if (!loan) return null;
+    
+    if (!this.isActualStateValid(loan)) return null;
+
+    // Check conditions for `LoanStateCodes.Funding`
+    const isFundingResumed = this.shouldBeResumed(loan);
+    if (isFundingResumed) return LoanStateCodes.Funding;
+
+    // Check conditions for `LoanStateCodes.Funded`
+    const isFundingCompleted = this.shouldBeCompleted(loan);
+    if (isFundingCompleted) return LoanStateCodes.Funded;
+
+    // Check conditions for `LoanStateCodes.Accepted`
+    const isFundingReturnedToAccepted = this.shouldBeReturnedToAccepted(loan);
+    if (isFundingReturnedToAccepted) return LoanStateCodes.Accepted;
+
+    // If no states above reached - keep the `LoanStateCodes.FundingPaused`
+    return LoanStateCodes.FundingPaused;
   }
 
   /**
@@ -49,10 +72,52 @@ export class FundingPausedLoanStateManager extends BaseLoanStateManager {
    * @returns Promise<boolean | null> - Returns:
    *   - `true` if the state transition and process resumption completed successfully
    *   - `null` if the transition failed or if issues prevent safe resumption
+   */   
+  protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
+    return this.executeStateTransition(loanId, nextState);
+  }
+
+  /**
+   * Determines if funding should be resumed based on payment states.
+   * 
+   * @param loan - The loan to evaluate for resumption
+   * @returns True if funding should be resumed
+   */
+  private shouldBeResumed(loan: ILoan): boolean {
+    return this.isPaymentPending(loan, this.getPrimaryPaymentType(), 'Funding resume');
+  }
+
+  /**
+   * Determines if funding should be completed based on payment states.
+   * 
+   * @param loan - The loan to evaluate for completion
+   * @returns True if funding should be marked as completed
+   */
+  private shouldBeCompleted(loan: ILoan): boolean { 
+    return this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'Funding completion');
+  }
+
+  /**
+   * Determines if funding should be returned to Accepted state.
+   * 
+   * Currently not implemented as there are no business requirements
+   * for reverting from FundingPaused to Accepted state.
+   * 
+   * @param loan - The loan to evaluate for reversion
+   * @returns Always returns false in current implementation
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    // TODO: Implement actual state transition logic
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+  private shouldBeReturnedToAccepted(loan: ILoan): boolean { 
+    // Currently, we do not have a condition to revert funding paused to Accepted state
+    // This might be implemented in the future if business rules change
+    return false;
+  }
+
+  protected getSupportedNextStates(): LoanState[] {
+    return [LoanStateCodes.Funded, LoanStateCodes.Accepted, LoanStateCodes.Funding];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    return LoanPaymentTypeCodes.Funding;
   }
 }

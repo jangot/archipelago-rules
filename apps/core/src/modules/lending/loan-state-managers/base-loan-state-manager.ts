@@ -1,7 +1,9 @@
+import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
+import { LoanPaymentStateCodes, LoanPaymentType, LoanState, PaymentAccountStateCodes } from '@library/entity/enum';
+import { LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ILoanStateManager } from '../interfaces';
-import { LoanState } from '@library/entity/enum';
-import { IDomainServices } from '@core/modules/domain/idomain.services';
 
 @Injectable()
 export abstract class BaseLoanStateManager implements ILoanStateManager {
@@ -71,27 +73,256 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
   protected abstract getNextState(loanId: string): Promise<LoanState | null>;
 
   /**
-   * Executes the actual state transition by updating the loan's state in the database.
-   * 
-   * This abstract method must be implemented by concrete state manager classes to handle
-   * the persistence layer updates required for state transitions. The implementation should:
-   * 
-   * 1. Update the loan entity's state field in the database
-   * 2. Record the state transition in audit logs
-   * 3. Trigger any side effects required by the new state (notifications, workflows, etc.)
-   * 4. Ensure atomicity - either all updates succeed or all are rolled back
-   * 5. Handle database constraints and validation errors gracefully
-   * 
-   * The method should use database transactions to ensure data consistency and
-   * should be idempotent where possible to handle retry scenarios.
+     * Executes the actual state transition by updating the loan's state in the database.
+     * 
+     * This abstract method must be implemented by concrete state manager classes to handle
+     * the persistence layer updates required for state transitions. The implementation should:
+     * 
+     * 1. Update the loan entity's state field in the database
+     * 2. Record the state transition in audit logs
+     * 3. Trigger any side effects required by the new state (notifications, workflows, etc.)
+     * 4. Ensure atomicity - either all updates succeed or all are rolled back
+     * 5. Handle database constraints and validation errors gracefully
+     * 
+     * The method should use database transactions to ensure data consistency and
+     * should be idempotent where possible to handle retry scenarios.
+     * 
+     * @param loanId - The unique identifier of the loan to update
+     * @param nextState - The target state to transition the loan to
+     * @returns Promise<boolean | null> - Returns:
+     *   - `true` if the state was successfully updated in the database
+     *   - `null` if the update failed due to a database error or constraint violation
+     * 
+     * @abstract This method must be implemented by concrete state manager classes
+     */
+  protected abstract setNextState(loanId: string, nextState: LoanState): Promise<boolean | null>;
+
+  /**
+   * Abstract methods that must be implemented by concrete state managers
+   */
+
+  /**
+   * Gets the supported next states for this state manager
+   * @returns Array of supported loan states this state can transition to
+   */
+  protected abstract getSupportedNextStates(): LoanState[];
+
+  /**
+   * Gets the primary payment type associated with this state
+   * @returns The primary payment type for this state
+   */
+  protected abstract getPrimaryPaymentType(): LoanPaymentType;
+
+  /**
+   * Common helper methods for state transition validation and execution
+   */
+
+  /**
+   * Template method for executing state transitions with validation
+   * Consolidates the common pattern of validation + logging + database update
    * 
    * @param loanId - The unique identifier of the loan to update
    * @param nextState - The target state to transition the loan to
-   * @returns Promise<boolean | null> - Returns:
-   *   - `true` if the state was successfully updated in the database
-   *   - `null` if the update failed due to a database error or constraint violation
-   * 
-   * @abstract This method must be implemented by concrete state manager classes
+   * @returns Promise<boolean | null> - Success status or null on failure
    */
-  protected abstract setNextState(loanId: string, nextState: LoanState): Promise<boolean | null>;
+  protected async executeStateTransition(loanId: string, nextState: LoanState): Promise<boolean | null> {
+    if (!this.getSupportedNextStates().includes(nextState)) {
+      this.logger.error(`Unsupported next state ${nextState} for loan ${loanId} in ${this.loanState} state.`);
+      return null;
+    }
+    this.logger.debug(`Setting next state for loan ${loanId} to ${nextState}.`);
+    return this.domainServices.loanServices.updateLoan(loanId, { state: nextState });
+  }
+
+  protected async getLoan(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> { 
+    const loan = await this.domainServices.loanServices.getLoanById(loanId, relations);
+    if (!loan) {
+      this.logger.error(`Loan with ID ${loanId} not found`);
+      return null; // Loan does not exist
+    }
+    return loan;
+  };
+
+  /**
+   * Retrieves the latest payment of a specific type for a loan, used for state evaluation.
+   * 
+   * This method filters the loan's payments to find the most recent payment of the specified type.
+   * It is used to evaluate the current state of the loan based on its payment history.
+   * 
+   * @param loan - The loan object containing payment information
+   * @param paymentType - The type of payment to evaluate (e.g., 'Biller', 'Lender', 'Borrower')
+   * @param evaluationContext - Contextual information for logging purposes
+   * @returns ILoanPayment | null - Returns:
+   *   - The latest payment of the specified type if found
+   *   - `null` if no payments of that type exist or if there are no payments at all
+   */
+  protected getStateEvaluationPayment(loan: ILoan, paymentType: LoanPaymentType, evaluationContext: string): ILoanPayment | null {
+    const { id: loanId, payments } = loan;
+
+    // Check that there are any payments at all
+    if (!payments || !payments.length) {
+      this.logger.warn(`Loan ${loanId} has no payments to evaluate for ${evaluationContext}.`);
+      return null;
+    }
+
+    // Filter payments by type and find the latest one
+    const typePayments = payments.filter(p => p.type === paymentType);
+    if (!typePayments || !typePayments.length) {
+      this.logger.warn(`Loan ${loanId} has no ${paymentType} payments to evaluate for ${evaluationContext}.`);
+      return null;
+    }
+
+    // Deefault scenario - return the latest payment of the specified type (except repayment)
+    if (typePayments.length === 1) {
+      return typePayments[0];
+    }
+
+    // Unexpected (except repayment) but handeled case - multiple payments of the same type
+    // Return the one with the latest createdAt date
+    // TODO: Align logic for repayments with this logic
+    return typePayments.reduce((latest, current) => {
+      return (current.createdAt > latest.createdAt) ? current : latest;
+    });
+  }
+
+  protected isActualStateValid(loan: ILoan): boolean {
+    const { state, id: loanId } = loan;
+    if (state !== this.loanState) {
+      this.logger.error(`Loan ${loanId} is not in expected state ${this.loanState}. Current state: ${state}`);
+      return false; // Loan is not in the expected state, validation failed
+    }
+    return true; // Loan is in the expected state, validation passed
+  }
+
+  /**
+   * Validates if a loan has valid Payment Accounts connected
+   * 
+   * Checks that all required entities and payment accounts are present and verified.
+   * This includes validation of biller, lender, and borrower accounts with their
+   * respective payment account states.
+   * 
+   * @param loan - The loan entity to validate
+   * @returns boolean - True if all prerequisites are met, false otherwise
+   */
+  protected hasValidAccountsConnected(loan: ILoan): boolean {
+    const { id: loanId, billerId, lenderId, borrowerId, biller, lenderAccountId, borrowerAccountId, lenderAccount, borrowerAccount } = loan;
+  
+    // Validate biller existence
+    if (!biller) {
+      this.logger.warn(`Loan ${loanId} has no associated biller`);
+      return false;
+    }
+  
+    // Validate payment accounts existence
+    if (!lenderAccount || !borrowerAccount || !biller.paymentAccount) {
+      this.logger.warn(`Loan ${loanId} has missing payment accounts for lender, borrower, or biller`);
+      return false;
+    }
+  
+    const { paymentAccountId: billerAccountId } = biller;
+    const requiredIds = [billerId, lenderId, borrowerId, billerAccountId, lenderAccountId, borrowerAccountId];
+      
+    // Check all required IDs are present
+    if (requiredIds.some(id => id === null || id === undefined)) {
+      this.logger.warn(`Loan ${loanId} has missing required entity IDs`);
+      return false;
+    }
+  
+    // Validate payment account states
+    const isLenderAccountVerified = lenderAccount.state === PaymentAccountStateCodes.Verified;
+    const isBorrowerAccountVerified = borrowerAccount.state === PaymentAccountStateCodes.Verified;
+    const isBillerAccountVerified = biller.paymentAccount.state === PaymentAccountStateCodes.Verified;
+  
+    if (!isLenderAccountVerified || !isBorrowerAccountVerified || !isBillerAccountVerified) {
+      this.logger.warn(`Loan ${loanId} has unverified payment accounts - Lender: ${isLenderAccountVerified}, Borrower: ${isBorrowerAccountVerified}, Biller: ${isBillerAccountVerified}`);
+      return false;
+    }
+  
+    return true;
+  }
+
+  /**
+   * Common payment evaluation methods
+   */
+
+  /**
+   * Checks if a payment is completed
+   * 
+   * @param loan - The loan to evaluate
+   * @param paymentType - The type of payment to check
+   * @param context - Context description for logging
+   * @returns True if payment is completed
+   */
+  protected isPaymentCompleted(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
+    const relevantPayment = this.getStateEvaluationPayment(loan, paymentType, context);
+    if (!relevantPayment) {
+      this.logger.warn(`No relevant ${paymentType} payment found for loan ${loan.id} during ${context} evaluation.`);
+      return false;
+    }
+    const result = relevantPayment.state === LoanPaymentStateCodes.Completed;
+    this.logPaymentResult(loan.id, context, relevantPayment, result, 'completed', 'not completed');
+    return result;
+  }
+
+  /**
+   * Checks if a payment has failed
+   * 
+   * @param loan - The loan to evaluate
+   * @param paymentType - The type of payment to check
+   * @param context - Context description for logging
+   * @returns True if payment has failed
+   */
+  protected isPaymentFailed(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
+    const relevantPayment = this.getStateEvaluationPayment(loan, paymentType, context);
+    if (!relevantPayment) {
+      this.logger.warn(`No relevant ${paymentType} payment found for loan ${loan.id} during ${context} evaluation.`);
+      return false;
+    }
+    const result = relevantPayment.state === LoanPaymentStateCodes.Failed;
+    this.logPaymentResult(loan.id, context, relevantPayment, result, 'failed', 'not failed');
+    return result;
+  }
+
+  /**
+   * Checks if a payment is pending
+   * 
+   * @param loan - The loan to evaluate
+   * @param paymentType - The type of payment to check
+   * @param context - Context description for logging
+   * @returns True if payment is pending
+   */
+  protected isPaymentPending(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
+    const relevantPayment = this.getStateEvaluationPayment(loan, paymentType, context);
+    if (!relevantPayment) {
+      this.logger.warn(`No relevant ${paymentType} payment found for loan ${loan.id} during ${context} evaluation.`);
+      return false;
+    }
+    const result = relevantPayment.state === LoanPaymentStateCodes.Pending;
+    this.logPaymentResult(loan.id, context, relevantPayment, result, 'pending', 'not pending');
+    return result;
+  }
+
+  /**
+   * Standardized logging for payment evaluation results
+   * 
+   * @param loanId - The loan identifier
+   * @param context - The evaluation context description
+   * @param payment - The payment that was evaluated
+   * @param result - The evaluation result
+   * @param positiveAction - Description for positive result
+   * @param negativeAction - Description for negative result
+   */
+  protected logPaymentResult(
+    loanId: string, 
+    context: string, 
+    payment: ILoanPayment, 
+    result: boolean,
+    positiveAction: string,
+    negativeAction: string
+  ): void {
+    const resultText = result ? positiveAction : negativeAction;
+    const paymentType = this.getPrimaryPaymentType().toLowerCase();
+    this.logger.debug(`Loan ${loanId} ${paymentType} ${resultText}, payment state: ${payment.state}.`);
+  }
+  
 }

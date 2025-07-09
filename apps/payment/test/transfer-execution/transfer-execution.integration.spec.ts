@@ -3,34 +3,34 @@ import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { DataModule } from '../../src/data/data.module';
-import { DomainModule } from '../../src/domain/domain.module';
-import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { IDomainServices } from '../../src/domain/idomain.services';
-import { TransferExecutionFactory } from '../../src/transfer-execution/transfer-execution.factory';
-import { 
-  CheckbookTransferExecutionProvider, 
-  FiservTransferExecutionProvider, 
-  MockTransferExecutionProvider, 
-  TabapayTransferExecutionProvider, 
-} from '../../src/transfer-execution/providers';
-import { 
-  ITransfer,
+import {
   IPaymentAccount,
+  ITransfer,
 } from '@library/entity/entity-interface';
-import { 
-  PaymentAccountProviderCodes,
-  TransferStateCodes,
-  PaymentStepStateCodes,
+import {
   LoanPaymentStateCodes,
   LoanPaymentTypeCodes,
+  PaymentAccountProviderCodes,
+  PaymentStepStateCodes,
+  TransferStateCodes,
 } from '@library/entity/enum';
-import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
-import { TestDataSeeder, FOUNDATION_TEST_IDS } from '@library/shared/tests/test-data-seeder';
-import { TestPaymentAccountFactory } from '@library/shared/tests/test-payment-account-factory';
-import { AllEntities } from '@library/shared/domain/entity';
 import { EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { AllEntities } from '@library/shared/domain/entity';
+import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
+import { FOUNDATION_TEST_IDS, TestDataSeeder } from '@library/shared/tests/test-data-seeder';
+import { TestPaymentAccountFactory } from '@library/shared/tests/test-payment-account-factory';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DataModule } from '@payment/modules/data';
+import { DomainModule } from '@payment/modules/domain/domain.module';
+import { IDomainServices } from '@payment/modules/domain/idomain.services';
+import {
+  CheckbookTransferExecutionProvider,
+  FiservTransferExecutionProvider,
+  MockTransferExecutionProvider,
+  TabapayTransferExecutionProvider,
+} from '../../src/modules/transfer-execution/providers';
+import { TransferExecutionFactory } from '../../src/modules/transfer-execution/transfer-execution.factory';
+import { TransferExecutionModule } from '../../src/modules/transfer-execution/transfer-execution.module';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
 // Use real service implementations for integration tests (2-3 levels deep)
