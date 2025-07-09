@@ -1,5 +1,5 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { LoanState, LoanStateCodes } from '@library/entity/enum';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { BaseLoanStateManager } from './base-loan-state-manager';
@@ -20,6 +20,15 @@ import { BaseLoanStateManager } from './base-loan-state-manager';
 export class AcceptedLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.Accepted);
+  }
+
+  protected getSupportedNextStates(): LoanState[] {
+    return [LoanStateCodes.Funding];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    // Accepted state doesn't have a primary payment type yet, using Funding as the next phase
+    return LoanPaymentTypeCodes.Funding;
   }
 
   /**
@@ -82,12 +91,6 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
    */
    
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    // For now Loan can advance from Advanced to Funding only
-    if (nextState !== LoanStateCodes.Funding) {
-      this.logger.error(`Invalid state transition from Accepted to ${nextState} for loan ${loanId}. Only Funding is allowed.`);
-      return null; // Invalid state transition
-    }
-    this.logger.debug(`Setting next state for loan ${loanId} to ${nextState} from Accepted state`);
-    return this.domainServices.loanServices.updateLoan(loanId, { state: nextState });
+    return this.executeStateTransition(loanId, nextState);
   }
 }

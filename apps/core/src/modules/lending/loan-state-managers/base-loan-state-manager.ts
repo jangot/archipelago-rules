@@ -1,6 +1,6 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
-import { LoanPaymentType, LoanState, PaymentAccountStateCodes } from '@library/entity/enum';
+import { LoanPaymentStateCodes, LoanPaymentType, LoanState, PaymentAccountStateCodes } from '@library/entity/enum';
 import { LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ILoanStateManager } from '../interfaces';
@@ -96,6 +96,43 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
      * @abstract This method must be implemented by concrete state manager classes
      */
   protected abstract setNextState(loanId: string, nextState: LoanState): Promise<boolean | null>;
+
+  /**
+   * Abstract methods that must be implemented by concrete state managers
+   */
+
+  /**
+   * Gets the supported next states for this state manager
+   * @returns Array of supported loan states this state can transition to
+   */
+  protected abstract getSupportedNextStates(): LoanState[];
+
+  /**
+   * Gets the primary payment type associated with this state
+   * @returns The primary payment type for this state
+   */
+  protected abstract getPrimaryPaymentType(): LoanPaymentType;
+
+  /**
+   * Common helper methods for state transition validation and execution
+   */
+
+  /**
+   * Template method for executing state transitions with validation
+   * Consolidates the common pattern of validation + logging + database update
+   * 
+   * @param loanId - The unique identifier of the loan to update
+   * @param nextState - The target state to transition the loan to
+   * @returns Promise<boolean | null> - Success status or null on failure
+   */
+  protected async executeStateTransition(loanId: string, nextState: LoanState): Promise<boolean | null> {
+    if (!this.getSupportedNextStates().includes(nextState)) {
+      this.logger.error(`Unsupported next state ${nextState} for loan ${loanId} in ${this.loanState} state.`);
+      return null;
+    }
+    this.logger.debug(`Setting next state for loan ${loanId} to ${nextState}.`);
+    return this.domainServices.loanServices.updateLoan(loanId, { state: nextState });
+  }
 
   protected async getLoan(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> { 
     const loan = await this.domainServices.loanServices.getLoanById(loanId, relations);
@@ -202,6 +239,90 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
     }
   
     return true;
+  }
+
+  /**
+   * Common payment evaluation methods
+   */
+
+  /**
+   * Checks if a payment is completed
+   * 
+   * @param loan - The loan to evaluate
+   * @param paymentType - The type of payment to check
+   * @param context - Context description for logging
+   * @returns True if payment is completed
+   */
+  protected isPaymentCompleted(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
+    const relevantPayment = this.getStateEvaluationPayment(loan, paymentType, context);
+    if (!relevantPayment) {
+      this.logger.warn(`No relevant ${paymentType} payment found for loan ${loan.id} during ${context} evaluation.`);
+      return false;
+    }
+    const result = relevantPayment.state === LoanPaymentStateCodes.Completed;
+    this.logPaymentResult(loan.id, context, relevantPayment, result, 'completed', 'not completed');
+    return result;
+  }
+
+  /**
+   * Checks if a payment has failed
+   * 
+   * @param loan - The loan to evaluate
+   * @param paymentType - The type of payment to check
+   * @param context - Context description for logging
+   * @returns True if payment has failed
+   */
+  protected isPaymentFailed(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
+    const relevantPayment = this.getStateEvaluationPayment(loan, paymentType, context);
+    if (!relevantPayment) {
+      this.logger.warn(`No relevant ${paymentType} payment found for loan ${loan.id} during ${context} evaluation.`);
+      return false;
+    }
+    const result = relevantPayment.state === LoanPaymentStateCodes.Failed;
+    this.logPaymentResult(loan.id, context, relevantPayment, result, 'failed', 'not failed');
+    return result;
+  }
+
+  /**
+   * Checks if a payment is pending
+   * 
+   * @param loan - The loan to evaluate
+   * @param paymentType - The type of payment to check
+   * @param context - Context description for logging
+   * @returns True if payment is pending
+   */
+  protected isPaymentPending(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
+    const relevantPayment = this.getStateEvaluationPayment(loan, paymentType, context);
+    if (!relevantPayment) {
+      this.logger.warn(`No relevant ${paymentType} payment found for loan ${loan.id} during ${context} evaluation.`);
+      return false;
+    }
+    const result = relevantPayment.state === LoanPaymentStateCodes.Pending;
+    this.logPaymentResult(loan.id, context, relevantPayment, result, 'pending', 'not pending');
+    return result;
+  }
+
+  /**
+   * Standardized logging for payment evaluation results
+   * 
+   * @param loanId - The loan identifier
+   * @param context - The evaluation context description
+   * @param payment - The payment that was evaluated
+   * @param result - The evaluation result
+   * @param positiveAction - Description for positive result
+   * @param negativeAction - Description for negative result
+   */
+  protected logPaymentResult(
+    loanId: string, 
+    context: string, 
+    payment: ILoanPayment, 
+    result: boolean,
+    positiveAction: string,
+    negativeAction: string
+  ): void {
+    const resultText = result ? positiveAction : negativeAction;
+    const paymentType = this.getPrimaryPaymentType().toLowerCase();
+    this.logger.debug(`Loan ${loanId} ${paymentType} ${resultText}, payment state: ${payment.state}.`);
   }
   
 }

@@ -1,23 +1,11 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
-import { LoanPaymentStateCodes, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { ILoan } from '@library/entity/entity-interface';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
-/**
- * Constants for funding evaluation contexts
- */
-const EVALUATION_CONTEXTS = {
-  COMPLETION: 'Funding completion',
-  PAUSE: 'Funding pause',
-} as const;
 
-const SUPPORTED_NEXT_STATES: LoanState[] = [
-  LoanStateCodes.Funded,
-  LoanStateCodes.FundingPaused,
-  LoanStateCodes.Accepted,
-];
 
 /**
  * State manager for loans in the 'Funding' state.
@@ -30,6 +18,14 @@ const SUPPORTED_NEXT_STATES: LoanState[] = [
 export class FundingLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.Funding);
+  }
+
+  protected getSupportedNextStates(): LoanState[] {
+    return [LoanStateCodes.Funded, LoanStateCodes.FundingPaused, LoanStateCodes.Accepted];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    return LoanPaymentTypeCodes.Funding;
   }
 
   /**
@@ -83,12 +79,7 @@ export class FundingLoanStateManager extends BaseLoanStateManager {
    *   - `null` if the transition failed and appropriate rollback was executed
    */
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    if (!SUPPORTED_NEXT_STATES.includes(nextState)) {
-      this.logger.error(`Unsupported next state ${nextState} for loan ${loanId} in Funding state.`);
-      return null; // Unsupported state transition
-    }
-    this.logger.debug(`Setting next state for loan ${loanId} to ${nextState}.`);
-    return this.domainServices.loanServices.updateLoan(loanId, { state: nextState });
+    return this.executeStateTransition(loanId, nextState);
   }
 
   /**
@@ -98,14 +89,7 @@ export class FundingLoanStateManager extends BaseLoanStateManager {
    * @returns True if funding should be marked as completed
    */
   private shouldBeCompleted(loan: ILoan): boolean {
-    const relevantPayment = this.getStateEvaluationPayment(loan, LoanPaymentTypeCodes.Funding, EVALUATION_CONTEXTS.COMPLETION);
-    if (!relevantPayment) {
-      this.logger.warn(`No relevant funding payment found for loan ${loan.id} during completion evaluation.`);
-      return false; // No payment to evaluate
-    }
-    const isCompleted = relevantPayment.state === LoanPaymentStateCodes.Completed;
-    this.logPaymentEvaluation(loan.id, EVALUATION_CONTEXTS.COMPLETION, relevantPayment, isCompleted);
-    return isCompleted;
+    return this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'Funding completion');
   }
 
   /**
@@ -115,29 +99,7 @@ export class FundingLoanStateManager extends BaseLoanStateManager {
    * @returns True if funding should be paused
    */
   private shouldBePaused(loan: ILoan): boolean {
-    const relevantPayment = this.getStateEvaluationPayment(loan, LoanPaymentTypeCodes.Funding, EVALUATION_CONTEXTS.PAUSE);
-    if (!relevantPayment) {
-      this.logger.warn(`No relevant funding payment found for loan ${loan.id} during pause evaluation.`);
-      return false; // No payment to evaluate
-    }
-    const shouldPause = relevantPayment.state === LoanPaymentStateCodes.Failed;
-    this.logPaymentEvaluation(loan.id, EVALUATION_CONTEXTS.PAUSE, relevantPayment, shouldPause);
-    return shouldPause;
-  }
-
-  /**
-   * Logs the result of payment evaluation with consistent formatting.
-   * 
-   * @param loanId - The loan identifier
-   * @param context - The evaluation context
-   * @param payment - The payment that was evaluated
-   * @param result - The evaluation result
-   */
-  private logPaymentEvaluation(loanId: string, context: string, payment: ILoanPayment, result: boolean): void {
-    const action = context === EVALUATION_CONTEXTS.COMPLETION ? 'completed' : 'paused';
-    const negativeAction = context === EVALUATION_CONTEXTS.COMPLETION ? 'not completed' : 'not paused';
-    const resultText = result ? action : negativeAction;
-    this.logger.debug(`Loan ${loanId} funding ${resultText}, payment state: ${payment.state}.`);
+    return this.isPaymentFailed(loan, this.getPrimaryPaymentType(), 'Funding pause');
   }
 
   

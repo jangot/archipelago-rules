@@ -1,23 +1,9 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
-import { LoanPaymentStateCodes, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { ILoan } from '@library/entity/entity-interface';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { BaseLoanStateManager } from './base-loan-state-manager';
-
-/**
- * Constants for disbursement paused evaluation contexts
- */
-const EVALUATION_CONTEXTS = {
-  COMPLETION: 'Disbursement completion',
-  RESUME: 'Disbursement resume',
-} as const;
-
-const SUPPORTED_NEXT_STATES: LoanState[] = [
-  LoanStateCodes.Disbursed,
-  LoanStateCodes.Funded,
-  LoanStateCodes.Disbursing,
-];
 
 /**
  * State manager for loans in the 'DisbursingPaused' state.
@@ -31,6 +17,14 @@ const SUPPORTED_NEXT_STATES: LoanState[] = [
 export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.DisbursingPaused);
+  }
+
+  protected getSupportedNextStates(): LoanState[] {
+    return [LoanStateCodes.Disbursed, LoanStateCodes.Funded, LoanStateCodes.Disbursing];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    return LoanPaymentTypeCodes.Disbursement;
   }
 
   /**
@@ -59,18 +53,18 @@ export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
     if (!this.isActualStateValid(loan)) return null;
 
     // Check conditions for `LoanStateCodes.Disbursing`
-    const isDisbursementResumed = this.shouldBeResumed(loan);
+    const isDisbursementResumed = this.isPaymentPending(loan, this.getPrimaryPaymentType(), 'disbursement resume');
     if (isDisbursementResumed) return LoanStateCodes.Disbursing;
 
-    // Check conditions for `LoanStateCodes.Funded`
-    const isDisbursementCompleted = this.shouldBeCompleted(loan);
+    // Check conditions for `LoanStateCodes.Disbursed`
+    const isDisbursementCompleted = this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'disbursement completion');
     if (isDisbursementCompleted) return LoanStateCodes.Disbursed;
 
-    // Check conditions for `LoanStateCodes.Accepted`
+    // Check conditions for `LoanStateCodes.Funded`
     const isDisbursementReturnedToFunded = this.shouldBeReturnedToFunded(loan);
     if (isDisbursementReturnedToFunded) return LoanStateCodes.Funded;
 
-    // If no states above reached - keep the `LoanStateCodes.FundingPaused`
+    // If no states above reached - keep the `LoanStateCodes.DisbursingPaused`
     return LoanStateCodes.DisbursingPaused;
   }
 
@@ -92,34 +86,7 @@ export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
    *   - `null` if transition failed or if issues prevent safe resumption
    */
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    if (!SUPPORTED_NEXT_STATES.includes(nextState)) {
-      this.logger.error(`Unsupported next state ${nextState} for loan ${loanId} in DisbursingPaused state.`);
-      return null; // Unsupported state transition
-    }
-    this.logger.debug(`Setting next state for loan ${loanId} to ${nextState}.`);
-    return this.domainServices.loanServices.updateLoan(loanId, { state: nextState });
-  }
-
-  private shouldBeResumed(loan: ILoan): boolean {
-    const relevantPayment = this.getStateEvaluationPayment(loan, LoanPaymentTypeCodes.Disbursement, EVALUATION_CONTEXTS.RESUME);
-    if (!relevantPayment) {
-      this.logger.warn(`No relevant payment found for loan ${loan.id} in DisbursingPaused state.`);
-      return false; // Cannot resume without a relevant payment
-    }
-    const isPaymentInProgress = relevantPayment.state === LoanPaymentStateCodes.Pending;
-    this.logPaymentEvaluation(loan.id, EVALUATION_CONTEXTS.RESUME, relevantPayment, isPaymentInProgress);
-    return isPaymentInProgress;
-  }
-
-  private shouldBeCompleted(loan: ILoan): boolean { 
-    const relevantPayment = this.getStateEvaluationPayment(loan, LoanPaymentTypeCodes.Disbursement, EVALUATION_CONTEXTS.COMPLETION);
-    if (!relevantPayment) {
-      this.logger.warn(`No relevant disbursement payment found for loan ${loan.id} during completion evaluation.`);
-      return false; // No payment to evaluate
-    }
-    const isCompleted = relevantPayment.state === LoanPaymentStateCodes.Completed;
-    this.logPaymentEvaluation(loan.id, EVALUATION_CONTEXTS.COMPLETION, relevantPayment, isCompleted);
-    return isCompleted;
+    return this.executeStateTransition(loanId, nextState);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -127,12 +94,5 @@ export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
     // Currently, we do not have a condition to revert disbursement paused to Funded state
     // This might be implemented in the future if business rules change
     return false;
-  }
-  
-  private logPaymentEvaluation(loanId: string, context: string, payment: ILoanPayment, result: boolean): void {
-    const action = context === EVALUATION_CONTEXTS.COMPLETION ? 'completed' : 'resumed';
-    const negativeAction = context === EVALUATION_CONTEXTS.COMPLETION ? 'not completed' : 'not resumed';
-    const resultText = result ? action : negativeAction;
-    this.logger.debug(`Loan ${loanId} disbursement ${resultText}, payment state: ${payment.state}.`);
   }
 }

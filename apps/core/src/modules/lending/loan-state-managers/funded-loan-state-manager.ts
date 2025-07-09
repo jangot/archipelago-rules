@@ -1,21 +1,9 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
-import { LoanPaymentStateCodes, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { ILoan } from '@library/entity/entity-interface';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { BaseLoanStateManager } from './base-loan-state-manager';
-
-/**
- * Constants for funded evaluation contexts
- */
-const EVALUATION_CONTEXTS = {
-  START_DISBURSEMENT: 'Starting disbursement',
-} as const;
-
-const SUPPORTED_NEXT_STATES: LoanState[] = [
-  LoanStateCodes.Accepted,
-  LoanStateCodes.Disbursing,
-];
 
 /**
  * State manager for loans in the 'Funded' state.
@@ -28,6 +16,14 @@ const SUPPORTED_NEXT_STATES: LoanState[] = [
 export class FundedLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.Funded);
+  }
+
+  protected getSupportedNextStates(): LoanState[] {
+    return [LoanStateCodes.Accepted, LoanStateCodes.Disbursing];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    return LoanPaymentTypeCodes.Funding;
   }
 
   /**
@@ -69,73 +65,22 @@ export class FundedLoanStateManager extends BaseLoanStateManager {
     return LoanStateCodes.Funded;
   }
 
-  /**
-   * Executes the state transition from Funded to the determined next state.
-   * 
-   * @param loanId - The unique identifier of the loan to update
-   * @param nextState - The target state to transition the loan to
-   * @returns Promise<boolean | null> - Returns:
-   *   - `true` if the state transition and disbursement initiation completed successfully
-   *   - `null` if the transition failed or disbursement could not be initiated safely
-   */
-   
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    if (!SUPPORTED_NEXT_STATES.includes(nextState)) {
-      this.logger.error(`Unsupported next state ${nextState} for loan ${loanId} in Funded state.`);
-      return null; // Unsupported state transition
-    }
-    this.logger.debug(`Setting next state for loan ${loanId} to ${nextState}.`);
-    return this.domainServices.loanServices.updateLoan(loanId, { state: nextState });
+    return this.executeStateTransition(loanId, nextState);
   }
 
-  /**
-   * Determines if loan funds should be disbursed based on funding payment status.
-   * 
-   * @param loan - The loan to evaluate for disbursement readiness
-   * @returns True if disbursement should be initiated
-   */
   private shouldBeDisbursed(loan: ILoan): boolean { 
-    const relevantPayment = this.getStateEvaluationPayment(loan, LoanPaymentTypeCodes.Funding, EVALUATION_CONTEXTS.START_DISBURSEMENT);
-    if (!relevantPayment) {
-      this.logger.debug(`No funding payment found for loan ${loan.id} in state ${this.loanState}.`);
-      return false; // No funding payment to evaluate
-    }
-    const isDisbursementReadyState = relevantPayment.status === LoanPaymentStateCodes.Completed;
-    // To ensure that Loan is ready to hext state transition - also check that accounts are valid
+    const isDisbursementReadyState = this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'starting disbursement');
+    // To ensure that Loan is ready for next state transition - also check that accounts are valid
     const hasValidAccounts = this.hasValidAccountsConnected(loan);
     const isDisbursementReady = isDisbursementReadyState && hasValidAccounts;
-    this.logPaymentEvaluation(loan.id, EVALUATION_CONTEXTS.START_DISBURSEMENT, relevantPayment, isDisbursementReady);
     return isDisbursementReady;
   }
 
-  /**
-   * Determines if funding should be returned to Accepted state.
-   * 
-   * Currently not implemented as there are no business requirements
-   * for reverting from Funded to Accepted state.
-   * 
-   * @param loan - The loan to evaluate for reversion
-   * @returns Always returns false in current implementation
-   */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private shouldBeReturnedToAccepted(loan: ILoan): boolean { 
     // Currently, we do not have a condition to revert Funded to Accepted state
     // This might be implemented in the future if business rules change
     return false;
-  }
-
-  /**
-   * Logs the result of payment evaluation with consistent formatting.
-   * 
-   * @param loanId - The loan identifier
-   * @param context - The evaluation context
-   * @param payment - The payment that was evaluated
-   * @param result - The evaluation result
-   */
-  private logPaymentEvaluation(loanId: string, context: string, payment: ILoanPayment, result: boolean): void {
-    const action = 'completed and ready for disbursement';
-    const negativeAction = 'not completed and / or not ready for disbursement';
-    const resultText = result ? action : negativeAction;
-    this.logger.debug(`Loan ${loanId} funding ${resultText}, payment state: ${payment.state}.`);
   }
 }

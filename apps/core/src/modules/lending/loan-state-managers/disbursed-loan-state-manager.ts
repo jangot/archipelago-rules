@@ -1,21 +1,9 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
-import { LoanPaymentStateCodes, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { ILoan } from '@library/entity/entity-interface';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { BaseLoanStateManager } from './base-loan-state-manager';
-
-/**
- * Constants for disbursed evaluation contexts
- */
-const EVALUATION_CONTEXTS = {
-  START_REPAYMENT: 'Starting repayment',
-} as const;
-
-const SUPPORTED_NEXT_STATES: LoanState[] = [
-  LoanStateCodes.Funded,
-  LoanStateCodes.Repaying,
-];
 
 /**
  * State manager for loans in the 'Disbursed' state.
@@ -29,6 +17,14 @@ const SUPPORTED_NEXT_STATES: LoanState[] = [
 export class DisbursedLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.Disbursed);
+  }
+
+  protected getSupportedNextStates(): LoanState[] {
+    return [LoanStateCodes.Funded, LoanStateCodes.Repaying];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    return LoanPaymentTypeCodes.Disbursement;
   }
 
   /**
@@ -90,26 +86,16 @@ export class DisbursedLoanStateManager extends BaseLoanStateManager {
    *   - `null` if transition failed or if issues prevent safe activation
    */
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    if (!SUPPORTED_NEXT_STATES.includes(nextState)) {
-      this.logger.error(`Unsupported next state ${nextState} for loan ${loanId} in Disbursed state.`);
-      return null; // Unsupported state transition
-    }
-    this.logger.debug(`Setting next state for loan ${loanId} to ${nextState}.`);
-    return this.domainServices.loanServices.updateLoan(loanId, { state: nextState });
+    return this.executeStateTransition(loanId, nextState);
   }
 
   private shouldStartRepayment(loan: ILoan): boolean { 
-    const relevantPayment = this.getStateEvaluationPayment(loan, LoanPaymentTypeCodes.Disbursement, EVALUATION_CONTEXTS.START_REPAYMENT);
-    if (!relevantPayment) {
-      this.logger.debug(`No disbursement payment found for loan ${loan.id} in state ${this.loanState}.`);
-      return false; // No disbursement payment to evaluate
-    }
-    const isRepaymentReadyState = relevantPayment.status === LoanPaymentStateCodes.Completed;
-    // To ensure that Loan is ready to hext state transition - also check that accounts are valid
+    // Check if disbursement payment is completed
+    const isDisbursementCompleted = this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'starting repayment');
+    // To ensure that Loan is ready for next state transition - also check that accounts are valid
     const hasValidAccounts = this.hasValidAccountsConnected(loan);
-    const isReadyReady = isRepaymentReadyState && hasValidAccounts;
-    this.logPaymentEvaluation(loan.id, EVALUATION_CONTEXTS.START_REPAYMENT, relevantPayment, isReadyReady);
-    return isReadyReady;
+    const isReady = isDisbursementCompleted && hasValidAccounts;
+    return isReady;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -118,13 +104,4 @@ export class DisbursedLoanStateManager extends BaseLoanStateManager {
     // This might be implemented in the future if business rules change
     return false;
   }
-
-  private logPaymentEvaluation(loanId: string, context: string, payment: ILoanPayment, result: boolean): void {
-    const action = 'completed and ready for repayment';
-    const negativeAction = 'not completed and / or not ready for repayment';
-    const resultText = result ? action : negativeAction;
-    this.logger.debug(`Loan ${loanId} disbursement ${resultText}, payment state: ${payment.state}.`);
-  }
-  
-  
 }
