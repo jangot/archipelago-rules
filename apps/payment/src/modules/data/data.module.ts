@@ -4,8 +4,8 @@ import { CoreEntities, PaymentEntities } from '@library/shared/domain/entity';
 import { SharedCoreRepositories } from '@library/shared/infrastructure/repository';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CustomPaymentRepositories } from '../infrastructure/repositories';
 import { PaymentDataService } from './data.service';
+import { CustomPaymentRepositories } from './repositories';
 
 @Module({
   imports: [

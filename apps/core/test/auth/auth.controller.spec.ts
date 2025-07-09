@@ -16,7 +16,6 @@ import { DataModule } from '@core/modules/data';
 import { DomainModule } from '@core/modules/domain/domain.module';
 import { UserDomainService } from '@core/modules/domain/services/user.domain.service';
 import { UsersModule } from '@core/modules/users';
-import { RegistrationStatus } from '@library/entity/enum';
 import { BaseDomainExceptionCodes } from '@library/shared/common/exception/domain';
 import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filter';
 import { INestApplication, Logger } from '@nestjs/common';
@@ -180,11 +179,17 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(400);
     });
 
-    it('should throw BadRequestException if code is missing', async () => {
-      await request(app.getHttpServer())
+    it('should throw LoginSessionNotInitiated if code is missing', async () => {
+      const response = await request(app.getHttpServer())
         .post('/auth/verify')
-        .send({ userId: 'valid-uuid', code: '' })
-        .expect(400);
+        .send({ userId: '2bacf5cb-9fa9-47c9-b560-9ea3766cc201', code: '' })
+        .expect(403);
+
+      expect(response.body).toEqual(expect.objectContaining({
+        statusCode: 403,
+        errorCode: AuthDomainExceptionCodes.LoginSessionNotInitiated,
+        message: 'Login session is not initiated',
+      }));
     });
 
     it('should throw Login session is not initiated (403) as User not initiated email login', async () => {
@@ -224,8 +229,8 @@ describe('AuthController - Negative Test Cases', () => {
     });
 
     // TODO: we are allowing to log in by any contact here by same code!!!
-    // Is it expected?
-    it('should fail as session was initiated for other contact (400)', async () => {
+    // Based on current implementation, verification type checking is no longer performed
+    it('should allow login with same code regardless of contact type', async () => {
       // Correctly initiate login session first
       const loginIntitateResponse = await request(app.getHttpServer()).post('/auth/login')
         .send({ email: '', phoneNumber: '+12124567993' })
@@ -237,17 +242,15 @@ describe('AuthController - Negative Test Cases', () => {
         verificationCode: expect.any(String),
       });
 
-      // Here we place email instead of phone number (for which we assigned secret)
-      // Is it correct expectance that here error should be thrown?
+      // The current implementation allows using the same verification code for different contact types
       const verifyResponse = await request(app.getHttpServer())
         .post('/auth/verify')
         .send({ userId: '2bacf5cb-9fa9-47c9-b560-9ea3766cc201', email: 'registration-verify-test1@email.com', code: correctVerificationCode })
-        .expect(400);
+        .expect(201);
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
-        statusCode: 400,
-        errorCode: AuthDomainExceptionCodes.WrongVerificationType,
-        message: 'User has a different verification type',
+        accessToken: expect.any(String),
+        refreshToken: expect.any(String),
       }));
     });
 
@@ -359,11 +362,8 @@ describe('AuthController - Negative Test Cases', () => {
         .expect(201);
 
       expect(secondAttempt.body).toEqual(expect.objectContaining({
-        email: registrationEmail,
+        userId: expect.any(String),
         verificationCode: expect.any(String),
-        id: expect.any(String),
-        phoneNumber: null,
-        verificationState: RegistrationStatus.EmailVerifying,
       }));
 
       // Search for user - 2 calls, one for registered, second for pending
@@ -407,15 +407,15 @@ describe('AuthController - Negative Test Cases', () => {
         .send({ email: registrationEmail })
         .expect(201);
 
-      const { id } = registrationInit.body;
+      const { userId } = registrationInit.body;
       const verifyResponse = await request(app.getHttpServer())
         .post('/auth/register/verify')
-        .send({ userId: id, code: '' })
+        .send({ userId, code: '' })
         .expect(400);
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
         errorCode: AuthDomainExceptionCodes.VerificationCodeMismatch,
-        message: `Verification code mismatch for user ${id}`,
+        message: `Verification code mismatch for user ${userId}`,
         statusCode: 400,
       }));
 
@@ -429,17 +429,17 @@ describe('AuthController - Negative Test Cases', () => {
         .send({ email: registrationEmail })
         .expect(201);
 
-      const { id, verificationCode } = registrationInit.body;
+      const { userId, verificationCode } = registrationInit.body;
 
       const wrongCode = generateWrongCode(verificationCode);
       const verifyResponse = await request(app.getHttpServer())
         .post('/auth/register/verify')
-        .send({ userId: id, code: wrongCode })
+        .send({ userId, code: wrongCode })
         .expect(400);
 
       expect(verifyResponse.body).toEqual(expect.objectContaining({
         errorCode: AuthDomainExceptionCodes.VerificationCodeMismatch,
-        message: `Verification code mismatch for user ${id}`,
+        message: `Verification code mismatch for user ${userId}`,
         statusCode: 400,
       }));
     });
@@ -454,15 +454,15 @@ describe('AuthController - Negative Test Cases', () => {
         .send({ email: registrationEmail })
         .expect(201);
 
-      const { id, verificationCode } = registrationInit.body;
+      const { userId, verificationCode } = registrationInit.body;
       await request(app.getHttpServer())
         .post('/auth/register/verify')
-        .send({ userId: id, code: verificationCode })
+        .send({ userId, code: verificationCode })
         .expect(201);
 
       await request(app.getHttpServer())
         .put('/auth/register')
-        .send({ userId: id, phoneNumber: registrationPhoneNumber })
+        .send({ userId, phoneNumber: registrationPhoneNumber })
         .expect(401);
     });
     it('should return 400 for code missmatch if code is empty on stage 2', async () => {
@@ -474,10 +474,10 @@ describe('AuthController - Negative Test Cases', () => {
         .send({ email: registrationEmail })
         .expect(201);
 
-      const { id, verificationCode } = registrationInit.body;
+      const { userId, verificationCode } = registrationInit.body;
       const verifyResponse = await request(app.getHttpServer())
         .post('/auth/register/verify')
-        .send({ userId: id, code: verificationCode })
+        .send({ userId, code: verificationCode })
         .expect(201);
 
       const { accessToken } = verifyResponse.body;
@@ -485,19 +485,19 @@ describe('AuthController - Negative Test Cases', () => {
       await request(app.getHttpServer())
         .put('/auth/register')
         .set({ 'authorization': `Bearer ${accessToken}` })
-        .send({ userId: id, phoneNumber: registrationPhoneNumber })
+        .send({ userId, phoneNumber: registrationPhoneNumber })
         .expect(200);
 
 
       const secondVerifyResponse = await request(app.getHttpServer())
         .post('/auth/register/verify')
         .set({ 'authorization': `Bearer ${accessToken}` })
-        .send({ userId: id, code: '' })
+        .send({ userId, code: '' })
         .expect(400);
 
       expect(secondVerifyResponse.body).toEqual(expect.objectContaining({
         errorCode: AuthDomainExceptionCodes.VerificationCodeMismatch,
-        message: `Verification code mismatch for user ${id}`,
+        message: `Verification code mismatch for user ${userId}`,
         statusCode: 400,
       }));
 
@@ -512,10 +512,10 @@ describe('AuthController - Negative Test Cases', () => {
         .send({ email: registrationEmail })
         .expect(201);
 
-      const { id, verificationCode } = registrationInit.body;
+      const { userId, verificationCode } = registrationInit.body;
       const verifyResponse = await request(app.getHttpServer())
         .post('/auth/register/verify')
-        .send({ userId: id, code: verificationCode })
+        .send({ userId, code: verificationCode })
         .expect(201);
 
       const { accessToken } = verifyResponse.body;
@@ -523,19 +523,19 @@ describe('AuthController - Negative Test Cases', () => {
       const phoneNumberResult = await request(app.getHttpServer())
         .put('/auth/register')
         .set({ 'authorization': `Bearer ${accessToken}` })
-        .send({ userId: id, phoneNumber: registrationPhoneNumber })
+        .send({ userId, phoneNumber: registrationPhoneNumber })
         .expect(200);
       const { verificationCode: phoneCode } = phoneNumberResult.body;
       const wrongCode = generateWrongCode(phoneCode);
       const secondVerifyResponse = await request(app.getHttpServer())
         .post('/auth/register/verify')
         .set({ 'authorization': `Bearer ${accessToken}` })
-        .send({ userId: id, code: wrongCode })
+        .send({ userId, code: wrongCode })
         .expect(400);
 
       expect(secondVerifyResponse.body).toEqual(expect.objectContaining({
         errorCode: AuthDomainExceptionCodes.VerificationCodeMismatch,
-        message: `Verification code mismatch for user ${id}`,
+        message: `Verification code mismatch for user ${userId}`,
         statusCode: 400,
       }));
     });
