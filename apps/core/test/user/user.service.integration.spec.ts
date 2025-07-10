@@ -3,14 +3,14 @@ import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { ValueOperator } from '@library/shared/common/search';
-import { ContactType } from '@library/entity/enum';
-import { UsersService } from '@core/modules/users/users.service';
 import { UsersModule } from '@core/modules/users';
-import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
-import { AllEntities } from '@library/shared/domain/entity';
 import { UserCreateRequestDto, UserUpdateRequestDto } from '@core/modules/users/dto/request';
+import { UsersService } from '@core/modules/users/users.service';
+import { ContactType, RegistrationStatus } from '@library/entity/enum';
+import { ValueOperator } from '@library/shared/common/search';
+import { AllEntities } from '@library/shared/domain/entity';
+import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
+import { Test, TestingModule } from '@nestjs/testing';
 
 
 describe('UsersService Integration Tests', () => {
@@ -46,14 +46,22 @@ describe('UsersService Integration Tests', () => {
       const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', phoneNumber };
 
       const createResult = await service.createUser(mockUser);
-      const result = await service.getUserDetailById(createResult!.id);
+      const result = await service.getUserDetailById(createResult!.userId);
 
       expect(result).toEqual(expect.objectContaining({
-        userId: createResult!.id,
+        id: createResult!.userId,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
         phoneNumber: mockUser.phoneNumber,
+        dateOfBirth: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zipCode: null,
+        onboardingStatus: undefined,
+        deletedAt: undefined,
       }));
     });
   });
@@ -67,13 +75,19 @@ describe('UsersService Integration Tests', () => {
 
       const createResult = await service.createUser(mockUser);
 
-      const result = await service.getUserById(createResult!.id);
+      const result = await service.getUserById(createResult!.userId);
       expect(result).toEqual(expect.objectContaining({
-        id: createResult!.id,
+        userId: createResult!.userId,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
         phoneNumber: mockUser.phoneNumber,
+        dateOfBirth: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        registrationStatus: RegistrationStatus.NotRegistered,
+        loginId: undefined,
       }));
     });
 
@@ -91,11 +105,17 @@ describe('UsersService Integration Tests', () => {
 
       const result = await service.getUserByContact(createResult!.email, ContactType.EMAIL);
       expect(result).toEqual(expect.objectContaining({
-        id: createResult!.id,
+        userId: createResult!.userId,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
         phoneNumber: mockUser.phoneNumber,
+        dateOfBirth: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        registrationStatus: RegistrationStatus.NotRegistered,
+        loginId: undefined,
       }));
     });
 
@@ -113,11 +133,17 @@ describe('UsersService Integration Tests', () => {
 
       const result = await service.getUserByContact(createResult!.phoneNumber, ContactType.PHONE_NUMBER);
       expect(result).toEqual(expect.objectContaining({
-        id: createResult!.id,
+        userId: createResult!.userId,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
         phoneNumber: mockUser.phoneNumber,
+        dateOfBirth: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        registrationStatus: RegistrationStatus.NotRegistered,
+        loginId: undefined,
       }));
     });
 
@@ -136,20 +162,29 @@ describe('UsersService Integration Tests', () => {
 
       const result = await service.createUser(createUserDto);
       expect(result).toEqual(expect.objectContaining({
-        id: expect.any(String),
+        userId: expect.any(String),
         firstName: createUserDto.firstName,
         lastName: createUserDto.lastName,
         email: createUserDto.email,
         phoneNumber: createUserDto.phoneNumber,
+        registrationStatus: RegistrationStatus.NotRegistered,
+        loginId: undefined,
       }));
 
-      const createdUser = await service.getUserById(result!.id);
+      const createdUser = await service.getUserById(result!.userId);
       expect(createdUser).toEqual(expect.objectContaining({
-        id: result!.id,
+        userId: result!.userId,
         firstName: createUserDto.firstName,
         lastName: createUserDto.lastName,
         email: createUserDto.email,
         phoneNumber: createUserDto.phoneNumber,
+        dateOfBirth: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zipCode: null,
+        onboardingStatus: null,
       }));
     });
 
@@ -173,36 +208,49 @@ describe('UsersService Integration Tests', () => {
       const creationResult = await service.createUser(mockUser);
 
       const updateUserDto: UserUpdateRequestDto = {
-        id: creationResult!.id,
         firstName: 'Jane',
         lastName: 'Doe',
         email: 'jane.doe@example.com',
         phoneNumber: creationResult!.phoneNumber,
+        dateOfBirth: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zipCode: null,
+        onboardingStatus: null,
       };
 
-      const result = await service.updateUser(updateUserDto);
+      const result = await service.updateUser(creationResult!.userId, updateUserDto);
       expect(result).toBe(true);
 
-      const updatedUser = await service.getUserById(creationResult!.id);
+      const updatedUser = await service.getUserById(creationResult!.userId);
       expect(updatedUser).toEqual(expect.objectContaining({
-        id: creationResult!.id,
+        id: creationResult!.userId,
         firstName: updateUserDto.firstName,
         lastName: updateUserDto.lastName,
         email: updateUserDto.email,
         phoneNumber: updateUserDto.phoneNumber,
+        dateOfBirth: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zipCode: null,
+        onboardingStatus: null,
       }));
     });
 
     it('should return false if user update fails', async () => {
+      const userId = uuidv4();
       const updateUserDto: UserUpdateRequestDto = {
-        id: uuidv4(),
         firstName: 'Jane',
         lastName: 'Doe',
         email: 'jane.doe@example.com',
         phoneNumber: '+12124567891',
       };
 
-      const result = await service.updateUser(updateUserDto);
+      const result = await service.updateUser(userId, updateUserDto);
       expect(result).toBe(false);
     });
   });
@@ -216,24 +264,37 @@ describe('UsersService Integration Tests', () => {
 
       const creationResult = await service.createUser(mockUser);
 
+      const userId = creationResult!.userId;
       const updateUserDto: UserUpdateRequestDto = {
-        id: creationResult!.id,
         firstName: 'Jane',
         lastName: undefined,
         email: undefined,
         phoneNumber: undefined,
       };
 
-      const result = await service.updateUser(updateUserDto);
-      expect(result).toBe(true);
-
-      const updatedUser = await service.getUserById(creationResult!.id);
-      expect(updatedUser).toEqual(expect.objectContaining({
-        id: creationResult!.id,
+      const result = await service.updateUser(userId, updateUserDto);
+      expect(result).toEqual(expect.objectContaining({
+        userId: userId,
         firstName: updateUserDto.firstName,
         lastName: creationResult!.lastName,
         email: creationResult!.email,
         phoneNumber: creationResult!.phoneNumber,
+      }));
+
+      const updatedUser = await service.getUserById(userId);
+      expect(updatedUser).toEqual(expect.objectContaining({
+        userId: creationResult!.userId,
+        firstName: updateUserDto.firstName,
+        lastName: creationResult!.lastName,
+        email: creationResult!.email,
+        phoneNumber: creationResult!.phoneNumber,
+        dateOfBirth: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zipCode: null,
+        onboardingStatus: null,
       }));
     });
 
@@ -249,19 +310,33 @@ describe('UsersService Integration Tests', () => {
       const mockUser: UserCreateRequestDto = { firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', phoneNumber };
 
       const creationResult = await service.createUser(mockUser);
+      const userId = creationResult!.userId;
 
-      const updateUserDto: UserUpdateRequestDto = { id: creationResult!.id, firstName: 'Jane', lastName: '', email: '', phoneNumber: undefined };
+      const updateUserDto: UserUpdateRequestDto = { firstName: 'Jane', lastName: '', email: '', phoneNumber: undefined };
 
-      const result = await service.updateUser(updateUserDto);
-      expect(result).toBe(true);
+      const result = await service.updateUser(userId, updateUserDto);
+      expect(result).toEqual(expect.objectContaining({
+        userId: userId,
+        firstName: updateUserDto.firstName,
+        lastName: creationResult!.lastName,
+        email: creationResult!.email,
+        phoneNumber: creationResult!.phoneNumber,
+      }));
 
-      const updatedUser = await service.getUserById(creationResult!.id);
+      const updatedUser = await service.getUserById(userId);
       expect(updatedUser).toEqual(expect.objectContaining({
-        id: creationResult!.id,
+        userId: userId,
         firstName: updateUserDto.firstName,
         lastName: '',
         email: '',
         phoneNumber: creationResult!.phoneNumber,
+        dateOfBirth: null,
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zipCode: null,
+        onboardingStatus: null,
       }));
     });
   });
@@ -275,10 +350,10 @@ describe('UsersService Integration Tests', () => {
 
       const creationResult = await service.createUser(mockUser);
 
-      const deleteResult = await service.deleteUser(creationResult!.id);
+      const deleteResult = await service.deleteUser(creationResult!.userId);
       expect(deleteResult).toBe(true);
 
-      const deletedUser = await service.getUserById(creationResult!.id);
+      const deletedUser = await service.getUserById(creationResult!.userId);
       expect(deletedUser).toBeNull();
     });
 
@@ -297,18 +372,23 @@ describe('UsersService Integration Tests', () => {
 
       const creationResult = await service.createUser(mockUser);
 
-      await service.deleteUser(creationResult!.id);
+      await service.deleteUser(creationResult!.userId);
 
-      const restoreResult = await service.restoreUser(creationResult!.id);
+      const restoreResult = await service.restoreUser(creationResult!.userId);
       expect(restoreResult).toBe(true);
 
-      const restoredUser = await service.getUserById(creationResult!.id);
+      const restoredUser = await service.getUserById(creationResult!.userId);
       expect(restoredUser).toEqual(expect.objectContaining({
-        id: creationResult!.id,
+        id: creationResult!.userId,
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
         email: mockUser.email,
         phoneNumber: mockUser.phoneNumber,
+        state: null,
+        zipCode: null,
+        onboardingStatus: null,
+        loginId: undefined,
+        registrationStatus: RegistrationStatus.NotRegistered,
       }));
     });
 

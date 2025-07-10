@@ -1,47 +1,76 @@
-import { MapTo } from '@library/entity/mapping/mapping.decorators';
-import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
-import { IsValidPhoneNumber } from '@library/shared/common/validator/phone-number.validator';
-import { ApiProperty, ApiSchema } from '@nestjs/swagger';
+import { IsValidDateString } from '@library/shared/common/validator/date-string.validator';
+import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
-@ApiSchema({ name: 'userUpdateRequest' })
 export class UserUpdateRequestDto {
-  @ApiProperty({ description: 'Id of the User', type: String, required: true })
-  @Expose()
-  @IsUUID()
-  id: string;
-
   @ApiProperty({ description: 'User First Name', type: String, required: false, maxLength: 100 })
   @Expose()
   @IsString()
-  @MaxLength(100)
   @IsOptional()
-  firstName?: string;
+  @MaxLength(100)
+  firstName?: string | null;
 
   @ApiProperty({ description: 'User Last Name', type: String, required: false, maxLength: 100 })
   @Expose()
   @IsString()
+  @IsOptional()
   @MaxLength(100)
-  @IsOptional()
-  lastName?: string;
+  lastName?: string | null;
 
-  @ApiProperty({ description: 'User email', type: String, required: false, maxLength: 320 })
+  @ApiProperty({ description: 'User Date of Birth in the format MM/dd/yyyy', type: String, required: false, maxLength: 10 })
   @Expose()
-  @IsEmail()
-  @MaxLength(320)
-  @IsOptional()
-  email?: string;
-
-  // Don't use the @IsPhonenumber() validator as it is too restrictive. Do alternate validation.
-  // We will validate this at the Controller level using the `phone npm module`
-  @ApiProperty({ description: 'User phone number', type: String, required: false, maxLength: 32 })
-  @Expose()
-  @MaxLength(32)
   @IsString()
-  @IsNotEmpty()
   @IsOptional()
-  @IsValidPhoneNumber()
-  @MapTo({ transform: transformPhoneNumber })
-  phoneNumber?: string;
+  @IsValidDateString()
+  @MaxLength(10)
+  dateOfBirth?: string | null;
+    
+  @ApiProperty({ description: 'User address line 1', type: String, required: false })
+  @Expose()
+  @IsOptional()
+  @IsString()
+  addressLine1?: string | null;
+    
+  @ApiProperty({ description: 'User address line 2', type: String, required: false })
+  @Expose()
+  @IsOptional()
+  @IsString()
+  addressLine2?: string | null;
+    
+  @ApiProperty({ description: 'User city', type: String, required: false })
+  @Expose()
+  @IsOptional()
+  @IsString()
+  city?: string | null;
+    
+  @ApiProperty({ description: 'User state', type: String, required: false })
+  @Expose()
+  @IsOptional()
+  @IsString()
+  state?: string | null;
+    
+  @ApiProperty({ description: 'User zip code', type: String, required: false })
+  @Expose()
+  @IsOptional()
+  @IsString()
+  zipCode?: string | null;
+
+  @ApiProperty({ description: 'Onboarding status', type: String, required: false })
+  @Expose()
+  @IsOptional()
+  @IsString()
+  onboardingStatus?: string | null;
+
+  @ApiProperty({ description: 'Email', type: String, required: false })
+  @Expose()
+  @IsOptional()
+  @IsString()
+  email?: string | null;
+
+  @ApiProperty({ description: 'Phone number', type: String, required: false })
+  @Expose()
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string | null;
 }

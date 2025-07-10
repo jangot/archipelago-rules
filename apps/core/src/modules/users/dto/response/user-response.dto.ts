@@ -6,9 +6,10 @@ import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, IsUUID, MaxLe
 @ApiSchema({ name: 'userResponse' })
 export class UserResponseDto {
   @ApiProperty({ description: 'Id of the User', type: String, required: true })
-  @Expose()
+  @Expose({ name: 'id' }) // Example of mapping the Entity 'id' field to the userId field here
+  @IsString()
   @IsUUID()
-  id: string;
+  userId: string;
 
   @ApiProperty({ description: 'User First Name', type: String, required: true, maxLength: 100 })
   @Expose()

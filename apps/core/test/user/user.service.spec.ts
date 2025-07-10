@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { Logger } from '@nestjs/common';
-import { UsersService } from '@core/modules/users/users.service';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { UserCreateRequestDto, UserUpdateRequestDto, UserDetailsUpdateRequestDto } from '@core/modules/users/dto/request';
-import { UserResponseDto, UserDetailsUpdateResponseDto } from '@core/modules/users/dto/response';
+import { UserCreateRequestDto, UserUpdateRequestDto } from '@core/modules/users/dto/request';
+import { UserDetailsUpdateResponseDto, UserResponseDto } from '@core/modules/users/dto/response';
+import { UsersService } from '@core/modules/users/users.service';
 import { ContactType } from '@library/entity/enum';
-import { EntityNotFoundException, EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
+import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { Logger } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -107,19 +107,19 @@ describe('UsersService', () => {
 
   describe('updateUser', () => {
     it('should update an existing user', async () => {
-      const updateUserDto: UserUpdateRequestDto = { id: '1', email: 'updated@test.com' };
+      const updateUserDto: UserUpdateRequestDto = { email: 'updated@test.com' };
       mockDomainServices.userServices.updateUser.mockResolvedValue(true);
 
-      const result = await service.updateUser(updateUserDto);
+      const result = await service.updateUser('1', updateUserDto);
       expect(result).toBe(true);
       expect(mockDomainServices.userServices.updateUser).toHaveBeenCalledWith(expect.objectContaining(updateUserDto));
     });
 
     it('should return null if update fails', async () => {
-      const updateUserDto: UserUpdateRequestDto = { id: '1', email: 'updated@test.com' };
+      const updateUserDto: UserUpdateRequestDto = { email: 'updated@test.com' };
       mockDomainServices.userServices.updateUser.mockResolvedValue(false);
 
-      const result = await service.updateUser(updateUserDto);
+      const result = await service.updateUser('1', updateUserDto);
       expect(result).toBe(false);
     });
   });
@@ -127,7 +127,7 @@ describe('UsersService', () => {
   describe('updateUserDetails', () => {
     it('should update user details', async () => {
       const userId = '1';
-      const updates: UserDetailsUpdateRequestDto = {
+      const updates: UserUpdateRequestDto = {
         firstName: 'Updated', lastName: 'User',
         dateOfBirth: null,
         addressLine1: null,
@@ -143,14 +143,14 @@ describe('UsersService', () => {
       mockDomainServices.userServices.updateUser.mockResolvedValue(true);
       mockDomainServices.userServices.getUserById.mockResolvedValueOnce(updatedUser);
 
-      const result = await service.updateUserDetails(userId, updates);
+      const result = await service.updateUser(userId, updates);
       expect(result).toEqual(expect.any(UserDetailsUpdateResponseDto));
       expect(mockDomainServices.userServices.updateUser).toHaveBeenCalledWith(expect.objectContaining(updatedUser));
     });
 
     it('should throw EntityNotFoundException if user does not exist', async () => {
       const userId = 'non-existent-id';
-      const updates: UserDetailsUpdateRequestDto = {
+      const updates: UserUpdateRequestDto = {
         firstName: 'Updated', lastName: 'User',
         dateOfBirth: null,
         addressLine1: null,
@@ -162,12 +162,12 @@ describe('UsersService', () => {
 
       mockDomainServices.userServices.getUserById.mockResolvedValue(null);
 
-      await expect(service.updateUserDetails(userId, updates)).rejects.toThrow(EntityNotFoundException);
+      await expect(service.updateUser(userId, updates)).rejects.toThrow(EntityNotFoundException);
     });
 
     it('should throw EntityFailedToUpdateException if update fails', async () => {
       const userId = '1';
-      const updates: UserDetailsUpdateRequestDto = {
+      const updates: UserUpdateRequestDto = {
         firstName: 'Updated', lastName: 'User',
         dateOfBirth: null,
         addressLine1: null,
@@ -181,7 +181,7 @@ describe('UsersService', () => {
       mockDomainServices.userServices.getUserById.mockResolvedValue(existingUser);
       mockDomainServices.userServices.updateUser.mockResolvedValue(false);
 
-      await expect(service.updateUserDetails(userId, updates)).rejects.toThrow(EntityFailedToUpdateException);
+      await expect(service.updateUser(userId, updates)).rejects.toThrow(EntityFailedToUpdateException);
     });
   });
 

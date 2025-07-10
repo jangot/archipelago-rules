@@ -93,11 +93,9 @@ export class VerifyContactCommandHandler
     if (newRegistrationStatus === RegistrationStatus.EmailVerified) {
       user.email = user.pendingEmail;
       user.pendingEmail = null;
-      user.onboardStatus = RegistrationStatus.EmailVerified;
     } else {
       user.phoneNumber = user.pendingPhoneNumber;
       user.pendingPhoneNumber = null;
-      user.onboardStatus = RegistrationStatus.PhoneNumberVerified;
     }
 
     user.verificationStatus = RegistrationLogic.calculateNewVerificationStatus(user.verificationStatus);

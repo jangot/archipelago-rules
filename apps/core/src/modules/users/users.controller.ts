@@ -19,7 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { UserNotRegisteredException } from '../auth/exceptions/auth-domain.exceptions';
-import { UserDetailsUpdateRequestDto } from './dto/request';
+import { UserUpdateRequestDto } from './dto/request';
 import { UserDetailResponseDto, UserDetailsUpdateResponseDto, UserResponseDto } from './dto/response';
 import { UsersService } from './users.service';
 
@@ -62,7 +62,7 @@ export class UsersController {
   @ApiBadRequestResponse({ description: 'Updates can not be empty', isArray: false }) 
   @ApiNotFoundResponse({ description: 'User not found', isArray: false }) 
   @ApiInternalServerErrorResponse({ description: 'Could not apply updates', isArray: false }) 
-  public async updateUser(@Req() request: IRequest, @Body() body: UserDetailsUpdateRequestDto): Promise<UserDetailsUpdateResponseDto> { 
+  public async updateUser(@Req() request: IRequest, @Body() body: UserUpdateRequestDto): Promise<UserDetailsUpdateResponseDto> { 
     if (!request.user || !request.user.id) { 
       throw new UserNotRegisteredException('User not registered'); 
     } 
@@ -70,7 +70,7 @@ export class UsersController {
       throw new MissingInputException('Updates can not be empty'); 
     } 
     const userId = request.user.id; 
-    const updatedUser = await this.userService.updateUserDetails(userId, body); 
+    const updatedUser = await this.userService.updateUser(userId, body); 
     if (!updatedUser) { 
       throw new EntityNotFoundException('User not found'); 
     }

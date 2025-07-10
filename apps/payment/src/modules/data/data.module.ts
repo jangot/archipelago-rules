@@ -10,12 +10,7 @@ import { CustomPaymentRepositories } from './repositories';
 @Module({
   imports: [
     // Single connection that can access all schemas
-    TypeOrmModule.forRootAsync(SingleDataSourceConfiguration([...CoreEntities, ...PaymentEntities],
-      [
-        'dist/apps/payment/db/migrations/*.{js,ts}',
-        'src/db/migrations/*.ts',
-      ]
-    )),
+    TypeOrmModule.forRootAsync(SingleDataSourceConfiguration([...CoreEntities, ...PaymentEntities])),
   ],
   providers: [
     PaymentDataService, 

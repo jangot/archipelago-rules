@@ -27,7 +27,7 @@ describe('UserController', () => {
   describe('getUserById', () => {
     it('should return a user by id', async () => {
       const userId = '1';
-      const userResponse: UserResponseDto = { id: userId, email: 'test@test.com', phoneNumber: '1234567890', firstName: 'Test', lastName: 'User', registrationStatus: RegistrationStatus.NotRegistered };
+      const userResponse: UserResponseDto = { userId, email: 'test@test.com', phoneNumber: '1234567890', firstName: 'Test', lastName: 'User', registrationStatus: RegistrationStatus.NotRegistered };
       jest.spyOn(service, 'getUserById').mockResolvedValue(userResponse);
 
       const result = await controller.getUserById(userId);
