@@ -1,7 +1,7 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { BaseLoanStateManager } from './base-loan-state-manager';
-import { LoanState, LoanStateCodes } from '@library/entity/enum';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
  * State manager for loans in the 'Closed' state.
@@ -66,5 +66,17 @@ export class ClosedLoanStateManager extends BaseLoanStateManager {
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
     // TODO: Implement actual state transition logic
     throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+  }
+
+  protected getSupportedNextStates(): LoanState[] {
+    // Closed is typically a terminal state with no transitions
+    // but in exceptional cases might allow transitions for corrections
+    return [];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    // Closed loans don't have an active payment type
+    // Using Repayment as it's the last active payment type before closure
+    return LoanPaymentTypeCodes.Repayment;
   }
 }

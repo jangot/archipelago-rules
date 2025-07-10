@@ -3,35 +3,35 @@ import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { DataModule } from '../../src/data/data.module';
-import { DomainModule } from '../../src/domain/domain.module';
-import { IDomainServices } from '../../src/domain/idomain.services';
-import { LoanPaymentStepFactory } from '../../src/loan-payment-steps/loan-payment-step.factory';
-import { CreatedStepManager, PendingStepManager, CompletedStepManager, FailedStepManager } from '../../src/loan-payment-steps/managers';
-import { PaymentStepStateIsOutOfSyncException } from '../../src/domain/exceptions/payment-domain.exceptions';
-import { 
+import {
   ILoanPaymentStep,
   IPaymentAccount,
 } from '@library/entity/entity-interface';
-import { 
-  LoanPaymentTypeCodes,
+import {
   LoanPaymentStateCodes,
-  PaymentAccountTypeCodes,
+  LoanPaymentTypeCodes,
   PaymentAccountOwnershipTypeCodes,
   PaymentAccountProviderCodes,
   PaymentAccountStateCodes,
+  PaymentAccountTypeCodes,
   PaymentStepStateCodes,
 } from '@library/entity/enum';
-import { LoanPaymentStepModule } from '../../src/loan-payment-steps/loan-payment-step.module';
-import { TransferExecutionModule } from '../../src/transfer-execution/transfer-execution.module';
-import { 
-  memoryDataSourceSingle, 
-  TestDataSeeder, 
-  FOUNDATION_TEST_IDS,
-} from '@library/shared/tests';
-import { AllEntities } from '@library/shared/domain/entity';
 import { EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { AllEntities } from '@library/shared/domain/entity';
+import {
+  FOUNDATION_TEST_IDS,
+  memoryDataSourceSingle,
+  TestDataSeeder,
+} from '@library/shared/tests';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DataModule } from '@payment/modules/data';
+import { DomainModule } from '@payment/modules/domain/domain.module';
+import { PaymentStepStateIsOutOfSyncException } from '@payment/modules/domain/exceptions';
+import { IDomainServices } from '@payment/modules/domain/idomain.services';
+import { LoanPaymentStepFactory } from '../../src/modules/loan-payment-steps/loan-payment-step.factory';
+import { LoanPaymentStepModule } from '../../src/modules/loan-payment-steps/loan-payment-step.module';
+import { CompletedStepManager, CreatedStepManager, FailedStepManager, PendingStepManager } from '../../src/modules/loan-payment-steps/managers';
+import { TransferExecutionModule } from '../../src/modules/transfer-execution/transfer-execution.module';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
 // Verify entity interfaces first - check libs/entity/src/interface/ for actual field names

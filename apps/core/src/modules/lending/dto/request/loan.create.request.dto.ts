@@ -4,7 +4,7 @@ import { transformPhoneNumber } from '@library/shared/common/data/transformers/p
 import { IsValidPhoneNumber } from '@library/shared/common/validator/phone-number.validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEmail, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsEmail, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import { NIL } from 'uuid';
 
 @ApiSchema({ name: 'loanInviteeCreateRequest' })
@@ -48,10 +48,12 @@ export class LoanInviteeCreateRequestDto {
 }
 @ApiSchema({ name: 'loanCreateRequest' })
 export class LoanCreateRequestDto {
-  @ApiProperty({ description: 'Loan amount', type: Number, required: true, example: 100.50 })
+  @ApiProperty({ description: 'Loan amount', type: Number, required: true, example: 100.50, minimum: 20, maximum: 1000 })
   @Expose()
   @IsNumber({ maxDecimalPlaces: 2 })
   @IsNotEmpty()
+  @Min(20)
+  @Max(1000)
   amount: number;
 
   @ApiProperty({ description: 'Loan type', type: String, required: true, enum: LoanTypeCodes, example: LoanTypeCodes.DirectBillPay })
@@ -62,7 +64,6 @@ export class LoanCreateRequestDto {
 
   @ApiProperty({ description: 'Relationship between lender and borrower', type: String, required: false, example: 'Family' })
   @Expose()
-  @IsOptional()
   @IsString()
   relationship: string | null;
 

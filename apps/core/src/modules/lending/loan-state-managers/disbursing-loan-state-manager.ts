@@ -1,7 +1,9 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { BaseLoanStateManager } from './base-loan-state-manager';
-import { LoanState, LoanStateCodes } from '@library/entity/enum';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ILoan } from '@library/entity/entity-interface';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { Injectable } from '@nestjs/common';
+import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
  * State manager for loans in the 'Disbursing' state.
@@ -14,6 +16,14 @@ import { IDomainServices } from '@core/modules/domain/idomain.services';
 export class DisbursingLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.Disbursing);
+  }
+
+  protected getSupportedNextStates(): LoanState[] {
+    return [LoanStateCodes.Disbursed, LoanStateCodes.DisbursingPaused, LoanStateCodes.Funded];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    return LoanPaymentTypeCodes.Disbursement;
   }
 
   /**
@@ -30,10 +40,28 @@ export class DisbursingLoanStateManager extends BaseLoanStateManager {
    *   - `LoanStateCodes.Disbursing` if disbursement should continue (no state change)
    *   - `null` if an error occurs during status evaluation
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    // TODO: Implement actual business logic for determining next state
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments]);
+
+    if (!loan) return null;
+
+    if (!this.isActualStateValid(loan)) return null;
+
+    // Check conditions for transition to `LoanStateCodes.Disbursed`
+    const isDisbursementComplete = this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'disbursement completion');
+    if (isDisbursementComplete) return LoanStateCodes.Disbursed;
+
+    // Check conditions for transition to `LoanStateCodes.DisbursingPaused`
+    const isDisbursementFailed = this.isPaymentFailed(loan, this.getPrimaryPaymentType(), 'disbursement pause');
+    if (isDisbursementFailed) return LoanStateCodes.DisbursingPaused;
+
+    // Check conditions for transition to `LoanStateCodes.Funded`
+    const isDisbursementFailedAndNeedsRevert = this.shouldBeReturnedToFunded(loan);
+    if (isDisbursementFailedAndNeedsRevert) return LoanStateCodes.Funded;
+
+    // If no states above reached - keep the `LoanStateCodes.Disbursing`
+    return LoanStateCodes.Disbursing;
   }
 
   /**
@@ -51,9 +79,14 @@ export class DisbursingLoanStateManager extends BaseLoanStateManager {
    *   - `true` if the state transition completed successfully
    *   - `null` if the transition failed and appropriate rollback was executed
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    // TODO: Implement actual state transition logic
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    return this.executeStateTransition(loanId, nextState);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private shouldBeReturnedToFunded(loan: ILoan): boolean { 
+    // Currently, we do not have a condition to revert disbursement to Funded state
+    // This might be implemented in the future if business rules change
+    return false;
   }
 }

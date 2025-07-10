@@ -1,9 +1,8 @@
+import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { BaseLoanStateManager } from './base-loan-state-manager';
-import { LoanState, LoanStateCodes, PaymentAccountStateCodes } from '@library/entity/enum';
-import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
-import { ILoan } from '@library/entity/entity-interface';
 
 /**
  * State manager for loans in the 'Accepted' state.
@@ -21,6 +20,15 @@ import { ILoan } from '@library/entity/entity-interface';
 export class AcceptedLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.Accepted);
+  }
+
+  protected getSupportedNextStates(): LoanState[] {
+    return [LoanStateCodes.Funding];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    // Accepted state doesn't have a primary payment type yet, using Funding as the next phase
+    return LoanPaymentTypeCodes.Funding;
   }
 
   /**
@@ -41,7 +49,7 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
    */
    
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    const loan = await this.domainServices.loanServices.getLoanById(
+    const loan = await this.getLoan(
       loanId, 
       [
         LOAN_RELATIONS.BillerPaymentAccount, 
@@ -50,21 +58,14 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
       ]);
 
     // Loan existance check
-    if (!loan) {
-      this.logger.error(`Loan with ID ${loanId} not found`);
-      return null;
-    }
+    // We logged error in base class, so we can return null here
+    if (!loan) return null;
 
     const { state } = loan;
 
-    // Quick return if loan is not in Accepted state
-    // Might be changed later to allow re-evaluation
-    if (state !== LoanStateCodes.Accepted) {
-      this.logger.warn(`Loan ${loanId} is not in Accepted state, current state: ${state}. State advance terminated.`);
-      return null;
-    }
+    if (!this.isActualStateValid(loan)) return null;
 
-    const isReadyForFunding = this.canInitiateFunding(loan);
+    const isReadyForFunding = this.hasValidAccountsConnected(loan);
     if (!isReadyForFunding) {
       this.logger.debug(`Loan ${loanId} is not ready for funding initiation. Current state: ${state}.`);
       return LoanStateCodes.Accepted; // Remain in Accepted state
@@ -90,59 +91,6 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
    */
    
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    // For now Loan can advance from Advanced to Funding only
-    if (nextState !== LoanStateCodes.Funding) {
-      this.logger.error(`Invalid state transition from Accepted to ${nextState} for loan ${loanId}. Only Funding is allowed.`);
-      return null; // Invalid state transition
-    }
-    this.logger.debug(`Setting next state for loan ${loanId} to ${nextState} from Accepted state`);
-    return this.domainServices.loanServices.updateLoan(loanId, { state: nextState });
-  }
-
-  /**
-   * Validates if a loan is ready for funding initiation.
-   * 
-   * Checks that all required entities and payment accounts are present and verified.
-   * This includes validation of biller, lender, and borrower accounts with their
-   * respective payment account states.
-   * 
-   * @param loan - The loan entity to validate
-   * @returns boolean - True if all funding prerequisites are met, false otherwise
-   */
-  private canInitiateFunding(loan: ILoan): boolean {
-    const { id: loanId, billerId, lenderId, borrowerId, biller, lenderAccountId, borrowerAccountId, lenderAccount, borrowerAccount } = loan;
-
-    // Validate biller existence
-    if (!biller) {
-      this.logger.warn(`Loan ${loanId} has no associated biller`);
-      return false;
-    }
-
-    // Validate payment accounts existence
-    if (!lenderAccount || !borrowerAccount || !biller.paymentAccount) {
-      this.logger.warn(`Loan ${loanId} has missing payment accounts for lender, borrower, or biller`);
-      return false;
-    }
-
-    const { paymentAccountId: billerAccountId } = biller;
-    const requiredIds = [billerId, lenderId, borrowerId, billerAccountId, lenderAccountId, borrowerAccountId];
-    
-    // Check all required IDs are present
-    if (requiredIds.some(id => id === null || id === undefined)) {
-      this.logger.warn(`Loan ${loanId} has missing required entity IDs`);
-      return false;
-    }
-
-    // Validate payment account states
-    const isLenderAccountVerified = lenderAccount.state === PaymentAccountStateCodes.Verified;
-    const isBorrowerAccountVerified = borrowerAccount.state === PaymentAccountStateCodes.Verified;
-    const isBillerAccountVerified = biller.paymentAccount.state === PaymentAccountStateCodes.Verified;
-
-    if (!isLenderAccountVerified || !isBorrowerAccountVerified || !isBillerAccountVerified) {
-      this.logger.warn(`Loan ${loanId} has unverified payment accounts - Lender: ${isLenderAccountVerified}, Borrower: ${isBorrowerAccountVerified}, Biller: ${isBillerAccountVerified}`);
-      return false;
-    }
-
-    return true;
+    return this.executeStateTransition(loanId, nextState);
   }
 }

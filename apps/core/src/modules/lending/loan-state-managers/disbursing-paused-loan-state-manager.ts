@@ -1,7 +1,9 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { BaseLoanStateManager } from './base-loan-state-manager';
-import { LoanState, LoanStateCodes } from '@library/entity/enum';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ILoan } from '@library/entity/entity-interface';
+import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { Injectable } from '@nestjs/common';
+import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
  * State manager for loans in the 'DisbursingPaused' state.
@@ -17,6 +19,14 @@ export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
     super(domainServices, LoanStateCodes.DisbursingPaused);
   }
 
+  protected getSupportedNextStates(): LoanState[] {
+    return [LoanStateCodes.Disbursed, LoanStateCodes.Funded, LoanStateCodes.Disbursing];
+  }
+
+  protected getPrimaryPaymentType(): LoanPaymentType {
+    return LoanPaymentTypeCodes.Disbursement;
+  }
+
   /**
    * Determines the next state for a loan with paused disbursement operations.
    * 
@@ -29,14 +39,33 @@ export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
    * @param loanId - The unique identifier of the paused loan
    * @returns Promise<LoanState | null> - Returns:
    *   - `LoanStateCodes.Disbursing` if conditions allow resuming disbursement
+   *   - `LoanStateCodes.Disbursed` if disbursement completed successfully
    *   - `LoanStateCodes.Funded` if disbursement should be restarted from funded state
    *   - `LoanStateCodes.DisbursingPaused` if pause should continue (no state change)
    *   - `null` if error occurs or if escalation/cancellation is required
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    // TODO: Implement actual business logic for determining next state
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments]);
+    
+    if (!loan) return null;
+    
+    if (!this.isActualStateValid(loan)) return null;
+
+    // Check conditions for `LoanStateCodes.Disbursing`
+    const isDisbursementResumed = this.isPaymentPending(loan, this.getPrimaryPaymentType(), 'disbursement resume');
+    if (isDisbursementResumed) return LoanStateCodes.Disbursing;
+
+    // Check conditions for `LoanStateCodes.Disbursed`
+    const isDisbursementCompleted = this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'disbursement completion');
+    if (isDisbursementCompleted) return LoanStateCodes.Disbursed;
+
+    // Check conditions for `LoanStateCodes.Funded`
+    const isDisbursementReturnedToFunded = this.shouldBeReturnedToFunded(loan);
+    if (isDisbursementReturnedToFunded) return LoanStateCodes.Funded;
+
+    // If no states above reached - keep the `LoanStateCodes.DisbursingPaused`
+    return LoanStateCodes.DisbursingPaused;
   }
 
   /**
@@ -56,9 +85,14 @@ export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
    *   - `true` if state transition and disbursement resumption completed successfully
    *   - `null` if transition failed or if issues prevent safe resumption
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    // TODO: Implement actual state transition logic
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    return this.executeStateTransition(loanId, nextState);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private shouldBeReturnedToFunded(loan: ILoan): boolean { 
+    // Currently, we do not have a condition to revert disbursement paused to Funded state
+    // This might be implemented in the future if business rules change
+    return false;
   }
 }
