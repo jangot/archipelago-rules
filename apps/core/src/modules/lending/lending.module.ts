@@ -12,10 +12,11 @@ import { ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
 import { LoanStateManagers, LOAN_STATE_MANAGERS } from './loan-state-managers';
 import { LoanStateManagersFactory } from './loan-state-manager-factory';
 import { ScheduleService } from '@library/shared/service';
+import { LoanApplicationsController } from '@core/modules/lending/loan.applications.controller';
 
 @Module({
   imports: [JwtModule, ConfigModule, DomainModule, CqrsModule],
-  controllers: [BillersController, LoansController, ScheduleController],
+  controllers: [BillersController, LoansController, LoanApplicationsController, ScheduleController],
   providers: [
     Logger, 
     BillersService, 
