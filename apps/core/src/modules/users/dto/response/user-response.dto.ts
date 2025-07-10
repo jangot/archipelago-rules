@@ -44,6 +44,12 @@ export class UserResponseDto {
   @Expose()
   registrationStatus: RegistrationStatus;
 
+  @ApiProperty({ description: 'Onboarding Status', type: String, required: true, maxLength: 32 })
+  @Expose()
+  @IsNotEmpty()
+  @MaxLength(32)
+  onboardStatus: string;
+
   @Exclude()
   loginId?: string | null;
 }
