@@ -8,7 +8,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentDataService } from '@payment/modules/data';
 import { DeepPartial } from 'typeorm';
-import { v4 } from 'uuid';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -89,25 +88,22 @@ export class PaymentDomainService extends BaseDomainServices {
     return this.data.loanPayments.createPayment(input);
   }
 
-  public async saveRepaymentPlan(plan: PlanPreviewOutputItem[], loanId: string): Promise<ILoanPayment[] | null> {
-    this.logger.debug(`Saving repayment plan for loan ${loanId}`, { plan });
+  public async createRepaymentPaymentByPreview(preview: PlanPreviewOutputItem, loanId: string): Promise<ILoanPayment | null> {
+    this.logger.debug(`Creating repayment payment for loan ${loanId}`, { preview });
 
-    if (!plan || !plan.length) {
-      this.logger.warn(`No repayment plan provided for loan ${loanId}`);
+    if (!preview || !preview.amount || !preview.paymentDate) {
+      this.logger.warn(`Invalid repayment preview for loan ${loanId}`);
       return null;
     }
 
-    const payments: DeepPartial<ILoanPayment>[] = plan.map(item => ({
-      id: v4(),
-      amount: item.amount,
+    return this.data.loanPayments.createPayment({
+      amount: preview.amount,
       loanId,
-      paymentNumber: item.index + 1,
+      paymentNumber: preview.index,
       type: LoanPaymentTypeCodes.Repayment,
       state: LoanPaymentStateCodes.Created,
-      scheduledAt: item.paymentDate,
-    }));
-
-    return this.data.loanPayments.createPayments(payments);
+      scheduledAt: preview.paymentDate,
+    });
   }
 
   public async completePayment(paymentId: string): Promise<boolean | null> {
