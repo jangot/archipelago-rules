@@ -8,7 +8,7 @@ ENV NODE_ENV=$NODE_ENV
 
 WORKDIR /usr/src/app
 COPY package*.json ./
-RUN npm run install
+RUN npm install
 RUN mkdir -p ./dist
 COPY ./dist/apps/$APP_NAME ./dist
 COPY ./libs ./libs
