@@ -1,1 +1,1 @@
-export * from './billers.module';
+export { BillersModule } from './billers.module';
