@@ -1,24 +1,24 @@
 import { BillerNetworkType, BillerNetworkTypeCodes } from '@library/entity/enum/biller-network.type';
 import { Injectable, Logger } from '@nestjs/common';
-import { IBillersFactory } from './interfaces/billers-factory.interface';
 import { IBillerProvider } from './interfaces/billers-provider.interface';
 import { RppsBillerProvider } from './providers/rpps-biller-provider';
 
+/**
+ * BillerProviderFactory creates new instances of BillerProviders based on the network type.
+ */
 @Injectable()
-export class BillersFactory implements IBillersFactory {
-  private readonly logger: Logger = new Logger(BillersFactory.name);
-
-  constructor(private readonly rppsProvider: RppsBillerProvider) { }
+export class BillerProviderFactory {
+  private readonly logger: Logger = new Logger(BillerProviderFactory.name);
 
   /**
-   * Gets the appropriate biller provider for a specific network type
+   * Creates a new BillerProvider for the specified network type.
    * @param billerNetworkType The type of biller network
-   * @returns The appropriate biller provider for the specified biller network type
+   * @returns The appropriate BillerProvider instance
    */
-  public getFactory(billerNetworkType: BillerNetworkType): IBillerProvider {
+  public create(billerNetworkType: BillerNetworkType): IBillerProvider {
     switch (billerNetworkType) {
       case BillerNetworkTypeCodes.RPPS:
-        return this.rppsProvider;
+        return new RppsBillerProvider();
       default:
         throw new Error(`Unsupported biller network type: ${billerNetworkType}`);
     }

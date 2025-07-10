@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { BillersController } from './billers.controler';
-import { BillersFactory } from './billers.factory';
-import { RppsFileProcessor } from './processors/rpps-file.processor';
-import { RppsBillerProvider } from './providers/rpps-biller-provider';
+import { BillerProviderFactory } from './billers.factory';
 
 /**
  * BillersModule is the root module for all biller-related ingestion, transformation, and persistence logic.
@@ -10,7 +8,7 @@ import { RppsBillerProvider } from './providers/rpps-biller-provider';
 @Module({
   imports: [],
   controllers: [BillersController],
-  providers: [BillersFactory, RppsBillerProvider, RppsFileProcessor],
+  providers: [BillerProviderFactory],
   exports: [],
 })
 export class BillersModule {} 

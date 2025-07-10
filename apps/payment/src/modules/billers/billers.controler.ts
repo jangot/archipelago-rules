@@ -1,22 +1,23 @@
 import { BillerNetworkType } from '@library/entity/enum/biller-network.type';
 import { Body, Controller, Post } from '@nestjs/common';
-import { BillersFactory } from './billers.factory';
+import { BillerProviderFactory } from './billers.factory';
+import { IngestBillerFileRequestDto } from './dto/request/ingest-biller-file.request.dto';
 
 /**
  * BillersController handles biller file ingestion endpoints.
  */
 @Controller('billers')
 export class BillersController {
-  constructor(private readonly billersFactory: BillersFactory) {}
+  constructor(private readonly billerProviderFactory: BillerProviderFactory) {}
 
   /**
    * Endpoint to trigger biller file ingestion (simulated S3 event)
    */
   @Post('ingest')
-  public async ingestBillerFile(@Body() body: { billerNetworkType: string; filePath: string }): Promise<{ success: boolean }> {
+  public async ingestBillerFile(@Body() body: IngestBillerFileRequestDto): Promise<{ success: boolean }> {
     const { billerNetworkType, filePath } = body;
-    const billerProvider = this.billersFactory.getFactory(billerNetworkType as BillerNetworkType);
-    await billerProvider.moveFileToLocalBucket(filePath);
+    const billerProvider = this.billerProviderFactory.create(billerNetworkType as BillerNetworkType);
+    await billerProvider.processBillerFile(billerNetworkType as BillerNetworkType, filePath);
     return { success: true };
   }
 }

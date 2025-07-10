@@ -1,3 +1,4 @@
+import { BillerNetworkType } from '@library/entity/enum/biller-network.type';
 import { Injectable, Logger } from '@nestjs/common';
 import { promises as fs } from 'fs';
 import * as path from 'path';
@@ -23,4 +24,6 @@ export abstract class BaseBillerProvider implements IBillerProvider {
     this.logger.log(`Moved file from ${sourcePath} to ${destPath}`);
     return destPath;
   }
+
+  public abstract processBillerFile(billerNetworkType: BillerNetworkType, filePath: string): Promise<void>;
 }

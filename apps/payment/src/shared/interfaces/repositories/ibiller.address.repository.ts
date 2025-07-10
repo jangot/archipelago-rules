@@ -6,7 +6,9 @@ import { IRepositoryBase } from '@library/shared/common/data';
  *
  * This interface is intentionally left empty for now, as custom methods will be added in the future.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface IBillerAddressRepository extends IRepositoryBase<IBillerAddress> {}
+export interface IBillerAddressRepository extends IRepositoryBase<IBillerAddress> {
+  createBillerAddress(billerAddress: IBillerAddress): Promise<IBillerAddress>;
+  updateBillerAddress(billerAddress: IBillerAddress): Promise<void>;
+}
 
 export const IBillerAddressRepository = Symbol('IBillerAddressRepository'); 
