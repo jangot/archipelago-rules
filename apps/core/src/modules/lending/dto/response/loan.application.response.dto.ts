@@ -10,13 +10,13 @@ export class LoanApplicationResponseDto {
   @IsUUID()
   @IsOptional()
   @Expose()
-  loanApplicationId: string | null;
+  id: string | null;
 
   @ApiProperty({ description: 'Current state of the loan application', type: 'string', example: 'created' })
   @IsString()
   @IsOptional()
   @Expose()
-  loanApplicationState: string | null;
+  status: string | null;
 
   // Biller fields
   @ApiProperty({ description: 'Name of the biller', type: 'string', example: 'Electric Company' })
@@ -79,6 +79,19 @@ export class LoanApplicationResponseDto {
   @IsOptional()
   @Expose()
   lenderNote: string | null;
+
+  @ApiProperty({ description: 'Unique identifier for the lender payment account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
+  @IsUUID()
+  @IsOptional()
+  @Expose()
+  lenderAccountId: string | null;
+
+  // Borrower fields
+  @ApiProperty({ description: 'Unique identifier for the borrower payment account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
+  @IsUUID()
+  @IsOptional()
+  @Expose()
+  borrowerAccountId: string | null;
 
   // Loan fields
   @ApiProperty({ description: 'Type of the loan', type: 'string', example: LoanTypeCodes.DirectBillPay })
