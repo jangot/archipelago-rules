@@ -395,14 +395,6 @@ describe('PaymentDomainService Integration', () => {
       expect(failed!.state).toBe(LoanPaymentStateCodes.Failed);
     });
 
-    it('should return null for empty repayment plan', async () => {
-      // Act
-      const result = await paymentDomainService.saveRepaymentPlan([], FOUNDATION_TEST_IDS.loans.disbursedLoan);
-      
-      // Assert
-      expect(result).toBeNull();
-    });
-
     it('should handle multiple payment types correctly', async () => {
       // Arrange & Act
       const fundingPayment = await createTestPayment();

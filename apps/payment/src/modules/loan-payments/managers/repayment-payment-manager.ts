@@ -37,18 +37,16 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
       return null;
     }
 
-    const samePaymentsFinished = this.getSamePayments(payments, ['completed', 'failed']);
-    const paymentNumber = samePaymentsFinished.length > 0 ? samePaymentsFinished.length + 1 : 1;
+    const samePaymentsCompleted = this.getSamePayments(payments, ['completed']);
+    const anyPaymentsCompleted = samePaymentsCompleted && samePaymentsCompleted.length;
+    const paymentNumber = anyPaymentsCompleted ? samePaymentsCompleted.length + 1 : 1;
     // Payments count overflow must be checked before the new payment initiation call
     // Buit to keep consistency we check it here as well
     if (paymentNumber > loan.paymentsCount) {
       this.logger.error(`Payment number ${paymentNumber} exceeds total payments count for loan ${loanId}`);
       return null;
     }
-
-    // To continue with new payment props calculation we need to know how many of them were successfully completed first
-    const samePaymentsCompleted = this.getSamePayments(payments, ['completed']);
-    const anyPaymentsCompleted = samePaymentsCompleted && samePaymentsCompleted.length;
+    
     // Build the new repayment plan, then take first payment from it
     const currentState: PlanPreviewInput = {
       amount,
