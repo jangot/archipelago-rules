@@ -1,6 +1,8 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ILoan } from '@library/entity/entity-interface';
 import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { Injectable } from '@nestjs/common';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
@@ -27,13 +29,43 @@ export class RepayingLoanStateManager extends BaseLoanStateManager {
    *   - `LoanStateCodes.Repaid` if loan balance is fully satisfied
    *   - `LoanStateCodes.RepaymentPaused` if repayment should be temporarily suspended
    *   - `LoanStateCodes.Closed` if loan should be closed due to special circumstances
-   *   - `LoanStateCodes.Repaying` if loan should continue in current state (no change)
+   *   - `LoanStateCodes.Repaying` if loan should continue in current state (no change / next repayment init)
    *   - `null` if an error occurs during evaluation or escalation is required
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    // TODO: Implement actual business logic for determining next state
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments]);
+
+    if (!loan) return null;
+
+    if (!this.isActualStateValid(loan)) return null;
+
+    // Check conditions for transition to `LoanStateCodes.Repaid`
+    // Despite other states the payment completion DOES NOT mean the loan is fully repaid
+    // Only if last payment is completed we set the loan to Repaid state
+    const isPaymentCompleted = this.isPaymentCompleted(loan, this.getPrimaryPaymentType(),
+      'repayment completion');
+    if (isPaymentCompleted && this.isLastPayment(loan)) {
+      return LoanStateCodes.Repaid;
+    } else if (isPaymentCompleted) {
+      // If payment is completed but not the last one, we remain in Repaying state
+      // TODO: Ensure that next payment initiation handled level higher, where we catch Payment Competion event
+      // OR fire explicit Event to initiate next payment
+      return LoanStateCodes.Repaying;
+    }
+
+    // Check conditions for transition to `LoanStateCodes.RepaymentPaused`
+    const isPaymentFailed = this.isPaymentFailed(loan, this.getPrimaryPaymentType(),
+      'repayment pause');
+    if (isPaymentFailed) {
+      return LoanStateCodes.RepaymentPaused;
+    }
+
+    // Check conditions for transition to `LoanStateCodes.Closed`
+    // TODO: Fogiveness check goes here OR in explicit ForgivenessInProgress state
+
+    // If no conditions met, remain in `LoanStateCodes.Repaying`
+    return LoanStateCodes.Repaying;
   }
 
   /**
@@ -47,10 +79,8 @@ export class RepayingLoanStateManager extends BaseLoanStateManager {
    *   - `true` if state transition completed successfully
    *   - `null` if transition failed or if issues prevent safe state change
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    // TODO: Implement actual state transition logic
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    return this.executeStateTransition(loanId, nextState);
   }
 
   /**
@@ -71,5 +101,22 @@ export class RepayingLoanStateManager extends BaseLoanStateManager {
   protected getPrimaryPaymentType(): LoanPaymentType {
     // Repaying state deals with active repayment transactions
     return LoanPaymentTypeCodes.Repayment;
+  }
+
+  /**
+   * Determines if the current payment is the last payment for the loan.
+   * 
+   * @param loan - The loan entity with payment information
+   * @returns boolean - True if this is the last payment, false otherwise
+   */
+  private isLastPayment(loan: ILoan): boolean {
+    const { paymentsCount } = loan;
+    const currentPayment = this.getStateEvaluationPayment(loan, this.getPrimaryPaymentType(), 'last payment check', true);
+    if (!currentPayment) {
+      this.logger.error(`No current payment found for loan ${loan.id} to check if it is the last payment`);
+      return false;
+    }
+
+    return paymentsCount === currentPayment.paymentNumber;
   }
 }

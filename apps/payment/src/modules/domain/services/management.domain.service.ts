@@ -1,11 +1,9 @@
-import { ILoanPayment } from '@library/entity/entity-interface';
 import { LoanPaymentType, PaymentAccountProvider, PaymentStepState } from '@library/entity/enum';
 import { TransferErrorPayload } from '@library/shared/type/lending';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ILoanPaymentStepFactory } from '@payment/modules/loan-payment-steps/interfaces';
 import { ILoanPaymentFactory } from '@payment/modules/loan-payments';
 import { ITransferExecutionFactory } from '@payment/modules/transfer-execution/interface';
-import { isArray } from 'lodash';
 
 /**
  * Service to manage states of Loan, Loan Payment, Loan Payment Steps by aggregating their managers.
@@ -34,28 +32,13 @@ export class ManagementDomainService {
    */
   public async initiateLoanPayment(loanId: string, paymentType: LoanPaymentType): Promise<boolean | null> {
     const paymentManager = this.loanPaymentFactory.getManager(paymentType);
-    const initiatedPayments = await paymentManager.initiate(loanId);
-    if (!initiatedPayments) {
+    const initiatedPayment = await paymentManager.initiate(loanId);
+    if (!initiatedPayment) {
       this.logger.error(`Failed to initiate ${paymentType} payment for loan ${loanId}`);
       return null;
     }
-    let paymentToInitiate: ILoanPayment;
-    // Payments array is only for Repayment and all payments in it should have not null payment number
-    if (isArray(initiatedPayments)) {
-      if (initiatedPayments.some(p => p.paymentNumber === null)) {
-        this.logger.error(`Payment number is null for one of the initiated payments for loan ${loanId}`);
-        return null;
-      }
-      // For repayment type, find the payment with the lowest paymentNumber to initiate first
-      paymentToInitiate = initiatedPayments.reduce((lowest, payment) => { 
-        // Safe to use < comparison because we already verified none are null
-        return (payment.paymentNumber! < lowest.paymentNumber!) ? payment : lowest;
-      }, initiatedPayments[0]);      
-    } else {
-      paymentToInitiate = initiatedPayments;
-    }
 
-    const { id: paymentId, steps: initialPaymentSteps } = paymentToInitiate;
+    const { id: paymentId, steps: initialPaymentSteps } = initiatedPayment;
 
     if (!initialPaymentSteps || !initialPaymentSteps.length) {
       this.logger.warn(`No steps found for initiated payment ${paymentId}`);

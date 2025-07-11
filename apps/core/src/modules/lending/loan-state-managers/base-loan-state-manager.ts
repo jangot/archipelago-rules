@@ -148,15 +148,22 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
    * 
    * This method filters the loan's payments to find the most recent payment of the specified type.
    * It is used to evaluate the current state of the loan based on its payment history.
+   * The method can sort by either creation date (default) or payment order number.
    * 
    * @param loan - The loan object containing payment information
    * @param paymentType - The type of payment to evaluate (e.g., 'Biller', 'Lender', 'Borrower')
    * @param evaluationContext - Contextual information for logging purposes
+   * @param sortByOrder - Optional flag to sort by paymentNumber instead of createdAt (default: false)
    * @returns ILoanPayment | null - Returns:
-   *   - The latest payment of the specified type if found
+   *   - The latest payment of the specified type if found (by createdAt or paymentNumber)
    *   - `null` if no payments of that type exist or if there are no payments at all
    */
-  protected getStateEvaluationPayment(loan: ILoan, paymentType: LoanPaymentType, evaluationContext: string): ILoanPayment | null {
+  protected getStateEvaluationPayment(
+    loan: ILoan,
+    paymentType: LoanPaymentType,
+    evaluationContext: string,
+    sortByOrder = false
+  ): ILoanPayment | null {
     const { id: loanId, payments } = loan;
 
     // Check that there are any payments at all
@@ -177,9 +184,15 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
       return typePayments[0];
     }
 
-    // Unexpected (except repayment) but handeled case - multiple payments of the same type
-    // Return the one with the latest createdAt date
-    // TODO: Align logic for repayments with this logic
+    // Multiple payments of the same type
+    // Return the one with the latest createdAt date by default
+    // If sortByOrder is true, return by highest paymentNumber instead
+    if (sortByOrder) {
+      return typePayments.reduce((latest, current) => {
+        return (current.paymentNumber && latest.paymentNumber && current.paymentNumber > latest.paymentNumber) ? current : latest;
+      });
+    }
+
     return typePayments.reduce((latest, current) => {
       return (current.createdAt > latest.createdAt) ? current : latest;
     });

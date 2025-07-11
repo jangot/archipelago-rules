@@ -88,7 +88,7 @@ export class PaymentDomainService extends BaseDomainServices {
     return this.data.loanPayments.createPayment(input);
   }
 
-  public async createRepaymentPaymentByPreview(preview: PlanPreviewOutputItem, loanId: string): Promise<ILoanPayment | null> {
+  public async createRepaymentByPreview(preview: PlanPreviewOutputItem, loanId: string): Promise<ILoanPayment | null> {
     this.logger.debug(`Creating repayment payment for loan ${loanId}`, { preview });
 
     if (!preview || !preview.amount || !preview.paymentDate) {

@@ -1,9 +1,8 @@
 import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
-import { Loan } from '@library/shared/domain/entity';
 import { LOAN_PAYMENT_RELATIONS, LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { ScheduleService } from '@library/shared/service';
-import { PlanPreviewInput, RepaymentPlanPaidPayment } from '@library/shared/type/lending';
+import { PlanPreviewInput, PlanPreviewOutputItem, RepaymentPlanPaidPayment } from '@library/shared/type/lending';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
@@ -22,7 +21,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
     
     // Get loan with necessary relations
     const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments, LOAN_RELATIONS.Biller, LOAN_RELATIONS.BillerPaymentAccount]);
-    const { payments, amount, paymentsCount, paymentFrequency, feeAmount, feeMode, createdAt, type } = loan;
+    const { payments, type } = loan;
 
     // Get payment accounts
     const { fromAccountId, toAccountId } = await this.getPaymentAccounts(loan);
@@ -46,33 +45,13 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
       this.logger.error(`Payment number ${paymentNumber} exceeds total payments count for loan ${loanId}`);
       return null;
     }
-    
-    // Build the new repayment plan, then take first payment from it
-    const currentState: PlanPreviewInput = {
-      amount,
-      paymentsCount,
-      paymentFrequency,
-      feeMode,
-      feeAmount,
-      repaymentStartDate: createdAt,
-    };
-    const paidRepayments: RepaymentPlanPaidPayment[] = anyPaymentsCompleted
-      ? samePaymentsCompleted.map(p => ({ amount: p.amount, paymentDate: p.scheduledAt || p.createdAt, index: p.paymentNumber || 1 }))
-      : [];
-    
-    const remainingRepayments = ScheduleService.previewRemainingRepayments(currentState, paidRepayments);
-    if (!remainingRepayments || !remainingRepayments.length) {
-      this.logger.error(`Unable to calculate remaining repayments plan for loan ${loanId}`, { currentState, paidRepayments });
-      return null;
-    }
 
     // Get the next payment from the remaining repayments plan
-    const nextPayment = remainingRepayments.reduce((lowest, current) => 
-      current.index < lowest.index ? current : lowest
-    );
+    const nextPayment = this.getNextPayment(loan, samePaymentsCompleted);
+    if (!nextPayment) return null;
 
     // Save the new repayment payment
-    const savedPayment = await this.paymentDomainService.createRepaymentPaymentByPreview({ ...nextPayment, index: paymentNumber }, loanId);
+    const savedPayment = await this.paymentDomainService.createRepaymentByPreview({ ...nextPayment, index: paymentNumber }, loanId);
     if (!savedPayment) {
       this.logger.error(`Failed to create repayment payment for loan ${loanId}`, { nextPayment, paymentNumber });
       return null;
@@ -116,13 +95,43 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
   }
 
   /**
-   * Gets information about the next scheduled repayment
-   * @param loan The loan to check for next repayment
-   * @returns The next scheduled repayment or null if none exists
+   * Gets the next payment for the loan based on the current state and paid payments
+   * @param loan The loan for which to get the next payment
+   * @param paidPayments The list of payments that have already been made
+   * @returns The next payment to be made, or null if it cannot be determined
    */
-  public async getNextScheduledRepayment(loan: Loan): Promise<ILoanPayment | null> {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _loan = loan; // Prevent unused parameter warning while implementation is pending
-    return null; // Implementation needed
+  private getNextPayment(loan: ILoan, paidPayments: ILoanPayment[]): PlanPreviewOutputItem | null {
+    const { id: loanId, amount, paymentsCount, paymentFrequency, feeMode, feeAmount, createdAt } = loan;
+    
+    // Build the current state for repayment plan preview
+    const currentState: PlanPreviewInput = {
+      amount,
+      paymentsCount,
+      paymentFrequency,
+      feeMode,
+      feeAmount,
+      repaymentStartDate: createdAt,
+    };
+
+    // Map paid payments to the format required for remaining repayments calculation
+    const paidRepayments: RepaymentPlanPaidPayment[] = paidPayments.map(p => ({
+      amount: p.amount,
+      paymentDate: p.scheduledAt || p.createdAt,
+      index: p.paymentNumber || 1,
+    }));
+
+    // Calculate remaining repayments
+    const remainingRepayments = ScheduleService.previewRemainingRepayments(currentState, paidRepayments);
+    if (!remainingRepayments || !remainingRepayments.length) {
+      this.logger.error(`Unable to calculate remaining repayments plan for loan ${loanId}`, { currentState, paidRepayments });
+      return null;
+    }
+
+    // Return the next payment from the remaining repayments
+    return remainingRepayments.reduce((lowest, current) => 
+      current.index < lowest.index ? current : lowest
+    );
   }
+
+
 }
