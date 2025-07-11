@@ -20,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { UserNotRegisteredException } from '../auth/exceptions/auth-domain.exceptions';
 import { UserUpdateRequestDto } from './dto/request';
-import { UserDetailResponseDto, UserDetailsUpdateResponseDto, UserResponseDto } from './dto/response';
+import { UserDetailsUpdateResponseDto, UserResponseDto } from './dto/response';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -38,17 +38,17 @@ export class UsersController {
   @ApiBearerAuth('jwt') 
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ description: 'Get User Details', summary: 'Get User Details' }) 
-  @ApiOkResponse({ description: 'User Details', type: UserDetailResponseDto, isArray: false }) 
+  @ApiOkResponse({ description: 'User Details', type: UserResponseDto, isArray: false }) 
   @ApiBadRequestResponse({ description: 'User not registered', isArray: false }) 
   @ApiNotFoundResponse({ description: 'User not found', isArray: false }) 
-  public async getSelf(@Req() request: IRequest): Promise<UserDetailResponseDto> { 
+  public async getSelf(@Req() request: IRequest): Promise<UserResponseDto> { 
     if (!request.user || !request.user.id) { 
       throw new UserNotRegisteredException('User not registered'); 
     } 
     const userId = request.user.id; 
-    const user = await this.userService.getUserDetailById(userId); 
+    const user = await this.userService.getUserById(userId); 
     if (!user) {
-      throw new EntityNotFoundException('User not found');
+      throw new HttpException('User not found', HttpStatus.NO_CONTENT);
     }
     return user;
   } 
