@@ -18,12 +18,4 @@ export class BillerAddressRepository extends RepositoryBase<BillerAddress> imple
   ) {
     super(repository, BillerAddress);
   }
-
-  public async createBillerAddress(billerAddress: BillerAddress): Promise<BillerAddress> {
-    return this.repository.create(billerAddress);
-  }
-
-  public async updateBillerAddress(billerAddress: BillerAddress): Promise<void> {
-    await this.repository.update(billerAddress.id, billerAddress);
-  }
 } 

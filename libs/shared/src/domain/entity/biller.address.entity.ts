@@ -5,7 +5,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 /**
  * BillerAddress entity implements IBillerAddress for the payment domain.
  */
-@Entity({ schema: DbSchemaCodes.Payment })
+@Entity({ schema: DbSchemaCodes.Core })
 export class BillerAddress implements IBillerAddress {
   /** UUID primary key */
   @PrimaryGeneratedColumn('uuid')

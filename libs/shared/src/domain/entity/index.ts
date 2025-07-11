@@ -11,7 +11,6 @@ import { BillerAddress } from './biller.address.entity';
 import { Biller } from './biller.entity';
 import { BillerMask } from './biller.mask.entity';
 import { BillerName } from './biller.name.entity';
-import { Biller as PaymentBiller } from './biller.payment.entity';
 import { Loan } from './loan.entity';
 import { LoanInvitee } from './loan.invitee.entity';
 import { LoanPayment } from './loan.payment.entity';
@@ -61,7 +60,6 @@ export const PaymentEntities = [
   PaymentsRouteStep,
   PaymentsRoute,
   TransferError,
-  PaymentBiller,
   BillerName,
   BillerAddress,
   BillerMask,

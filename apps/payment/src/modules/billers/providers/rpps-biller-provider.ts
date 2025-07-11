@@ -1,5 +1,6 @@
 import { BillerNetworkType } from '@library/entity/enum/biller-network.type';
-import { RppsFileProcessor } from '../processors/rpps-file.processor';
+import { ProcessBillersResult } from '../interfaces/billers-provider.interface';
+import { RppsFileProcessor } from '../processors/rpps/rpps-file.processor';
 import { BaseBillerProvider } from './base-biller-provider';
 
 export class RppsBillerProvider extends BaseBillerProvider {
@@ -11,13 +12,19 @@ export class RppsBillerProvider extends BaseBillerProvider {
   }
 
   /**
-   * Processes a biller file for the RPPS network.
+   * Processes billers for the RPPS network.
    * @param billerNetworkType The type of biller network
-   * @param filePath The path to the file to be used for the biller
+   * @param path The path to the file or resource for the billers
+   * @returns ProcessBillersResult
    */
-  public async processBillerFile(billerNetworkType: BillerNetworkType, filePath: string): Promise<void> {
-    const localPath = await this.moveFileToLocalBucket(filePath);
-    await this.rppsFileProcessor.processFile(localPath);
-    // TODO: Save parsed data to DB
+  public async processBillers(billerNetworkType: BillerNetworkType, path: string): Promise<ProcessBillersResult> {
+    try {
+      const processedCount = await this.rppsFileProcessor.processFile('');
+      
+      // TODO: Save parsed data to DB
+      return { processedCount };
+    } catch (error) {
+      return { processedCount: 0, errors: [error.message] };
+    }
   }
 }

@@ -7,9 +7,6 @@ import { IRepositoryBase } from '@library/shared/common/data';
  * This interface is intentionally left empty for now, as custom methods will be added in the future.
  */
  
-export interface IBillerMaskRepository extends IRepositoryBase<IBillerMask> {
-  createBillerMask(billerMask: IBillerMask): Promise<IBillerMask>;
-  updateBillerMask(billerMask: IBillerMask): Promise<void>;
-}
+export interface IBillerMaskRepository extends IRepositoryBase<IBillerMask> {}
 
 export const IBillerMaskRepository = Symbol('IBillerMaskRepository'); 

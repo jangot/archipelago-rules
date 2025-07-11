@@ -1,5 +1,5 @@
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
-import { Biller } from '@library/shared/domain/entity/biller.payment.entity';
+import { Biller } from '@library/shared/domain/entity/biller.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -17,13 +17,5 @@ export class BillerRepository extends RepositoryBase<Biller> implements IBillerR
     protected readonly repository: Repository<Biller>,
   ) {
     super(repository, Biller);
-  }
-
-  public async createBiller(biller: Biller): Promise<Biller> {
-    return this.repository.create(biller);
-  }
-
-  public async updateBiller(biller: Biller): Promise<void> {
-    await this.repository.update(biller.id, biller);
   }
 } 

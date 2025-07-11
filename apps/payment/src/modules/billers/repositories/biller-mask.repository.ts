@@ -18,12 +18,4 @@ export class BillerMaskRepository extends RepositoryBase<BillerMask> implements 
   ) {
     super(repository, BillerMask);
   }
-
-  public async createBillerMask(billerMask: BillerMask): Promise<BillerMask> {
-    return this.repository.create(billerMask);
-  }
-
-  public async updateBillerMask(billerMask: BillerMask): Promise<void> {
-    await this.repository.update(billerMask.id, billerMask);
-  }
 } 

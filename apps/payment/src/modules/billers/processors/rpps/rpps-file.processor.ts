@@ -9,11 +9,11 @@ export class RppsFileProcessor {
 
   /**
    * Processes the given RPPS file and returns parsed data.
-   * @param file The path to the RPPS .txt file
+   * @param resource The path to the RPPS .txt file
    * @returns Parsed data (placeholder)
    */
-  public async processFile(file: string): Promise<any> {
-    this.logger.log(`Processing RPPS file at: ${file}`);
+  public async processFile(resource : string): Promise<any> {
+    this.logger.log(`Processing RPPS resource: ${resource}`);
     // TODO: Implement actual parsing logic
     return {};
   }

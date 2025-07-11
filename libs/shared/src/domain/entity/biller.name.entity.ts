@@ -1,11 +1,11 @@
 import { IBillerName } from '@library/entity/entity-interface/ibiller-name';
 import { DbSchemaCodes } from '@library/shared/common/data';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
  * BillerName entity implements IBillerName for the payment domain.
  */
-@Entity({ schema: DbSchemaCodes.Payment })
+@Entity({ schema: DbSchemaCodes.Core })
 export class BillerName implements IBillerName {
   /** UUID primary key */
   @PrimaryGeneratedColumn('uuid')
@@ -16,12 +16,13 @@ export class BillerName implements IBillerName {
   billerId: string;
 
   /** Name string */
+  @Index()
   @Column({ type: 'text' })
   name: string;
 
-  /** External key (optional) */
-  @Column({ type: 'text', nullable: true })
-  externalKey?: string;
+  /** External key */
+  @Column({ type: 'text' })
+  externalKey: string;
 
   /** Date when the name went live */
   @Column({ type: 'date' })

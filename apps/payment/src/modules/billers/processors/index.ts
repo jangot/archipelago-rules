@@ -1,1 +1,1 @@
-export { RppsFileProcessor } from './rpps-file.processor';
+export { RppsFileProcessor } from './rpps/rpps-file.processor';

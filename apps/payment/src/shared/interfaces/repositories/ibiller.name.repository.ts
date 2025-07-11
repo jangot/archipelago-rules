@@ -7,9 +7,6 @@ import { IRepositoryBase } from '@library/shared/common/data';
  * This interface is intentionally left empty for now, as custom methods will be added in the future.
  */
  
-export interface IBillerNameRepository extends IRepositoryBase<IBillerName> {
-  createBillerName(billerName: IBillerName): Promise<IBillerName>;
-  updateBillerName(billerName: IBillerName): Promise<void>;
-}
+export interface IBillerNameRepository extends IRepositoryBase<IBillerName> {}
 
 export const IBillerNameRepository = Symbol('IBillerNameRepository'); 

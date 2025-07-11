@@ -5,7 +5,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 /**
  * BillerMask entity implements IBillerMask for the payment domain.
  */
-@Entity({ schema: DbSchemaCodes.Payment })
+@Entity({ schema: DbSchemaCodes.Core })
 export class BillerMask implements IBillerMask {
   /** UUID primary key */
   @PrimaryGeneratedColumn('uuid')
@@ -23,9 +23,9 @@ export class BillerMask implements IBillerMask {
   @Column({ type: 'int' })
   maskLength: number;
 
-  /** External key (optional) */
-  @Column({ type: 'text', nullable: true })
-  externalKey?: string;
+  /** External key */
+  @Column({ type: 'text' })
+  externalKey: string;
 
   /** Date when the mask went live */
   @Column({ type: 'date' })

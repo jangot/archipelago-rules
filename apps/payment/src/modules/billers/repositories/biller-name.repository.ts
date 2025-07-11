@@ -18,12 +18,4 @@ export class BillerNameRepository extends RepositoryBase<BillerName> implements 
   ) {
     super(repository, BillerName);
   }
-
-  public async createBillerName(billerName: BillerName): Promise<BillerName> {
-    return this.repository.create(billerName);
-  }
-
-  public async updateBillerName(billerName: BillerName): Promise<void> {
-    await this.repository.update(billerName.id, billerName);
-  }
 } 

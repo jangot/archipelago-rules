@@ -6,9 +6,6 @@ import { IRepositoryBase } from '@library/shared/common/data';
  *
  * This interface is intentionally left empty for now, as custom methods will be added in the future.
  */
-export interface IBillerAddressRepository extends IRepositoryBase<IBillerAddress> {
-  createBillerAddress(billerAddress: IBillerAddress): Promise<IBillerAddress>;
-  updateBillerAddress(billerAddress: IBillerAddress): Promise<void>;
-}
+export interface IBillerAddressRepository extends IRepositoryBase<IBillerAddress> {}
 
 export const IBillerAddressRepository = Symbol('IBillerAddressRepository'); 

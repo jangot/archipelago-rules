@@ -5,6 +5,6 @@ export interface IBillerName extends EntityId<string> {
   billerId: string; // FK for Biller
 
   name: string;
-  externalKey?: string; 
+  externalKey: string; 
   liveDate: Date;
 } 
