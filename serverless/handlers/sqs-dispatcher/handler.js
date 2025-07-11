@@ -1,5 +1,8 @@
 import axios from 'axios';
 
+const NOTIFICATION_WEBHOOK_URL = process.env.NOTIFICATION_WEBHOOK_URL;
+const PAYMENT_WEBHOOK_URL = process.env.PAYMENT_WEBHOOK_URL;
+
 export const handler = async (event) => {
     for (const record of event.Records) {
         const body = JSON.parse(record.body);
@@ -10,10 +13,10 @@ export const handler = async (event) => {
         let endpoint;
         switch (type) {
             case 'notification':
-                endpoint = 'http://notification.zng.local:3000/webhook';
+                endpoint = NOTIFICATION_WEBHOOK_URL;
                 break;
             case 'payment':
-                endpoint = 'http://payment.zng.local:3000/webhook';
+                endpoint = PAYMENT_WEBHOOK_URL;
                 break;
             default:
                 console.warn(`Unknown type: ${type}`);

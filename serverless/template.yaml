@@ -16,6 +16,10 @@ Parameters:
     Type: String
   DispatcherLambdaRoleArn:
     Type: String
+  NotificationWebhookUrl:
+    Type: String
+  PaymentWebhookUrl:
+    Type: String
 
 Resources:
   SqsDispatcherFunction:
@@ -30,6 +34,10 @@ Resources:
           Type: SQS
           Properties:
             Queue: !Ref DispatcherQueueArn
+      Environment:
+        Variables:
+          NOTIFICATION_WEBHOOK_URL: !Ref NotificationWebhookUrl
+          PAYMENT_WEBHOOK_URL: !Ref PaymentWebhookUrl
 
 Outputs:
   SqsDispatcherFunctionArn:
