@@ -14,7 +14,7 @@ Parameters:
     Type: String
   DispatcherQueueArn:
     Type: String
-  LambdaExecutionRoleArn:
+  DispatcherLambdaRoleArn:
     Type: String
 
 Resources:
@@ -24,7 +24,7 @@ Resources:
       FunctionName: !Ref SqsDispatcherFunctionName
       CodeUri: handlers/sqs-dispatcher/
       Handler: handler.handler
-      Role: !Ref LambdaExecutionRoleArn
+      Role: !Ref DispatcherLambdaRoleArn
       Events:
         SqsTrigger:
           Type: SQS
