@@ -14,7 +14,7 @@ export interface ILoanApplication extends EntityId<string> {
   biller: IBiller | null;
   billerPostalCode: string | null;
   billAccount: string | null;
-  billAmount: number | null;
+  loanAmount: number | null;
 
   // Lender
   lenderFirstName: string | null;

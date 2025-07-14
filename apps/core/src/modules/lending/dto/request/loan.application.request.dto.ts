@@ -35,7 +35,7 @@ export class LoanApplicationRequestDto {
   @ApiProperty({ description: 'Amount of the bill to be paid', type: 'number', example: 150.75, required: false })
   @IsNumber()
   @IsOptional()
-  billAmount: number | null;
+  loanAmount: number | null;
 
   // Lender fields
   @ApiProperty({ description: 'First name of the lender', type: 'string', example: 'Jane', required: false })

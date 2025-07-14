@@ -39,7 +39,7 @@ export class LoanApplication implements ILoanApplication {
   billAccount: string | null;
 
   @Column({ type: 'decimal', nullable: true })
-  billAmount: number | null;
+  loanAmount: number | null;
 
   // Lender
   @Column({ type: 'text', nullable: true })
