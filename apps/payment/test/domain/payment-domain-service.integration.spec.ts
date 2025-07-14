@@ -29,7 +29,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DataModule } from '@payment/modules/data';
 import { DomainModule } from '@payment/modules/domain/domain.module';
 import { PaymentDomainService } from '@payment/modules/domain/services';
-import { DeepPartial } from 'typeorm';
 
 /**
  * Integration tests for PaymentDomainService
@@ -99,7 +98,7 @@ describe('PaymentDomainService Integration', () => {
    */
   async function createTestPaymentAccount(userId?: string): Promise<IPaymentAccount> {
     const userIdToUse = userId || FOUNDATION_TEST_IDS.users.primaryUser;
-    const accountData = TestPaymentAccountFactory.createCheckbookBankAccount('Test User Account') as DeepPartial<IPaymentAccount>;
+    const accountData = TestPaymentAccountFactory.createCheckbookBankAccount('Test User Account') as Partial<IPaymentAccount>;
     
     const result = await paymentDomainService.addPaymentAccount(userIdToUse, accountData);
     
@@ -118,7 +117,7 @@ describe('PaymentDomainService Integration', () => {
    */
   async function createTestInternalAccount(userId?: string): Promise<IPaymentAccount> {
     const userIdToUse = userId || FOUNDATION_TEST_IDS.users.primaryUser;
-    const accountData = TestPaymentAccountFactory.createFiservDebitAccount('Internal Platform Account') as DeepPartial<IPaymentAccount>;
+    const accountData = TestPaymentAccountFactory.createFiservDebitAccount('Internal Platform Account') as Partial<IPaymentAccount>;
     
     const result = await paymentDomainService.addPaymentAccount(userIdToUse, accountData);
     
@@ -137,7 +136,7 @@ describe('PaymentDomainService Integration', () => {
    */
   async function createTestPayment(loanId?: string): Promise<ILoanPayment> {
     const loanIdToUse = loanId || FOUNDATION_TEST_IDS.loans.disbursedLoan;
-    const paymentInput: DeepPartial<ILoanPayment> = {
+    const paymentInput: Partial<ILoanPayment> = {
       loanId: loanIdToUse,
       amount: 1000,
       type: LoanPaymentTypeCodes.Funding,
@@ -166,7 +165,7 @@ describe('PaymentDomainService Integration', () => {
    * @throws Error if step creation fails due to constraint violations
    */
   async function createTestPaymentSteps(paymentId: string, sourceAccountId: string, targetAccountId: string): Promise<ILoanPaymentStep[]> {
-    const stepInputs: DeepPartial<ILoanPaymentStep>[] = [
+    const stepInputs: Partial<ILoanPaymentStep>[] = [
       {
         loanPaymentId: paymentId,
         order: 0,
@@ -207,7 +206,7 @@ describe('PaymentDomainService Integration', () => {
    */
   async function createTestRepaymentPayment(loanId?: string, amount: number = 200): Promise<ILoanPayment> {
     const loanIdToUse = loanId || FOUNDATION_TEST_IDS.loans.disbursedLoan;
-    const paymentInput: DeepPartial<ILoanPayment> = {
+    const paymentInput: Partial<ILoanPayment> = {
       loanId: loanIdToUse,
       amount: amount,
       type: LoanPaymentTypeCodes.Repayment,
@@ -347,7 +346,7 @@ describe('PaymentDomainService Integration', () => {
     it('should update a payment state successfully', async () => {
       // Arrange
       const created = await createTestPayment();
-      const updates: DeepPartial<ILoanPayment> = {
+      const updates: Partial<ILoanPayment> = {
         state: LoanPaymentStateCodes.Pending,
       };
       
@@ -643,7 +642,7 @@ describe('PaymentDomainService Integration', () => {
     it('should handle concurrent payment creation gracefully', async () => {
       // Arrange & Act
       const paymentPromises = Array.from({ length: 3 }, (_, index) => {
-        const paymentInput: DeepPartial<ILoanPayment> = {
+        const paymentInput: Partial<ILoanPayment> = {
           loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
           amount: 100 * (index + 1),
           type: LoanPaymentTypeCodes.Repayment,
@@ -768,7 +767,7 @@ describe('PaymentDomainService Integration', () => {
 
     it('should handle edge cases with zero amounts gracefully', async () => {
       // Arrange
-      const paymentInput: DeepPartial<ILoanPayment> = {
+      const paymentInput: Partial<ILoanPayment> = {
         loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 0,
         type: LoanPaymentTypeCodes.Fee,

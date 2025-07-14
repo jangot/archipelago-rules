@@ -8,7 +8,6 @@ import { LOAN_INVITEE_RELATIONS, LOAN_RELATIONS, LoanRelation } from '@library/s
 import { LoanAssignToContactInput, LoansSetTargetUserInput, LoanTargetUserInput } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DeepPartial } from 'typeorm';
 
 @Injectable()
 export class LoanDomainService extends BaseDomainServices {
@@ -26,7 +25,7 @@ export class LoanDomainService extends BaseDomainServices {
     return this.data.loans.getLoanById(loanId, relations);
   }
 
-  public async createLoan(loan: DeepPartial<ILoan>): Promise<ILoan | null> {
+  public async createLoan(loan: Partial<ILoan>): Promise<ILoan | null> {
     const createdLoan = await this.data.loans.createLoan(loan);
     if (!createdLoan) throw new EntityFailedToUpdateException('Failed to create Loan');
     
@@ -43,7 +42,7 @@ export class LoanDomainService extends BaseDomainServices {
     return this.getLoanById(loanId);
   }
 
-  public async updateLoan(loanId: string, loan: DeepPartial<ILoan>): Promise<boolean | null> {
+  public async updateLoan(loanId: string, loan: Partial<ILoan>): Promise<boolean | null> {
     return this.data.loans.update(loanId, loan);
   }
 
@@ -139,7 +138,7 @@ export class LoanDomainService extends BaseDomainServices {
     }
 
     // Set the target Payment Account to the Loan and update the Loan state
-    const updates: DeepPartial<ILoan> = {
+    const updates: Partial<ILoan> = {
       state: LoanStateCodes.Accepted,
       lenderAccountId: loanState === LoanStateCodes.BorrowerAssigned ? lenderAccountId : targetPaymentAccountId,
       borrowerAccountId: loanState === LoanStateCodes.LenderAssigned ? borrowerAccountId : targetPaymentAccountId,
@@ -254,7 +253,7 @@ export class LoanDomainService extends BaseDomainServices {
   // #endregion
 
   // #region Biller
-  public async createPersonalBiller(invitee: DeepPartial<ILoanInvitee>, createdById: string): Promise<IBiller | null> {
+  public async createPersonalBiller(invitee: ILoanInvitee, createdById: string): Promise<IBiller | null> {
     const loanTypeText = invitee ? invitee.type === LoanInviteeTypeCodes.Borrower ? 'offer' : 'request' : '';
     const billerName = `Personal ${loanTypeText} to ${invitee?.firstName} ${invitee?.lastName}`;
     return this.data.billers.createBiller({ name: billerName, type: BillerTypeCodes.Personal, createdById });

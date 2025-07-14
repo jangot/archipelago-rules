@@ -1,8 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { INotificationDefinition } from '@library/entity/entity-interface';
-import { ConfigService } from '@nestjs/config';
-import { DeepPartial } from 'typeorm';
 import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NotificationDataService } from '@notification/data';
 
 /**
@@ -47,7 +46,7 @@ export class NotificationDomainService extends BaseDomainServices {
    * @param notificationDefinition - The DTO containing the data for the new definition
    * @returns A NotificationDefinitionResponseDto DTO for the created definition
    */
-  async createDefinition(notificationDefinition: DeepPartial<INotificationDefinition>): Promise<INotificationDefinition | null> {
+  async createDefinition(notificationDefinition: INotificationDefinition): Promise<INotificationDefinition | null> {
     return this.data.notificationDefinitions.insert(notificationDefinition, true);
   }
 
@@ -59,7 +58,7 @@ export class NotificationDomainService extends BaseDomainServices {
    * @returns A NotificationDefinitionResponseDto DTO for the updated definition
    * @throws NotFoundException if no definition is found with the provided ID
    */
-  async updateDefinition(id: string, notificationDefinition: DeepPartial<INotificationDefinition>): Promise<boolean | null> {
+  async updateDefinition(id: string, notificationDefinition: Partial<INotificationDefinition>): Promise<boolean | null> {
     return this.data.notificationDefinitions.update(id, notificationDefinition);
   }
 

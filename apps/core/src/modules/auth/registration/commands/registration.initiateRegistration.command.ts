@@ -6,17 +6,17 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { ContactType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
-import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { RegistrationInitiatedCommand } from './registration.commands';
-import { IApplicationUser } from '@library/entity/entity-interface';
-import { RegistrationTransitionResult } from '../registration-transition-result';
-import { logSafeRegistration, logSafeUser, safeTrim } from '@library/shared/common/helper';
-import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { ContactTakenException, UnableToCreateUserException } from '../../exceptions/auth-domain.exceptions';
-import { VerificationEvent } from '@core/modules/auth/verification';
 import { RegistrationDto } from '@core/modules/auth/dto/request/registration.request.dto';
+import { VerificationEvent } from '@core/modules/auth/verification';
+import { IApplicationUser } from '@library/entity/entity-interface';
+import { ContactType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { logSafeRegistration, logSafeUser, safeTrim } from '@library/shared/common/helper';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { ContactTakenException, UnableToCreateUserException } from '../../exceptions/auth-domain.exceptions';
+import { RegistrationTransitionResult } from '../registration-transition-result';
+import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
+import { RegistrationInitiatedCommand } from './registration.commands';
 
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler

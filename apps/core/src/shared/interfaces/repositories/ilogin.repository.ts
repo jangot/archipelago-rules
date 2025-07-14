@@ -1,6 +1,5 @@
-import { IRepositoryBase } from '@library/shared/common/data';
-import { DeepPartial } from 'typeorm';
 import { ILogin } from '@library/entity/entity-interface';
+import { IRepositoryBase } from '@library/shared/common/data';
 
 /**
  * Interface representing a repository for managing authentication secrets.
@@ -13,7 +12,7 @@ export interface ILoginRepository extends IRepositoryBase<ILogin> {
    * Creates Login if not existed yet, otherwise updates it. Default TypeORM createOrUpdate do not work properly with constrains.
    * @param login Login to create or update
    */
-  createOrUpdate(login: DeepPartial<ILogin>): Promise<ILogin | null>;
+  createOrUpdate(login: Partial<ILogin>): Promise<ILogin | null>;
 
   /**
    * Retrieves all user logins by user ID.

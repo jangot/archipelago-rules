@@ -5,7 +5,6 @@ import { LOAN_PAYMENT_RELATIONS, LOAN_RELATIONS } from '@library/shared/domain/e
 import { ScheduleService } from '@library/shared/service';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
-import { DeepPartial } from 'typeorm';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
 
 /**
@@ -64,7 +63,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
     }
 
     // Generate steps for each payment
-    const generatedSteps: DeepPartial<ILoanPaymentStep>[] = [];
+    const generatedSteps: Partial<ILoanPaymentStep>[] = [];
     repayments.forEach(repayment => {
       const repaymentSteps = this.generateStepsForPayment(repayment, route, fromAccountId, toAccountId);
       if (repaymentSteps && repaymentSteps.length) {

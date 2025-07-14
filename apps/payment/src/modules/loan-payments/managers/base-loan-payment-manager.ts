@@ -4,7 +4,6 @@ import { EntityNotFoundException, MissingInputException } from '@library/shared/
 import { LOAN_PAYMENT_RELATIONS, LOAN_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
-import { DeepPartial } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { v4 } from 'uuid';
 import { ILoanPaymentManager } from '../interfaces';
@@ -330,7 +329,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     fromAccountId: string,
     toAccountId: string,
     order: number
-  ): DeepPartial<ILoanPaymentStep> {
+  ): Partial<ILoanPaymentStep> {
     const { fromId, toId } = stepToApply;
     return {
       id: v4(), // We generate id here as TypeORM sometimes fails to generate multiple uuids within one transaction
@@ -369,7 +368,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     route: IPaymentsRoute | null, 
     fromAccountId: string, 
     toAccountId: string
-  ): DeepPartial<ILoanPaymentStep>[] | null {
+  ): Partial<ILoanPaymentStep>[] | null {
     if (!payment) {
       this.logger.error(`Failed to generate ${this.paymentType} payment steps for loan as payment was not provided`, 
         { payment, route, fromAccountId, toAccountId });
@@ -384,7 +383,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
 
     const { id: loanPaymentId, amount } = payment;
     const routeSteps = this.getStepsToApply(route.steps);
-    const paymentSteps: DeepPartial<ILoanPaymentStep>[] = [];
+    const paymentSteps: Partial<ILoanPaymentStep>[] = [];
 
     for (let index = 0; index < routeSteps.length; index++) {
       const stepToApply = routeSteps[index];

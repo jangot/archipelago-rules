@@ -1,12 +1,12 @@
-import { LoanPaymentStep } from '@library/shared/domain/entity';
+import { ILoanPaymentStep } from '@library/entity/entity-interface';
+import { PaymentStepState } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
+import { LoanPaymentStep } from '@library/shared/domain/entity';
+import { LoanPaymentStepRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
 import { ILoanPaymentStepRepository } from '@payment/shared/interfaces/repositories';
-import { ILoanPaymentStep } from '@library/entity/entity-interface';
-import { LoanPaymentStepRelation } from '@library/shared/domain/entity/relation';
-import { PaymentStepState } from '@library/entity/enum';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class LoanPaymentStepRepository extends RepositoryBase<LoanPaymentStep> implements ILoanPaymentStepRepository {
@@ -16,7 +16,7 @@ export class LoanPaymentStepRepository extends RepositoryBase<LoanPaymentStep> i
     super(repository, LoanPaymentStep);
   }
 
-  public async createPaymentSteps(steps: DeepPartial<LoanPaymentStep>[]): Promise<LoanPaymentStep[] | null> {
+  public async createPaymentSteps(steps: Partial<LoanPaymentStep>[]): Promise<LoanPaymentStep[] | null> {
     return this.insertMany(steps, true);
   }
 
