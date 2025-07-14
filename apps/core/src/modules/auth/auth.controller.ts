@@ -130,7 +130,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   public async updateVerificationField(@Body() body: RegistrationUpdateRequestDto, 
     @Req() request: IRequest): Promise<UserRegisterResponseDto | null> {
-    const userId = request.user?.id;
+    const userId = request.user!.id;
     return this.registrationService.updateRegistrationContact(body, userId);
   }
 

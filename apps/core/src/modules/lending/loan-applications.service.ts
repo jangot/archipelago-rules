@@ -1,12 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DeepPartial } from 'typeorm';
-import { LoanApplication } from '@library/shared/domain/entity';
-import { DtoMapper } from '@library/entity/mapping/dto.mapper';
-import { LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
-import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
-import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
+import { LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
+import { DtoMapper } from '@library/entity/mapping/dto.mapper';
+import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { LoanApplication } from '@library/shared/domain/entity';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class LoanApplicationsService {
@@ -23,15 +22,15 @@ export class LoanApplicationsService {
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
-  async createLoanApplication(data: DeepPartial<LoanApplicationRequestDto>): Promise<LoanApplicationResponseDto | null> {
+  async createLoanApplication(data: Partial<LoanApplicationRequestDto>): Promise<LoanApplicationResponseDto | null> {
     this.logger.debug('create: Creating loan application:', data);
     const loanApplicationInput = EntityMapper.toEntity(data, LoanApplication);
-    const result = await this.domainServices.loanServices.createLoanApplication(loanApplicationInput)
+    const result = await this.domainServices.loanServices.createLoanApplication(loanApplicationInput);
     if (!result) throw new EntityFailedToUpdateException('Failed to create Loan application');
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
-  async updateLoanApplication(id: string, data: DeepPartial<LoanApplication>): Promise<boolean> {
+  async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<boolean> {
     this.logger.debug(`update: Updating loan application ${id}:`, data);
     const loanApplicationInput = EntityMapper.toEntity(data, LoanApplication);
     const result = await this.domainServices.loanServices.updateLoanApplication(id, loanApplicationInput);

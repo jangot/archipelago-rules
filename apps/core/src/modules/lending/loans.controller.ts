@@ -51,10 +51,8 @@ export class LoansController {
   @ApiCreatedResponse({ description: 'Loan created successfully', type: LoanResponseDto })
   public async create(@Req() request: IRequest, @Body() input: LoanCreateRequestDto): Promise<LoanResponseDto | null> {
     // TODO: make a validation stuff here
-    const userId = request.user?.id;
-    if (!userId) {
-      throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
-    }
+    const userId = request.user!.id;
+
     this.logger.debug('Creating loan', { input });
     return this.loansService.createLoan(userId, input);
   }
@@ -63,10 +61,8 @@ export class LoansController {
   @Patch('accept/:id')
   @ApiOperation({ summary: 'Accept a loan and provide required details (e.g. target payment method)', description: 'Accept a loan and provide required details (e.g. target payment method)' })
   public async acceptLoan(@UUIDParam('id') id: string, @Req() request: IRequest, @Body() input: LoanAcceptRequestDto): Promise<unknown> {
-    const userId = request.user?.id;
-    if (!userId) {
-      throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
-    }
+    const userId = request.user!.id;
+    
     this.logger.debug(`Accepting loan with ID: ${id}`, { input });
     return this.loansService.acceptLoan(userId, id, input.paymentAccountId);
   }
@@ -83,10 +79,8 @@ export class LoansController {
   @Patch(':id')
   @ApiOperation({ summary: 'Connect a bank account to the loan and send it to the target for acceptance', description: 'Connect a bank account to the loan and send it to the target for acceptance' })
   public async connectAndSend(@Req() request: IRequest, @UUIDParam('id') id: string, @Body() input: LoanProposeRequestDto): Promise<unknown> {
-    const userId = request.user?.id;
-    if (!userId) {
-      throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
-    }
+    const userId = request.user!.id;
+
     if (!id) {
       throw new HttpException('Loan Id is required', HttpStatus.BAD_REQUEST);
     }
