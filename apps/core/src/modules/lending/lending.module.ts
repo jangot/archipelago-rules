@@ -13,14 +13,17 @@ import { LoanStateManagers, LOAN_STATE_MANAGERS } from './loan-state-managers';
 import { LoanStateManagersFactory } from './loan-state-manager-factory';
 import { ScheduleService } from '@library/shared/service';
 import { LoanApplicationsController } from '@core/modules/lending/loan.applications.controller';
+import { LoanApplicationService } from '@core/modules/lending/loan.application.service';
+import { DataModule } from '@core/modules/data';
 
 @Module({
-  imports: [JwtModule, ConfigModule, DomainModule, CqrsModule],
+  imports: [JwtModule, ConfigModule, DomainModule, CqrsModule, DataModule],
   controllers: [BillersController, LoansController, LoanApplicationsController, ScheduleController],
   providers: [
     Logger, 
     BillersService, 
     LoansService, 
+    LoanApplicationService,
     ScheduleService,
     // Individual state managers (spread from array)
     ...LOAN_STATE_MANAGERS,
