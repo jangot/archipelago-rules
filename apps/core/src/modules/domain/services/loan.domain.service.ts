@@ -1,6 +1,6 @@
 import { CoreDataService } from '@core/modules/data';
 import { ActionNotAllowedException } from '@core/modules/lending/exceptions';
-import { IApplicationUser, IBiller, ILoan, ILoanInvitee } from '@library/entity/entity-interface';
+import { IApplicationUser, IBiller, ILoan, ILoanApplication, ILoanInvitee } from '@library/entity/entity-interface';
 import { BillerTypeCodes, ContactType, LoanAssignIntent, LoanAssignIntentCodes, LoanInviteeTypeCodes, LoanStateCodes, RegistrationStatus } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
@@ -9,6 +9,7 @@ import { LoanAssignToContactInput, LoansSetTargetUserInput, LoanTargetUserInput 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
+import { LoanApplication } from '@library/shared/domain/entity';
 
 @Injectable()
 export class LoanDomainService extends BaseDomainServices {
@@ -266,6 +267,20 @@ export class LoanDomainService extends BaseDomainServices {
 
   public async getCustomBillers(createdById: string): Promise<Array<IBiller> | null> {
     return this.data.billers.getAllCustomBillers(createdById);
+  }
+  // #endregion
+
+  // #region Loan Application
+  public async getLoanApplicationById(id: string): Promise<ILoanApplication | null> {
+    return this.data.loanApplications.getById(id);
+  }
+
+  public async createLoanApplication(data: DeepPartial<LoanApplication>): Promise<ILoanApplication> {
+    return  this.data.loanApplications.insertWithResult(data);
+  }
+
+  public async updateLoanApplication(id: string, data: DeepPartial<LoanApplication>): Promise<boolean> {
+    return  this.data.loanApplications.update(id, data);
   }
   // #endregion
 }

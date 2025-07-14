@@ -12,8 +12,8 @@ import { ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
 import { LoanStateManagers, LOAN_STATE_MANAGERS } from './loan-state-managers';
 import { LoanStateManagersFactory } from './loan-state-manager-factory';
 import { ScheduleService } from '@library/shared/service';
-import { LoanApplicationsController } from '@core/modules/lending/loan.applications.controller';
-import { LoanApplicationsService } from '@core/modules/lending/loan.applications.service';
+import { LoanApplicationsController } from '@core/modules/lending/loan-applications.controller';
+import { LoanApplicationsService } from '@core/modules/lending/loan-applications.service';
 import { DataModule } from '@core/modules/data';
 
 @Module({

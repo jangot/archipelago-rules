@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IBillerRepository, ILoanInviteeRepository, ILoginRepository, IUserRegistrationRepository, IUserRepository } from '../../shared/interfaces/repositories';
 import { IDataService } from '@library/shared/common/data/idata.service';
 import { ILoanRepository, IPaymentAccountRepository } from '@library/shared/infrastructure/interface';
-import { ILoanApplicationRepository } from '@library/shared/infrastructure/interface/iloan.application.repository';
+import { ILoanApplicationRepository } from '@core/shared/interfaces/repositories/iloan-application.repository';
 
 
 @Injectable()

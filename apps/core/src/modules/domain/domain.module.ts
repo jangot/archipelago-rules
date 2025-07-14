@@ -4,15 +4,14 @@ import { DomainServices } from './domain.services';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
-import { UserDomainService, LoanDomainService, LoanApplicationDomainService } from './services';
+import { UserDomainService, LoanDomainService } from './services';
 import { DataModule } from '../data';
 
 @Module({
   imports: [CqrsModule, ConfigModule, DataModule, JwtModule],
   providers: [
     UserDomainService, 
-    LoanDomainService, 
-    LoanApplicationDomainService,
+    LoanDomainService,
     { provide: IDomainServices, useClass: DomainServices }],
   exports: [IDomainServices],
 })

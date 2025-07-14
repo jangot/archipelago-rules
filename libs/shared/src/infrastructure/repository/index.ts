@@ -2,8 +2,8 @@
 import { PaymentAccountRepository } from './payment.account.repository';
 import { LoanRepository } from './loan.repository';
 import { ILoanRepository, IPaymentAccountRepository } from '../interface';
-import { ILoanApplicationRepository } from '@library/shared/infrastructure/interface/iloan.application.repository';
-import { LoanApplicationRepository } from '@library/shared/infrastructure/repository/loan.application.repository';
+import { ILoanApplicationRepository } from '@core/shared/interfaces/repositories/iloan-application.repository';
+import { LoanApplicationRepository } from '@core/modules/lending/repositories/loan-application.repository';
 
 
 export * from './payment.account.repository';

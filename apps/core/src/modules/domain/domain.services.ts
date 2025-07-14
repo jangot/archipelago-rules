@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { IDomainServices } from './idomain.services';
 import { UserDomainService } from './services/user.domain.service';
 import { LoanDomainService } from './services/loan.domain.service';
-import { LoanApplicationDomainService } from './services/loan.application.domain.service';
 
 /*
  * File Name   : domain.service.ts
@@ -16,7 +15,6 @@ import { LoanApplicationDomainService } from './services/loan.application.domain
 export class DomainServices implements IDomainServices {
   constructor(
     public readonly userServices: UserDomainService,
-    public readonly loanServices: LoanDomainService,
-    public readonly loanApplicationServices: LoanApplicationDomainService
+    public readonly loanServices: LoanDomainService
   ) {}
 }

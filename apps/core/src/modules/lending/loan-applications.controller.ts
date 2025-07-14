@@ -5,7 +5,7 @@ import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiOperation, ApiTags } fro
 import { JwtAuthGuard } from '../auth/guards';
 import { LoanApplicationUpdateDto, LoanApplicationRequestDto } from './dto/request';
 import { LoanApplicationResponseDto } from './dto/response';
-import { LoanApplicationsService } from './loan.applications.service';
+import { LoanApplicationsService } from './loan-applications.service';
 
 @Controller('loan-applications')
 @ApiTags('loan-applications')

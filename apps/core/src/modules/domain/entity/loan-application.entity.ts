@@ -8,8 +8,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { LoanType } from '@library/entity/enum';
-import { PaymentAccount } from './payment.account.entity';
-import { Biller } from './biller.entity';
+import { PaymentAccount } from '@library/shared/domain/entity/payment.account.entity';
+import { Biller } from '@library/shared/domain/entity/biller.entity';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { ILoanApplication } from '@library/entity/entity-interface';
 
