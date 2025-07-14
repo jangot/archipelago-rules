@@ -1,14 +1,20 @@
+import { IBiller } from '@library/entity/entity-interface/ibiller';
 import { BillerType } from '@library/entity/enum';
-import { IBiller } from '@library/entity/entity-interface';
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { ApplicationUser } from './application.user.entity';
-import { PaymentAccount } from './payment.account.entity';
 import { DbSchemaCodes } from '@library/shared/common/data';
+import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { ApplicationUser } from './application.user.entity';
+import { BillerAddress } from './biller.address.entity';
+import { BillerMask } from './biller.mask.entity';
+import { BillerName } from './biller.name.entity';
+import { PaymentAccount } from './payment.account.entity';
 
+/**
+ * Biller entity implements IBiller for the core domain.
+ *
+ * @implements {IBiller}
+ */
 @Entity({ schema: DbSchemaCodes.Core })
 export class Biller implements IBiller {
-
-
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -35,4 +41,47 @@ export class Biller implements IBiller {
 
   @ManyToOne(() => PaymentAccount, { nullable: true })
   paymentAccount: PaymentAccount | null;
+
+  @Column({ type: 'text', nullable: true })
+  externalBillerId: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  externalBillerKey: string;
+
+  @Column({ type: 'date' })
+  liveDate: Date;
+
+  @Column({ type: 'text', nullable: true })
+  billerClass: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  billerType: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  lineOfBusiness: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  territoryCode: string | null;
+
+  @Column({ type: 'int' })
+  crc32: number;
+
+  /**
+   * List of alternative names for the biller.
+   */
+  @OneToMany(() => BillerName, (billerName) => billerName.billerId)
+  names: BillerName[];
+
+  /**
+   * List of account number masks for the biller.
+   */
+  @OneToMany(() => BillerMask, (billerMask) => billerMask.billerId)
+  masks: BillerMask[];
+
+  /**
+   * List of addresses for the biller.
+   */
+  @OneToMany(() => BillerAddress, (billerAddress) => billerAddress.billerId)
+  addresses: BillerAddress[];
+
 }

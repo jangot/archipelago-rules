@@ -1,11 +1,15 @@
 import { EntityId } from '@library/shared/common/data';
 import { BillerType } from '../enum';
 import { IApplicationUser } from './iapplication-user';
+import { IBillerAddress } from './ibiller-address';
+import { IBillerMask } from './ibiller-mask';
+import { IBillerName } from './ibiller-name';
 import { IPaymentAccount } from './ipayment-account';
 
 export interface IBiller extends EntityId<string> {
   id: string; // UUID
   name: string;
+
 
   /** Type of the Biller: 
    * `network` - Biller was imported from Billers network (RPPS); 
@@ -17,6 +21,28 @@ export interface IBiller extends EntityId<string> {
   */
   // accountNumberValidation: string | null;
 
+
+  externalBillerId: string | null, 
+  externalBillerKey: string | null, 
+
+  /**
+   * Date component only, no time (yyyy-mm-dd)
+   */
+  liveDate: Date, 
+
+  billerClass: string | null,
+  billerType: string | null,
+  lineOfBusiness: string | null,
+  territoryCode: string | null,
+
+  
+  crc32: number,
+
+
+  names: IBillerName[],
+  masks: IBillerMask[],
+  addresses: IBillerAddress[],
+
   createdAt: Date;
   updatedAt: Date | null;
 
@@ -27,3 +53,4 @@ export interface IBiller extends EntityId<string> {
   paymentAccount: IPaymentAccount | null;
 
 }
+
