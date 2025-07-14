@@ -55,10 +55,8 @@ export class RepaidLoanStateManager extends BaseLoanStateManager {
    *   - `true` if state transition and loan closure completed successfully
    *   - `null` if transition failed or if issues prevent safe closure completion
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    // TODO: Implement actual state transition logic
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    return this.executeStateTransition(loanId, nextState);  
   }
 
   protected getSupportedNextStates(): LoanState[] {

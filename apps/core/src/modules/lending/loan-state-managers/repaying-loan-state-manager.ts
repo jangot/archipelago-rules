@@ -57,9 +57,8 @@ export class RepayingLoanStateManager extends BaseLoanStateManager {
     // Check conditions for transition to `LoanStateCodes.RepaymentPaused`
     const isPaymentFailed = this.isPaymentFailed(loan, this.getPrimaryPaymentType(),
       'repayment pause');
-    if (isPaymentFailed) {
-      return LoanStateCodes.RepaymentPaused;
-    }
+    if (isPaymentFailed) return LoanStateCodes.RepaymentPaused;
+    
 
     // Check conditions for transition to `LoanStateCodes.Closed`
     // TODO: Fogiveness check goes here OR in explicit ForgivenessInProgress state
