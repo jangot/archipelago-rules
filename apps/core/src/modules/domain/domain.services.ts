@@ -15,6 +15,6 @@ import { LoanDomainService } from './services/loan.domain.service';
 export class DomainServices implements IDomainServices {
   constructor(
     public readonly userServices: UserDomainService,
-    public readonly loanServices: LoanDomainService,
+    public readonly loanServices: LoanDomainService
   ) {}
 }

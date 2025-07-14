@@ -13,7 +13,7 @@ import { CoreDataService } from './data.service';
     TypeOrmModule.forRootAsync(SingleDataSourceConfiguration(AllEntities)),
   ],
   providers: [
-    CoreDataService, 
+    CoreDataService,
     ...registerCustomRepositoryProviders(CoreEntities), 
     ...registerCustomRepositoryProviders(PaymentEntities),  
     ...CustomCoreRepositories,
