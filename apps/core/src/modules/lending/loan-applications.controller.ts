@@ -27,10 +27,7 @@ export class LoanApplicationsController {
   @ApiOperation({ summary: 'Create a new loan application', description: 'Create a new loan application' })
   @ApiCreatedResponse({ description: 'Loan application created', type: LoanApplicationResponseDto })
   public async create(@Req() request: IRequest, @Body() input: LoanApplicationRequestDto): Promise<LoanApplicationResponseDto | null> {
-    const userId = request.user?.id;
-    if (!userId) {
-      throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
-    }
+    const userId = request.user!.id;
     this.logger.debug('Creating loan', { input });
     return this.loanApplicationService.createLoanApplication(input);
   }
