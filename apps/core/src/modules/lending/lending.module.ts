@@ -13,7 +13,7 @@ import { LoanStateManagers, LOAN_STATE_MANAGERS } from './loan-state-managers';
 import { LoanStateManagersFactory } from './loan-state-manager-factory';
 import { ScheduleService } from '@library/shared/service';
 import { LoanApplicationsController } from '@core/modules/lending/loan.applications.controller';
-import { LoanApplicationService } from '@core/modules/lending/loan.application.service';
+import { LoanApplicationsService } from '@core/modules/lending/loan.applications.service';
 import { DataModule } from '@core/modules/data';
 
 @Module({
@@ -23,7 +23,7 @@ import { DataModule } from '@core/modules/data';
     Logger, 
     BillersService, 
     LoansService, 
-    LoanApplicationService,
+    LoanApplicationsService,
     ScheduleService,
     // Individual state managers (spread from array)
     ...LOAN_STATE_MANAGERS,

@@ -5,7 +5,7 @@ import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiOperation, ApiTags } fro
 import { JwtAuthGuard } from '../auth/guards';
 import { LoanApplicationUpdateDto, LoanApplicationRequestDto } from './dto/request';
 import { LoanApplicationResponseDto } from './dto/response';
-import { LoanApplicationService } from './loan.application.service';
+import { LoanApplicationsService } from './loan.applications.service';
 
 @Controller('loan-applications')
 @ApiTags('loan-applications')
@@ -14,13 +14,13 @@ import { LoanApplicationService } from './loan.application.service';
 export class LoanApplicationsController {
   private readonly logger: Logger = new Logger(LoanApplicationsController.name);
 
-  constructor(private readonly loanApplicationService: LoanApplicationService) {}
+  constructor(private readonly loanApplicationService: LoanApplicationsService) {}
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a loan application by ID ', description: 'Get a loan application by ID' })
   public async getLoanApplicationById(@UUIDParam('id') id: string): Promise<LoanApplicationResponseDto | null> {
     this.logger.debug(`Getting loan application details with ID: ${id}`);
-    return this.loanApplicationService.getById(id);
+    return this.loanApplicationService.getLoanApplicationById(id);
   }
   
   @Post()
@@ -32,7 +32,7 @@ export class LoanApplicationsController {
       throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
     }
     this.logger.debug('Creating loan', { input });
-    return this.loanApplicationService.create(input);
+    return this.loanApplicationService.createLoanApplication(input);
   }
 
 
@@ -45,6 +45,6 @@ export class LoanApplicationsController {
     @Body() updates: LoanApplicationUpdateDto,
   ): Promise<boolean> {
     this.logger.debug(`Updating loan application ${id} with data:`, updates);
-    return this.loanApplicationService.partiallyUpdate(id, updates);
+    return this.loanApplicationService.updateLoanApplication(id, updates);
   }
 }
