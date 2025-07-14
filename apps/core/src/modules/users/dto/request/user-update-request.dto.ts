@@ -60,7 +60,7 @@ export class UserUpdateRequestDto {
   @Expose()
   @IsOptional()
   @IsString()
-  onboardingStatus?: string | null;
+  onboardStatus?: string | null;
 
   @ApiProperty({ description: 'Email', type: String, required: false })
   @Expose()

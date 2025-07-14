@@ -60,7 +60,7 @@ describe('UsersService Integration Tests', () => {
         city: null,
         state: null,
         zipCode: null,
-        onboardingStatus: undefined,
+        onboardStatus: undefined,
         deletedAt: undefined,
       }));
     });
@@ -184,7 +184,7 @@ describe('UsersService Integration Tests', () => {
         city: null,
         state: null,
         zipCode: null,
-        onboardingStatus: null,
+        onboardStatus: null,
       }));
     });
 
@@ -218,7 +218,7 @@ describe('UsersService Integration Tests', () => {
         city: null,
         state: null,
         zipCode: null,
-        onboardingStatus: null,
+        onboardStatus: null,
       };
 
       const result = await service.updateUser(creationResult!.userId, updateUserDto);
@@ -237,7 +237,7 @@ describe('UsersService Integration Tests', () => {
         city: null,
         state: null,
         zipCode: null,
-        onboardingStatus: null,
+        onboardStatus: null,
       }));
     });
 
@@ -294,7 +294,7 @@ describe('UsersService Integration Tests', () => {
         city: null,
         state: null,
         zipCode: null,
-        onboardingStatus: null,
+        onboardStatus: null,
       }));
     });
 
@@ -336,7 +336,7 @@ describe('UsersService Integration Tests', () => {
         city: null,
         state: null,
         zipCode: null,
-        onboardingStatus: null,
+        onboardStatus: null,
       }));
     });
   });
@@ -386,7 +386,7 @@ describe('UsersService Integration Tests', () => {
         phoneNumber: mockUser.phoneNumber,
         state: null,
         zipCode: null,
-        onboardingStatus: null,
+        onboardStatus: null,
         loginId: undefined,
         registrationStatus: RegistrationStatus.NotRegistered,
       }));

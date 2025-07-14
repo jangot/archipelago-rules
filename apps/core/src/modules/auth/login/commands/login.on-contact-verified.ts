@@ -17,8 +17,8 @@ export class LoginOnContactVerifiedCommandHandler
       throw new MissingInputException('No userId provided');
     }
 
-    const onboardingStatus = contactType === ContactType.EMAIL ? RegistrationStatus.EmailVerified : RegistrationStatus.PhoneNumberVerified;
-    const result = await this.generateLoginPayload(userId, onboardingStatus, undefined);
+    const onboardStatus = contactType === ContactType.EMAIL ? RegistrationStatus.EmailVerified : RegistrationStatus.PhoneNumberVerified;
+    const result = await this.generateLoginPayload(userId, onboardStatus, undefined);
     if (loginId) {
       const updatedLogin = { id: loginId, updatedAt: new Date(), secret: result.refreshToken, secretExpiresAt: 
       result.refreshTokenExpiresAt, sessionId: result.accessToken };

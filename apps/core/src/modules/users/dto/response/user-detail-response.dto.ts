@@ -78,7 +78,7 @@ export class UserDetailResponseDto {
   @ApiProperty({ description: 'Onboarding status', type: String, required: true })
   @Expose()
   @IsString()
-  onboardingStatus: string;
+  onboardStatus: string;
 }
 
 export class UserDetailsUpdateResponseDto extends OmitType(UserDetailResponseDto, ['deletedAt'] as const) {}

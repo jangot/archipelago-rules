@@ -16,7 +16,7 @@ export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = Lo
 
   public abstract execute(command: TCommand): Promise<UserLoginPayloadDto>;
 
-  protected async generateLoginPayload(userId: string, onboardingStatus: string, expiresIn?: number): Promise<UserLoginPayloadDto> {
+  protected async generateLoginPayload(userId: string, onboardStatus: string, expiresIn?: number): Promise<UserLoginPayloadDto> {
     const payload = this.domainServices.userServices.createAccessTokenPayload(userId);
     const refreshPayload = this.domainServices.userServices.createRefreshTokenPayload(userId);
 
@@ -28,7 +28,7 @@ export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = Lo
 
     const result: UserLoginPayloadDto = {
       userId,
-      onboardingStatus,
+      onboardStatus,
       accessToken,
       refreshToken,
       accessTokenExpiresAt: new Date(payload!.exp! * 1000),
