@@ -1,13 +1,14 @@
 import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/entity-interface';
 import { LoanInviteeTypeCodes, LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
+import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { IEventPublisher } from '@library/shared/common/event/interface/ieventpublisher';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { Loan, LoanInvitee } from '@library/shared/domain/entity';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { LoanAssignToContactInput } from '@library/shared/type/lending';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DeepPartial } from 'typeorm';
 import { IDomainServices } from '../domain/idomain.services';
 import { LoanCreateRequestDto } from './dto/request/loan.create.request.dto';
 import { LoanResponseDto } from './dto/response/loan.response.dto';
@@ -30,12 +31,13 @@ export class LoansService {
   public async createLoan(userId: string, input: LoanCreateRequestDto): Promise<LoanResponseDto | null> {
     LendingLogic.validateLoanCreateInput(input);
 
-    const loanCreateInput: DeepPartial<ILoan> = { ...input };
+    const loanCreateInput: Partial<ILoan> = EntityMapper.toEntity(input, Loan);
     const { type, invitee } = input;
     const { type: inviteeType } = invitee;
-
+    const inviteeEntity: ILoanInvitee = EntityMapper.toEntity(invitee, LoanInvitee);
+    
     if (type === LoanTypeCodes.Personal) {
-      const personalBiller = await this.createPersonalBiller(invitee, userId);
+      const personalBiller = await this.createPersonalBiller(inviteeEntity, userId);
       loanCreateInput.billerId = personalBiller.id;
     }
 
@@ -60,7 +62,7 @@ export class LoansService {
     
     const paymentAccount = await this.getPaymentAccount(sourcePaymentAccountId, userId);
     
-    const updates: DeepPartial<ILoan> = {};
+    const updates: Partial<ILoan> = {};
     if (isInviteeBorrower) {
       updates.lenderAccountId = paymentAccount.id;
       updates.state = LoanStateCodes.Offered;
@@ -122,7 +124,7 @@ export class LoansService {
     return manager.advance(loanId);
   }
 
-  private async createPersonalBiller(invitee: DeepPartial<ILoanInvitee>, createdById: string): Promise<IBiller> {
+  private async createPersonalBiller(invitee: ILoanInvitee, createdById: string): Promise<IBiller> {
     const personalBiller = await this.domainServices.loanServices.createPersonalBiller(invitee, createdById);
     if (!personalBiller) {
       this.logger.error('LoanCreateCommand: Failed to create personal Biller', { invitee, createdById });

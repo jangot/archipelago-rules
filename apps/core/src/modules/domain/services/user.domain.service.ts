@@ -6,24 +6,23 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { Injectable, Logger } from '@nestjs/common';
 import { IApplicationUser, ILogin, IPaymentAccount, IUserRegistration } from '@library/entity/entity-interface';
-import { Transactional } from 'typeorm-transactional';
-import { DeepPartial } from 'typeorm';
 import { ContactType } from '@library/entity/enum';
+import { Injectable, Logger } from '@nestjs/common';
+import { Transactional } from 'typeorm-transactional';
 
-import { generateSecureCode } from '@library/shared/common/helper';
-import { JwtService } from '@nestjs/jwt';
 import { IJwtPayload } from '@core/modules/auth/interfaces/ijwt-payload';
 import { IRefreshTokenPayload } from '@core/modules/auth/interfaces/irefresh-token-payload';
-import { ConfigService } from '@nestjs/config';
-import { addSeconds, getUnixTime } from 'date-fns';
+import { CoreDataService } from '@core/modules/data/data.service';
+import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
+import { generateSecureCode } from '@library/shared/common/helper';
 import { generateCRC32String } from '@library/shared/common/helper/crc32.helpers';
 import { IPaging, PagingOptionsDto } from '@library/shared/common/paging';
 import { SearchFilterDto } from '@library/shared/common/search';
-import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
-import { CoreDataService } from '@core/modules/data/data.service';
 import { PaymentAccountRelation } from '@library/shared/domain/entity/relation';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { addSeconds, getUnixTime } from 'date-fns';
 
 @Injectable()
 export class UserDomainService extends BaseDomainServices {
@@ -49,7 +48,7 @@ export class UserDomainService extends BaseDomainServices {
   public async createUserLoginOnRegistration(
     user: IApplicationUser,
     registration: IUserRegistration,
-    login: DeepPartial<ILogin> | null
+    login: Partial<ILogin> | null
   ): Promise<ILogin | null> {
     this.logger.debug(`Creating login ${login?.loginType || '{already logged in - skipping}'} for user ${user.id}`);
 
@@ -88,23 +87,29 @@ export class UserDomainService extends BaseDomainServices {
   //#endregion
 
   //#region User Related Creation Methods
-  public async createNewUser(user: DeepPartial<IApplicationUser>): Promise<IApplicationUser | null> {
+  public async createNewUser(user: Partial<IApplicationUser>): Promise<IApplicationUser | null> {
     return this.data.users.insert(user, true);
   }
 
-  public async createNewUserRegistration(registration: DeepPartial<IUserRegistration>): Promise<IUserRegistration | null> {
-    return this.data.userRegistrations.create(registration);
+  public async createNewUserRegistration(registration: Partial<IUserRegistration>): Promise<IUserRegistration | null> {
+    return this.data.userRegistrations.insertWithResult(registration);
   }
   //#endregion
 
   //#region User Related Login Methods
-  public async createLogin(login: DeepPartial<ILogin>, shouldHashSecrets = false): Promise<ILogin | null> {
-    login = this.applyRequiredHashes(login, shouldHashSecrets);
-    return this.data.logins.create(login);
+  public async createLogin(login: Partial<ILogin>, shouldHashSecrets = false): Promise<ILogin | null> {
+    const { secret, sessionId } = this.generateRequiredHashes(login.secret || null, login.sessionId || null, shouldHashSecrets);
+    login.secret = secret;
+    login.sessionId = sessionId;
+
+    return this.data.logins.insertWithResult(login);
   }
 
-  public async updateLogin(loginId: string, login: DeepPartial<ILogin>, shouldHashSecrets = false): Promise<boolean | null> {
-    login = this.applyRequiredHashes(login, shouldHashSecrets);
+  public async updateLogin(loginId: string, login: Partial<ILogin>, shouldHashSecrets = false): Promise<boolean | null> {
+    const { secret, sessionId } = this.generateRequiredHashes(login.secret || null, login.sessionId || null, shouldHashSecrets);
+    login.secret = secret;
+    login.sessionId = sessionId;
+
     return this.data.logins.update(loginId, login);
   }
 
@@ -205,19 +210,17 @@ export class UserDomainService extends BaseDomainServices {
     return this.jwtService.signAsync(payload, { secret });
   }
 
-  private applyRequiredHashes(login: DeepPartial<ILogin>, shouldHashSecrets = false): DeepPartial<ILogin> {
-    const { secret, sessionId } = login;
+  private generateRequiredHashes(rawSecret: string | null, rawSessionId: string | null, shouldHashSecrets = false):
+  { secret: string | null; sessionId: string | null } {
     return {
-      ...login,
-      secret: shouldHashSecrets && secret ? generateCRC32String(secret) : secret,
-      sessionId: shouldHashSecrets && sessionId ? generateCRC32String(sessionId) : sessionId,
+      secret: shouldHashSecrets && rawSecret ? generateCRC32String(rawSecret) : rawSecret || null,
+      sessionId: shouldHashSecrets && rawSessionId ? generateCRC32String(rawSessionId) : rawSessionId || null,
     };
   }
-
   //#endregion
 
   // #region Payment Accounts
-  public async addPaymentAccount(userId: string, input: DeepPartial<IPaymentAccount>): Promise<IPaymentAccount | null> {
+  public async addPaymentAccount(userId: string, input: Partial<IPaymentAccount>): Promise<IPaymentAccount | null> {
     this.logger.debug(`Adding payment account for user ${userId}`, { input });
     return this.data.paymentAccounts.createPaymentAccount({ ...input, userId: userId });
   }

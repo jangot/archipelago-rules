@@ -1,12 +1,12 @@
-import { Transfer } from '@library/shared/domain/entity';
+import { ITransfer } from '@library/entity/entity-interface';
+import { TransferStateCodes } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
+import { Transfer } from '@library/shared/domain/entity';
+import { TransferRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
 import { ITransferRepository } from '@payment/shared/interfaces/repositories';
-import { TransferStateCodes } from '@library/entity/enum';
-import { ITransfer } from '@library/entity/entity-interface';
-import { TransferRelation } from '@library/shared/domain/entity/relation';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class TransferRepository extends RepositoryBase<Transfer> implements ITransferRepository {
@@ -20,7 +20,7 @@ export class TransferRepository extends RepositoryBase<Transfer> implements ITra
     return this.repository.findOne({ where: { loanPaymentStepId: stepId }, order: { order: 'DESC' } });
   }
 
-  public async createTransferForStep(transferData: DeepPartial<Transfer>): Promise<Transfer | null> {
+  public async createTransferForStep(transferData: Partial<Transfer>): Promise<Transfer | null> {
     return this.insert(transferData, true);
   }
 

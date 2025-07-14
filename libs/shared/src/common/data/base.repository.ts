@@ -6,9 +6,11 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { AllowedCriteriaTypes, IRepositoryBase } from './ibase.repository';
+import { executePGFunction, PGFunctionParam } from '@library/extensions/typeorm/typeorm.extensions';
+import { IDatabaseConnection, PreparedQuery } from '@pgtyped/runtime';
+import camelcaseKeys from 'camelcase-keys';
+import { Pool } from 'pg';
 import {
-  DeepPartial,
   DeleteResult,
   FindManyOptions,
   FindOneOptions,
@@ -18,15 +20,12 @@ import {
   Repository,
   UpdateResult,
 } from 'typeorm';
-import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
-import { ISearchFilter } from '../search/search-query';
 import { buildPagingQuery, IPaging, IPagingOptions } from '../paging';
 import { buildSearchQuery } from '../search';
-import { IDatabaseConnection, PreparedQuery } from '@pgtyped/runtime';
-import { Pool } from 'pg';
+import { ISearchFilter } from '../search/search-query';
+import { AllowedCriteriaTypes, IRepositoryBase } from './ibase.repository';
+import { CompositeIdEntityType, EntityId, SingleIdEntityType } from './id.entity';
 import { PgPoolAdapter } from './pg-pool-adapter';
-import camelcaseKeys from 'camelcase-keys';
-import { PGFunctionParam, executePGFunction } from '@library/extensions/typeorm/typeorm.extensions';
 
 /**
  * RepositoryBase class
@@ -57,9 +56,9 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return this.repository.find();
   }
 
-  public async insert(item: DeepPartial<Entity>, returnResult: false): Promise<Entity['id'] | null>;
-  public async insert(item: DeepPartial<Entity>, returnResult: true): Promise<Entity | null>;
-  public async insert(item: DeepPartial<Entity>, returnResult: boolean = false): Promise<Entity['id'] | Entity | null> {
+  public async insert(item: Partial<Entity>, returnResult: false): Promise<Entity['id'] | null>;
+  public async insert(item: Partial<Entity>, returnResult: true): Promise<Entity | null>;
+  public async insert(item: Partial<Entity>, returnResult: boolean = false): Promise<Entity['id'] | Entity | null> {
     if (returnResult) {
       return this.insertWithResult(item);
     }
@@ -69,7 +68,7 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return id;
   }
 
-  public async insertWithResult(item: DeepPartial<Entity>): Promise<Entity> {
+  public async insertWithResult(item: Partial<Entity>): Promise<Entity> {
     const insertResult = await this.repository
       .createQueryBuilder()
       .insert()
@@ -85,9 +84,9 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return insertResult.generatedMaps[0] as Entity;
   }
 
-  public async insertMany(items: DeepPartial<Entity>[], returnResult: false): Promise<Entity['id'][] | null>;
-  public async insertMany(items: DeepPartial<Entity>[], returnResult: true): Promise<Entity[] | null>;
-  public async insertMany(items: DeepPartial<Entity>[], returnResult: boolean = false): Promise<Entity['id'][] | Entity[] | null> {
+  public async insertMany(items: Partial<Entity>[], returnResult: false): Promise<Entity['id'][] | null>;
+  public async insertMany(items: Partial<Entity>[], returnResult: true): Promise<Entity[] | null>;
+  public async insertMany(items: Partial<Entity>[], returnResult: boolean = false): Promise<Entity['id'][] | Entity[] | null> {
     if (items.length === 0) {
       return null;
     }
@@ -101,7 +100,7 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return ids;
   }
 
-  public async insertManyWithResult(items: DeepPartial<Entity>[]): Promise<Entity[]> {
+  public async insertManyWithResult(items: Partial<Entity>[]): Promise<Entity[]> {
     if (items.length === 0) {
       return [];
     }
@@ -121,11 +120,11 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return insertResult.generatedMaps as Entity[];
   }
 
-  public async create(item: DeepPartial<Entity>): Promise<Entity> {
+  public async create(item: Entity): Promise<Entity> {
     return this.repository.save(item);
   }
 
-  public async update(id: Entity['id'], item: DeepPartial<Entity>): Promise<boolean> {
+  public async update(id: Entity['id'], item: Partial<Entity>): Promise<boolean> {
     // Handles Compound Primary keys as well as simple Primary keys
     const whereCondition = this.normalizedIdWhereCondition(id);
 

@@ -1,10 +1,10 @@
+import { ILoginRepository } from '@core/shared/interfaces/repositories';
+import { ILogin } from '@library/entity/entity-interface';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
+import { Login } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
-import { ILogin } from '@library/entity/entity-interface';
-import { Login } from '@library/shared/domain/entity';
-import { ILoginRepository } from '@core/shared/interfaces/repositories';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
 @Injectable()
 export class LoginRepository extends RepositoryBase<Login> implements ILoginRepository {
@@ -17,7 +17,7 @@ export class LoginRepository extends RepositoryBase<Login> implements ILoginRepo
     super(repository, Login);
   }
 
-  public async createOrUpdate(login: DeepPartial<Login>): Promise<ILogin | null> {
+  public async createOrUpdate(login: Partial<Login>): Promise<ILogin | null> {
     const existing = await this.findOneBy({ userId: login.userId, loginType: login.loginType });
     if (existing) {
       await this.update(existing.id, login);
