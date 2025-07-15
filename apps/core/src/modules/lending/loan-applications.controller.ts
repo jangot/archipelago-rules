@@ -29,7 +29,7 @@ export class LoanApplicationsController {
   @ApiCreatedResponse({ description: 'Loan application created', type: LoanApplicationResponseDto })
   public async create(@Req() request: IRequest, @Body() input: LoanApplicationRequestDto): Promise<LoanApplicationResponseDto | null> {
     const userId = request.user!.id;  
-    this.logger.debug('Creating loan', { input });
+    this.logger.debug('Creating loan application', { input });
 
     return this.loanApplicationService.createLoanApplication(userId, input);
   }
