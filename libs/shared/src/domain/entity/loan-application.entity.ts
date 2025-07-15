@@ -1,5 +1,5 @@
 import { ILoanApplication } from '@library/entity/entity-interface';
-import { LoanType } from '@library/entity/enum';
+import { LoanApplicationStatus, LoanType } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Biller } from '@library/shared/domain/entity/biller.entity';
 import { PaymentAccount } from '@library/shared/domain/entity/payment.account.entity';
@@ -20,7 +20,7 @@ export class LoanApplication implements ILoanApplication {
   id: string;
 
   @Column({ type: 'text', nullable: true })
-  status: string | null;
+  status: LoanApplicationStatus | null;
 
   // Biller
   @Column({ type: 'uuid', nullable: true })

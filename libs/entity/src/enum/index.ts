@@ -11,6 +11,7 @@ export * from './registration.status';
 // #region Loan
 export * from './loan.type';
 export * from './loan.state';
+export * from './loan-application.status';
 export * from './loan-closure.type';
 export * from './loan-payment-frequency.type';
 export * from './loan-fee-mode';

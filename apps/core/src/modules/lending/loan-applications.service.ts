@@ -1,6 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
+import { LoanApplicationStatusCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
@@ -17,6 +18,13 @@ export class LoanApplicationsService {
 
   ) {}
 
+  /**
+   * Retrieves a loan application by its ID.
+   * Throws EntityNotFoundException if not found.
+   *
+   * @param id - The ID of the loan application
+   * @returns Promise<LoanApplicationResponseDto | null> - The loan application DTO or null
+   */
   public async getLoanApplicationById(id: string): Promise<LoanApplicationResponseDto | null> {
     const result = await this.domainServices.loanServices.getLoanApplicationById(id);
 
@@ -25,6 +33,14 @@ export class LoanApplicationsService {
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
+  /**
+   * Creates a new loan application for the specified user.
+   * Throws EntityFailedToUpdateException if creation fails.
+   *
+   * @param userId - The ID of the user creating the application
+   * @param data - Partial loan application request DTO
+   * @returns Promise<LoanApplicationResponseDto | null> - The created loan application DTO or null
+   */
   public async createLoanApplication(userId: string, data: Partial<LoanApplicationRequestDto>): Promise<LoanApplicationResponseDto | null> {
     this.logger.debug('create: Creating loan application:', data);
 
@@ -37,6 +53,15 @@ export class LoanApplicationsService {
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
+  /**
+   * Updates an existing loan application for the specified user.
+   * Validates user authorization and throws if not authorized or update fails.
+   *
+   * @param userId - The ID of the user updating the application
+   * @param id - The ID of the loan application
+   * @param data - Partial loan application request DTO
+   * @returns Promise<LoanApplicationResponseDto | null> - The updated loan application DTO or null
+   */
   public async updateLoanApplication(userId: string, id: string, data: Partial<LoanApplicationRequestDto>):
   Promise<LoanApplicationResponseDto | null> {
     this.logger.debug(`update: Updating loan application ${id}:`, data);
@@ -54,6 +79,29 @@ export class LoanApplicationsService {
 
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
+
+
+  /**
+   * Sends the loan application to the lender by updating its status to 'sent_to_lender'.
+   * Validates that the loan application exists, and throws if not found.
+   *
+   * @param userId - The user performing the action
+   * @param id - The loan application ID
+   * @returns Promise<LoanApplicationResponseDto | null> - The loan application DTO or null
+   */
+  public async sendToLender(userId: string, id: string): Promise<LoanApplicationResponseDto | null> {
+    this.logger.debug(`sendToLender: Sending loan application ${id} to lender`);
+
+    await this.validateApplicationLoanUser(id, userId);
+
+    const status = LoanApplicationStatusCodes.SentToLender;
+    const result = await this.domainServices.loanServices.updateLoanApplication(id, { status });
+
+    if (!result) throw new EntityFailedToUpdateException('Failed to send Loan application to lender');
+
+    return DtoMapper.toDto(result, LoanApplicationResponseDto);
+  }
+
 
   // TODO: This is a placeholder for the actual loan fee calculation
   private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {

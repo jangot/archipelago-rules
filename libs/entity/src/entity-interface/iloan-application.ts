@@ -1,10 +1,10 @@
 import { EntityId } from '@library/shared/common/data/id.entity';
-import { LoanType } from '../enum';
+import { LoanApplicationStatus, LoanType } from '../enum';
 
 export interface ILoanApplication extends EntityId<string> {
   // Loan Application
   id: string;
-  status: string | null; //TODO: need to define this. enum?
+  status: LoanApplicationStatus | null; // See LoanApplicationStatusCodes enum
 
   // Biller
   billerId: string | null;
