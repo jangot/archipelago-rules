@@ -124,6 +124,10 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return this.repository.save(item);
   }
 
+  public async upsert(item: Entity): Promise<Entity> {
+    return this.repository.save(item);
+  }
+
   public async update(id: Entity['id'], item: Partial<Entity>): Promise<boolean> {
     // Handles Compound Primary keys as well as simple Primary keys
     const whereCondition = this.normalizedIdWhereCondition(id);
@@ -131,6 +135,22 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     const updateResult = await this.repository.update(whereCondition, item);
 
     return this.actionResult(updateResult);
+  }
+
+  public async updateWithResult(id: Entity['id'], item: Partial<Entity>): Promise<Entity> {
+    const updateResult = await this.repository
+      .createQueryBuilder()
+      .update(this.repository.metadata.target)
+      .set(item)
+      .where('id = :id', { id })
+      .returning('*')
+      .execute();
+
+    if (!updateResult.generatedMaps || updateResult.generatedMaps.length === 0) {
+      throw new Error('Update failed: no entity was returned');
+    }
+    // generatedMaps[0] will have keys matching entity's properties (camelCased)
+    return updateResult.generatedMaps[0] as Entity;
   }
 
   public async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {

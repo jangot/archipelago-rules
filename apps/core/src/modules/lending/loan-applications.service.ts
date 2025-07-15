@@ -37,18 +37,31 @@ export class LoanApplicationsService {
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
-  public async updateLoanApplication(userId: string, id: string, data: Partial<LoanApplicationRequestDto>): Promise<boolean> {
+  public async updateLoanApplication(userId: string, id: string, data: Partial<LoanApplicationRequestDto>):
+  Promise<LoanApplicationResponseDto | null> {
     this.logger.debug(`update: Updating loan application ${id}:`, data);
 
     // Validate that the loan application belongs to the user (as a borrower or lender)
     await this.validateApplicationLoanUser(id, userId);
+
+    const loanFee = this.calculateLoanFee(data);
+    data.loanServiceFee = loanFee;
 
     const loanApplicationInput = EntityMapper.toEntity(data, LoanApplication);
     const result = await this.domainServices.loanServices.updateLoanApplication(id, loanApplicationInput);
 
     if (!result) throw new EntityFailedToUpdateException('Failed to update Loan application');
 
-    return result;
+    return DtoMapper.toDto(result, LoanApplicationResponseDto);
+  }
+
+  // TODO: This is a placeholder for the actual loan fee calculation
+  private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {
+    // Round to 2 decimal places
+    const loanFee = (data.loanAmount || 0) * 0.05;
+    const loanFeeRounded = Math.round(loanFee * 100) / 100;
+
+    return loanFeeRounded;
   }
 
   private async validateApplicationLoanUser(id: string, userId: string) {

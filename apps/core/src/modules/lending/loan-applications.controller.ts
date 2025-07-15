@@ -41,7 +41,7 @@ export class LoanApplicationsController {
     @UUIDParam('id') id: string,
     @Req() request: IRequest,
     @Body() updates: LoanApplicationUpdateDto,
-  ): Promise<boolean> {
+  ): Promise<LoanApplicationResponseDto | null> {
     const userId = request.user!.id;
     this.logger.debug(`Updating loan application ${id} with data:`, updates);
 

@@ -65,6 +65,15 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
   create(item: Entity): Promise<Entity>;
 
   /**
+   * Upserts (Insert or Update) an Entity of the given type
+   *
+   * @param {Entity} item Populated Entity to Upsert in the DB
+   * @return {Promise<Entity>} Entity with all fields populated upserted in the DB
+   * @memberof IRepositoryBase
+   */
+  upsert(item: Entity): Promise<Entity>;
+
+  /**
    * Updates an Entity of the given type (it must exist in the DB already)
    *
    * @param {Entity['id']} id
@@ -73,6 +82,17 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
    * @memberof IRepositoryBase
    */
   update(id: Entity['id'], item: Partial<Entity>): Promise<boolean>;
+
+  /**
+   * Updates an Entity of the given type (it must exist in the DB already) and returns the updated Entity
+   *
+   * @param {Entity['id']} id
+   * @param {Entity} item Populated Entity to Update in the DB
+   * @return {Promise<Entity>} Returns the updated Entity
+   * @memberof IRepositoryBase
+   * @see {@link https://orkhan.gitbook.io/typeorm/docs/update-query-builder TypeORM Update Query Builder Documentation}
+   */
+  updateWithResult(id: Entity['id'], item: Partial<Entity>): Promise<Entity>;
 
   /**
    * Finds the first entity that matches the given search options.

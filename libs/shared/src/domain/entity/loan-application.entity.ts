@@ -92,13 +92,13 @@ export class LoanApplication implements ILoanApplication {
   @Column({ type: 'text', nullable: true })
   loanPaymentFrequency: string | null;
 
-  @Column({ type: 'decimal', nullable: true })
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   loanAmount: number | null;
 
   @Column({ type: 'int', nullable: true })
   loanPayments: number | null;
 
-  @Column({ type: 'decimal', nullable: true })
+  @Column({ type: 'decimal', precision: 12, scale: 4, nullable: true, default: 0 })
   loanServiceFee: number | null;
 
   // Metadata
