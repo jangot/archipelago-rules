@@ -1,9 +1,9 @@
 import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
 import { IRequest } from '@library/shared/type';
-import { Body, Controller, Get, HttpException, HttpStatus, Logger, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards';
-import { LoanApplicationUpdateDto, LoanApplicationRequestDto } from './dto/request';
+import { LoanApplicationRequestDto, LoanApplicationUpdateDto } from './dto/request';
 import { LoanApplicationResponseDto } from './dto/response';
 import { LoanApplicationsService } from './loan-applications.service';
 
@@ -27,12 +27,10 @@ export class LoanApplicationsController {
   @ApiOperation({ summary: 'Create a new loan application', description: 'Create a new loan application' })
   @ApiCreatedResponse({ description: 'Loan application created', type: LoanApplicationResponseDto })
   public async create(@Req() request: IRequest, @Body() input: LoanApplicationRequestDto): Promise<LoanApplicationResponseDto | null> {
-    const userId = request.user!.id;
+    //const userId = request.user!.id;  //TODO: I'm assuming value needs to be used to set the borrowerId
     this.logger.debug('Creating loan', { input });
     return this.loanApplicationService.createLoanApplication(input);
   }
-
-
 
   @Patch(':id')
   @ApiOperation({ summary: 'Partially update a loan application', description: 'Partially update a loan application' })

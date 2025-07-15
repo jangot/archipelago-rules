@@ -1,17 +1,17 @@
+import { ILoanApplication } from '@library/entity/entity-interface';
+import { LoanType } from '@library/entity/enum';
+import { DbSchemaCodes } from '@library/shared/common/data';
+import { Biller } from '@library/shared/domain/entity/biller.entity';
+import { PaymentAccount } from '@library/shared/domain/entity/payment.account.entity';
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
-  JoinColumn,
   CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { LoanType } from '@library/entity/enum';
-import { PaymentAccount } from '@library/shared/domain/entity/payment.account.entity';
-import { Biller } from '@library/shared/domain/entity/biller.entity';
-import { DbSchemaCodes } from '@library/shared/common/data';
-import { ILoanApplication } from '@library/entity/entity-interface';
 
 @Entity({ schema: DbSchemaCodes.Core })
 export class LoanApplication implements ILoanApplication {
@@ -35,13 +35,18 @@ export class LoanApplication implements ILoanApplication {
   @Column({ type: 'text', nullable: true })
   billerPostalCode: string | null;
 
+  // Bill
   @Column({ type: 'text', nullable: true })
-  billAccount: string | null;
-
-  @Column({ type: 'decimal', nullable: true })
-  loanAmount: number | null;
+  billAccountNumber: string | null;
 
   // Lender
+  @Column({ type: 'uuid', nullable: true })
+  lenderAccountId: string | null;
+
+  @ManyToOne(() => PaymentAccount, { nullable: true })
+  @JoinColumn({ name: 'lender_account_id' })
+  lenderAccount: PaymentAccount | null;
+
   @Column({ type: 'text', nullable: true })
   lenderFirstName: string | null;
 
@@ -57,24 +62,29 @@ export class LoanApplication implements ILoanApplication {
   @Column({ type: 'text', nullable: true })
   lenderNote: string | null;
 
-  @Column({ type: 'uuid', nullable: true })
-  lenderAccountId: string | null;
-
-  @ManyToOne(() => PaymentAccount, { nullable: true })
-  @JoinColumn({ name: 'lender_account_id' })
-  lenderAccount: PaymentAccount | null;
+  @Column({ type: 'text', nullable: true })
+  lenderPaymentAccountId: string | null;
 
   // Borrower
   @Column({ type: 'uuid', nullable: true })
-  borrowerAccountId: string | null;
+  borrowerId: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  borrowerPaymentAccountId: string | null;
 
   @ManyToOne(() => PaymentAccount, { nullable: true })
   @JoinColumn({ name: 'borrower_account_id' })
-  borrowerAccount: PaymentAccount | null;
+  borrowerPaymentAccount: PaymentAccount | null;
 
   // Loan Info
   @Column({ type: 'text', nullable: true })
   loanType: LoanType | null;
+
+  @Column({ type: 'text', nullable: true })
+  loanPaymentFrequency: string | null;
+
+  @Column({ type: 'decimal', nullable: true })
+  loanAmount: number | null;
 
   @Column({ type: 'int', nullable: true })
   loanPayments: number | null;

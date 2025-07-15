@@ -30,7 +30,7 @@ export class LoanApplicationsService {
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
-  async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<boolean> {
+  async updateLoanApplication(id: string, data: Partial<LoanApplicationRequestDto>): Promise<boolean> {
     this.logger.debug(`update: Updating loan application ${id}:`, data);
     const loanApplicationInput = EntityMapper.toEntity(data, LoanApplication);
     const result = await this.domainServices.loanServices.updateLoanApplication(id, loanApplicationInput);
