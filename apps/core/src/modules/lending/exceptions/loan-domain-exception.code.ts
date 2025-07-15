@@ -6,6 +6,7 @@ export const LoanDomainExceptionCodes = {
   UnableToCreatePersonalBiller: 'unable_to_create_personal_biller',
   ActionNotAllowed: 'action_not_allowed',
   ActionNotSupportedForState: 'action_not_supported_for_state',
+  InvalidUserForLoanApplication: 'invalid_user_for_loan_application',
 } as const;
 
 export type LoanDomainExcetionCode = typeof LoanDomainExceptionCodes[keyof typeof LoanDomainExceptionCodes];

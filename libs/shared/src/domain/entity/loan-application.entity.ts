@@ -12,6 +12,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ApplicationUser } from './application.user.entity';
 
 @Entity({ schema: DbSchemaCodes.Core })
 export class LoanApplication implements ILoanApplication {
@@ -41,11 +42,18 @@ export class LoanApplication implements ILoanApplication {
 
   // Lender
   @Column({ type: 'uuid', nullable: true })
-  lenderAccountId: string | null;
+  lenderId: string | null;
+
+  @ManyToOne(() => ApplicationUser, { nullable: true })
+  @JoinColumn({ name: 'lender_id' })
+  lender: ApplicationUser | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  lenderPaymentAccountId: string | null;
 
   @ManyToOne(() => PaymentAccount, { nullable: true })
-  @JoinColumn({ name: 'lender_account_id' })
-  lenderAccount: PaymentAccount | null;
+  @JoinColumn({ name: 'lender_payment_account_id' })
+  lenderPaymentAccount: PaymentAccount | null;
 
   @Column({ type: 'text', nullable: true })
   lenderFirstName: string | null;
@@ -62,12 +70,13 @@ export class LoanApplication implements ILoanApplication {
   @Column({ type: 'text', nullable: true })
   lenderNote: string | null;
 
-  @Column({ type: 'text', nullable: true })
-  lenderPaymentAccountId: string | null;
-
   // Borrower
   @Column({ type: 'uuid', nullable: true })
   borrowerId: string | null;
+
+  @ManyToOne(() => ApplicationUser, { nullable: true })
+  @JoinColumn({ name: 'borrower_id' })
+  borrower: ApplicationUser | null;
 
   @Column({ type: 'uuid', nullable: true })
   borrowerPaymentAccountId: string | null;

@@ -15,14 +15,14 @@ export interface ILoanApplication extends EntityId<string> {
   billAccountNumber: string | null;
 
   // Lender
-  lenderAccountId: string | null;
+  lenderId: string | null;
+  lenderPaymentAccountId: string | null;
   lenderFirstName: string | null;
   lenderLastName: string | null;
   lenderEmail: string | null;
   lenderRelationship: string | null;
   lenderNote: string | null;
-  lenderPaymentAccountId: string | null; // lenderPaymentAccountId
-
+  
   // Borrower
   borrowerId: string | null;
   borrowerPaymentAccountId: string | null;
