@@ -1,8 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
+import { EVALUATION_CONTEXT_CODES, StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
 
@@ -18,6 +17,7 @@ import { BaseLoanStateManager } from './base-loan-state-manager';
 export class FundingPausedLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.FundingPaused);
+    this.paymentStrategy = this.getDefaultPaymentStrategy();
   }
 
   /**
@@ -36,26 +36,7 @@ export class FundingPausedLoanStateManager extends BaseLoanStateManager {
    */
    
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments]);
-    
-    if (!loan) return null;
-    
-    if (!this.isActualStateValid(loan)) return null;
-
-    // Check conditions for `LoanStateCodes.Funding`
-    const isFundingResumed = this.shouldBeResumed(loan);
-    if (isFundingResumed) return LoanStateCodes.Funding;
-
-    // Check conditions for `LoanStateCodes.Funded`
-    const isFundingCompleted = this.shouldBeCompleted(loan);
-    if (isFundingCompleted) return LoanStateCodes.Funded;
-
-    // Check conditions for `LoanStateCodes.Accepted`
-    const isFundingReturnedToAccepted = this.shouldBeReturnedToAccepted(loan);
-    if (isFundingReturnedToAccepted) return LoanStateCodes.Accepted;
-
-    // If no states above reached - keep the `LoanStateCodes.FundingPaused`
-    return LoanStateCodes.FundingPaused;
+    return this.evaluateStateTransition(loanId);
   }
 
   /**
@@ -77,40 +58,24 @@ export class FundingPausedLoanStateManager extends BaseLoanStateManager {
     return this.executeStateTransition(loanId, nextState);
   }
 
-  /**
-   * Determines if funding should be resumed based on payment states.
-   * 
-   * @param loan - The loan to evaluate for resumption
-   * @returns True if funding should be resumed
-   */
-  private shouldBeResumed(loan: ILoan): boolean {
-    return this.isPaymentPending(loan, this.getPrimaryPaymentType(), 'Funding resume');
-  }
-
-  /**
-   * Determines if funding should be completed based on payment states.
-   * 
-   * @param loan - The loan to evaluate for completion
-   * @returns True if funding should be marked as completed
-   */
-  private shouldBeCompleted(loan: ILoan): boolean { 
-    return this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'Funding completion');
-  }
-
-  /**
-   * Determines if funding should be returned to Accepted state.
-   * 
-   * Currently not implemented as there are no business requirements
-   * for reverting from FundingPaused to Accepted state.
-   * 
-   * @param loan - The loan to evaluate for reversion
-   * @returns Always returns false in current implementation
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private shouldBeReturnedToAccepted(loan: ILoan): boolean { 
-    // Currently, we do not have a condition to revert funding paused to Accepted state
-    // This might be implemented in the future if business rules change
-    return false;
+  protected getStateDecisions(): StateDecision[] {
+    return [
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToResumed(loan, EVALUATION_CONTEXT_CODES.FUNDING.RESUME),
+        nextState: LoanStateCodes.Funding,
+        priority: 1,
+      },
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToCompleted(loan, EVALUATION_CONTEXT_CODES.FUNDING.COMPLETION),
+        nextState: LoanStateCodes.Funded,
+        priority: 2,
+      },
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.FUNDING.FALLBACK),
+        nextState: LoanStateCodes.Accepted,
+        priority: 3,
+      },
+    ];
   }
 
   protected getSupportedNextStates(): LoanState[] {

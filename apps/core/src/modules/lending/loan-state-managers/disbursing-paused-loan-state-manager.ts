@@ -1,8 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
+import { EVALUATION_CONTEXT_CODES, StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
@@ -17,6 +16,7 @@ import { BaseLoanStateManager } from './base-loan-state-manager';
 export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.DisbursingPaused);
+    this.paymentStrategy = this.getDefaultPaymentStrategy();
   }
 
   protected getSupportedNextStates(): LoanState[] {
@@ -46,26 +46,27 @@ export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
    */
    
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments]);
-    
-    if (!loan) return null;
-    
-    if (!this.isActualStateValid(loan)) return null;
+    return this.evaluateStateTransition(loanId);
+  }
 
-    // Check conditions for `LoanStateCodes.Disbursing`
-    const isDisbursementResumed = this.isPaymentPending(loan, this.getPrimaryPaymentType(), 'disbursement resume');
-    if (isDisbursementResumed) return LoanStateCodes.Disbursing;
-
-    // Check conditions for `LoanStateCodes.Disbursed`
-    const isDisbursementCompleted = this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'disbursement completion');
-    if (isDisbursementCompleted) return LoanStateCodes.Disbursed;
-
-    // Check conditions for `LoanStateCodes.Funded`
-    const isDisbursementReturnedToFunded = this.shouldBeReturnedToFunded(loan);
-    if (isDisbursementReturnedToFunded) return LoanStateCodes.Funded;
-
-    // If no states above reached - keep the `LoanStateCodes.DisbursingPaused`
-    return LoanStateCodes.DisbursingPaused;
+  protected getStateDecisions(): StateDecision[] {
+    return [
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToResumed(loan, EVALUATION_CONTEXT_CODES.DISBURSEMENT.RESUME),
+        nextState: LoanStateCodes.Disbursing,
+        priority: 1,
+      },
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToCompleted(loan, EVALUATION_CONTEXT_CODES.DISBURSEMENT.COMPLETION),
+        nextState: LoanStateCodes.Disbursed,
+        priority: 2,
+      },
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.DISBURSEMENT.FALLBACK),
+        nextState: LoanStateCodes.Funded,
+        priority: 3,
+      },
+    ];
   }
 
   /**
@@ -87,12 +88,5 @@ export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
    */
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
     return this.executeStateTransition(loanId, nextState);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private shouldBeReturnedToFunded(loan: ILoan): boolean { 
-    // Currently, we do not have a condition to revert disbursement paused to Funded state
-    // This might be implemented in the future if business rules change
-    return false;
   }
 }

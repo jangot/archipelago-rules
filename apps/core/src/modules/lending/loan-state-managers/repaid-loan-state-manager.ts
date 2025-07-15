@@ -1,6 +1,9 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { ILoan } from '@library/entity/entity-interface';
 import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { LOAN_STANDARD_RELATIONS } from '@library/shared/domain/entity/relation';
+import { Injectable } from '@nestjs/common';
+import { StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
@@ -15,6 +18,7 @@ import { BaseLoanStateManager } from './base-loan-state-manager';
 export class RepaidLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.Repaid);
+    this.paymentStrategy = this.getDefaultPaymentStrategy();
   }
 
   /**
@@ -33,10 +37,21 @@ export class RepaidLoanStateManager extends BaseLoanStateManager {
    *   - `LoanStateCodes.Repaid` if loan should remain in current state pending final processing
    *   - `null` if an error occurs during validation or if manual intervention is required
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    // TODO: Implement actual business logic for determining next state
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    return this.evaluateStateTransition(loanId);
+  }
+
+  protected getStateDecisions(): StateDecision[] {
+    return [
+      {
+        condition: (loan) => !this.shouldBeHeldInRepaid(loan),
+        nextState: LoanStateCodes.Closed,
+        priority: 1,
+      }];
+  }
+
+  protected getRequiredRelations() {
+    return [...LOAN_STANDARD_RELATIONS.PAYMENT_EVALUATION];
   }
 
   /**
@@ -67,5 +82,10 @@ export class RepaidLoanStateManager extends BaseLoanStateManager {
   protected getPrimaryPaymentType(): LoanPaymentType {
     // Repaid state deals with the final repayment transactions
     return LoanPaymentTypeCodes.Repayment;
+  }
+
+  private shouldBeHeldInRepaid(loan: ILoan): boolean {
+    // Place here any required logic to hold Loan in Repaid state and not transition to Closed
+    return false;
   }
 }

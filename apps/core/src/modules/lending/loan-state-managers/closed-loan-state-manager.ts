@@ -1,6 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
@@ -15,6 +16,10 @@ import { BaseLoanStateManager } from './base-loan-state-manager';
 export class ClosedLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.Closed);
+  }
+
+  protected getRequiredRelations() {
+    return []; // Terminal state needs no relations for evaluation
   }
 
   /**
@@ -38,10 +43,15 @@ export class ClosedLoanStateManager extends BaseLoanStateManager {
    *   - Alternative state only in exceptional circumstances requiring correction
    *   - `null` if error occurs or if manual intervention/escalation is required
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    // TODO: Implement actual business logic for determining next state
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    return this.evaluateStateTransition(loanId);
+  }
+
+  protected getStateDecisions(): StateDecision[] {
+    // Closed is a terminal state - no transitions expected
+    // If exceptional cases need to be handled, they would be added here
+    return [];
   }
 
   /**
@@ -62,10 +72,8 @@ export class ClosedLoanStateManager extends BaseLoanStateManager {
    *   - `true` if state transition (or maintenance) completed successfully
    *   - `null` if issues prevent safe state transition or maintenance
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    // TODO: Implement actual state transition logic
-    throw new HttpException('Method not implemented', HttpStatus.NOT_IMPLEMENTED);
+    return this.executeStateTransition(loanId, nextState);
   }
 
   protected getSupportedNextStates(): LoanState[] {

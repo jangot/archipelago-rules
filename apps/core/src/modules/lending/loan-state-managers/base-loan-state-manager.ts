@@ -1,14 +1,16 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
-import { LoanPaymentStateCodes, LoanPaymentType, LoanState, PaymentAccountStateCodes } from '@library/entity/enum';
-import { LoanRelation } from '@library/shared/domain/entity/relation';
+import { LoanPaymentStateCodes, LoanPaymentType, LoanState, LoanStateCodes, PaymentAccountStateCodes } from '@library/entity/enum';
+import { LOAN_STANDARD_RELATIONS, LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
-import { ILoanStateManager } from '../interfaces';
+import { ILoanStateManager, IPaymentEvaluationStrategy, StateDecision } from '../interfaces';
+import { DisbursementPaymentStrategy, FundingPaymentStrategy, RepaymentStrategy } from './strategy';
 
 @Injectable()
 export abstract class BaseLoanStateManager implements ILoanStateManager {
   protected readonly logger: Logger;
   protected readonly loanState: LoanState;
+  protected paymentStrategy: IPaymentEvaluationStrategy;
 
   constructor(protected readonly domainServices: IDomainServices, currentState: LoanState) {
     this.logger = new Logger(BaseLoanStateManager.name);
@@ -266,7 +268,7 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
    * @param context - Context description for logging
    * @returns True if payment is completed
    */
-  protected isPaymentCompleted(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
+  public isPaymentCompleted(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
     const relevantPayment = this.getStateEvaluationPayment(loan, paymentType, context);
     if (!relevantPayment) {
       this.logger.warn(`No relevant ${paymentType} payment found for loan ${loan.id} during ${context} evaluation.`);
@@ -285,7 +287,7 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
    * @param context - Context description for logging
    * @returns True if payment has failed
    */
-  protected isPaymentFailed(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
+  public isPaymentFailed(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
     const relevantPayment = this.getStateEvaluationPayment(loan, paymentType, context);
     if (!relevantPayment) {
       this.logger.warn(`No relevant ${paymentType} payment found for loan ${loan.id} during ${context} evaluation.`);
@@ -304,7 +306,7 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
    * @param context - Context description for logging
    * @returns True if payment is pending
    */
-  protected isPaymentPending(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
+  public isPaymentPending(loan: ILoan, paymentType: LoanPaymentType, context: string): boolean {
     const relevantPayment = this.getStateEvaluationPayment(loan, paymentType, context);
     if (!relevantPayment) {
       this.logger.warn(`No relevant ${paymentType} payment found for loan ${loan.id} during ${context} evaluation.`);
@@ -313,6 +315,28 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
     const result = relevantPayment.state === LoanPaymentStateCodes.Pending;
     this.logPaymentResult(loan.id, context, relevantPayment, result, 'pending', 'not pending');
     return result;
+  }
+
+  /**
+   * Determines if the current payment is the last payment for the loan.
+   * 
+   * @param loan - The loan entity with payment information
+   * @returns boolean - True if this is the last payment, false otherwise
+   */
+  public isLastPayment(loan: ILoan): boolean {
+    const { paymentsCount } = loan;
+    const currentPayment = this.getStateEvaluationPayment(loan, this.getPrimaryPaymentType(), 'last payment check', true);
+    if (!currentPayment) {
+      this.logger.error(`No current payment found for loan ${loan.id} to check if it is the last payment`);
+      return false;
+    }
+  
+    return paymentsCount === currentPayment.paymentNumber;
+  }
+
+  protected shouldAllowFallbackTransition(loan: ILoan, targetState: LoanState): boolean {
+    this.logger.debug(`Fallback transition to ${targetState} not implemented for ${this.loanState} state`);
+    return false;
   }
 
   /**
@@ -336,6 +360,57 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
     const resultText = result ? positiveAction : negativeAction;
     const paymentType = this.getPrimaryPaymentType().toLowerCase();
     this.logger.debug(`Loan ${loanId} ${paymentType} ${resultText}, payment state: ${payment.state}.`);
+  }
+
+  protected setPaymentStrategy(strategy: IPaymentEvaluationStrategy): void {
+    this.paymentStrategy = strategy;
+  }
+  
+  protected getDefaultPaymentStrategy(): IPaymentEvaluationStrategy {
+    // Factory method to create appropriate strategy based on state
+    switch (this.loanState) {
+      case LoanStateCodes.Funding:
+      case LoanStateCodes.FundingPaused:
+      case LoanStateCodes.Funded:
+        return new FundingPaymentStrategy(this);
+      case LoanStateCodes.Disbursing:
+      case LoanStateCodes.DisbursingPaused:
+      case LoanStateCodes.Disbursed:
+        return new DisbursementPaymentStrategy(this);
+      case LoanStateCodes.Repaying:
+      case LoanStateCodes.RepaymentPaused:
+      case LoanStateCodes.Repaid:
+        return new RepaymentStrategy(this);
+      default:
+        this.logger.error(`No default payment strategy defined for state ${this.loanState}`);
+        throw new Error(`Unsupported loan state: ${this.loanState}`);
+    }
+  }
+
+  protected async validateAndGetLoan(loanId: string): Promise<ILoan | null> {
+    const loan = await this.getLoan(loanId, this.getRequiredRelations());
+    if (!loan || !this.isActualStateValid(loan)) return null;
+    return loan;
+  }
+  
+  protected async evaluateStateTransition(loanId: string): Promise<LoanState | null> {
+    const loan = await this.validateAndGetLoan(loanId);
+    if (!loan) return null;
+  
+    const decisions = this.getStateDecisions();
+    for (const decision of decisions.sort((a, b) => a.priority - b.priority)) {
+      if (decision.condition(loan)) {
+        return decision.nextState;
+      }
+    }
+    
+    return this.loanState; // Stay in current state
+  }
+  
+  protected abstract getStateDecisions(): StateDecision[];
+  
+  protected getRequiredRelations(): LoanRelation[] {
+    return [...LOAN_STANDARD_RELATIONS.PAYMENT_EVALUATION]; // Default
   }
   
 }

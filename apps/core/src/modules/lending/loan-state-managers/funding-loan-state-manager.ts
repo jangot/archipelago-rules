@@ -1,8 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
+import { EVALUATION_CONTEXT_CODES, StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
 
@@ -16,8 +15,31 @@ import { BaseLoanStateManager } from './base-loan-state-manager';
  */
 @Injectable()
 export class FundingLoanStateManager extends BaseLoanStateManager {
+
+
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.Funding);
+    this.paymentStrategy = this.getDefaultPaymentStrategy();
+  }
+
+  protected getStateDecisions(): StateDecision[] {
+    return [
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToCompleted(loan, EVALUATION_CONTEXT_CODES.FUNDING.COMPLETION),
+        nextState: LoanStateCodes.Funded,
+        priority: 1,
+      },
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToPaused(loan, EVALUATION_CONTEXT_CODES.FUNDING.PAUSE),
+        nextState: LoanStateCodes.FundingPaused,
+        priority: 2,
+      },
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.FUNDING.FALLBACK),
+        nextState: LoanStateCodes.Accepted,
+        priority: 3,
+      },
+    ];
   }
 
   protected getSupportedNextStates(): LoanState[] {
@@ -44,26 +66,7 @@ export class FundingLoanStateManager extends BaseLoanStateManager {
    */
    
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments]);
-
-    if (!loan) return null;
-
-    if (!this.isActualStateValid(loan)) return null;
-
-    // Check conditions for transition to `LoanStateCodes.Funded`
-    const isFundingComplete = this.shouldBeCompleted(loan);
-    if (isFundingComplete) return LoanStateCodes.Funded;
-    
-    // Check conditions for transition to `LoanStateCodes.FundingPaused`
-    const isFundingFailed = this.shouldBePaused(loan);
-    if (isFundingFailed) return LoanStateCodes.FundingPaused;
-
-    // Check conditions for transition to `LoanStateCodes.Accepted`
-    const isFundingFailedAndNeedsRevert = this.shouldBeReturnedtoAccepted(loan);
-    if (isFundingFailedAndNeedsRevert) return LoanStateCodes.Accepted;
-
-    // If no states above reached - keep the `LoanStateCodes.Funding`
-    return LoanStateCodes.Funding;
+    return this.evaluateStateTransition(loanId);
   }
 
   /**
@@ -80,33 +83,5 @@ export class FundingLoanStateManager extends BaseLoanStateManager {
    */
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
     return this.executeStateTransition(loanId, nextState);
-  }
-
-  /**
-   * Determines if funding should be completed based on payment states.
-   * 
-   * @param loan - The loan to evaluate for completion
-   * @returns True if funding should be marked as completed
-   */
-  private shouldBeCompleted(loan: ILoan): boolean {
-    return this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'Funding completion');
-  }
-
-  /**
-   * Determines if funding should be paused based on payment states.
-   * 
-   * @param loan - The loan to evaluate for pausing
-   * @returns True if funding should be paused
-   */
-  private shouldBePaused(loan: ILoan): boolean {
-    return this.isPaymentFailed(loan, this.getPrimaryPaymentType(), 'Funding pause');
-  }
-
-  
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private shouldBeReturnedtoAccepted(loan: ILoan): boolean {
-    // Currently, we do not have a condition to revert funding to Accepted state
-    // This might be implemented in the future if business rules change
-    return false;
   }
 }

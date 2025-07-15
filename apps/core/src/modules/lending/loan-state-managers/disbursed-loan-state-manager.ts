@@ -1,8 +1,9 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { ILoan } from '@library/entity/entity-interface';
 import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { LOAN_STANDARD_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
+import { EVALUATION_CONTEXT_CODES, StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
@@ -17,6 +18,7 @@ import { BaseLoanStateManager } from './base-loan-state-manager';
 export class DisbursedLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.Disbursed);
+    this.paymentStrategy = this.getDefaultPaymentStrategy();
   }
 
   protected getSupportedNextStates(): LoanState[] {
@@ -25,6 +27,10 @@ export class DisbursedLoanStateManager extends BaseLoanStateManager {
 
   protected getPrimaryPaymentType(): LoanPaymentType {
     return LoanPaymentTypeCodes.Disbursement;
+  }
+
+  protected getRequiredRelations() {
+    return [...LOAN_STANDARD_RELATIONS.FULL_EVALUATION]; // Needs both payments and accounts
   }
 
   /**
@@ -44,29 +50,28 @@ export class DisbursedLoanStateManager extends BaseLoanStateManager {
    */
    
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    const loan = await this.getLoan(
-      loanId, 
-      [
-        LOAN_RELATIONS.Payments,
-        LOAN_RELATIONS.BillerPaymentAccount, 
-        LOAN_RELATIONS.LenderPaymentAccount, 
-        LOAN_RELATIONS.BorrowerPaymentAccount, 
-      ]);
+    return this.evaluateStateTransition(loanId);
+  }
 
-    if (!loan) return null;
+  protected getStateDecisions(): StateDecision[] {
+    return [
+      {
+        condition: (loan) => this.shouldStartRepayment(loan),
+        nextState: LoanStateCodes.Repaying,
+        priority: 1,
+      },
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.DISBURSEMENT.FALLBACK),
+        nextState: LoanStateCodes.Funded,
+        priority: 2,
+      },
+    ];
+  }
 
-    if (!this.isActualStateValid(loan)) return null;
-
-    // Check conditions for `LoanStateCodes.Repaying`
-    const isReadyForRepayment = this.shouldStartRepayment(loan);
-    if (isReadyForRepayment) return LoanStateCodes.Repaying;
-
-    // Check conditions for `LoanStateCodes.Funded`
-    const isDisbursedReturnedToFunded = this.shouldBeReturnedToFunded(loan);
-    if (isDisbursedReturnedToFunded) return LoanStateCodes.Funded;
-
-    // If no states above reached - keep the `LoanStateCodes.Disbursed`
-    return LoanStateCodes.Disbursed;
+  private shouldStartRepayment(loan: ILoan): boolean {
+    const isDisbursementCompleted = this.paymentStrategy.shouldTransitionToCompleted(loan, EVALUATION_CONTEXT_CODES.DISBURSEMENT.COMPLETION);
+    const hasValidAccounts = this.hasValidAccountsConnected(loan);
+    return isDisbursementCompleted && hasValidAccounts;
   }
 
   /**
@@ -87,21 +92,5 @@ export class DisbursedLoanStateManager extends BaseLoanStateManager {
    */
   protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
     return this.executeStateTransition(loanId, nextState);
-  }
-
-  private shouldStartRepayment(loan: ILoan): boolean { 
-    // Check if disbursement payment is completed
-    const isDisbursementCompleted = this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'starting repayment');
-    // To ensure that Loan is ready for next state transition - also check that accounts are valid
-    const hasValidAccounts = this.hasValidAccountsConnected(loan);
-    const isReady = isDisbursementCompleted && hasValidAccounts;
-    return isReady;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private shouldBeReturnedToFunded(loan: ILoan): boolean { 
-    // Currently, we do not have a condition to revert Disbursed to Funded state
-    // This might be implemented in the future if business rules change
-    return false;
   }
 }

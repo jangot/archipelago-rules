@@ -1,8 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
+import { EVALUATION_CONTEXT_CODES, StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
@@ -16,6 +15,7 @@ import { BaseLoanStateManager } from './base-loan-state-manager';
 export class RepaymentPausedLoanStateManager extends BaseLoanStateManager {
   constructor(domainServices: IDomainServices) {
     super(domainServices, LoanStateCodes.RepaymentPaused);
+    this.paymentStrategy = this.getDefaultPaymentStrategy();
   }
 
   /**
@@ -34,36 +34,28 @@ export class RepaymentPausedLoanStateManager extends BaseLoanStateManager {
    */
    
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments]);
-    
-    if (!loan) return null;
-    
-    if (!this.isActualStateValid(loan)) return null;
+    return this.evaluateStateTransition(loanId);
+  }
 
-    // Check conditions for transition to `LoanStateCodes.Repaid`
-    // Despite other states the payment completion DOES NOT mean the loan is fully repaid
-    // Only if last payment is completed we set the loan to Repaid state
-    const isPaymentCompleted = this.isPaymentCompleted(loan, this.getPrimaryPaymentType(),
-      'repayment completion');
-    if (isPaymentCompleted && this.isLastPayment(loan)) {
-      return LoanStateCodes.Repaid;
-    } else if (isPaymentCompleted) {
-      // If payment is completed but not the last one, we remain in Repaying state
-      // TODO: Ensure that next payment initiation handled level higher, where we catch Payment Competion event
-      // OR fire explicit Event to initiate next payment
-      return LoanStateCodes.Repaying;
-    }
-
-    // Check conditions for transition to `LoanStateCodes.Repaying`
-    const isPaymentResumed = this.isPaymentPending(loan, LoanPaymentTypeCodes.Repayment, 'repayment resumption');
-    if (isPaymentResumed) return LoanStateCodes.Repaying;
-    
-    // Check conditions for transition to `LoanStateCodes.Closed`
-    // TODO: Fogiveness check goes here OR in explicit ForgivenessInProgress state
-
-    // If no conditions met, remain in `LoanStateCodes.RepaymentPaused`
-    return LoanStateCodes.RepaymentPaused;
-
+  protected getStateDecisions(): StateDecision[] {
+    return [
+      {
+        // RepaymentStrategy handles the special "last payment" logic
+        condition: (loan) => this.paymentStrategy.shouldTransitionToCompleted(loan, EVALUATION_CONTEXT_CODES.REPAYMENT.COMPLETION),
+        nextState: LoanStateCodes.Repaid,
+        priority: 1,
+      },
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToResumed(loan, EVALUATION_CONTEXT_CODES.REPAYMENT.RESUME),
+        nextState: LoanStateCodes.Repaying,
+        priority: 2,
+      },
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.REPAYMENT.FALLBACK),
+        nextState: LoanStateCodes.Closed,
+        priority: 3,
+      },
+    ];
   }
 
   /**
@@ -108,21 +100,4 @@ export class RepaymentPausedLoanStateManager extends BaseLoanStateManager {
     return LoanPaymentTypeCodes.Repayment;
   }
 
-  /**
-   * Determines if the current payment is the last payment for the loan.
-   * 
-   * @param loan - The loan entity with payment information
-   * @returns boolean - True if this is the last payment, false otherwise
-   */
-  private isLastPayment(loan: ILoan): boolean {
-    const { paymentsCount } = loan;
-    const currentPayment = this.getStateEvaluationPayment(loan, this.getPrimaryPaymentType(), 'last payment check', true);
-    if (!currentPayment) {
-      this.logger.error(`No current payment found for loan ${loan.id} to check if it is the last payment`);
-      return false;
-    }
-  
-    return paymentsCount === currentPayment.paymentNumber;
-  }
-  
 }

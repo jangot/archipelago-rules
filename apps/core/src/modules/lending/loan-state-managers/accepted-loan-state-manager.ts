@@ -1,7 +1,8 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { LOAN_STANDARD_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
+import { StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
@@ -31,6 +32,10 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
     return LoanPaymentTypeCodes.Funding;
   }
 
+  protected getRequiredRelations() {
+    return [...LOAN_STANDARD_RELATIONS.ACCOUNT_VALIDATION]; // Only needs account validation
+  }
+
   /**
    * Determines the next state for an accepted loan based on business rules and readiness checks.
    * 
@@ -49,29 +54,17 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
    */
    
   protected async getNextState(loanId: string): Promise<LoanState | null> {
-    const loan = await this.getLoan(
-      loanId, 
-      [
-        LOAN_RELATIONS.BillerPaymentAccount, 
-        LOAN_RELATIONS.LenderPaymentAccount, 
-        LOAN_RELATIONS.BorrowerPaymentAccount, 
-      ]);
+    return this.evaluateStateTransition(loanId);
+  }
 
-    // Loan existance check
-    // We logged error in base class, so we can return null here
-    if (!loan) return null;
-
-    const { state } = loan;
-
-    if (!this.isActualStateValid(loan)) return null;
-
-    const isReadyForFunding = this.hasValidAccountsConnected(loan);
-    if (!isReadyForFunding) {
-      this.logger.debug(`Loan ${loanId} is not ready for funding initiation. Current state: ${state}.`);
-      return LoanStateCodes.Accepted; // Remain in Accepted state
-    } 
-
-    return LoanStateCodes.Funding; // Transition to Funding state
+  protected getStateDecisions(): StateDecision[] {
+    return [
+      {
+        condition: (loan) => this.hasValidAccountsConnected(loan),
+        nextState: LoanStateCodes.Funding,
+        priority: 1,
+      },
+    ];
   }
 
   /**
