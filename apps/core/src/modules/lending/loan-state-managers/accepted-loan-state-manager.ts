@@ -1,5 +1,5 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { LoanStateCodes } from '@library/entity/enum';
 import { LOAN_STANDARD_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { StateDecision } from '../interfaces';
@@ -23,40 +23,18 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
     super(domainServices, LoanStateCodes.Accepted);
   }
 
-  protected getSupportedNextStates(): LoanState[] {
-    return [LoanStateCodes.Funding];
-  }
-
-  protected getPrimaryPaymentType(): LoanPaymentType {
-    // Accepted state doesn't have a primary payment type yet, using Funding as the next phase
-    return LoanPaymentTypeCodes.Funding;
-  }
-
+  /**
+   * Gets the required relations for loan evaluation in accepted state
+   * @returns Array of loan relations needed for account validation
+   */
   protected getRequiredRelations() {
     return [...LOAN_STANDARD_RELATIONS.ACCOUNT_VALIDATION]; // Only needs account validation
   }
 
   /**
-   * Determines the next state for an accepted loan based on business rules and readiness checks.
-   * 
-   * The transition logic evaluates multiple factors to determine if the loan is ready
-   * to move to the Funding state.
-   * 
-   * If all conditions are met, the loan transitions to 'Funding' state.
-   * If any critical checks fail, the loan may need to remain in 'Accepted'
-   * state until issues are resolved.
-   * 
-   * @param loanId - The unique identifier of the loan to evaluate
-   * @returns Promise<LoanState | null> - Returns:
-   *   - `LoanStateCodes.Funding` if all prerequisites are met and funding can begin
-   *   - `LoanStateCodes.Accepted` if the loan should remain in current state
-   *   - `null` if an error occurs during evaluation
+   * Defines state transition decisions for the accepted state
+   * @returns Array of state decisions with conditions and priorities
    */
-   
-  protected async getNextState(loanId: string): Promise<LoanState | null> {
-    return this.evaluateStateTransition(loanId);
-  }
-
   protected getStateDecisions(): StateDecision[] {
     return [
       {
@@ -65,25 +43,5 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
         priority: 1,
       },
     ];
-  }
-
-  /**
-   * Executes the state transition from Accepted to the determined next state.
-   * 
-   * This method handles the database updates and side effects required when
-   * transitioning from the Accepted state.
-   * 
-   * The method ensures that either all updates succeed or all are rolled back
-   * to maintain data integrity.
-   * 
-   * @param loanId - The unique identifier of the loan to update
-   * @param nextState - The target state to transition the loan to
-   * @returns Promise<boolean | null> - Returns:
-   *   - `true` if the state transition was successful
-   *   - `null` if the transition failed and was rolled back
-   */
-   
-  protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    return this.executeStateTransition(loanId, nextState);
   }
 }

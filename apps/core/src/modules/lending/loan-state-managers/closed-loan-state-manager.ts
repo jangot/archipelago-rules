@@ -1,5 +1,5 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { LoanStateCodes } from '@library/entity/enum';
 import { Injectable } from '@nestjs/common';
 import { StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
@@ -18,73 +18,21 @@ export class ClosedLoanStateManager extends BaseLoanStateManager {
     super(domainServices, LoanStateCodes.Closed);
   }
 
+  /**
+   * Gets the required relations for loan evaluation in closed state
+   * @returns Empty array as terminal state needs no relations for evaluation
+   */
   protected getRequiredRelations() {
     return []; // Terminal state needs no relations for evaluation
   }
 
   /**
-   * Determines the next state for a loan in the closed state.
-   * 
-   * As the terminal state in the loan lifecycle, loans in the Closed state
-   * typically do not transition to other states. However, this method evaluates
-   * rare exceptional circumstances that might require state changes
-   * 
-   * In the vast majority of cases, this method will return the current state
-   * (Closed) indicating no state change is required. State transitions from
-   * Closed state require exceptional circumstances and typically involve
-   * manual review and approval processes.
-   * 
-   * The method maintains strict audit controls and requires comprehensive
-   * documentation for any proposed state changes from the closed state.
-   * 
-   * @param loanId - The unique identifier of the closed loan
-   * @returns Promise<LoanState | null> - Returns:
-   *   - `LoanStateCodes.Closed` in most cases (no state change required)
-   *   - Alternative state only in exceptional circumstances requiring correction
-   *   - `null` if error occurs or if manual intervention/escalation is required
+   * Defines state transition decisions for the closed state
+   * @returns Empty array as closed is a terminal state with no transitions
    */
-   
-  protected async getNextState(loanId: string): Promise<LoanState | null> {
-    return this.evaluateStateTransition(loanId);
-  }
-
   protected getStateDecisions(): StateDecision[] {
     // Closed is a terminal state - no transitions expected
     // If exceptional cases need to be handled, they would be added here
     return [];
-  }
-
-  /**
-   * Executes the state transition from Closed to the determined next state.
-   * 
-   * Since loans in the Closed state rarely transition to other states, this method
-   * primarily handles exceptional correction scenarios with comprehensive audit
-   * and approval controls.
-   * 
-   * The method ensures that any transition from the closed state maintains
-   * strict regulatory compliance, provides complete audit,
-   * and follows established exception handling procedures while protecting
-   * the integrity of historical loan records and operational controls.
-   * 
-   * @param loanId - The unique identifier of the loan to update
-   * @param nextState - The target state to transition the loan to
-   * @returns Promise<boolean | null> - Returns:
-   *   - `true` if state transition (or maintenance) completed successfully
-   *   - `null` if issues prevent safe state transition or maintenance
-   */
-  protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    return this.executeStateTransition(loanId, nextState);
-  }
-
-  protected getSupportedNextStates(): LoanState[] {
-    // Closed is typically a terminal state with no transitions
-    // but in exceptional cases might allow transitions for corrections
-    return [];
-  }
-
-  protected getPrimaryPaymentType(): LoanPaymentType {
-    // Closed loans don't have an active payment type
-    // Using Repayment as it's the last active payment type before closure
-    return LoanPaymentTypeCodes.Repayment;
   }
 }
