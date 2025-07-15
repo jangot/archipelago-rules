@@ -1,4 +1,7 @@
+import { DataModule } from '@core/modules/data';
 import { DomainModule } from '@core/modules/domain/domain.module';
+import { LoanApplicationsController } from '@core/modules/lending/loan-applications.controller';
+import { LoanApplicationsService } from '@core/modules/lending/loan-applications.service';
 import { ScheduleService } from '@library/shared/service';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -15,12 +18,13 @@ import { LoansService } from './loans.service';
 import { ScheduleController } from './schedule.controller';
 
 @Module({
-  imports: [JwtModule, ConfigModule, DomainModule, CqrsModule],
-  controllers: [BillersController, LoansController, ScheduleController],
+  imports: [JwtModule, ConfigModule, DomainModule, CqrsModule, DataModule],
+  controllers: [BillersController, LoansController, LoanApplicationsController, ScheduleController],
   providers: [
     Logger, 
     BillersService, 
     LoansService, 
+    LoanApplicationsService,
     ScheduleService,
     // Individual state managers (spread from array)
     ...LOAN_STATE_MANAGERS,

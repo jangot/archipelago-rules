@@ -6,9 +6,10 @@ import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, IsUUID, MaxLe
 @ApiSchema({ name: 'userResponse' })
 export class UserResponseDto {
   @ApiProperty({ description: 'Id of the User', type: String, required: true })
-  @Expose()
+  @Expose({ name: 'id' }) // Example of mapping the Entity 'id' field to the userId field here
+  @IsString()
   @IsUUID()
-  id: string;
+  userId: string;
 
   @ApiProperty({ description: 'User First Name', type: String, required: true, maxLength: 100 })
   @Expose()
@@ -42,6 +43,12 @@ export class UserResponseDto {
   @ApiProperty({ description: 'Registration Status', type: String, required: true, enum: RegistrationStatus })
   @Expose()
   registrationStatus: RegistrationStatus;
+
+  @ApiProperty({ description: 'Onboarding Status', type: String, required: true, maxLength: 32 })
+  @Expose()
+  @IsNotEmpty()
+  @MaxLength(32)
+  onboardStatus: string;
 
   @Exclude()
   loginId?: string | null;

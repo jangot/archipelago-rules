@@ -1,9 +1,9 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Logger, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { BillersService } from './billers.service';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
 import { JwtAuthGuard } from '@core/modules/auth/guards';
+import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
 import { IRequest } from '@library/shared/type';
+import { Body, Controller, Get, Logger, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { BillersService } from './billers.service';
 import { BillerCreateCustomRequestDto } from './dto/request/biller.create-custom.request.dto';
 import { BillerResponseDto } from './dto/response/biller.response.dto';
 
@@ -30,10 +30,8 @@ export class BillersController {
   @ApiOperation({ summary: 'Get custom billers created by User', description: 'Get custom billers created by User' })
   @ApiOkResponse({ description: 'Get custom billers', type: Array<BillerResponseDto> })
   public async getCustom(@Req() request: IRequest): Promise<BillerResponseDto[] | null> {
-    const userId = request.user?.id;
-    if (!userId) {
-      throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
-    }
+    const userId = request.user!.id;
+
     this.logger.debug('Getting custom billers');
     const result = await this.billersService.getCustomBillers(userId);
     return result;
@@ -52,10 +50,8 @@ export class BillersController {
   @ApiOperation({ summary: 'Create a custom biller for DBP Loans', description: 'Create a custom biller for DBP Loans' })
   @ApiCreatedResponse({ description: 'Custom biller created successfully', type: BillerResponseDto })
   public async createCustom(@Req() request: IRequest, @Body() input: BillerCreateCustomRequestDto): Promise<BillerResponseDto | null> {
-    const userId = request.user?.id;
-    if (!userId) {
-      throw new HttpException('User is not authenticated', HttpStatus.UNAUTHORIZED);
-    }
+    const userId = request.user!.id;
+
     this.logger.debug('Creating custom biller', { input });
     return this.billersService.createCustomBiller(userId, input.name);
   }

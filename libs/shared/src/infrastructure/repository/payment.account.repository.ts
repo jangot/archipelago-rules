@@ -1,9 +1,9 @@
+import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { PaymentAccount } from '@library/shared/domain/entity/payment.account.entity';
 import { PaymentAccountRelation } from '@library/shared/domain/entity/relation';
-import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { IPaymentAccountRepository } from '../interface';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class PaymentAccountRepository extends RepositoryBase<PaymentAccount> imp
     super(repository, PaymentAccount);
   }
 
-  public async createPaymentAccount(input: DeepPartial<PaymentAccount>): Promise<PaymentAccount | null> {
+  public async createPaymentAccount(input: Partial<PaymentAccount>): Promise<PaymentAccount | null> {
     return this.insert(input, true);
   }
 

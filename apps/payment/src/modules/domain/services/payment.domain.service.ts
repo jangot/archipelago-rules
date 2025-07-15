@@ -7,7 +7,7 @@ import { PlanPreviewOutputItem, TransferErrorDetails } from '@library/shared/typ
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentDataService } from '@payment/modules/data';
-import { DeepPartial } from 'typeorm';
+import { v4 } from 'uuid';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -21,7 +21,7 @@ export class PaymentDomainService extends BaseDomainServices {
   }
 
   // #region Accounts
-  public async addPaymentAccount(userId: string, input: DeepPartial<IPaymentAccount>): Promise<IPaymentAccount | null> {
+  public async addPaymentAccount(userId: string, input: Partial<IPaymentAccount>): Promise<IPaymentAccount | null> {
     this.logger.debug(`Adding payment account for user ${userId}`, { input });
     return this.data.paymentAccounts.createPaymentAccount({ ...input, userId: userId });
   }
@@ -49,7 +49,7 @@ export class PaymentDomainService extends BaseDomainServices {
 
 
 
-  public async updatePayment(paymentId: string, updates: DeepPartial<ILoanPayment>): Promise<boolean | null> {
+  public async updatePayment(paymentId: string, updates: Partial<ILoanPayment>): Promise<boolean | null> {
     this.logger.debug(`Updating loan payment ${paymentId}`, { updates });
     return this.data.loanPayments.updatePayment(paymentId, updates);
   }
@@ -82,7 +82,7 @@ export class PaymentDomainService extends BaseDomainServices {
     return route;
   }
 
-  public async createPayment(input: DeepPartial<ILoanPayment>): Promise<ILoanPayment | null> {
+  public async createPayment(input: Partial<ILoanPayment>): Promise<ILoanPayment | null> {
     this.logger.debug('Creating payment ', { input });
 
     return this.data.loanPayments.createPayment(input);
@@ -97,6 +97,7 @@ export class PaymentDomainService extends BaseDomainServices {
     }
 
     return this.data.loanPayments.createPayment({
+      id: v4(),
       amount: preview.amount,
       loanId,
       paymentNumber: preview.index,
@@ -139,7 +140,7 @@ export class PaymentDomainService extends BaseDomainServices {
     return loanPaymentStep;
   }
 
-  public async createPaymentSteps(steps: DeepPartial<ILoanPaymentStep>[]): Promise<ILoanPaymentStep[] | null> {
+  public async createPaymentSteps(steps: Partial<ILoanPaymentStep>[]): Promise<ILoanPaymentStep[] | null> {
     return this.data.loanPaymentSteps.createPaymentSteps(steps);
   }
 
@@ -164,7 +165,7 @@ export class PaymentDomainService extends BaseDomainServices {
     const step = await this.getLoanPaymentStepById(stepId, [LOAN_PAYMENT_STEP_RELATIONS.Transfers]);
     const { amount, sourcePaymentAccountId, targetPaymentAccountId, transfers } = step;
     const transferOrder = transfers ? transfers.length : 0;
-    const transferData: DeepPartial<ITransfer> = {
+    const transferData: Partial<ITransfer> = {
       amount,
       state: TransferStateCodes.Created,
       sourceAccountId: sourcePaymentAccountId,

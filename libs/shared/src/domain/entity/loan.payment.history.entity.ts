@@ -3,8 +3,7 @@ import { LoanPaymentState } from '../../../../entity/src/enum';
 import { DbSchemaCodes } from '../../common/data';
 import { LoanPayment } from './loan.payment.entity';
 
-
-@Entity({ schema: DbSchemaCodes.Payment })
+@Entity({ name: 'loan_payments_history', schema: DbSchemaCodes.Payment })
 export class LoanPaymentHistory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -16,8 +15,8 @@ export class LoanPaymentHistory {
   @JoinColumn({ name: 'loan_payment_id' })
   loanPayment: LoanPayment;
 
-  @Column({ type: 'text' })
-  fromState: LoanPaymentState;
+  @Column({ type: 'text', nullable: true })
+  fromState?: LoanPaymentState;
 
   @Column({ type: 'text' })
   toState: LoanPaymentState;

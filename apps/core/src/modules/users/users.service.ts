@@ -7,7 +7,7 @@ import { createPaginationWrapper, PagingDto } from '@library/shared/common/pagin
 import { SearchQueryDto } from '@library/shared/common/search';
 import { ApplicationUser } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
-import { UserCreateRequestDto, UserDetailsUpdateRequestDto, UserUpdateRequestDto } from './dto/request';
+import { UserCreateRequestDto, UserUpdateRequestDto } from './dto/request';
 import { UserDetailResponseDto, UserDetailsUpdateResponseDto, UserResponseDto } from './dto/response';
 
 @Injectable()
@@ -62,20 +62,6 @@ export class UsersService {
     return DtoMapper.toDto(result, UserResponseDto);
   }
 
-  public async updateUser(input: UserUpdateRequestDto): Promise<boolean | null> {
-    this.logger.debug(`updateUser: Updating User: ${input.id}`);
-
-    // TODO: Update method requires separate 'id' and 'ApplicationUser' object which already contain this
-    // Also 'update' method gets 'ApplicationUser' where all fields are required, while update should support partial (up to one field) updates, isnt it?
-    // So here is a point where we should decide what way we will choose:
-    // - change base 'update' method to support partial updates (along with data validation)
-    // - do updates in 'merge' way where each field goes through check 'is change provided or not' and then update
-    // For me p.1 seems way easier and straightforward
-    const user = EntityMapper.toEntity(input, ApplicationUser);
-    const result = await this.domainServices.userServices.updateUser(user);
-    return result;
-  }
-
   /**
    * Updates User details by merging the existing user data with the provided updates.
    * This method is similar to {@link updateUser}, but it allows updating only details information 
@@ -84,7 +70,7 @@ export class UsersService {
    * @param updates Updates to apply to the User
    * @returns Updated User details
    */
-  public async updateUserDetails(userId: string, updates: UserDetailsUpdateRequestDto): Promise<UserDetailsUpdateResponseDto | null> { 
+  public async updateUser(userId: string, updates: UserUpdateRequestDto): Promise<UserDetailsUpdateResponseDto | null> { 
     const user = await this.domainServices.userServices.getUserById(userId); 
     if (!user) { 
       this.logger.error(`updateDetails: User not found for ID: ${userId}`); 

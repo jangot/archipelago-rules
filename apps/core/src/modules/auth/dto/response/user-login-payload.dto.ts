@@ -33,7 +33,7 @@ export class UserLoginPayloadDto {
   @ApiProperty({ description: 'Onboarding Status', type: String, required: true })
   @Expose()
   @IsString()
-  onboardingStatus?: string; // Used during Onboarding / registration to provide initial starting point
+  onboardStatus?: string; // Used during Onboarding / registration to provide initial starting point
 
   @ApiProperty({ description: 'Verification Code', type: String, required: true })
   @Expose()

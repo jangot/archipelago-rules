@@ -27,8 +27,6 @@ export interface DatabaseConfigOptions {
   configService: ConfigService;
   entities?: DatabaseConfigEntities;
   schema?: DbSchemaType;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  migrations?: MixedList<Function | string>;
 }
 
 export type BaseDatabaseConfigOptions = Omit<DatabaseConfigOptions, 'configService'>;
@@ -51,9 +49,6 @@ export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOp
     logging: options.configService.get<string>('TYPE_ORM_LOGGING') === 'true' ? ['query', 'error'] : false,
     entities: options.entities,
     schema: options.schema, // Default schema to use for all entities defined here
-    migrations: options.migrations,
-    migrationsRun: options.configService.get<string>('NODE_ENV') === 'development',
-    logger: 'advanced-console',
   };
 }
 
@@ -84,7 +79,17 @@ export function TypeOrmModuleConfiguration(options: BaseDatabaseConfigOptions): 
         throw new Error('No Datasource options for TypeOrmModule provided');
       }
     
-      return addTransactionalDataSource(new DataSource(options));
+      // Build the DataSource and add Transactional support
+      const dataSource = addTransactionalDataSource(new DataSource(options));
+      // Initialize the DataSource
+      await dataSource.initialize();
+
+      // Run pre-initialization SQL
+
+      // Run migrations
+      //await dataSource.runMigrations();
+
+      return dataSource;
     },
   };
 }
@@ -97,23 +102,6 @@ export function TypeOrmModuleConfiguration(options: BaseDatabaseConfigOptions): 
  * @returns TypeOrmModuleAsyncOptions configured for dependency injection with transaction support
  */
  
-export function SingleDataSourceConfiguration(allEntities: DatabaseConfigEntities,
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  migrations?: MixedList<Function | string>): TypeOrmModuleAsyncOptions {
-  return {
-    imports: [ConfigModule],
-    inject: [ConfigService],
-    useFactory: (configService: ConfigService) => DbConfiguration({ 
-      configService, 
-      entities: allEntities,
-      migrations: migrations,
-    }),
-    async dataSourceFactory(options) {
-      if (!options) {
-        throw new Error('No Datasource options for TypeOrmModule provided');
-      }
-    
-      return addTransactionalDataSource(new DataSource(options));
-    },
-  };
+export function SingleDataSourceConfiguration(allEntities: DatabaseConfigEntities): TypeOrmModuleAsyncOptions {
+  return TypeOrmModuleConfiguration({ entities: allEntities });
 }

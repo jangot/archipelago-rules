@@ -1,11 +1,11 @@
+import { ILoanPayment } from '@library/entity/entity-interface';
+import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { LoanPayment } from '@library/shared/domain/entity';
 import { LoanPaymentRelation } from '@library/shared/domain/entity/relation';
-import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, In, Repository } from 'typeorm';
 import { ILoanPaymentRepository } from '@payment/shared/interfaces/repositories';
-import { ILoanPayment } from '@library/entity/entity-interface';
+import { In, Repository } from 'typeorm';
 
 @Injectable()
 export class LoanPaymentRepository extends RepositoryBase<LoanPayment> implements ILoanPaymentRepository {
@@ -23,17 +23,17 @@ export class LoanPaymentRepository extends RepositoryBase<LoanPayment> implement
     return this.repository.find({ where: { id: In(paymentIds) }, relations });
   }
 
-  public async updatePayment(id: string, updates: DeepPartial<LoanPayment>): Promise<boolean | null> {
+  public async updatePayment(id: string, updates: Partial<LoanPayment>): Promise<boolean | null> {
     const result = await this.repository.update(id, updates);
     if (!result) return null;
     return this.actionResult(result);
   }
 
-  public async createPayment(input: DeepPartial<LoanPayment>): Promise<LoanPayment | null> {
+  public async createPayment(input: Partial<LoanPayment>): Promise<LoanPayment | null> {
     return this.insert(input, true);
   }
 
-  public async createPayments(payments: DeepPartial<LoanPayment>[]): Promise<LoanPayment[] | null> {
+  public async createPayments(payments: Partial<LoanPayment>[]): Promise<LoanPayment[] | null> {
     return this.repository.create(payments);
   }
 }

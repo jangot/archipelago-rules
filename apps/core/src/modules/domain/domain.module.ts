@@ -9,7 +9,10 @@ import { DataModule } from '../data';
 
 @Module({
   imports: [CqrsModule, ConfigModule, DataModule, JwtModule],
-  providers: [UserDomainService, LoanDomainService, { provide: IDomainServices, useClass: DomainServices }],
+  providers: [
+    UserDomainService, 
+    LoanDomainService,
+    { provide: IDomainServices, useClass: DomainServices }],
   exports: [IDomainServices],
 })
 export class DomainModule {}

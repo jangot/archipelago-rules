@@ -1,17 +1,17 @@
-import { DataSource, DeepPartial } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { v4 } from 'uuid';
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { withTransactionHandler } from '@library/shared/common/data/withtransaction.handler';
-import { RegistrationStatus, VerificationStatus, LoanTypeCodes, LoanStateCodes, LoanPaymentFrequencyCodes, LoanClosureCodes } from '@library/entity/enum';
-import { IUserRepository } from '@core/shared/interfaces/repositories';
-import { AllEntities, ApplicationUser, Loan } from '@library/shared/domain/entity';
-import { CoreDataService } from '@core/modules/data/data.service';
 import { DataModule } from '@core/modules/data';
-import { memoryDataSourceSimple } from '@library/shared/tests/postgress-memory-datasource';
-import { ILoanRepository } from '@library/shared/infrastructure/interface';
+import { CoreDataService } from '@core/modules/data/data.service';
+import { IUserRepository } from '@core/shared/interfaces/repositories';
 import { ILoan } from '@library/entity/entity-interface';
+import { LoanClosureCodes, LoanPaymentFrequencyCodes, LoanStateCodes, LoanTypeCodes, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
+import { withTransactionHandler } from '@library/shared/common/data/withtransaction.handler';
+import { AllEntities, ApplicationUser, Loan } from '@library/shared/domain/entity';
+import { ILoanRepository } from '@library/shared/infrastructure/interface';
+import { memoryDataSourceSimple } from '@library/shared/tests/postgress-memory-datasource';
+import { Test, TestingModule } from '@nestjs/testing';
 
 describe('DataModule Integration Tests', () => {
   let module: TestingModule;
@@ -79,7 +79,7 @@ describe('DataModule Integration Tests', () => {
 
       lenderUserId = v4();
       const lenderCreatedAt = new Date();
-      const lenderUser: DeepPartial<ApplicationUser> = {
+      const lenderUser: ApplicationUser = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'test-lender@mail.com',
@@ -107,7 +107,7 @@ describe('DataModule Integration Tests', () => {
 
       borrowerUserId = v4();
       const borrowerCreatedAt = new Date();
-      const borrowerUser: DeepPartial<ApplicationUser> = {
+      const borrowerUser: ApplicationUser = {
         firstName: 'John',
         lastName: 'Doe',
         email: 'test-borrower@mail.com',
@@ -134,7 +134,7 @@ describe('DataModule Integration Tests', () => {
       };
 
       expectedLoanId = v4();
-      const expectedLoan: DeepPartial<Loan> = {
+      const expectedLoan: Partial<Loan> = {
         id: expectedLoanId,
         amount: 1000,
         type: LoanTypeCodes.Personal,
@@ -237,7 +237,7 @@ describe('DataModule Integration Tests', () => {
 
       // We set existing loan id to be the same as the one we created in previous test
       // This should cause a conflict and rollback the transaction
-      const fakeLoan: DeepPartial<ILoan> = {
+      const fakeLoan: Partial<ILoan> = {
         id: expectedLoanId,
         amount: 1000,
         borrowerId: fakeBorrowerId,
@@ -255,7 +255,7 @@ describe('DataModule Integration Tests', () => {
       const fakeTransaction = withTransactionHandler(async () => {
         await dataService.users.create(fakeLender);
         await dataService.users.create(fakeBorrower);
-        await dataService.loans.create(fakeLoan);
+        await dataService.loans.insert(fakeLoan, true);
       });
 
       await expect(fakeTransaction).rejects.toThrow();
