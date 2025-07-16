@@ -6,8 +6,8 @@ import { Body, Controller, Logger, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BankingService } from './payment-accounts.service';
 
-@Controller('bank')
-@ApiTags('bank')
+@Controller('payment-accounts')
+@ApiTags('payment-accounts')
 @ApiBearerAuth('jwt')
 @UseGuards(JwtAuthGuard)
 export class BankingController {
@@ -15,7 +15,7 @@ export class BankingController {
 
   constructor(private readonly bankingService: BankingService) {}
 
-  @Post('account')
+  @Post()
   @ApiOperation({ summary: 'Add a payment method', description: 'Add a payment method' })
   @ApiCreatedResponse({ description: 'Payment method added successfully', type: PaymentAccountResponseDto })
   public async addPaymentMethod(@Req() request: IRequest, @Body() input: PaymentMethodCreateRequestDto): Promise<PaymentAccountResponseDto | null> {
