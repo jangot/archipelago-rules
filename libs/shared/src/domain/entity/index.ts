@@ -11,6 +11,9 @@ import { BillerAddress } from './biller.address.entity';
 import { Biller } from './biller.entity';
 import { BillerMask } from './biller.mask.entity';
 import { BillerName } from './biller.name.entity';
+import { EventStore } from './event.store.entity';
+import { EventSubscriber } from './event.subscriber.entity';
+import { LoanApplication } from './loan-application.entity';
 import { Loan } from './loan.entity';
 import { LoanInvitee } from './loan.invitee.entity';
 import { LoanPayment } from './loan.payment.entity';
@@ -23,12 +26,13 @@ import { PaymentsRouteStep } from './payments.route.step.entity';
 import { Transfer } from './transfer.entity';
 import { TransferError } from './transfer.error.entity';
 import { UserRegistration } from './user.registration.entity';
-import { LoanApplication } from './loan-application.entity';
 
 export * from './application.user.entity';
 export * from './biller.entity';
-export * from './loan.entity';
+export * from './event.store.entity';
+export * from './event.subscriber.entity';
 export * from './loan-application.entity';
+export * from './loan.entity';
 export * from './loan.invitee.entity';
 export * from './loan.payment.entity';
 export * from './loan.payment.history.entity';
@@ -43,6 +47,11 @@ export * from './user.registration.entity';
 
 // Add all Core Entities here (will get add the TypeORM entities[])
 // The glob pattern method does not seem to work properly, especially with WebPack
+export const SharedEntities = [
+  EventStore,
+  EventSubscriber,
+];
+
 export const CoreEntities = [
   Loan,
   LoanApplication,
@@ -68,4 +77,4 @@ export const PaymentEntities = [
   BillerMask,
 ];
 
-export const AllEntities = [...CoreEntities, ...PaymentEntities];
+export const AllEntities = [...SharedEntities, ...CoreEntities, ...PaymentEntities];

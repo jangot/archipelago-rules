@@ -278,8 +278,8 @@ export class LoanDomainService extends BaseDomainServices {
     return  this.data.loanApplications.insertWithResult(data);
   }
 
-  public async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<boolean> {
-    return  this.data.loanApplications.update(id, data);
+  public async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<ILoanApplication> {
+    return  this.data.loanApplications.updateWithResult(id, data);
   }
   // #endregion
 }

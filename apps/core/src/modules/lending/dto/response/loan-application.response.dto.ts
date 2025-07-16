@@ -1,11 +1,11 @@
-import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { IsEmail, IsInt, IsOptional, IsString, IsUUID, IsNumber } from 'class-validator';
-import { Expose } from 'class-transformer';
 import { LoanType, LoanTypeCodes } from '@library/entity/enum';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
+import { IsEmail, IsInt, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 @ApiSchema({ name: 'loanApplicationResponse' })
 export class LoanApplicationResponseDto {
-  // Loan Application fields
+  // Loan Application
   @ApiProperty({ description: 'Unique identifier for the loan application', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
   @IsOptional()
@@ -18,18 +18,18 @@ export class LoanApplicationResponseDto {
   @Expose()
   status: string | null;
 
-  // Biller fields
-  @ApiProperty({ description: 'Name of the biller', type: 'string', example: 'Electric Company' })
-  @IsString()
-  @IsOptional()
-  @Expose()
-  billerName: string | null;
-
+  // Biller
   @ApiProperty({ description: 'Unique identifier for the biller', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001' })
   @IsUUID()
   @IsOptional()
   @Expose()
   billerId: string | null;
+
+  @ApiProperty({ description: 'Name of the biller', type: 'string', example: 'Electric Company' })
+  @IsString()
+  @IsOptional()
+  @Expose()
+  billerName: string | null;
 
   @ApiProperty({ description: 'Postal code of the biller', type: 'string', example: '90210' })
   @IsString()
@@ -37,19 +37,20 @@ export class LoanApplicationResponseDto {
   @Expose()
   billerPostalCode: string | null;
 
+  // Bill
   @ApiProperty({ description: 'Account number with the biller', type: 'string', example: '123456789' })
   @IsString()
   @IsOptional()
   @Expose()
-  billAccount: string | null;
+  billAccountNumber: string | null;
 
-  @ApiProperty({ description: 'Amount of the bill to be paid', type: 'number', example: 150.75 })
-  @IsNumber()
+  // Lender
+  @ApiProperty({ description: 'Unique identifier for the lender user account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
+  @IsUUID()
   @IsOptional()
   @Expose()
-  loanAmount: number | null;
+  lenderId: string | null;
 
-  // Lender fields
   @ApiProperty({ description: 'First name of the lender', type: 'string', example: 'Jane' })
   @IsString()
   @IsOptional()
@@ -80,25 +81,43 @@ export class LoanApplicationResponseDto {
   @Expose()
   lenderNote: string | null;
 
-  @ApiProperty({ description: 'Unique identifier for the lender payment account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
+  @ApiProperty({ description: 'Optional lender payment account ID', type: 'string', example: '550e8400-e29b-41d4-a716-446655440001' })
   @IsUUID()
   @IsOptional()
   @Expose()
-  lenderAccountId: string | null;
+  lenderPaymentAccountId: string | null;
 
-  // Borrower fields
+  // Borrower
+  @ApiProperty({ description: 'Unique identifier for the borrower user account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
+  @IsUUID()
+  @IsOptional()
+  @Expose()
+  borrowerId: string | null;
+
   @ApiProperty({ description: 'Unique identifier for the borrower payment account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
   @IsUUID()
   @IsOptional()
   @Expose()
   borrowerAccountId: string | null;
 
-  // Loan fields
+  // Loan
   @ApiProperty({ description: 'Type of the loan', type: 'string', example: LoanTypeCodes.DirectBillPay })
   @IsString()
   @IsOptional()
   @Expose()
   loanType: LoanType | null;
+
+  @ApiProperty({ description: 'Amount of the bill to be paid', type: 'number', example: 150.75 })
+  @IsNumber()
+  @IsOptional()
+  @Expose()
+  loanAmount: number | null;
+
+  @ApiProperty({ description: 'Payment frequency for the loan', type: 'string', example: 'monthly' })
+  @IsString()
+  @IsOptional()
+  @Expose()
+  loanPaymentFrequency: string | null;
 
   @ApiProperty({ description: 'Number of loan payments', type: 'integer', example: 12 })
   @IsInt()

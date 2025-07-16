@@ -24,6 +24,14 @@ export class ZngNamingStrategy extends SnakeNamingStrategy implements NamingStra
     super();
   }
 
+  closureJunctionTableName(originalClosureTableName: string): string {
+    return parseName(originalClosureTableName, [], 'closure');
+  }
+
+  columnName(propertyName: string, customName: string | undefined, embeddedPrefixes: string[]): string {
+    return super.columnName(propertyName, customName || '', embeddedPrefixes);
+  }
+
   tableName(targetName: string, userSpecifiedName: string | undefined): string {
     return userSpecifiedName ? userSpecifiedName : snakeCase(pluralize.plural(targetName));
   }
@@ -31,6 +39,47 @@ export class ZngNamingStrategy extends SnakeNamingStrategy implements NamingStra
   primaryKeyName(tableOrName: Table | string, columnNames: string[]): string {
     return parseName(tableOrName, columnNames, 'pkey');
   }
+
+  joinColumnName(relationName: string, referencedColumnName: string): string {
+    return super.joinColumnName(relationName, referencedColumnName);
+  }
+
+  joinTableColumnName(tableName: string, propertyName: string, columnName?: string): string {
+    return super.joinTableColumnName(tableName, propertyName, columnName);
+  }
+
+  relationName(propertyName: string): string {
+    return super.relationName(propertyName);
+  }
+
+  relationConstraintName(tableOrName: Table | string, columnNames: string[]): string {
+    return super.relationConstraintName(tableOrName, columnNames);
+  }
+
+  joinTableInverseColumnName(tableName: string, propertyName: string, columnName?: string): string {
+    return super.joinTableInverseColumnName(tableName, propertyName, columnName);
+  }
+
+  joinTableColumnDuplicationPrefix(columnName: string, index: number): string {
+    return super.joinTableColumnDuplicationPrefix(columnName, index);
+  }
+
+  //@Check('loans_borrower_id_ne_lender_id_check', '"borrower_id" <> "lender_id"')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  checkConstraintName(tableOrName: Table | string, expression: string, _isEnum?: boolean): string {
+    return parseName(tableOrName, [expression], 'check');
+  }
+
+  joinTableName(firstTableName: string, secondTableName: string, firstPropertyName: string, secondPropertyName: string): string {
+    return super.joinTableName(firstTableName, secondTableName, firstPropertyName, secondPropertyName);
+  }
+
+  prefixTableName(prefix: string, tableName: string): string {
+    return super.prefixTableName(prefix, tableName);
+  }
+
+  nestedSetColumnNames = { left: 'nsleft', right: 'nsright' };
+  materializedPathColumnName = 'mpath';
 
   foreignKeyName(
     tableOrName: Table | string,
@@ -68,10 +117,14 @@ export class ZngNamingStrategy extends SnakeNamingStrategy implements NamingStra
   }
 }
 
-function parseName(tableOrName: Table | string, columnNames: string[], suffix: string, length: number = 63) {
+function parseName(tableOrName: Table | string, columnNames: string[], suffix: string | undefined = undefined, length: number = 63) {
   const tableName = tableOrName instanceof Table ? tableOrName.name : tableOrName;
   const cols = columnNames.join('_');
-  const name = `${tableName}_${cols}_${suffix}`.slice(0, length);
+
+  // If suffix is undefined, don't add it to the name
+  const name = suffix
+    ? `${tableName}_${cols}_${suffix}`.slice(0, length)
+    : `${tableName}_${cols}`.slice(0, length);
 
   return name;
 }

@@ -6,6 +6,7 @@ import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
 import { LoanApplication } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
+import { InvalidUserForLoanApplicationException } from './exceptions';
 
 @Injectable()
 export class LoanApplicationsService {
@@ -16,25 +17,58 @@ export class LoanApplicationsService {
 
   ) {}
 
-  async getLoanApplicationById(id: string): Promise<LoanApplicationResponseDto | null> {
+  public async getLoanApplicationById(id: string): Promise<LoanApplicationResponseDto | null> {
     const result = await this.domainServices.loanServices.getLoanApplicationById(id);
-    if (!result) throw new EntityNotFoundException(`LoanApplication: ${id} not found`);
+
+    if (!result) throw new EntityNotFoundException(`Loan application: ${id} not found`);
+
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
-  async createLoanApplication(data: Partial<LoanApplicationRequestDto>): Promise<LoanApplicationResponseDto | null> {
+  public async createLoanApplication(userId: string, data: Partial<LoanApplicationRequestDto>): Promise<LoanApplicationResponseDto | null> {
     this.logger.debug('create: Creating loan application:', data);
+
     const loanApplicationInput = EntityMapper.toEntity(data, LoanApplication);
+    loanApplicationInput.borrowerId = userId;
     const result = await this.domainServices.loanServices.createLoanApplication(loanApplicationInput);
+
     if (!result) throw new EntityFailedToUpdateException('Failed to create Loan application');
+
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
-  async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<boolean> {
+  public async updateLoanApplication(userId: string, id: string, data: Partial<LoanApplicationRequestDto>):
+  Promise<LoanApplicationResponseDto | null> {
     this.logger.debug(`update: Updating loan application ${id}:`, data);
+
+    // Validate that the loan application belongs to the user (as a borrower or lender)
+    await this.validateApplicationLoanUser(id, userId);
+
+    const loanFee = this.calculateLoanFee(data);
+    data.loanServiceFee = loanFee;
+
     const loanApplicationInput = EntityMapper.toEntity(data, LoanApplication);
     const result = await this.domainServices.loanServices.updateLoanApplication(id, loanApplicationInput);
+
     if (!result) throw new EntityFailedToUpdateException('Failed to update Loan application');
-    return result;
+
+    return DtoMapper.toDto(result, LoanApplicationResponseDto);
+  }
+
+  // TODO: This is a placeholder for the actual loan fee calculation
+  private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {
+    // Round to 2 decimal places
+    const loanFee = (data.loanAmount || 0) * 0.05;
+    const loanFeeRounded = Math.round(loanFee * 100) / 100;
+
+    return loanFeeRounded;
+  }
+
+  private async validateApplicationLoanUser(id: string, userId: string) {
+    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(id);
+    if (!loanApplication) throw new EntityNotFoundException(`Loan application: ${id} not found`);
+
+    if (loanApplication.borrowerId !== userId && loanApplication.lenderId !== userId)
+      throw new InvalidUserForLoanApplicationException('You are not authorized to update this loan application');
   }
 }

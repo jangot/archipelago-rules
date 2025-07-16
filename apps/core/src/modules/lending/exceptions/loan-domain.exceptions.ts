@@ -47,3 +47,15 @@ export class ActionNotSupportedForStateException extends LoanDomainException {
     super(LoanDomainExceptionCodes.ActionNotSupportedForState, HttpStatus.BAD_REQUEST, message);
   }
 }
+
+/**
+ * HTTP Forbidden(403) Exception thrown when an action is not allowed for calling user.
+ * 
+ * @extends LoanDomainException
+ * @see {@link https://docs.nestjs.com/exception-filters#built-in-http-exceptions}
+ */
+export class InvalidUserForLoanApplicationException extends LoanDomainException {
+  constructor(message?: string) {
+    super(LoanDomainExceptionCodes.InvalidUserForLoanApplication, HttpStatus.FORBIDDEN, message);
+  }
+}
