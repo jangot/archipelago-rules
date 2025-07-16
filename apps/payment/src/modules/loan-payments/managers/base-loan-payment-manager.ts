@@ -1,5 +1,5 @@
 import { ILoan, ILoanPayment, ILoanPaymentStep, IPaymentsRoute, IPaymentsRouteStep } from '@library/entity/entity-interface';
-import { LoanPaymentStateCodes, LoanPaymentType, LoanType, PaymentStepStateCodes } from '@library/entity/enum';
+import { LoanPaymentState, LoanPaymentStateCodes, LoanPaymentType, LoanType, PaymentStepStateCodes } from '@library/entity/enum';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { LOAN_PAYMENT_RELATIONS, LOAN_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
@@ -47,7 +47,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param loanId The ID of the loan for which to initiate a payment
    * @returns The created loan payment or null if creation failed
    */
-  public abstract initiate(loanId: string): Promise<ILoanPayment | ILoanPayment[] | null>;
+  public abstract initiate(loanId: string): Promise<ILoanPayment | null>;
 
   /**
    * Template method for initiating a payment - implements common steps while allowing
@@ -117,6 +117,17 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    */
   protected hasDuplicatePayment(payments: ILoanPayment[] | null): boolean {
     return !!payments && payments.some(payment => payment.type === this.paymentType);
+  }
+
+  /**
+   * Gets payments of the current payment type that match the specified states
+   * @param payments Array of existing payments for the loan
+   * @param statesFilter Array of payment states to filter by
+   * @returns Array of payments matching the type and states filter
+   */
+  protected getSamePayments(payments: ILoanPayment[] | null, statesFilter: LoanPaymentState[]): ILoanPayment[] {
+    if (!payments) return [];
+    return payments.filter(payment => payment.type === this.paymentType && statesFilter.includes(payment.state));
   }
 
   /**

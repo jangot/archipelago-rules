@@ -1,6 +1,6 @@
 import { SingleDataSourceConfiguration } from '@library/shared/common/data';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
-import { CoreEntities, PaymentEntities } from '@library/shared/domain/entity';
+import { AllEntities } from '@library/shared/domain/entity';
 import { SharedCoreRepositories } from '@library/shared/infrastructure/repository';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,12 +10,11 @@ import { CustomPaymentRepositories } from './repositories';
 @Module({
   imports: [
     // Single connection that can access all schemas
-    TypeOrmModule.forRootAsync(SingleDataSourceConfiguration([...CoreEntities, ...PaymentEntities])),
+    TypeOrmModule.forRootAsync(SingleDataSourceConfiguration(AllEntities)),
   ],
   providers: [
     PaymentDataService, 
-    ...registerCustomRepositoryProviders(CoreEntities), 
-    ...registerCustomRepositoryProviders(PaymentEntities),  
+    ...registerCustomRepositoryProviders(AllEntities), 
     ...CustomPaymentRepositories,
     ...SharedCoreRepositories,
   ],
