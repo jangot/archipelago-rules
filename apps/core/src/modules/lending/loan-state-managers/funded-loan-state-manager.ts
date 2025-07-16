@@ -1,8 +1,9 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { ILoan } from '@library/entity/entity-interface';
-import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { LoanStateCodes } from '@library/entity/enum';
+import { LOAN_STANDARD_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
+import { EVALUATION_CONTEXT_CODES, StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
 
 /**
@@ -18,69 +19,41 @@ export class FundedLoanStateManager extends BaseLoanStateManager {
     super(domainServices, LoanStateCodes.Funded);
   }
 
-  protected getSupportedNextStates(): LoanState[] {
-    return [LoanStateCodes.Accepted, LoanStateCodes.Disbursing];
-  }
-
-  protected getPrimaryPaymentType(): LoanPaymentType {
-    return LoanPaymentTypeCodes.Funding;
+  /**
+   * Gets the required relations for loan evaluation in funded state
+   * @returns Array of loan relations needed for both payments and accounts evaluation
+   */
+  protected getRequiredRelations() {
+    return [...LOAN_STANDARD_RELATIONS.FULL_EVALUATION]; // Needs both payments and accounts
   }
 
   /**
-   * Determines the next state for a loan with successfully received funds.
-   * 
-   * The transition logic prepares for and initiates the disbursement process
-   * by evaluating multiple readiness factors.
-   * 
-   * @param loanId - The unique identifier of the funded loan
-   * @returns Promise<LoanState | null> - Returns:
-   *   - `LoanStateCodes.Disbursing` if all conditions are met for fund disbursement
-   *   - `LoanStateCodes.Funded` if the loan should remain in current state (no change)
-   *   - `null` if an error occurs during readiness evaluation
+   * Defines state transition decisions for the funded state
+   * @returns Array of state decisions with conditions and priorities
    */
-   
-  protected async getNextState(loanId: string): Promise<LoanState | null> {
-    const loan = await this.getLoan(
-      loanId, 
-      [
-        LOAN_RELATIONS.Payments,
-        LOAN_RELATIONS.BillerPaymentAccount, 
-        LOAN_RELATIONS.LenderPaymentAccount, 
-        LOAN_RELATIONS.BorrowerPaymentAccount, 
-      ]);
-
-    if (!loan) return null;
-
-    if (!this.isActualStateValid(loan)) return null;
-
-    // Check conditions for `LoanStateCodes.Disbursing`
-    const isDisbursementReady = this.shouldBeDisbursed(loan);
-    if (isDisbursementReady) return LoanStateCodes.Disbursing;
-
-    // Check conditions for `LoanStateCodes.Accepted`
-    const isFundedReturnedToAccepted = this.shouldBeReturnedToAccepted(loan);
-    if (isFundedReturnedToAccepted) return LoanStateCodes.Accepted;
-
-    // If no states above reached - keep the `LoanStateCodes.Funded`
-    return LoanStateCodes.Funded;
+  protected getStateDecisions(): StateDecision[] {
+    return [
+      {
+        condition: (loan) => this.shouldStartDisbursement(loan),
+        nextState: LoanStateCodes.Disbursing,
+        priority: 1,
+      },
+      {
+        condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.FUNDING.FALLBACK),
+        nextState: LoanStateCodes.Accepted,
+        priority: 2,
+      },
+    ];
   }
 
-  protected async setNextState(loanId: string, nextState: LoanState): Promise<boolean | null> {
-    return this.executeStateTransition(loanId, nextState);
-  }
-
-  private shouldBeDisbursed(loan: ILoan): boolean { 
-    const isDisbursementReadyState = this.isPaymentCompleted(loan, this.getPrimaryPaymentType(), 'starting disbursement');
-    // To ensure that Loan is ready for next state transition - also check that accounts are valid
+  /**
+   * Determines if disbursement should start based on funding completion and account validation
+   * @param loan - The loan to evaluate
+   * @returns True if disbursement should start
+   */
+  private shouldStartDisbursement(loan: ILoan): boolean {
+    const isFundingCompleted = this.paymentStrategy.shouldTransitionToCompleted(loan, EVALUATION_CONTEXT_CODES.FUNDING.COMPLETION);
     const hasValidAccounts = this.hasValidAccountsConnected(loan);
-    const isDisbursementReady = isDisbursementReadyState && hasValidAccounts;
-    return isDisbursementReady;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private shouldBeReturnedToAccepted(loan: ILoan): boolean { 
-    // Currently, we do not have a condition to revert Funded to Accepted state
-    // This might be implemented in the future if business rules change
-    return false;
+    return isFundingCompleted && hasValidAccounts;
   }
 }

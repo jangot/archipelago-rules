@@ -23,3 +23,18 @@ export const LOAN_RELATIONS = {
  * Type for loan relation strings that can be passed to TypeORM
  */
 export type LoanRelation = (typeof LOAN_RELATIONS)[keyof typeof LOAN_RELATIONS];
+
+export const LOAN_STANDARD_RELATIONS = {
+  PAYMENT_EVALUATION: [LOAN_RELATIONS.Payments],
+  ACCOUNT_VALIDATION: [
+    LOAN_RELATIONS.BillerPaymentAccount,
+    LOAN_RELATIONS.LenderPaymentAccount, 
+    LOAN_RELATIONS.BorrowerPaymentAccount,
+  ],
+  FULL_EVALUATION: [
+    LOAN_RELATIONS.Payments,
+    LOAN_RELATIONS.BillerPaymentAccount,
+    LOAN_RELATIONS.LenderPaymentAccount, 
+    LOAN_RELATIONS.BorrowerPaymentAccount,
+  ],
+} as const;
