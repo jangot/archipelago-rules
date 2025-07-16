@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: ZNG Lambda Handlers
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Architectures: [x86_64]
+    Timeout: 300
+    MemorySize: 128
+
+Parameters:
+  SqsDispatcherFunctionName:
+    Type: String
+  DispatcherQueueArn:
+    Type: String
+  DispatcherLambdaRoleArn:
+    Type: String
+  NotificationWebhookUrl:
+    Type: String
+  PaymentWebhookUrl:
+    Type: String
+
+Resources:
+  SqsDispatcherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref SqsDispatcherFunctionName
+      CodeUri: handlers/sqs-dispatcher/
+      Handler: handler.handler
+      Role: !Ref DispatcherLambdaRoleArn
+      Events:
+        SqsTrigger:
+          Type: SQS
+          Properties:
+            Queue: !Ref DispatcherQueueArn
+      Environment:
+        Variables:
+          NOTIFICATION_WEBHOOK_URL: !Ref NotificationWebhookUrl
+          PAYMENT_WEBHOOK_URL: !Ref PaymentWebhookUrl
+
+Outputs:
+  SqsDispatcherFunctionArn:
+    Description: "ARN of the dispatcher Lambda"
+    Value: !GetAtt SqsDispatcherFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-SqsDispatcherFunctionArn"
