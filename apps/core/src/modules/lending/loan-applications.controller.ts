@@ -34,6 +34,36 @@ export class LoanApplicationsController {
     return this.loanApplicationService.createLoanApplication(userId, input);
   }
 
+  @Post(':id/submit')
+  @ApiOperation({ summary: 'Submit a loan application', description: 'Submit a loan application' })
+  @ApiCreatedResponse({ description: 'Loan application submitted', type: LoanApplicationResponseDto })
+  public async submitLoanApplication(@UUIDParam('id') id: string, @Req() request: IRequest): Promise<LoanApplicationResponseDto | null> {
+    const userId = request.user!.id;
+    this.logger.debug(`Submitting loan application with ID: ${id}`);
+
+    return this.loanApplicationService.submitLoanApplication(userId, id);
+  }
+
+  @Post(':id/accept')
+  @ApiOperation({ summary: 'Accept a loan application', description: 'Accept a loan application' })
+  @ApiCreatedResponse({ description: 'Loan application accepted', type: LoanApplicationResponseDto })
+  public async acceptLoanApplication(@UUIDParam('id') id: string, @Req() request: IRequest): Promise<LoanApplicationResponseDto | null> {
+    const userId = request.user!.id;
+    this.logger.debug(`Accepting loan application with ID: ${id}`);
+
+    return this.loanApplicationService.acceptLoanApplication(userId, id);
+  }
+
+  @Post(':id/reject')
+  @ApiOperation({ summary: 'Reject a loan application', description: 'Reject a loan application' })
+  @ApiCreatedResponse({ description: 'Loan application rejected', type: LoanApplicationResponseDto })
+  public async rejectLoanApplication(@UUIDParam('id') id: string, @Req() request: IRequest): Promise<LoanApplicationResponseDto | null> {
+    const userId = request.user!.id;
+    this.logger.debug(`Rejecting loan application with ID: ${id}`);
+
+    return this.loanApplicationService.rejectLoanApplication(userId, id);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Partially update a loan application', description: 'Partially update a loan application' })
   @ApiBody({ type: LoanApplicationUpdateDto })
