@@ -1,8 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
-import { ILoanApplication, ILoanInvitee } from '@library/entity/entity-interface';
-import { LoanApplicationStatusCodes, LoanAssignIntentCodes, LoanInviteeTypeCodes } from '@library/entity/enum';
+import { LoanApplicationStatusCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
@@ -105,14 +104,8 @@ export class LoanApplicationsService {
       throw new MissingInputException('Lender information is required to send loan application to lender');
     }
 
-    const invitee = await this.createLenderInvitee(loanApplication);
-
-    const assignInput = this.domainServices.loanServices.mapInviteeToAssignInput(id, LoanAssignIntentCodes.Propose, invitee);
-    const assignResult = await this.domainServices.loanServices.setLoansTarget(assignInput);
+    // TODO: Send email to lender
     
-    if (assignResult && assignResult.length) {
-      this.logger.log(`Assigned Lender to Loan Application ${id} with invitee ${invitee.id} during sendToLender`);
-    }
 
     const status = LoanApplicationStatusCodes.SentToLender;
     const result = await this.domainServices.loanServices.updateLoanApplication(id, { status });
@@ -138,30 +131,5 @@ export class LoanApplicationsService {
 
     if (loanApplication.borrowerId !== userId && loanApplication.lenderId !== userId)
       throw new InvalidUserForLoanApplicationException('You are not authorized to update this loan application');
-  }
-
-  /**
-   * Creates a loan invitee for the lender based on loan application data.
-   * 
-   * @param loanApplication - The loan application containing lender information
-   * @returns Promise<ILoanInvitee> - The created loan invitee
-   * @private
-   */
-  private async createLenderInvitee(loanApplication: ILoanApplication): Promise<ILoanInvitee> {
-    const inviteeData = {
-      type: LoanInviteeTypeCodes.Lender,
-      firstName: loanApplication.lenderFirstName,
-      lastName: loanApplication.lenderLastName,
-      email: loanApplication.lenderEmail,
-      phone: null, // Phone not available in loan application yet, should be?
-    };
-
-    const storedInvitee = await this.domainServices.loanServices.createLoanApplicationInvitee(loanApplication.id, inviteeData);
-
-    if (!storedInvitee) {
-      throw new EntityFailedToUpdateException('Failed to create lender invitee');
-    }
-
-    return storedInvitee;
   }
 }

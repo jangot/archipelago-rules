@@ -1,12 +1,12 @@
 import { ILoan } from '@library/entity/entity-interface';
-import { LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
+import { LoanStateCodes } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Loan } from '@library/shared/domain/entity';
 import { LoanRelation } from '@library/shared/domain/entity/relation';
-import { LoansSetTargetUserInput } from '@library/shared/type/lending';
+// import { LoansSetTargetUserInput } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ILoanRepository } from '../interface';
 
 @Injectable()
@@ -40,13 +40,16 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     return this.insert({ ...loan, state: LoanStateCodes.Created }, true);
   }
 
+  // TODO: Need to check with AlexK if this will be still needed
+  /*
   public async assignUserToLoans(input: LoansSetTargetUserInput): Promise<void> {
-    const { userId, loansTargets } = input;
+     const { userId, loansTargets } = input;
     this.logger.debug(`assignUserToLoans: for User ${userId}`, loansTargets);
 
+
     // Make two arrays - for borrowerId and lenderId
-    const borrowerUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Borrower).map(t => t.loanId);
-    const lenderUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Lender).map(t => t.loanId);
+    // const borrowerUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Borrower).map(t => t.loanId);
+    // const lenderUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Lender).map(t => t.loanId);
 
     // Run two bulk updates inside a transaction
     return this.repository.manager.transaction(async manager => {
@@ -60,5 +63,5 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
         await repo.update({ id: In(lenderUpdates) }, { lenderId: userId, state: LoanStateCodes.LenderAssigned });
       }
     });
-  }
+  }*/
 }

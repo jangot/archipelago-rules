@@ -1,12 +1,11 @@
-import { IBiller, ILoan, ILoanInvitee, IPaymentAccount } from '@library/entity/entity-interface';
-import { LoanInviteeTypeCodes, LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
+import { IBiller, ILoan, IPaymentAccount } from '@library/entity/entity-interface';
+import { LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { IEventPublisher } from '@library/shared/common/event/interface/ieventpublisher';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { Loan, LoanInvitee } from '@library/shared/domain/entity';
+import { Loan } from '@library/shared/domain/entity';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
-import { LoanAssignToContactInput } from '@library/shared/type/lending';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IDomainServices } from '../domain/idomain.services';
@@ -32,21 +31,15 @@ export class LoansService {
     LendingLogic.validateLoanCreateInput(input);
 
     const loanCreateInput: Partial<ILoan> = EntityMapper.toEntity(input, Loan);
-    const { type, invitee } = input;
-    const { type: inviteeType } = invitee;
-    const inviteeEntity: ILoanInvitee = EntityMapper.toEntity(invitee, LoanInvitee);
+    const { type } = input;
     
     if (type === LoanTypeCodes.Personal) {
-      const personalBiller = await this.createPersonalBiller(inviteeEntity, userId);
+      const personalBiller = await this.createPersonalBiller(userId);
       loanCreateInput.billerId = personalBiller.id;
     }
 
     // Link user who created a Loan to lender/borrower side
-    if (inviteeType === LoanInviteeTypeCodes.Borrower) {
-      loanCreateInput.lenderId = userId;
-    } else if (inviteeType === LoanInviteeTypeCodes.Lender) {
-      loanCreateInput.borrowerId = userId;
-    }
+    loanCreateInput.lenderId = userId; // Will come from the loan application, refactor still pending
 
     const result = await this.domainServices.loanServices.createLoan(loanCreateInput);
     return DtoMapper.toDto(result, LoanResponseDto);
@@ -57,19 +50,11 @@ export class LoansService {
     const loan = await this.getLoan(loanId);
     LendingLogic.validateLoanProposeInput(userId, loan);
 
-    const { invitee } = loan;
-    const isInviteeBorrower = invitee.type === LoanInviteeTypeCodes.Borrower;
-    
     const paymentAccount = await this.getPaymentAccount(sourcePaymentAccountId, userId);
     
     const updates: Partial<ILoan> = {};
-    if (isInviteeBorrower) {
-      updates.lenderAccountId = paymentAccount.id;
-      updates.state = LoanStateCodes.Offered;
-    } else {
-      updates.borrowerAccountId = paymentAccount.id;
-      updates.state = LoanStateCodes.Requested;
-    }
+    updates.lenderAccountId = paymentAccount.id; // Will come from the loan application, refactor still pending
+    updates.state = LoanStateCodes.Offered;
     
     const updateResult = await this.domainServices.loanServices.updateLoan(loan.id, updates);
     if (!updateResult) {
@@ -78,10 +63,6 @@ export class LoansService {
 
     const result = await this.getLoan(loanId);
     return DtoMapper.toDto(result, LoanResponseDto);
-  }
-
-  public async setLoansTarget(input: LoanAssignToContactInput): Promise<void> {
-    await this.domainServices.loanServices.setLoansTarget(input);
   }
 
   public async acceptLoan(loanId: string, userId: string, targetPaymentAccountId: string): Promise<LoanResponseDto | null> {
@@ -124,10 +105,10 @@ export class LoansService {
     return manager.advance(loanId);
   }
 
-  private async createPersonalBiller(invitee: ILoanInvitee, createdById: string): Promise<IBiller> {
-    const personalBiller = await this.domainServices.loanServices.createPersonalBiller(invitee, createdById);
+  private async createPersonalBiller(createdById: string): Promise<IBiller> {
+    const personalBiller = await this.domainServices.loanServices.createPersonalBiller(createdById);
     if (!personalBiller) {
-      this.logger.error('LoanCreateCommand: Failed to create personal Biller', { invitee, createdById });
+      this.logger.error('LoanCreateCommand: Failed to create personal Biller', { createdById });
       throw new UnableToCreatePersonalBillerException('Failed to create personal biller');
     }
     return personalBiller;
