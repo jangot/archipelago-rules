@@ -6,7 +6,7 @@ import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
 import { LoanApplication } from '@library/shared/domain/entity';
 import { LOAN_INVITEE_RELATIONS, LOAN_RELATIONS, LoanRelation } from '@library/shared/domain/entity/relation';
-import { LoanAssignToContactInput, LoansSetTargetUserInput, LoanTargetUserInput } from '@library/shared/type/lending';
+import { LoanAssignToContactInput, LoanTargetUserInput, LoansSetTargetUserInput } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -228,7 +228,7 @@ export class LoanDomainService extends BaseDomainServices {
    * @param invitee - The loan invitee containing contact information
    * @returns LoanAssignToContactInput with appropriate contact type and value
    */
-  private mapInviteeToAssignInput(loanId: string, intent: LoanAssignIntent, invitee: ILoanInvitee): LoanAssignToContactInput {
+  public mapInviteeToAssignInput(loanId: string, intent: LoanAssignIntent, invitee: ILoanInvitee): LoanAssignToContactInput {
     let contactValue: string;
     let contactType: ContactType;
 
@@ -276,6 +276,20 @@ export class LoanDomainService extends BaseDomainServices {
 
   public async createLoanApplication(data: Partial<LoanApplication>): Promise<ILoanApplication> {
     return  this.data.loanApplications.insertWithResult(data);
+  }
+
+  public async createLoanApplicationInvitee(loanApplicationId: string, inviteeData: Omit<Partial<ILoanInvitee>, 'id' | 'loanId'>): Promise<ILoanInvitee> {
+    const invitee = {
+      ...inviteeData,
+      loanId: loanApplicationId,
+    };
+    
+    const storedInvitee = await this.data.loanInvitees.insert(invitee, true);
+    if (!storedInvitee) {
+      throw new EntityFailedToUpdateException('Failed to create loan application invitee');
+    }
+    
+    return storedInvitee;
   }
 
   public async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<ILoanApplication> {

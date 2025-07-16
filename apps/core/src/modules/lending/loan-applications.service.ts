@@ -1,10 +1,11 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
-import { LoanApplicationStatusCodes } from '@library/entity/enum';
+import { ILoanApplication, ILoanInvitee } from '@library/entity/entity-interface';
+import { LoanApplicationStatusCodes, LoanAssignIntentCodes, LoanInviteeTypeCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
-import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { LoanApplication } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InvalidUserForLoanApplicationException } from './exceptions';
@@ -83,9 +84,10 @@ export class LoanApplicationsService {
 
   /**
    * Sends the loan application to the lender by updating its status to 'sent_to_lender'.
-   * Validates that the loan application exists, and throws if not found.
+   * Creates a loan invitee for the lender and attempts to assign them to the loan application.
+   * Validates that the loan application exists and has required lender information.
    *
-   * @param userId - The user performing the action
+   * @param userId - The user performing the action (borrower)
    * @param id - The loan application ID
    * @returns Promise<LoanApplicationResponseDto | null> - The loan application DTO or null
    */
@@ -93,6 +95,24 @@ export class LoanApplicationsService {
     this.logger.debug(`sendToLender: Sending loan application ${id} to lender`);
 
     await this.validateApplicationLoanUser(id, userId);
+
+    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(id);
+    if (!loanApplication) {
+      throw new EntityNotFoundException(`Loan application: ${id} not found`);
+    }
+
+    if (!loanApplication.lenderEmail && !loanApplication.lenderFirstName) {
+      throw new MissingInputException('Lender information is required to send loan application to lender');
+    }
+
+    const invitee = await this.createLenderInvitee(loanApplication);
+
+    const assignInput = this.domainServices.loanServices.mapInviteeToAssignInput(id, LoanAssignIntentCodes.Propose, invitee);
+    const assignResult = await this.domainServices.loanServices.setLoansTarget(assignInput);
+    
+    if (assignResult && assignResult.length) {
+      this.logger.log(`Assigned Lender to Loan Application ${id} with invitee ${invitee.id} during sendToLender`);
+    }
 
     const status = LoanApplicationStatusCodes.SentToLender;
     const result = await this.domainServices.loanServices.updateLoanApplication(id, { status });
@@ -118,5 +138,30 @@ export class LoanApplicationsService {
 
     if (loanApplication.borrowerId !== userId && loanApplication.lenderId !== userId)
       throw new InvalidUserForLoanApplicationException('You are not authorized to update this loan application');
+  }
+
+  /**
+   * Creates a loan invitee for the lender based on loan application data.
+   * 
+   * @param loanApplication - The loan application containing lender information
+   * @returns Promise<ILoanInvitee> - The created loan invitee
+   * @private
+   */
+  private async createLenderInvitee(loanApplication: ILoanApplication): Promise<ILoanInvitee> {
+    const inviteeData = {
+      type: LoanInviteeTypeCodes.Lender,
+      firstName: loanApplication.lenderFirstName,
+      lastName: loanApplication.lenderLastName,
+      email: loanApplication.lenderEmail,
+      phone: null, // Phone not available in loan application yet, should be?
+    };
+
+    const storedInvitee = await this.domainServices.loanServices.createLoanApplicationInvitee(loanApplication.id, inviteeData);
+
+    if (!storedInvitee) {
+      throw new EntityFailedToUpdateException('Failed to create lender invitee');
+    }
+
+    return storedInvitee;
   }
 }
