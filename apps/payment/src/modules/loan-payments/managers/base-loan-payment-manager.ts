@@ -42,72 +42,47 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     this.paymentType = this.type;
   }
 
-  /**
-   * Initiates a new loan payment for a specific loan lifecycle part
-   * @param loanId The ID of the loan for which to initiate a payment
-   * @returns The created loan payment or null if creation failed
-   */
-  public abstract initiate(loanId: string): Promise<ILoanPayment | null>;
-
-  /**
-   * Template method for initiating a payment - implements common steps while allowing
-   * specific behaviors to be overridden by child classes
-   * @param loanId The ID of the loan for which to initiate a payment
-   * @returns The created loan payment or null if creation failed
-   */
-  protected async initiatePayment(loanId: string): Promise<ILoanPayment | null> {
-    this.logger.debug(`Initiating ${this.paymentType} payment for loan ${loanId}`);
+  public async initiate(loanId: string): Promise<ILoanPayment | null> {
+    this.logger.debug(`Initiating new ${this.paymentType} payment for loan ${loanId}`);
     
     // Get loan with necessary relations
     const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments, LOAN_RELATIONS.Biller, LOAN_RELATIONS.BillerPaymentAccount]);
-    
-    // Check for duplicate payment
-    if (this.hasDuplicatePayment(loan.payments)) {
-      this.logger.error(`${this.paymentType} payment already exists for loan ${loanId}`);
-      return null;
-    }
-    
-    // Get payment accounts
-    const { fromAccountId, toAccountId } = await this.getPaymentAccounts(loan);
-    if (!fromAccountId || !toAccountId) {
-      return null; // Error already logged in getPaymentAccounts
-    }
-    
-    // Get the Route with its steps
-    const route = await this.findRouteForPayment(fromAccountId, toAccountId, loan.type);
-    
-    // Create payment with basic details
-    const paymentAmount = this.getPaymentAmount(loan);
-    const paymentOptions = this.getPaymentOptions(loan, paymentAmount);
-    const payment = await this.paymentDomainService.createPayment({
-      amount: paymentAmount,
-      loanId,
-      paymentNumber: null,
-      type: this.paymentType,
-      state: paymentOptions.state,
-      completedAt: paymentOptions.completedAt,
-      scheduledAt: paymentOptions.scheduledAt,
-      initiatedAt: paymentOptions.initiatedAt,
-    });
+    const { type: loanType } = loan;
 
-    if (!payment) {
-      this.logger.error(`Failed to create ${this.paymentType} payment for loan ${loanId}`);
+    // Check if payment can be initiated by validating payments states
+    // Logging is done in canInitiatePayment method
+    const canInitiate = this.canInitiatePayment(loan);
+    if (!canInitiate) return null;
+
+    // Get payment accounts by explicit payment type implementation
+    const { fromAccountId, toAccountId } = await this.getPaymentAccounts(loan);
+    if (!fromAccountId || !toAccountId) return null;
+
+    // Get the route with its steps
+    const route = await this.findRouteForPayment(fromAccountId, toAccountId, loanType);
+
+    // Since different payment managers could have different logic for payment calculations - they should provide their own implementation of Payment generation
+    const claculatedPayment = this.calculateNewPayment(loan);
+    if (!claculatedPayment) return null; // Error already logged in calculateNewPayment
+
+    // Save calculated Payment to continue with steps generation
+    const newPayment = await this.paymentDomainService.createPayment(claculatedPayment);
+    if (!newPayment) {
+      this.logger.error(`Failed to create new ${this.paymentType} payment for loan ${loanId}`);
       return null;
     }
-    
-    // Generate and create payment steps
-    const generatedSteps = this.generateStepsForPayment(payment, route, fromAccountId, toAccountId);
+
+    // Generate steps for the new payment
+    const generatedSteps = this.generateStepsForPayment(newPayment, route, fromAccountId, toAccountId);
     if (!generatedSteps || !generatedSteps.length) {
-      if (paymentOptions.state === LoanPaymentStateCodes.Completed) {
-        // For zero amount payments we might not need steps
-        return { ...payment, steps: [] };
-      }
-      this.logger.error(`Failed to generate ${this.paymentType} payment steps for loan`, { payment, route, fromAccountId, toAccountId });
+      this.logger.error('Failed to generate repayment payment steps for loan', { newPayment, route, fromAccountId, toAccountId });
       return null;
     }
-    
-    const savedSteps = await this.paymentDomainService.createPaymentSteps(generatedSteps);
-    return { ...payment, steps: savedSteps };
+    // Save the generated steps
+    await this.paymentDomainService.createPaymentSteps(generatedSteps);
+
+    // Return the saved payment with its steps
+    return this.paymentDomainService.getLoanPaymentById(newPayment.id, [LOAN_PAYMENT_RELATIONS.Steps]);
   }
 
   /**
@@ -118,6 +93,25 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
   protected hasDuplicatePayment(payments: ILoanPayment[] | null): boolean {
     return !!payments && payments.some(payment => payment.type === this.paymentType);
   }
+
+  protected getSameInitiatedPayments(payments: ILoanPayment[] | null): ILoanPayment[] {
+    if (!payments) return [];
+    return this.getSamePayments(payments, ['created', 'pending']);
+  }
+
+  protected getSameCompletedPayments(payments: ILoanPayment[] | null): ILoanPayment[] {
+    if (!payments) return [];
+    return this.getSamePayments(payments, ['completed']);
+  }
+
+  protected getSameFailedPayments(payments: ILoanPayment[] | null): ILoanPayment[] {
+    if (!payments) return [];
+    return this.getSamePayments(payments, ['failed']);
+  }
+
+  protected abstract canInitiatePayment(loan: ILoan): boolean;
+
+  protected abstract calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null;
 
   /**
    * Gets payments of the current payment type that match the specified states
@@ -146,19 +140,6 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    */
   protected getPaymentAmount(loan: ILoan): number {
     return loan.amount; // Default to loan amount, override in specific manager if needed
-  }
-
-  /**
-   * Gets the payment options (state, timestamps) for this payment type
-   * Override this method in child classes if the options differ from the defaults
-   * @param loan The loan for which to get payment options
-   * @param amount The payment amount
-   * @returns Object containing payment options
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected getPaymentOptions(_loan: ILoan, _amount: number): PaymentOptions {
-    // By default, return Created state with no timestamps
-    return { state: LoanPaymentStateCodes.Created };
   }
 
   /**

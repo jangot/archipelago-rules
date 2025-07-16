@@ -1,6 +1,5 @@
 import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
-import { LoanPaymentTypeCodes } from '@library/entity/enum';
-import { LOAN_PAYMENT_RELATIONS, LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
+import { LoanPaymentStateCodes, LoanPaymentTypeCodes } from '@library/entity/enum';
 import { ScheduleService } from '@library/shared/service';
 import { PlanPreviewInput, PlanPreviewOutputItem, RepaymentPlanPaidPayment } from '@library/shared/type/lending';
 import { Injectable } from '@nestjs/common';
@@ -14,59 +13,6 @@ import { BaseLoanPaymentManager } from './base-loan-payment-manager';
 export class RepaymentPaymentManager extends BaseLoanPaymentManager {
   constructor(protected readonly paymentDomainService: PaymentDomainService) {
     super(paymentDomainService, LoanPaymentTypeCodes.Repayment);
-  }
-
-  public async initiate(loanId: string): Promise<ILoanPayment | null> {
-    this.logger.debug(`Initiating repayment payment for loan ${loanId}`);
-    
-    // Get loan with necessary relations
-    const loan = await this.getLoan(loanId, [LOAN_RELATIONS.Payments, LOAN_RELATIONS.Biller, LOAN_RELATIONS.BillerPaymentAccount]);
-    const { payments, type } = loan;
-
-    // Get payment accounts
-    const { fromAccountId, toAccountId } = await this.getPaymentAccounts(loan);
-    if (!fromAccountId || !toAccountId) return null;
-    
-    // Get the route with its steps
-    const route = await this.findRouteForPayment(fromAccountId, toAccountId, type);
-
-    const samePaymentsInitiated = this.getSamePayments(payments, ['created', 'pending']);
-    if (samePaymentsInitiated && samePaymentsInitiated.length > 0) {
-      this.logger.error(`Repayment payment already initiated for loan ${loanId}`);
-      return null;
-    }
-
-    const samePaymentsCompleted = this.getSamePayments(payments, ['completed']);
-    const anyPaymentsCompleted = samePaymentsCompleted && samePaymentsCompleted.length;
-    const paymentNumber = anyPaymentsCompleted ? samePaymentsCompleted.length + 1 : 1;
-    // Payments count overflow must be checked before the new payment initiation call
-    // Buit to keep consistency we check it here as well
-    if (paymentNumber > loan.paymentsCount) {
-      this.logger.error(`Payment number ${paymentNumber} exceeds total payments count for loan ${loanId}`);
-      return null;
-    }
-
-    // Get the next payment from the remaining repayments plan
-    const nextPayment = this.getNextPayment(loan, samePaymentsCompleted);
-    if (!nextPayment) return null;
-
-    // Save the new repayment payment
-    const savedPayment = await this.paymentDomainService.createRepaymentByPreview({ ...nextPayment, index: paymentNumber }, loanId);
-    if (!savedPayment) {
-      this.logger.error(`Failed to create repayment payment for loan ${loanId}`, { nextPayment, paymentNumber });
-      return null;
-    }
-
-    // Generate steps for the new payment
-    const generatedSteps = this.generateStepsForPayment(savedPayment, route, fromAccountId, toAccountId);
-    if (!generatedSteps || !generatedSteps.length) {
-      this.logger.error('Failed to generate repayment payment steps for loan', { savedPayment, route, fromAccountId, toAccountId });
-      return null;
-    }
-    // Save the generated steps
-    await this.paymentDomainService.createPaymentSteps(generatedSteps);
-    // Return the saved payment with its steps
-    return this.paymentDomainService.getLoanPaymentById(savedPayment.id, [LOAN_PAYMENT_RELATIONS.Steps]);
   }
 
   /**
@@ -91,6 +37,57 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
     return { 
       fromAccountId: borrowerAccountId, // Note: For repayment, borrower is the source
       toAccountId: lenderAccountId,      // And lender is the recipient
+    };
+  }
+
+  protected canInitiatePayment(loan: ILoan): boolean {
+    const { id: loanId, payments } = loan;
+    
+    // Fast return for the first payment initiation
+    if (!payments || !payments.length) return true;
+    
+    // Check already initiated payments
+    const initiatedPayments = this.getSameInitiatedPayments(payments);
+    if (initiatedPayments && initiatedPayments.length) {
+      this.logger.error(`Repayment payment already initiated for loan ${loanId}`);
+      return false;
+    }
+
+    // Check payment for existed completion
+    const completedPayments = this.getSameCompletedPayments(payments);
+    if (completedPayments && completedPayments.length) {
+      // Payments count overflow must be checked before the new payment initiation call
+      // Buit to keep consistency we check it here as well
+      const highestPaymentNumber = Math.max(...completedPayments.map(p => p.paymentNumber || 0));
+      if (highestPaymentNumber >= loan.paymentsCount) { 
+        this.logger.error(`Loan ${loanId} already has all payments completed or initiated`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  protected calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null {
+    const { id: loanId, payments } = loan;
+
+    const samePaymentsCompleted = this.getSameCompletedPayments(payments);
+    const anyPaymentsCompleted = samePaymentsCompleted && samePaymentsCompleted.length;
+    const paymentNumber = anyPaymentsCompleted ? samePaymentsCompleted.length + 1 : 1;
+
+    const nextPayment = this.getNextPayment(loan, samePaymentsCompleted);
+    if (!nextPayment) {
+      this.logger.error(`Unable to calculate next payment for loan ${loanId}`, { loan });
+      return null;
+    }
+
+    // TODO: Attemts calc goes here
+    return {
+      amount: nextPayment.amount,
+      loanId,
+      paymentNumber,
+      type: this.paymentType,
+      state: LoanPaymentStateCodes.Created,
+      scheduledAt: nextPayment.paymentDate,
     };
   }
 

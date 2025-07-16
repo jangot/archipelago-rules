@@ -1,5 +1,5 @@
 import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
-import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { LoanPaymentStateCodes, LoanPaymentTypeCodes } from '@library/entity/enum';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
@@ -11,17 +11,6 @@ import { BaseLoanPaymentManager } from './base-loan-payment-manager';
 export class RefundPaymentManager extends BaseLoanPaymentManager {
   constructor(protected readonly paymentDomainService: PaymentDomainService) {
     super(paymentDomainService, LoanPaymentTypeCodes.Refund);
-  }
-
-  /**
-   * Initiates a new refund payment for a loan
-   * TODO: Refund requires more sophisticated logic and should be revisited
-   * This is a placeholder implementation that may not cover all edge cases.
-   * @param loanId The ID of the loan for which to initiate a refund payment
-   * @returns The created loan payment or null if creation failed
-   */
-  public async initiate(loanId: string): Promise<ILoanPayment | null> {
-    return this.initiatePayment(loanId);
   }
 
   /**
@@ -46,5 +35,46 @@ export class RefundPaymentManager extends BaseLoanPaymentManager {
       fromAccountId: lenderAccountId,
       toAccountId: biller.paymentAccountId,
     };
+  }
+
+  protected canInitiatePayment(loan: ILoan): boolean {
+    const { id: loanId, payments } = loan;
+    
+    // Fast return for the first payment initiation
+    if (!payments || !payments.length) return true;
+    
+    // Check already initiated payments
+    const initiatedPayments = this.getSameInitiatedPayments(payments);
+    if (initiatedPayments && initiatedPayments.length) {
+      this.logger.error(`Refund payment already initiated for loan ${loanId}`);
+      return false;
+    }
+    
+    // Check payment for existed completion
+    const completedPayments = this.getSameCompletedPayments(payments);
+    if (completedPayments && completedPayments.length) {
+      this.logger.error(`Refund payment already completed for loan ${loanId}`);
+      return false;
+    }
+    
+    return true;
+  }
+    
+  protected calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null {
+    const { id: loanId } = loan;
+    const amount = this.getPaymentAmount(loan);
+    // TODO: Attemts calc goes here
+    return {
+      amount,
+      loanId,
+      type: this.paymentType,
+      state: LoanPaymentStateCodes.Created,
+      scheduledAt: new Date(),
+    };
+  }
+
+  // TODO: Requires more sophisticated logic for refund amount
+  protected getPaymentAmount(loan: ILoan): number {
+    return loan.amount || 0;
   }
 }

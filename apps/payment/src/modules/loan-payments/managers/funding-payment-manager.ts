@@ -1,5 +1,5 @@
 import { ILoan, ILoanPayment, IPaymentsRouteStep } from '@library/entity/entity-interface';
-import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { LoanPaymentStateCodes, LoanPaymentTypeCodes } from '@library/entity/enum';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
@@ -11,15 +11,6 @@ import { BaseLoanPaymentManager } from './base-loan-payment-manager';
 export class FundingPaymentManager extends BaseLoanPaymentManager {
   constructor(protected readonly paymentDomainService: PaymentDomainService) {
     super(paymentDomainService, LoanPaymentTypeCodes.Funding);
-  }
-
-  /**
-   * Initiates a new funding payment for a loan
-   * @param loanId The ID of the loan for which to initiate a funding payment
-   * @returns The created loan payment or null if creation failed
-   */
-  public async initiate(loanId: string): Promise<ILoanPayment | null> {
-    return this.initiatePayment(loanId);
   }
 
   /**
@@ -46,10 +37,46 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
     };
   }
 
+  protected canInitiatePayment(loan: ILoan): boolean {
+    const { id: loanId, payments } = loan;
+  
+    // Fast return for the first payment initiation
+    if (!payments || !payments.length) return true;
+  
+    // Check already initiated payments
+    const initiatedPayments = this.getSameInitiatedPayments(payments);
+    if (initiatedPayments && initiatedPayments.length) {
+      this.logger.error(`Funding payment already initiated for loan ${loanId}`);
+      return false;
+    }
+  
+    // Check payment for existed completion
+    const completedPayments = this.getSameCompletedPayments(payments);
+    if (completedPayments && completedPayments.length) {
+      this.logger.error(`Funding payment already completed for loan ${loanId}`);
+      return false;
+    }
+  
+    return true;
+  }
+  
+  protected calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null {
+    const { id: loanId } = loan;
+    const amount = this.getPaymentAmount(loan);
+    // TODO: Attemts calc goes here
+    return {
+      amount,
+      loanId,
+      type: this.paymentType,
+      state: LoanPaymentStateCodes.Created,
+      scheduledAt: new Date(),
+    };
+  }
+  
+
   /**
    * Gets the route steps to apply for funding payment
    * For Funding + Disbursement route:
-   * - If route has a single step, then Funding doesn't use any steps
    * - If route has N steps, then Funding uses only the first step
    * @param routeSteps Steps from the payment route
    * @returns The steps to apply for this payment type
@@ -59,5 +86,10 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
       return [routeSteps[0]];
     }
     return [];
+  }
+
+  protected getPaymentAmount(loan: ILoan): number {
+    const { feeAmount, amount } = loan;
+    return amount + (feeAmount || 0);
   }
 }

@@ -1,10 +1,10 @@
 import { EntityId } from '@library/shared/common/data/id.entity';
-import { IApplicationUser } from './iapplication-user';
 import { LoanClosure, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanType } from '../enum';
+import { IApplicationUser } from './iapplication-user';
 import { IBiller } from './ibiller';
-import { IPaymentAccount } from './ipayment-account';
-import { ILoanPayment } from './iloan-payment';
 import { ILoanInvitee } from './iloan-invitee';
+import { ILoanPayment } from './iloan-payment';
+import { IPaymentAccount } from './ipayment-account';
 import { ITransferError } from './itransfer-error';
 
 export interface ILoan extends EntityId<string> {
@@ -53,6 +53,7 @@ export interface ILoan extends EntityId<string> {
 
   // #region Payment Schedule Info
   /** Total number of (re)payments for the Loan */
+  /** Important: `paymentsCount` supports value updates but to the value not lower than `completedRepayments.length + 1` */
   paymentsCount: number;
 
   /** Enum that tells how often (re)payment should happen

@@ -1,5 +1,5 @@
 import { ILoan, ILoanPayment, IPaymentsRouteStep } from '@library/entity/entity-interface';
-import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { LoanPaymentStateCodes, LoanPaymentTypeCodes } from '@library/entity/enum';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
@@ -13,13 +13,40 @@ export class DisbursementPaymentManager extends BaseLoanPaymentManager {
     super(paymentDomainService, LoanPaymentTypeCodes.Disbursement);
   }
 
-  /**
-   * Initiates a new disbursement payment for a loan
-   * @param loanId The ID of the loan for which to initiate a disbursement payment
-   * @returns The created loan payment or null if creation failed
-   */
-  public async initiate(loanId: string): Promise<ILoanPayment | null> {
-    return this.initiatePayment(loanId);
+  protected canInitiatePayment(loan: ILoan): boolean {
+    const { id: loanId, payments } = loan;
+
+    // Fast return for the first payment initiation
+    if (!payments || !payments.length) return true;
+
+    // Check already initiated payments
+    const initiatedPayments = this.getSameInitiatedPayments(payments);
+    if (initiatedPayments && initiatedPayments.length) {
+      this.logger.error(`Disbursement payment already initiated for loan ${loanId}`);
+      return false;
+    }
+
+    // Check payment for existed completion
+    const completedPayments = this.getSameCompletedPayments(payments);
+    if (completedPayments && completedPayments.length) {
+      this.logger.error(`Disbursement payment already completed for loan ${loanId}`);
+      return false;
+    }
+
+    return true;
+  }
+
+  protected calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null {
+    const { id: loanId } = loan;
+    const amount = this.getPaymentAmount(loan);
+    // TODO: Attemts calc goes here
+    return {
+      amount,
+      loanId,
+      type: this.paymentType,
+      state: LoanPaymentStateCodes.Created,
+      scheduledAt: new Date(),
+    };
   }
 
   /**
@@ -49,7 +76,6 @@ export class DisbursementPaymentManager extends BaseLoanPaymentManager {
   /**
    * Gets the route steps to apply for disbursement payment
    * For Funding + Disbursement route:
-   * - If route has a single step, then Disbursement uses all steps
    * - If route has N steps, then Disbursement uses N-1 steps, starting from second
    * @param routeSteps Steps from the payment route
    * @returns The steps to apply for this payment type

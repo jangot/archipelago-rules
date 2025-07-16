@@ -1,13 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
 import { ILoan } from '@library/entity/entity-interface';
-import { LoanType, LoanState, LoanClosure, LoanPaymentFrequency, LoanFeeMode, LoanClosureCodes } from '@library/entity/enum';
+import { LoanClosure, LoanClosureCodes, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanType } from '@library/entity/enum';
+import { DbSchemaCodes } from '@library/shared/common/data';
+import { Check, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
 import { Biller } from './biller.entity';
-import { PaymentAccount } from './payment.account.entity';
-import { LoanPayment } from './loan.payment.entity';
 import { LoanInvitee } from './loan.invitee.entity';
+import { LoanPayment } from './loan.payment.entity';
+import { PaymentAccount } from './payment.account.entity';
 import { TransferError } from './transfer.error.entity';
-import { DbSchemaCodes } from '@library/shared/common/data';
 
 @Entity({ schema: DbSchemaCodes.Core })
 // When using @Check('<constraint_name>', '<expression') -- always specify a Constraint name

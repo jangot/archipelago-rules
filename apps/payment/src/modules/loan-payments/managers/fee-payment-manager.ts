@@ -2,7 +2,7 @@ import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
 import { LoanPaymentStateCodes, LoanPaymentTypeCodes } from '@library/entity/enum';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
-import { BaseLoanPaymentManager, PaymentOptions } from './base-loan-payment-manager';
+import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
 
 /**
  * Handles loan fee payments
@@ -14,20 +14,12 @@ export class FeePaymentManager extends BaseLoanPaymentManager {
   }
 
   /**
-   * Initiates a new fee payment for a loan
-   * @param loanId The ID of the loan for which to initiate a fee payment
-   * @returns The created loan payment or null if creation failed
-   */
-  public async initiate(loanId: string): Promise<ILoanPayment | null> {
-    return this.initiatePayment(loanId);
-  }
-
-  /**
    * Gets the source and target payment account IDs for fee payment
    * @param loan The loan for which to get payment accounts
    * @returns Object containing fromAccountId and toAccountId
    */
-  protected async getPaymentAccounts(loan: ILoan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
+  // TODO: Use explicit Payment Account for Fee
+  protected async getPaymentAccounts(loan: ILoan): Promise<PaymentAccountPair> {
     const { lenderAccountId, biller } = loan;
     
     if (!lenderAccountId) {
@@ -45,6 +37,46 @@ export class FeePaymentManager extends BaseLoanPaymentManager {
       toAccountId: biller.paymentAccountId,
     };
   }
+
+  protected canInitiatePayment(loan: ILoan): boolean {
+    const { id: loanId, payments, feeAmount } = loan;
+
+    // Fast returns
+    if (!feeAmount || feeAmount <= 0) {
+      this.logger.warn(`Fee amount is not set or invalid for loan ${loanId}`);
+      return false;
+    }
+    if (!payments || !payments.length) return true;
+
+    // Check already initiated payments
+    const initiatedPayments = this.getSameInitiatedPayments(payments);
+    if (initiatedPayments && initiatedPayments.length) {
+      this.logger.error(`Fee payment already initiated for loan ${loanId}`);
+      return false;
+    }
+
+    // Check payment for existed completion
+    const completedPayments = this.getSameCompletedPayments(payments);
+    if (completedPayments && completedPayments.length) {
+      this.logger.error(`Fee payment already completed for loan ${loanId}`);
+      return false;
+    }
+
+    return true;
+  }
+
+  protected calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null {
+    const { id: loanId } = loan;
+    const amount = this.getPaymentAmount(loan);
+    // TODO: Attemts calc goes here
+    return {
+      amount,
+      loanId,
+      type: this.paymentType,
+      state: LoanPaymentStateCodes.Created,
+      scheduledAt: new Date(),
+    };
+  }
   
   /**
    * Gets the payment amount for fee payment type
@@ -53,26 +85,5 @@ export class FeePaymentManager extends BaseLoanPaymentManager {
    */
   protected getPaymentAmount(loan: ILoan): number {
     return loan.feeAmount || 0;
-  }
-  
-  /**
-   * Gets the payment options for fee payment
-   * For zero amount, automatically mark as completed
-   * @param _loan The loan for which to get payment options
-   * @param amount The payment amount
-   * @returns Object containing payment options
-   */
-  protected getPaymentOptions(_loan: ILoan, amount: number): PaymentOptions {
-    // If amount is zero then create a completed payment without steps
-    if (!amount) {
-      const completionDate = new Date();
-      return { 
-        state: LoanPaymentStateCodes.Completed,
-        completedAt: completionDate,
-        scheduledAt: completionDate,
-        initiatedAt: completionDate,
-      };
-    }
-    return { state: LoanPaymentStateCodes.Created };
   }
 }
