@@ -1,6 +1,6 @@
-import { PaymentMethodCreateRequestDto } from '@core/modules/banking/dto/request/payment-method.create.request.dto';
-import { PaymentAccountResponseDto } from '@core/modules/banking/dto/response/payment-account.response.dto';
 import { IDomainServices } from '@core/modules/domain/idomain.services';
+import { PaymentMethodCreateRequestDto } from '@core/modules/payment-accounts/dto/request/payment-method.create.request.dto';
+import { PaymentAccountResponseDto } from '@core/modules/payment-accounts/dto/response/payment-account.response.dto';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { Injectable, Logger } from '@nestjs/common';
 

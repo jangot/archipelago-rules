@@ -26,6 +26,7 @@ export interface ILoanApplication extends EntityId<string> {
   // Borrower
   borrowerId: string | null;
   borrowerPaymentAccountId: string | null;
+  borrowerSubmittedAt: Date | null;
 
   // Loan Info
   loanType: LoanType | null;  // p2p, billPay, etc.  //TODO: Need to define this. Change to ILoanType? enum?

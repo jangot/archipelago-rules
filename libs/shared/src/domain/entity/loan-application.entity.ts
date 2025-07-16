@@ -85,6 +85,9 @@ export class LoanApplication implements ILoanApplication {
   @JoinColumn({ name: 'borrower_account_id' })
   borrowerPaymentAccount: PaymentAccount | null;
 
+  @Column({ name: 'borrower_submitted_at', type: 'timestamptz', nullable: true })
+  borrowerSubmittedAt: Date | null;
+
   // Loan Info
   @Column({ type: 'text', nullable: true })
   loanType: LoanType | null;

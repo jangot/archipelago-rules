@@ -11,6 +11,7 @@ import { IDatabaseConnection, PreparedQuery } from '@pgtyped/runtime';
 import camelcaseKeys from 'camelcase-keys';
 import { Pool } from 'pg';
 import {
+  DeepPartial,
   DeleteResult,
   FindManyOptions,
   FindOneOptions,
@@ -137,20 +138,27 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return this.actionResult(updateResult);
   }
 
+  //TODO: Mike, please review... thx
   public async updateWithResult(id: Entity['id'], item: Partial<Entity>): Promise<Entity> {
+    const returning = this.repository.metadata.columns
+      .map(col => `"${col.databaseName}" AS "${col.propertyName}"`)
+      .join(', ');
+
     const updateResult = await this.repository
       .createQueryBuilder()
       .update(this.repository.metadata.target)
       .set(item)
       .where('id = :id', { id })
-      .returning('*')
+      .returning(returning)
       .execute();
 
-    if (!updateResult.generatedMaps || updateResult.generatedMaps.length === 0) {
-      throw new Error('Update failed: no entity was returned');
-    }
-    // generatedMaps[0] will have keys matching entity's properties (camelCased)
-    return updateResult.generatedMaps[0] as Entity;
+    // updated rows come back in `raw`
+    const updatedRows = updateResult.raw as DeepPartial<Entity>[];
+
+    // if you want full entities, you can re-hydrate them:
+    const updatedEntities = updatedRows.map(r => this.repository.create(r));
+
+    return updatedEntities[0] || null;
   }
 
   public async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
