@@ -1,7 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
-import { LoanApplicationStatusCodes } from '@library/entity/enum';
+import { ContactType, LoanApplicationStatusCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
@@ -82,37 +82,39 @@ export class LoanApplicationsService {
 
 
   /**
-   * Sends the loan application to the lender by updating its status to 'sent_to_lender'.
+   * Submits the loan application by updating its status to 'sent_to_lender'.
    * Creates a loan invitee for the lender and attempts to assign them to the loan application.
    * Validates that the loan application exists and has required lender information.
    *
    * @param userId - The user performing the action (borrower)
    * @param id - The loan application ID
-   * @returns Promise<LoanApplicationResponseDto | null> - The loan application DTO or null
+   * @returns Promise<void>
    */
-  public async sendToLender(userId: string, id: string): Promise<LoanApplicationResponseDto | null> {
-    this.logger.debug(`sendToLender: Sending loan application ${id} to lender`);
+  public async submitLoanApplication(userId: string, id: string): Promise<void> {
+    this.logger.debug(`submitLoanApplication: Submitting loan application ${id}`);
 
     await this.validateApplicationLoanUser(id, userId);
 
     const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(id);
-    if (!loanApplication) {
-      throw new EntityNotFoundException(`Loan application: ${id} not found`);
+
+    if (!loanApplication!.lenderEmail && !loanApplication!.lenderFirstName) {
+      throw new MissingInputException('Lender information is required to submit loan application');
     }
 
-    if (!loanApplication.lenderEmail && !loanApplication.lenderFirstName) {
-      throw new MissingInputException('Lender information is required to send loan application to lender');
+    const lenderUser = await this.domainServices.userServices.getUserByContact(
+      loanApplication!.lenderEmail!,
+      ContactType.EMAIL
+    );
+    const status = LoanApplicationStatusCodes.Submitted;
+    if (lenderUser && lenderUser.id) {
+      this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} was found. Will assign lenderId now.`);
+      await this.domainServices.loanServices.updateLoanApplicationNoResult(id, { lenderId: lenderUser.id, status });
+    } else {
+      // TODO: Assign lenderId once the lender creates/authenticates a Zirtue account
+      this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} not found. Will assign lenderId after registration.`);
+      await this.domainServices.loanServices.updateLoanApplicationNoResult(id, { status });
     }
-
     // TODO: Send email to lender
-    
-
-    const status = LoanApplicationStatusCodes.SentToLender;
-    const result = await this.domainServices.loanServices.updateLoanApplication(id, { status });
-
-    if (!result) throw new EntityFailedToUpdateException('Failed to send Loan application to lender');
-
-    return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
 

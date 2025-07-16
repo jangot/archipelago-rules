@@ -64,19 +64,48 @@ export class LoanApplicationsController {
     return this.loanApplicationService.updateLoanApplication(userId, id, updates);
   }
 
-  @Patch('send-to-lender/:id')
-  @ApiOperation({ summary: 'Send loan application to lender', description: 'Change the status of the loan application and send it to the lender' })
+  @Post(':id/submit')
+  @ApiOperation({ summary: 'Submit a loan application', description: 'Submit a loan application' })
   @ApiParam({ name: 'id', required: true, description: 'Loan application id' })
-  @ApiOkResponse({ description: 'Loan application sent to lender', type: Boolean, isArray: false })
+  @ApiOkResponse({ description: 'Loan application submitted', type: undefined, isArray: false })
   @ApiNotFoundResponse({ description: 'No Loan application found', isArray: false })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
-  public async sendToLender(
+  public async submitLoanApplication(
     @UUIDParam('id') id: string,
     @Req() request: IRequest,
-  ): Promise<LoanApplicationResponseDto | null> {
+  ): Promise<void> {
     const userId = request.user!.id;
-    this.logger.debug(`Sending loan application ${id} to lender`);
-    
-    return this.loanApplicationService.sendToLender(userId, id);
+    this.logger.debug(`Submitting loan application ${id}`);
+    await this.loanApplicationService.submitLoanApplication(userId, id);
+  }
+
+  @Post(':id/accept')
+  @ApiOperation({ summary: 'Accept a loan application', description: 'Accept a loan application' })
+  @ApiParam({ name: 'id', required: true, description: 'Loan application id' })
+  @ApiOkResponse({ description: 'Loan application accepted', type: undefined, isArray: false })
+  @ApiNotFoundResponse({ description: 'No Loan application found', isArray: false })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
+  public async acceptLoanApplication(
+    @UUIDParam('id') id: string,
+    @Req() request: IRequest,
+  ): Promise<void> {
+    const userId = request.user!.id;
+    this.logger.debug(`Accepting loan application ${id} by user ${userId}`);
+    // Service logic to be implemented
+  }
+
+  @Post(':id/reject')
+  @ApiOperation({ summary: 'Reject a loan application', description: 'Reject a loan application' })
+  @ApiParam({ name: 'id', required: true, description: 'Loan application id' })
+  @ApiOkResponse({ description: 'Loan application rejected', type: undefined, isArray: false })
+  @ApiNotFoundResponse({ description: 'No Loan application found', isArray: false })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
+  public async rejectLoanApplication(
+    @UUIDParam('id') id: string,
+    @Req() request: IRequest,
+  ): Promise<void> {
+    const userId = request.user!.id;
+    this.logger.debug(`Rejecting loan application ${id} by user ${userId}`);
+    // Service logic to be implemented
   }
 }
