@@ -91,7 +91,7 @@ export class LoanApplicationsController {
   ): Promise<void> {
     const userId = request.user!.id;
     this.logger.debug(`Accepting loan application ${id} by user ${userId}`);
-    // Service logic to be implemented
+    await this.loanApplicationService.acceptLoanApplication(userId, id);
   }
 
   @Post(':id/reject')

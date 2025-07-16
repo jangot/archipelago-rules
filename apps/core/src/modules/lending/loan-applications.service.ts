@@ -1,6 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
+import { ILoanApplication } from '@library/entity/entity-interface';
 import { ContactType, LoanApplicationStatusCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
@@ -117,6 +118,90 @@ export class LoanApplicationsService {
     // TODO: Send email to lender
   }
 
+  /**
+   * Accepts a loan application by creating a loan from the application data.
+   * Validates all required information is present before creating the loan.
+   *
+   * @param userId - The ID of the user accepting the application (lender)
+   * @param loanApplicationId - The ID of the loan application to accept
+   * @returns Promise<void>
+   */
+  public async acceptLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
+    this.logger.debug(`acceptLoanApplication: Accepting loan application ${loanApplicationId} by user ${userId}`);
+
+    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
+    if (!loanApplication) {
+      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
+    }
+
+    // Validate that the user is the lender for v1
+    if (loanApplication.lenderId !== userId) {
+      this.logger.warn(`${userId} is not authorized to accept loan application ${loanApplicationId}`);
+      throw new InvalidUserForLoanApplicationException('You are not authorized to accept this loan application');
+    }
+
+    this.validateLoanApplicationForAcceptance(loanApplication);
+
+    const createdLoan = await this.domainServices.loanServices.acceptLoanApplication(loanApplicationId, userId);
+    if (!createdLoan) {
+      this.logger.error(`Failed to create loan from application ${loanApplicationId}`);
+      throw new EntityFailedToUpdateException('Failed to create loan from application');
+    }
+
+    this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
+  }
+
+  private validateLoanApplicationForAcceptance(loanApplication: ILoanApplication): void {
+    const missingFields: string[] = [];
+
+    // Required loan information
+    if (!loanApplication.loanAmount) {
+      missingFields.push('loanAmount');
+    }
+    if (!loanApplication.loanType) {
+      missingFields.push('loanType');
+    }
+
+    // Required user information
+    if (!loanApplication.lenderId) {
+      missingFields.push('lenderId');
+    }
+    if (!loanApplication.borrowerId) {
+      missingFields.push('borrowerId');
+    }
+
+    // Required payment account information
+    if (!loanApplication.lenderPaymentAccountId) {
+      missingFields.push('lenderPaymentAccountId');
+    }
+    if (!loanApplication.borrowerPaymentAccountId) {
+      missingFields.push('borrowerPaymentAccountId');
+    }
+
+    // Required payments frequency
+    if (!loanApplication.loanPaymentFrequency) {
+      missingFields.push('loanPaymentFrequency');
+    }
+    if (!loanApplication.loanPayments) {
+      missingFields.push('loanPayments');
+    }
+
+    // For non-personal loans, biller information is required
+    if (loanApplication.loanType !== 'personal') {
+      if (!loanApplication.billerId) {
+        missingFields.push('billerId');
+      }
+      if (!loanApplication.billAccountNumber) {
+        missingFields.push('billAccountNumber');
+      }
+    }
+
+    if (missingFields.length > 0) {
+      const errorMessage = `Loan application is missing required fields: ${missingFields.join(', ')}`;
+      this.logger.error(`Validation failed for loan application ${loanApplication.id}: ${errorMessage}`);
+      throw new MissingInputException(errorMessage);
+    }
+  }
 
   // TODO: This is a placeholder for the actual loan fee calculation
   private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {

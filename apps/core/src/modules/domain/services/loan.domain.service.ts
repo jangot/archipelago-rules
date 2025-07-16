@@ -1,7 +1,7 @@
 import { CoreDataService } from '@core/modules/data';
 import { ActionNotAllowedException } from '@core/modules/lending/exceptions';
 import { IBiller, ILoan, ILoanApplication } from '@library/entity/entity-interface';
-import { BillerTypeCodes, LoanStateCodes } from '@library/entity/enum';
+import { BillerTypeCodes, LoanPaymentFrequency, LoanStateCodes } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
 import { LoanApplication } from '@library/shared/domain/entity';
@@ -112,6 +112,40 @@ export class LoanDomainService extends BaseDomainServices {
     return this.getLoanById(loanId);
   }
 
+
+  public async acceptLoanApplication(loanApplicationId: string, userId: string): Promise<ILoan | null> {
+    this.logger.debug(`acceptLoanApplication: Accepting loan application ${loanApplicationId} by user ${userId}`);
+
+    const loanApplication = await this.getLoanApplicationById(loanApplicationId);
+
+    // Create loan from loan application data
+    const loanData: Partial<ILoan> = {
+      amount: loanApplication!.loanAmount!,
+      type: loanApplication!.loanType!,
+      state: LoanStateCodes.Created, // Initial state for new loan
+      lenderId: loanApplication!.lenderId,
+      borrowerId: loanApplication!.borrowerId,
+      relationship: loanApplication!.lenderRelationship,
+      note: loanApplication!.lenderNote,
+      billerId: loanApplication!.billerId,
+      billingAccountNumber: loanApplication!.billAccountNumber,
+      paymentsCount: loanApplication!.loanPayments!,
+      paymentFrequency: loanApplication!.loanPaymentFrequency as LoanPaymentFrequency,
+      feeAmount: loanApplication!.loanServiceFee,
+      lenderAccountId: loanApplication!.lenderPaymentAccountId,
+      borrowerAccountId: loanApplication!.borrowerPaymentAccountId,
+    };
+
+    // Create the loan
+    const createdLoan = await this.createLoan(loanData);
+    if (!createdLoan) {
+      this.logger.error(`Failed to create loan from application ${loanApplicationId}`);
+      throw new EntityFailedToUpdateException('Failed to create loan from application');
+    }
+
+    this.logger.debug(`Successfully created loan ${createdLoan.id} from application ${loanApplicationId}`);
+    return createdLoan;
+  }
   // #endregion
 
   // #region Biller
@@ -141,7 +175,14 @@ export class LoanDomainService extends BaseDomainServices {
   }
 
   public async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<ILoanApplication> {
-    return  this.data.loanApplications.updateWithResult(id, data);
+    // Prevent borrowerId from being changed for v1
+    const { borrowerId, ...updateData } = data;
+    
+    if (borrowerId !== undefined) {
+      this.logger.debug(`updateLoanApplication: borrowerId change attempted but ignored for loan application ${id}`);
+    }
+    
+    return this.data.loanApplications.updateWithResult(id, updateData);
   }
 
   public async updateLoanApplicationNoResult(id: string, data: Partial<LoanApplication>): Promise<boolean | null> {
