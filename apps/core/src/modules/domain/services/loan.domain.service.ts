@@ -149,10 +149,8 @@ export class LoanDomainService extends BaseDomainServices {
   // #endregion
 
   // #region Biller
-  public async createPersonalBiller(createdById: string): Promise<IBiller | null> {
-    // const loanTypeText = invitee ? invitee.type === LoanAssignIntent.Borrower ? 'offer' : 'request' : '';
-    // const billerName = `Personal offer to ${invitee?.firstName} ${invitee?.lastName}`;
-    const billerName = `Personal offer to ${createdById}`; // TODO: Add correct name based on the loan application
+  public async createPersonalBiller(createdById: string, lenderName?: string): Promise<IBiller | null> {
+    const billerName = `Personal offer to ${lenderName}`;
     return this.data.billers.createBiller({ name: billerName, type: BillerTypeCodes.Personal, createdById });
   }
 
@@ -187,6 +185,21 @@ export class LoanDomainService extends BaseDomainServices {
 
   public async updateLoanApplicationNoResult(id: string, data: Partial<LoanApplication>): Promise<boolean | null> {
     return this.data.loanApplications.update(id, data);
+  }
+
+  // This should be integrated after registration is done.
+  public async updateLenderIdByEmail(lenderEmail: string, lenderId: string): Promise<string[]> {
+    const result = await this.data.loanApplications.findBy({ lenderEmail });
+    const applications = result.data;
+    if (!applications.length) {
+      return [];
+    }
+    const updatedIds: string[] = [];
+    for (const app of applications) {
+      await this.data.loanApplications.update(app.id, { lenderId });
+      updatedIds.push(app.id);
+    }
+    return updatedIds;
   }
   // #endregion
 }

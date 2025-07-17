@@ -33,7 +33,7 @@ export class LoansService {
     const loanCreateInput: Partial<ILoan> = EntityMapper.toEntity(input, Loan);
     const { type } = input;
     
-    if (type === LoanTypeCodes.Personal) {
+    if (type === LoanTypeCodes.Personal && !loanCreateInput.billerId) {
       const personalBiller = await this.createPersonalBiller(userId);
       loanCreateInput.billerId = personalBiller.id;
     }

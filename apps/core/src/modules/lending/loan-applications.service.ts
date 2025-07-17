@@ -2,7 +2,7 @@ import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
 import { ILoanApplication } from '@library/entity/entity-interface';
-import { ContactType, LoanApplicationStatusCodes } from '@library/entity/enum';
+import { ContactType, LoanApplicationStatusCodes, LoanTypeCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
@@ -142,6 +142,10 @@ export class LoanApplicationsService {
 
     this.validateLoanApplicationForAcceptance(loanApplication);
 
+    if (loanApplication.loanType == LoanTypeCodes.Personal){
+      const personalBiller = await this.domainServices.loanServices.createPersonalBiller(userId, `${loanApplication.lenderFirstName} ${loanApplication.lenderLastName}`);
+      loanApplication.billerId = personalBiller!.id;
+    }
     const createdLoan = await this.domainServices.loanServices.acceptLoanApplication(loanApplicationId, userId);
     if (!createdLoan) {
       this.logger.error(`Failed to create loan from application ${loanApplicationId}`);
