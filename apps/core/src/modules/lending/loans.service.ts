@@ -65,15 +65,6 @@ export class LoansService {
     return DtoMapper.toDto(result, LoanResponseDto);
   }
 
-  public async acceptLoan(loanId: string, userId: string, targetPaymentAccountId: string): Promise<LoanResponseDto | null> {
-    if (!loanId || !userId || !targetPaymentAccountId) {
-      this.logger.warn('Missing required parameters for accepting loan', { loanId, userId, targetPaymentAccountId });
-      throw new MissingInputException('Some of the required parameters (Loan ID, User ID, Payment Account ID) are missing');
-    }
-    const result = await this.domainServices.loanServices.acceptLoan(loanId, userId, targetPaymentAccountId);
-    return DtoMapper.toDto(result, LoanResponseDto);
-  }
-
   /**
    * Advances a loan through its state machine lifecycle by delegating to the appropriate state manager.
    * 
