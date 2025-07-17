@@ -36,83 +36,6 @@ export class LoanDomainService extends BaseDomainServices {
     return this.data.loans.update(loanId, loan);
   }
 
-  
-
-  public async acceptLoan(loanId: string, userId: string, targetPaymentAccountId: string): Promise<ILoan | null> {
-    // Check Loan existance
-    const loan = await this.getLoanById(loanId, [LOAN_RELATIONS.Biller, LOAN_RELATIONS.Invitee]);
-    if (!loan) {
-      this.logger.error(`Loan with ID ${loanId} not found for acceptance`);
-      throw new EntityNotFoundException(`Loan ${loanId} not found`);
-    }
-
-    const { state: loanState, lenderId, borrowerId, lenderAccountId, borrowerAccountId } = loan;
-    let { biller } = loan;
-    // Check that Loan is in the correct state for acceptance
-    if (loanState !== LoanStateCodes.BorrowerAssigned && loanState !== LoanStateCodes.LenderAssigned) {
-      this.logger.error(`Loan with ID ${loanId} is not in a state that allows acceptance: ${loanState}`);
-      throw new EntityFailedToUpdateException(`Loan ${loanId} is not in a state that allows acceptance`);
-    }
-
-    // Check User existance
-    const user = await this.data.users.getById(userId);
-    if (!user) {
-      this.logger.error(`User with ID ${userId} not found for loan acceptance`);
-      throw new EntityNotFoundException(`User ${userId} not found`);
-    }
-
-    // Check User allowance to accept the Loan
-    if (loanState === LoanStateCodes.BorrowerAssigned && userId !== borrowerId || 
-      loanState === LoanStateCodes.LenderAssigned && userId !== lenderId) {
-      this.logger.error(`User ${userId} is not allowed to accept Loan ${loanId}`);
-      throw new ActionNotAllowedException(`User ${userId} is not allowed to accept Loan ${loanId}`);
-    }
-
-    // Check Payment Account existance
-    const paymentAccount = await this.data.paymentAccounts.getById(targetPaymentAccountId);
-    if (!paymentAccount) {
-      this.logger.error(`Payment Account with ID ${targetPaymentAccountId} not found for loan acceptance`);
-      throw new EntityNotFoundException(`Payment Account ${targetPaymentAccountId} not found`);
-    }
-
-    const sourceUserId = loanState === LoanStateCodes.BorrowerAssigned ? lenderId! : borrowerId!;
-    // Biller is required for acceptance - so if it is not set yet, we create it as Personal Biller
-    if (!biller) {
-      this.logger.warn(`Biller not found for Loan ${loanId}, creating Personal Biller`);
-      const billerCreateResult = await this.createPersonalBiller(sourceUserId);
-      if (!billerCreateResult) {
-        this.logger.error(`Failed to create Personal Biller for Loan ${loanId} on acceptance`);
-        throw new EntityFailedToUpdateException(`Failed to create Personal Biller for Loan ${loanId}`);
-      }
-      biller = billerCreateResult;
-    }
-    const { type: billerType, paymentAccountId: billerPaymentAccountId, id: billerId } = biller;
-    // If Biller is personal - it means we should set its paymentAccount to the one provided if it is not set yet
-    if (billerType === BillerTypeCodes.Personal && !billerPaymentAccountId) {
-      this.logger.debug(`Setting Payment Account ${targetPaymentAccountId} to Personal Biller ${biller.id}`);
-      await this.data.billers.update(billerId, { paymentAccountId: targetPaymentAccountId });
-    }
-
-    // Set the target Payment Account to the Loan and update the Loan state
-    const updates: Partial<ILoan> = {
-      state: LoanStateCodes.Accepted,
-      lenderAccountId: loanState === LoanStateCodes.BorrowerAssigned ? lenderAccountId : targetPaymentAccountId,
-      borrowerAccountId: loanState === LoanStateCodes.LenderAssigned ? borrowerAccountId : targetPaymentAccountId,
-      billerId: loan.billerId || billerId,
-    };
-
-    this.logger.debug(`Updating Loan ${loanId} with Payment Account ${targetPaymentAccountId} and state ${updates.state}`);
-    const updateResult = await this.updateLoan(loanId, updates);
-
-    if (!updateResult) {
-      this.logger.error(`Failed to accept Loan ${loanId} with Payment Account ${targetPaymentAccountId}`);
-      return null;
-    }
-
-    return this.getLoanById(loanId);
-  }
-
-
   public async acceptLoanApplication(loanApplicationId: string, userId: string): Promise<ILoan | null> {
     this.logger.debug(`acceptLoanApplication: Accepting loan application ${loanApplicationId} by user ${userId}`);
 
@@ -185,21 +108,6 @@ export class LoanDomainService extends BaseDomainServices {
 
   public async updateLoanApplicationNoResult(id: string, data: Partial<LoanApplication>): Promise<boolean | null> {
     return this.data.loanApplications.update(id, data);
-  }
-
-  // This should be integrated after registration is done.
-  public async updateLenderIdByEmail(lenderEmail: string, lenderId: string): Promise<string[]> {
-    const result = await this.data.loanApplications.findBy({ lenderEmail });
-    const applications = result.data;
-    if (!applications.length) {
-      return [];
-    }
-    const updatedIds: string[] = [];
-    for (const app of applications) {
-      await this.data.loanApplications.update(app.id, { lenderId });
-      updatedIds.push(app.id);
-    }
-    return updatedIds;
   }
   // #endregion
 }
