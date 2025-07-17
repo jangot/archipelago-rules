@@ -55,6 +55,41 @@ export class LoanApplicationsService {
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
+  //TODO: This is a placeholder for the loan application submission
+  public async submitLoanApplication(userId: string, id: string): Promise<LoanApplicationResponseDto | null> {
+    this.logger.debug(`submit: Submitting loan application ${id}`);
+
+    //const result = await this.domainServices.loanServices.submitLoanApplication(id, userId);
+    const result = await this.domainServices.loanServices.getLoanApplicationById(id);
+
+    if (!result) throw new EntityFailedToUpdateException('Failed to submit Loan application');
+
+    return DtoMapper.toDto(result, LoanApplicationResponseDto);
+  }
+
+  //TODO: This is a placeholder for the loan application accepted
+  public async acceptLoanApplication(userId: string, id: string): Promise<LoanApplicationResponseDto | null> {
+    this.logger.debug(`accept: Accepting loan application ${id}`);
+
+    const result = await this.domainServices.loanServices.getLoanApplicationById(id);
+
+    if (!result) throw new EntityFailedToUpdateException('Failed to accept Loan application');
+
+    return DtoMapper.toDto(result, LoanApplicationResponseDto);
+  }
+
+  //TODO: This is a placeholder for the loan application rejected
+  public async rejectLoanApplication(userId: string, id: string): Promise<LoanApplicationResponseDto | null> {
+    this.logger.debug(`reject: Rejecting loan application ${id}`);
+
+    const result = await this.domainServices.loanServices.getLoanApplicationById(id);
+
+    if (!result) throw new EntityFailedToUpdateException('Failed to reject Loan application');
+
+    return DtoMapper.toDto(result, LoanApplicationResponseDto);
+  }
+  
+
   // TODO: This is a placeholder for the actual loan fee calculation
   private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {
     // Round to 2 decimal places

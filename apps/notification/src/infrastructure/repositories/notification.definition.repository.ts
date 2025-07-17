@@ -1,9 +1,9 @@
+import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { RepositoryBase } from '@library/shared/common/data/base.repository';
-import { NotificationDefinition } from '@notification/domain/entities';
+import { NotificationDefinition } from '@notification/domain/entity';
 import { INotificationDefinitionRepository } from '@notification/shared/interfaces/repositories/inotification.definition.repository';
+import { Repository } from 'typeorm';
 
 /**
  * Implementation of the NotificationDefinition repository

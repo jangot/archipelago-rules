@@ -1,7 +1,7 @@
 import { LoanType } from '@library/entity/enum';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEmail, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsDate, IsEmail, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 
 @ApiSchema({ name: 'loanApplicationRequest' })
 export class LoanApplicationRequestDto {
@@ -84,6 +84,11 @@ export class LoanApplicationRequestDto {
   @IsString()
   @IsOptional()
   borrowerPaymentAccountId: string | null;
+
+  @ApiProperty({ description: 'Date when the borrower submitted the application', type: 'string', format: 'date-time', example: '2023-10-01T12:00:00Z', required: false })
+  @IsDate()
+  @IsOptional()
+  borrowerSubmittedAt: Date | null;
 
   // Loan fields
   @ApiProperty({ description: 'Type of the loan', type: 'string', example: 'DirectBillPay', required: false })
