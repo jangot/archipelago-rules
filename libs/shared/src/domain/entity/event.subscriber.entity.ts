@@ -3,20 +3,23 @@ import { EventSubscriberServiceName } from '@library/entity/enum/event-subscribe
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('event_subscribers', { schema: 'notifications' })
-@Index(['subscriber', 'name', 'destination'], { unique: true })
+@Index(['subscriberService', 'name', 'destination'], { unique: true })
 export class EventSubscriber implements IEventSubscriber {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ type: 'text', nullable: true })
+  name: string | null;
+
   @Index({ unique: false })
   @Column({ type: 'text' })
-  name: string;
+  eventName: string;
 
   @Column({ type: 'text' })
-  subscriber: EventSubscriberServiceName;
+  subscriberService: EventSubscriberServiceName;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description: string | null;
 
   /**
    * The destination of the event subscriber
@@ -28,4 +31,10 @@ export class EventSubscriber implements IEventSubscriber {
    */
   @Column({ type: 'text' })
   destination: string;
+
+  @Column({ type: 'timestamptz', default: () => 'now()' })
+  createdAt: Date;
+
+  @Column({ type: 'boolean', default: false })
+  isDeleted: boolean;
 }

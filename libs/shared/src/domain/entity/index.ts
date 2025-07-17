@@ -11,6 +11,7 @@ import { BillerAddress } from './biller.address.entity';
 import { Biller } from './biller.entity';
 import { BillerMask } from './biller.mask.entity';
 import { BillerName } from './biller.name.entity';
+import { EventPublished } from './event.published.entity';
 import { EventStore } from './event.store.entity';
 import { EventSubscriber } from './event.subscriber.entity';
 import { LoanApplication } from './loan-application.entity';
@@ -28,7 +29,11 @@ import { TransferError } from './transfer.error.entity';
 import { UserRegistration } from './user.registration.entity';
 
 export * from './application.user.entity';
+export * from './biller.address.entity';
 export * from './biller.entity';
+export * from './biller.mask.entity';
+export * from './biller.name.entity';
+export * from './event.published.entity';
 export * from './event.store.entity';
 export * from './event.subscriber.entity';
 export * from './loan-application.entity';
@@ -47,9 +52,10 @@ export * from './user.registration.entity';
 
 // Add all Core Entities here (will get add the TypeORM entities[])
 // The glob pattern method does not seem to work properly, especially with WebPack
-export const SharedEntities = [
+export const EventEntities = [
   EventStore,
   EventSubscriber,
+  EventPublished,
 ];
 
 export const CoreEntities = [
@@ -72,9 +78,10 @@ export const PaymentEntities = [
   PaymentsRouteStep,
   PaymentsRoute,
   TransferError,
+  Biller,
   BillerName,
   BillerAddress,
   BillerMask,
 ];
 
-export const AllEntities = [...SharedEntities, ...CoreEntities, ...PaymentEntities];
+export const AllEntities = [...CoreEntities, ...PaymentEntities];

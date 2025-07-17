@@ -7,7 +7,7 @@
  */
 import { IZngEvent } from './izng-event';
 
-export interface IEventPublisher {
+export interface IEventPublisherService {
   publish<T>(event: IZngEvent): T;
 }
 

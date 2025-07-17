@@ -138,8 +138,8 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
     return this.actionResult(updateResult);
   }
 
-  //TODO: Mike, please review... thx
-  public async updateWithResult(id: Entity['id'], item: Partial<Entity>): Promise<Entity> {
+  public async updateWithResult(id: Entity['id'], item: Partial<Entity>): Promise<Entity | null> {
+    // Workaround to get the updated entity back from the database with the correct camelCase keys
     const returning = this.repository.metadata.columns
       .map(col => `"${col.databaseName}" AS "${col.propertyName}"`)
       .join(', ');
@@ -152,13 +152,13 @@ export class RepositoryBase<Entity extends EntityId<SingleIdEntityType | Composi
       .returning(returning)
       .execute();
 
-    // updated rows come back in `raw`
+    // updated rows come back in `raw` when doing an Update (stupid TypeORM!)
     const updatedRows = updateResult.raw as DeepPartial<Entity>[];
 
     // if you want full entities, you can re-hydrate them:
-    const updatedEntities = updatedRows.map(r => this.repository.create(r));
+    const updatedEntities = updatedRows?.map(r => this.repository.create(r)) || [];
 
-    return updatedEntities[0] || null;
+    return updatedEntities.length === 0 ? null : updatedEntities[0];
   }
 
   public async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
