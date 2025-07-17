@@ -257,24 +257,30 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
   }
 
   /**
-   * Calculates the payment details for a new payment.
+   * Calculates and returns a new loan payment object with default values.
    * 
-   * This method creates the basic payment structure with default values.
-   * Override this method in child classes to implement payment-type-specific
-   * calculation logic such as repayment scheduling or fee calculations.
+   * This method creates a partial loan payment object containing the calculated payment amount,
+   * attempt tracking for failed payments and other fields.
+   * The attempt counter is incremented based on the number of previously failed payment attempts
+   * for the same loan.
    * 
-   * @param loan - The loan entity for which to calculate the payment
-   * @returns Partial payment object ready for creation, or null if calculation failed
+   * @param loan - The loan object containing payment history and loan details
+   * @returns A partial loan payment object with calculated values, or null if payment cannot be calculated
+
    */
   protected calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null {
-    const { id: loanId } = loan;
+    const { id: loanId, payments } = loan;
     const amount = this.getPaymentAmount(loan);
-    // TODO: Attempts calc goes here
+    const failedAttempts = this.getSameFailedPayments(payments);
+    const attempt = failedAttempts && failedAttempts.length ? failedAttempts.length : 0;
+
     return {
       amount,
       loanId,
       type: this.paymentType,
       state: LoanPaymentStateCodes.Created,
+      attempt,
+      paymentNumber: null,
       scheduledAt: new Date(),
     };
   }

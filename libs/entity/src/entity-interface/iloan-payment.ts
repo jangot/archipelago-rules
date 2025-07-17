@@ -1,6 +1,6 @@
 import { EntityId } from '@library/shared/common/data';
-import { ILoan } from './iloan';
 import { LoanPaymentState, LoanPaymentType } from '../enum';
+import { ILoan } from './iloan';
 import { ILoanPaymentStep } from './iloan-payment-step';
 
 export interface ILoanPayment extends EntityId<string> {
@@ -22,6 +22,11 @@ export interface ILoanPayment extends EntityId<string> {
    * `refund` - Performing refund for the payment
    */
   type: LoanPaymentType;
+
+  /** Indicates how many times this Payment was attempted.
+   * Should be `0` for the first attempt, and incremented for each re-attempt.
+   */
+  attempt: number;
 
   /** Indicates current state of the Loan Payment.
    * `pending` - Payment is executed but not completed yet

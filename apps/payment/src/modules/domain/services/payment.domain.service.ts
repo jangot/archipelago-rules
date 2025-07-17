@@ -1,13 +1,12 @@
 import { ILoan, ILoanPayment, ILoanPaymentStep, IPaymentAccount, IPaymentsRoute, ITransfer } from '@library/entity/entity-interface';
-import { LoanPaymentStateCodes, LoanPaymentType, LoanPaymentTypeCodes, LoanType, PaymentStepState, TransferStateCodes } from '@library/entity/enum';
+import { LoanPaymentStateCodes, LoanPaymentType, LoanType, PaymentStepState, TransferStateCodes } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
-import { PlanPreviewOutputItem, TransferErrorDetails } from '@library/shared/type/lending';
+import { TransferErrorDetails } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentDataService } from '@payment/modules/data';
-import { v4 } from 'uuid';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -86,25 +85,6 @@ export class PaymentDomainService extends BaseDomainServices {
     this.logger.debug('Creating payment ', { input });
 
     return this.data.loanPayments.createPayment(input);
-  }
-
-  public async createRepaymentByPreview(preview: PlanPreviewOutputItem, loanId: string): Promise<ILoanPayment | null> {
-    this.logger.debug(`Creating repayment payment for loan ${loanId}`, { preview });
-
-    if (!preview || !preview.amount || !preview.paymentDate) {
-      this.logger.warn(`Invalid repayment preview for loan ${loanId}`);
-      return null;
-    }
-
-    return this.data.loanPayments.createPayment({
-      id: v4(),
-      amount: preview.amount,
-      loanId,
-      paymentNumber: preview.index,
-      type: LoanPaymentTypeCodes.Repayment,
-      state: LoanPaymentStateCodes.Created,
-      scheduledAt: preview.paymentDate,
-    });
   }
 
   public async completePayment(paymentId: string): Promise<boolean | null> {

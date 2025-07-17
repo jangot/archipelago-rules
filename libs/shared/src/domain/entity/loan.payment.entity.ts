@@ -26,6 +26,9 @@ export class LoanPayment implements ILoanPayment {
   @Column({ type: 'text' })
   type: LoanPaymentType;
 
+  @Column({ type: 'integer', default: 0 })
+  attempt: number;
+
   @Column({ type: 'text' })
   state: LoanPaymentState;
 

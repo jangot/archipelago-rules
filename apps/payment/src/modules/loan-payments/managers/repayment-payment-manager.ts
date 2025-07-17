@@ -86,10 +86,13 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
       return null;
     }
 
-    // TODO: Attempts calc goes here
+    const failedAttempts = this.getSameFailedPayments(payments);
+    const installmentAttempts = failedAttempts && failedAttempts.length ? failedAttempts.filter(a => a.paymentNumber === paymentNumber).length : 0;
+
     return {
       amount: nextPayment.amount,
       loanId,
+      attempt: installmentAttempts,
       paymentNumber,
       type: this.paymentType,
       state: LoanPaymentStateCodes.Created,
