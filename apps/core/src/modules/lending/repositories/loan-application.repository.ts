@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 
 import { ILoanApplicationRepository } from '@core/shared/interfaces/repositories/iloan-application.repository';
+import { LoanApplicationStates } from '@library/entity/enum';
 import { LoanApplication } from '@library/shared/domain/entity';
 
 @Injectable()
@@ -31,7 +32,7 @@ export class LoanApplicationRepository extends RepositoryBase<LoanApplication> i
     return this.repository.find({
       where: {
         borrowerId: userId,
-        status: 'pending',
+        status: LoanApplicationStates.Pending,
       },
       order: {
         createdAt: 'DESC',

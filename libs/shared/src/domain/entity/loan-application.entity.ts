@@ -1,5 +1,5 @@
 import { ILoanApplication } from '@library/entity/entity-interface';
-import { LoanType } from '@library/entity/enum';
+import { LoanApplicationStates, LoanApplicationStateType, LoanType } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Biller } from '@library/shared/domain/entity/biller.entity';
 import { PaymentAccount } from '@library/shared/domain/entity/payment.account.entity';
@@ -14,14 +14,13 @@ import {
 } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
 
-
 @Entity({ schema: DbSchemaCodes.Core })
 export class LoanApplication implements ILoanApplication {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'text', nullable: true, default: 'pending' }) //TODO: Should this be an enum for status
-  status: string | null;
+  @Column({ type: 'text', nullable: true, default: LoanApplicationStates.Pending }) //TODO: Should this be an enum for status
+  status: LoanApplicationStateType | null;
 
   // Biller
   @Column({ type: 'uuid', nullable: true })
