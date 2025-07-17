@@ -109,9 +109,47 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     return this.getSamePayments(payments, ['failed']);
   }
 
-  protected abstract canInitiatePayment(loan: ILoan): boolean;
+  protected canInitiatePayment(loan: ILoan): boolean {
+    const { id: loanId, payments } = loan;
+  
+    // Fast return for the first payment initiation
+    if (!payments || !payments.length) return true;
+  
+    // Check already initiated payments
+    const initiatedPayments = this.getSameInitiatedPayments(payments);
+    if (initiatedPayments && initiatedPayments.length) {
+      this.logger.error(`${this.paymentType} payment already initiated for loan ${loanId}`);
+      return false;
+    }
+  
+    // Check payment for existed completion
+    const completedPayments = this.getSameCompletedPayments(payments);
+    if (completedPayments && completedPayments.length) {
+      return this.canInitiateAfterCompleted(loan, completedPayments);
+    }
+  
+    return true;
+  }
 
-  protected abstract calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected canInitiateAfterCompleted(loan: ILoan, completedPayments: ILoanPayment[]): boolean {
+    const { id: loanId } = loan;
+    this.logger.error(`${this.paymentType} payment already completed for loan ${loanId}`);
+    return false; // Default behavior for single-payment types
+  }
+
+  protected calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null {
+    const { id: loanId } = loan;
+    const amount = this.getPaymentAmount(loan);
+    // TODO: Attemts calc goes here
+    return {
+      amount,
+      loanId,
+      type: this.paymentType,
+      state: LoanPaymentStateCodes.Created,
+      scheduledAt: new Date(),
+    };
+  }
 
   /**
    * Gets payments of the current payment type that match the specified states
@@ -124,13 +162,23 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     return payments.filter(payment => payment.type === this.paymentType && statesFilter.includes(payment.state));
   }
 
-  /**
-   * Gets the source and target payment account IDs for this payment type
-   * Override this method in child classes to provide specific account mapping logic
-   * @param loan The loan for which to get payment accounts
-   * @returns Object containing fromAccountId and toAccountId
-   */
-  protected abstract getPaymentAccounts(loan: ILoan): Promise<PaymentAccountPair>;
+  protected async getPaymentAccounts(loan: ILoan): Promise<PaymentAccountPair> {
+    const accountPair = this.getAccountPairForPaymentType(loan);
+  
+    if (!accountPair.fromAccountId) {
+      this.logger.warn(`Source account ID is missing for loan ${loan.id}`);
+      return { fromAccountId: null, toAccountId: null };
+    }
+
+    if (!accountPair.toAccountId) {
+      this.logger.warn(`Target account ID is missing for loan ${loan.id}`);
+      return { fromAccountId: null, toAccountId: null };
+    }
+
+    return accountPair;
+  }
+
+  protected abstract getAccountPairForPaymentType(loan: ILoan): PaymentAccountPair;
 
   /**
    * Gets the payment amount for this payment type

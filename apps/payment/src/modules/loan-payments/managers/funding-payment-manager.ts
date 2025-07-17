@@ -1,8 +1,8 @@
-import { ILoan, ILoanPayment, IPaymentsRouteStep } from '@library/entity/entity-interface';
-import { LoanPaymentStateCodes, LoanPaymentTypeCodes } from '@library/entity/enum';
+import { ILoan, IPaymentsRouteStep } from '@library/entity/entity-interface';
+import { LoanPaymentTypeCodes } from '@library/entity/enum';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
-import { BaseLoanPaymentManager } from './base-loan-payment-manager';
+import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
 
 /**
  * Handles loan funding payments
@@ -13,66 +13,12 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
     super(paymentDomainService, LoanPaymentTypeCodes.Funding);
   }
 
-  /**
-   * Gets the source and target payment account IDs for funding payment
-   * @param loan The loan for which to get payment accounts
-   * @returns Object containing fromAccountId and toAccountId
-   */
-  protected async getPaymentAccounts(loan: ILoan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
-    const { lenderAccountId, biller } = loan;
-    
-    if (!lenderAccountId) {
-      this.logger.warn(`Lender account ID is missing for loan ${loan.id}`);
-      return { fromAccountId: null, toAccountId: null };
-    }
-
-    if (!biller || !biller.paymentAccountId) {
-      this.logger.warn(`Biller or Biller's payment Account is missing for loan ${loan.id}`);
-      return { fromAccountId: null, toAccountId: null };
-    }
-
+  protected getAccountPairForPaymentType(loan: ILoan): PaymentAccountPair {
     return { 
-      fromAccountId: lenderAccountId,
-      toAccountId: biller.paymentAccountId,
+      fromAccountId: loan.lenderAccountId,
+      toAccountId: loan.biller?.paymentAccountId || null,
     };
   }
-
-  protected canInitiatePayment(loan: ILoan): boolean {
-    const { id: loanId, payments } = loan;
-  
-    // Fast return for the first payment initiation
-    if (!payments || !payments.length) return true;
-  
-    // Check already initiated payments
-    const initiatedPayments = this.getSameInitiatedPayments(payments);
-    if (initiatedPayments && initiatedPayments.length) {
-      this.logger.error(`Funding payment already initiated for loan ${loanId}`);
-      return false;
-    }
-  
-    // Check payment for existed completion
-    const completedPayments = this.getSameCompletedPayments(payments);
-    if (completedPayments && completedPayments.length) {
-      this.logger.error(`Funding payment already completed for loan ${loanId}`);
-      return false;
-    }
-  
-    return true;
-  }
-  
-  protected calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null {
-    const { id: loanId } = loan;
-    const amount = this.getPaymentAmount(loan);
-    // TODO: Attemts calc goes here
-    return {
-      amount,
-      loanId,
-      type: this.paymentType,
-      state: LoanPaymentStateCodes.Created,
-      scheduledAt: new Date(),
-    };
-  }
-  
 
   /**
    * Gets the route steps to apply for funding payment

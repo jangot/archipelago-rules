@@ -4,7 +4,7 @@ import { ScheduleService } from '@library/shared/service';
 import { PlanPreviewInput, PlanPreviewOutputItem, RepaymentPlanPaidPayment } from '@library/shared/type/lending';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
-import { BaseLoanPaymentManager } from './base-loan-payment-manager';
+import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
 
 /**
  * Handles loan repayment payments
@@ -15,54 +15,19 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
     super(paymentDomainService, LoanPaymentTypeCodes.Repayment);
   }
 
-  /**
-   * Gets the source and target payment account IDs for repayment payment
-   * For repayments, the borrower pays to the lender (reverse direction from other payments)
-   * @param loan The loan for which to get payment accounts
-   * @returns Object containing fromAccountId and toAccountId
-   */
-  protected async getPaymentAccounts(loan: ILoan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
-    const { lenderAccountId, borrowerAccountId } = loan;
-    
-    if (!lenderAccountId) {
-      this.logger.warn(`Lender account ID is missing for loan ${loan.id}`);
-      return { fromAccountId: null, toAccountId: null };
-    }
-
-    if (!borrowerAccountId) {
-      this.logger.warn(`Borrower account ID is missing for loan ${loan.id}`);
-      return { fromAccountId: null, toAccountId: null };
-    }
-
+  protected getAccountPairForPaymentType(loan: ILoan): PaymentAccountPair {
     return { 
-      fromAccountId: borrowerAccountId, // Note: For repayment, borrower is the source
-      toAccountId: lenderAccountId,      // And lender is the recipient
+      fromAccountId: loan.borrowerAccountId,
+      toAccountId: loan.lenderAccountId,
     };
   }
 
-  protected canInitiatePayment(loan: ILoan): boolean {
-    const { id: loanId, payments } = loan;
-    
-    // Fast return for the first payment initiation
-    if (!payments || !payments.length) return true;
-    
-    // Check already initiated payments
-    const initiatedPayments = this.getSameInitiatedPayments(payments);
-    if (initiatedPayments && initiatedPayments.length) {
-      this.logger.error(`Repayment payment already initiated for loan ${loanId}`);
+  protected canInitiateWhenPaymentsExist(loan: ILoan, completedPayments: ILoanPayment[]): boolean {
+    const { id: loanId, paymentsCount } = loan;
+    const highestPaymentNumber = Math.max(...completedPayments.map(p => p.paymentNumber || 0));
+    if (highestPaymentNumber >= paymentsCount) { 
+      this.logger.error(`Loan ${loanId} already has all payments completed or initiated`);
       return false;
-    }
-
-    // Check payment for existed completion
-    const completedPayments = this.getSameCompletedPayments(payments);
-    if (completedPayments && completedPayments.length) {
-      // Payments count overflow must be checked before the new payment initiation call
-      // Buit to keep consistency we check it here as well
-      const highestPaymentNumber = Math.max(...completedPayments.map(p => p.paymentNumber || 0));
-      if (highestPaymentNumber >= loan.paymentsCount) { 
-        this.logger.error(`Loan ${loanId} already has all payments completed or initiated`);
-        return false;
-      }
     }
     return true;
   }
