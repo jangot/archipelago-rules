@@ -72,7 +72,12 @@ export interface ILoan extends EntityId<string> {
   /** Total amount of the fee.
    * If it is splitted to few payments - need to keep track on that
    */
-  feeAmount: number | null;
+  feeAmount: number;
+
+  /** Amount of principal left to be paid. Calculates initialy on creation, updates on repayments success */
+  principalAmountLeft: number;
+  /** Amount of fee left to be paid. Calculates initialy on creation, updates on repayments success */
+  feeAmountLeft: number;
   // #endregion
 
   // #region Payment Account Assignment
@@ -101,28 +106,4 @@ export interface ILoan extends EntityId<string> {
 
   currentError: ITransferError | null; // Current error of the Loan
   retryCount: number; // Number of retries for the Loan. Includes only errors reasoned by personal accounts
-
-
-
-  // // #region Loan State Tracking
-  // // For Loan State I suggest to have a separate table, which will contain historical entries of Loan state changes
-  // // No matter was it success or failure - we are interested in storing this information anyway
-  // // It will contain:
-  // /** 'id' not 'stateId'. PK UUID */
-  // stateId: string;
-  // /** FK to Loan */
-  // loanId: string;
-  // /** 'state' not 'loanState'. Enum. At which Loan state event happened */
-  // loanState: string;
-  // /** Enum. What event happened */
-  // event: string;
-  // /** Timestamp of event happened */
-  // timestamp: Date;
-  // /** Optional - User resulted an event */
-  // userId: string | null;
-  // /** Optional - Transfer whith which event happened */
-  // transferId: string | null;
-  // /** Optional - JSON with any extra event data payload */
-  // data: object | null;
-  // // #endregion
 }

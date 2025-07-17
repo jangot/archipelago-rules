@@ -127,6 +127,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
     // Map paid payments to the format required for remaining repayments calculation
     const paidRepayments: RepaymentPlanPaidPayment[] = paidPayments.map(p => ({
       amount: p.amount,
+      feeAmount: p.feeAmount || 0,
       paymentDate: p.scheduledAt || p.createdAt,
       index: p.paymentNumber || 1,
     }));

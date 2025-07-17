@@ -6,6 +6,7 @@ import { ILoanPaymentStep } from './iloan-payment-step';
 export interface ILoanPayment extends EntityId<string> {
   id: string; // UUID
   amount: number;
+  feeAmount: number;
 
   loanId: string;
   loan: ILoan;

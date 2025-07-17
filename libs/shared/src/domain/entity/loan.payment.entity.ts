@@ -13,6 +13,9 @@ export class LoanPayment implements ILoanPayment {
   @Column({ type: 'decimal' })
   amount: number;
 
+  @Column({ type: 'decimal', default: 0 })
+  feeAmount: number;
+
   @Column({ type: 'uuid' })
   loanId: string;
 
