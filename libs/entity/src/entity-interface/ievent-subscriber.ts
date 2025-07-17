@@ -2,8 +2,11 @@ import { EventSubscriberServiceName } from '../enum/event-subscriber-service-nam
 
 export interface IEventSubscriber {
   id: string;
-  name: string;
-  subscriber: EventSubscriberServiceName;
-  description: string;
+  name?: string | null;
+  eventName: string;
+  subscriberService: EventSubscriberServiceName;
+  description?: string | null;
   destination: string;
+  createdAt: Date;
+  isDeleted: boolean;
 }

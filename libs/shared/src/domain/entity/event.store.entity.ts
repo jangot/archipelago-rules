@@ -29,4 +29,10 @@ export class EventStore implements IEventStore {
   // CRC32 of the event name + event payload + causation_id || '' + correlation_id || ''
   @Column({ type: 'int', nullable: false })
   deduplication_id: number;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  completedAt?: Date | null;
+
+  @Column({ type: 'boolean', default: false })
+  isCompleted: boolean;
 }

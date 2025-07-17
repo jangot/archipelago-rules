@@ -92,7 +92,7 @@ export interface IRepositoryBase<Entity extends EntityId<SingleIdEntityType | Co
    * @memberof IRepositoryBase
    * @see {@link https://orkhan.gitbook.io/typeorm/docs/update-query-builder TypeORM Update Query Builder Documentation}
    */
-  updateWithResult(id: Entity['id'], item: Partial<Entity>): Promise<Entity>;
+  updateWithResult(id: Entity['id'], item: Partial<Entity>): Promise<Entity | null>;
 
   /**
    * Finds the first entity that matches the given search options.

@@ -24,6 +24,24 @@ export class LoanApplicationsController {
 
   constructor(private readonly loanApplicationService: LoanApplicationsService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'Get all loan applications', description: 'Get all loan applications' })
+  public async getAllLoanApplications(@Req() request: IRequest): Promise<LoanApplicationResponseDto[]> {
+    const userId = request.user!.id;
+    this.logger.debug(`Getting all loan applications for user ID: ${userId}`);
+
+    return this.loanApplicationService.getAllLoanApplicationsByUserId(userId);
+  }
+
+  @Get('pending')
+  @ApiOperation({ summary: 'Get pending loan applications', description: 'Get pending loan applications' })
+  public async getPendingLoanApplications(@Req() request: IRequest): Promise<LoanApplicationResponseDto[]> {
+    const userId = request.user!.id;
+    this.logger.debug(`Getting pending loan applications for user ID: ${userId}`);
+
+    return this.loanApplicationService.getPendingLoanApplicationsByUserId(userId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a loan application by ID ', description: 'Get a loan application by ID' })
   @ApiOkResponse({ description: 'Loan application', type: LoanApplicationResponseDto, isArray: false })

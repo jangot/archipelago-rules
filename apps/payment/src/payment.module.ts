@@ -1,5 +1,6 @@
 import { SharedModule } from '@library/shared';
 import { HealthModule } from '@library/shared/common/health/health.module';
+import { EventModule } from '@library/shared/modules/events/event.module';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
@@ -18,8 +19,9 @@ import { PaymentService } from './payment.service';
     CqrsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     GracefulShutdownModule.forRoot(),
-    // Bring in Shared stuff like IEventPublisher, pino Logger properly configured, more to follow
+    // Bring in Shared stuff like pino Logger properly configured, more to follow
     SharedModule.forRoot([PaymentController]),
+    EventModule.forRoot('payment', '<url to payment event handler endpoint>'),
     HealthModule,
     DomainModule,
     ManagementModule,

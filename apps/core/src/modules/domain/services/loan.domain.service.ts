@@ -1,6 +1,7 @@
 import { CoreDataService } from '@core/modules/data';
-import { IBiller, ILoan, ILoanApplication } from '@library/entity/entity-interface';
-import { BillerTypeCodes, LoanPaymentFrequency, LoanStateCodes } from '@library/entity/enum';
+import { ActionNotAllowedException } from '@core/modules/lending/exceptions';
+import { IApplicationUser, IBiller, ILoan, ILoanApplication, ILoanInvitee } from '@library/entity/entity-interface';
+import { BillerTypeCodes, ContactType, LoanAssignIntent, LoanAssignIntentCodes, LoanInviteeTypeCodes, LoanStateCodes, RegistrationStatus } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
 import { LoanApplication } from '@library/shared/domain/entity';
@@ -90,18 +91,26 @@ export class LoanDomainService extends BaseDomainServices {
     return this.data.loanApplications.getById(id);
   }
 
+  public async getAllLoanApplicationsByUserId(userId: string): Promise<ILoanApplication[]> {
+    return this.data.loanApplications.getAllByUserId(userId);
+  }
+
+  public async getPendingLoanApplicationsByUserId(userId: string): Promise<ILoanApplication[]> {
+    return this.data.loanApplications.getPendingLoanApplicationsByUserId(userId);
+  }
+
   public async createLoanApplication(data: Partial<LoanApplication>): Promise<ILoanApplication> {
-    return  this.data.loanApplications.insertWithResult(data);
+    return this.data.loanApplications.insertWithResult(data);
   }
 
   public async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<ILoanApplication> {
     // Prevent borrowerId from being changed for v1
     const { borrowerId, ...updateData } = data;
-    
+
     if (borrowerId !== undefined) {
       this.logger.debug(`updateLoanApplication: borrowerId change attempted but ignored for loan application ${id}`);
     }
-    
+
     return this.data.loanApplications.updateWithResult(id, updateData);
   }
 

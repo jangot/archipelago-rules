@@ -2,7 +2,7 @@ import { IBiller, ILoan, IPaymentAccount } from '@library/entity/entity-interfac
 import { LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
-import { IEventPublisher } from '@library/shared/common/event/interface/ieventpublisher';
+import { EventManager } from '@library/shared/common/event/event-manager';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { Loan } from '@library/shared/domain/entity';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
@@ -21,8 +21,7 @@ export class LoansService {
     
   constructor(
     private readonly domainServices: IDomainServices, 
-    @Inject(IEventPublisher)
-    private readonly eventPublisher: IEventPublisher,
+    private readonly eventManager: EventManager,
     private readonly config: ConfigService,
     @Inject(ILoanStateManagersFactory)
     private readonly stateManagerFactory: ILoanStateManagersFactory) {}

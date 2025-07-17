@@ -1,6 +1,5 @@
 import { DbSchemaCodes, TypeOrmModuleConfiguration } from '@library/shared/common/data/dbcommon.config';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
-import { SharedEntities } from '@library/shared/domain/entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationDefinition } from '../domain/entity/notification.definition.entity';
@@ -19,7 +18,7 @@ export const NotificationEntities = [
   imports: [
     // schema: notifications
     TypeOrmModule.forRootAsync(TypeOrmModuleConfiguration({
-      entities: [...SharedEntities, ...NotificationEntities],
+      entities: [...NotificationEntities],
       schema: DbSchemaCodes.Notification,
     })),
 

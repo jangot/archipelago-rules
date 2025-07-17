@@ -34,6 +34,24 @@ export class LoanApplicationsService {
     return DtoMapper.toDto(result, LoanApplicationResponseDto);
   }
 
+  public async getAllLoanApplicationsByUserId(userId: string): Promise<LoanApplicationResponseDto[]> {
+    this.logger.debug(`getAllLoanApplications: Getting all loan applications for user ID: ${userId}`);
+
+    const result = await this.domainServices.loanServices.getAllLoanApplicationsByUserId(userId);
+
+    return result.map((r) => DtoMapper.toDto(r, LoanApplicationResponseDto)).filter((dto) => dto !== null);
+  }
+
+  public async getPendingLoanApplicationsByUserId(userId: string): Promise<LoanApplicationResponseDto[]> {
+    this.logger.debug(`getPendingLoanApplicationsByUserId: Getting pending loan applications for user ID: ${userId}`);
+
+    const result = await this.domainServices.loanServices.getPendingLoanApplicationsByUserId(userId);
+
+    return result.map((r) => DtoMapper.toDto(r, LoanApplicationResponseDto)).filter((dto) => dto !== null);
+  }
+
+  //TODO: Mike, can you review this to confirm the work is done at the right level?
+
   /**
    * Creates a new loan application for the specified user.
    * Throws EntityFailedToUpdateException if creation fails.
