@@ -5,14 +5,33 @@ import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
 
 /**
- * Handles loan funding payments
+ * FundingPaymentManager handles the first phase of loan funding where lenders
+ * transfer loan capital to Zirtue's holding account. This implements the 
+ * Lender → Zirtue payment flow and manages route step separation for multi-step
+ * funding/disbursement processes.
+ * 
+ * Key responsibilities:
+ * - Process lender-to-Zirtue fund transfers
+ * - Calculate total funding amount (principal + fees)
+ * - Handle first step of multi-step payment routes
+ * - Coordinate with DisbursementPaymentManager for complete loan funding
  */
 @Injectable()
 export class FundingPaymentManager extends BaseLoanPaymentManager {
+
   constructor(protected readonly paymentDomainService: PaymentDomainService) {
     super(paymentDomainService, LoanPaymentTypeCodes.Funding);
   }
 
+  /**
+   * Resolves account pair for the Lender → Zirtue funding payment flow.
+   * The source account is always the lender's account, while the target
+   * should be Zirtue's holding account (currently using biller account
+   * as temporary implementation).
+   * 
+   * @param loan - Loan entity containing account information
+   * @returns Payment account pair with lender as source and Zirtue as target
+   */
   protected getAccountPairForPaymentType(loan: ILoan): PaymentAccountPair {
     return { 
       fromAccountId: loan.lenderAccountId,
@@ -21,11 +40,14 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
   }
 
   /**
-   * Gets the route steps to apply for funding payment
-   * For Funding + Disbursement route:
-   * - If route has N steps, then Funding uses only the first step
-   * @param routeSteps Steps from the payment route
-   * @returns The steps to apply for this payment type
+   * Filters route steps to only include the funding phase for multi-step routes.
+   * In combined Funding + Disbursement routes, funding handles only the first
+   * step (Lender → Zirtue), while disbursement handles subsequent steps
+   * (Zirtue → Biller). This separation allows independent processing and
+   * tracking of each payment phase.
+   * 
+   * @param routeSteps - Complete array of route steps from payment route
+   * @returns Array containing only the first step, or empty if single-step route
    */
   protected getStepsToApply(routeSteps: IPaymentsRouteStep[]): IPaymentsRouteStep[] {
     if (routeSteps.length > 1) {
@@ -34,6 +56,15 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
     return [];
   }
 
+  /**
+   * Calculates the total funding amount including loan principal and all fees.
+   * Lenders must provide the complete amount upfront, which includes processing
+   * fees and service charges in addition to the loan principal that will be
+   * disbursed to the biller.
+   * 
+   * @param loan - Loan entity containing amount and fee information
+   * @returns Total funding amount (principal + fees)
+   */
   protected getPaymentAmount(loan: ILoan): number {
     const { feeAmount, amount } = loan;
     return amount + (feeAmount || 0);

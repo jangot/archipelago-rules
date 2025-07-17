@@ -7,14 +7,34 @@ import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
 
 /**
- * Handles loan repayment payments
+ * RepaymentPaymentManager handles scheduled loan repayment payments where
+ * borrowers make installment payments directly to lenders according to the
+ * established repayment schedule. This implements the Borrower → Lender
+ * payment flow and manages complex repayment scheduling logic.
+ * 
+ * Key responsibilities:
+ * - Process borrower-to-lender repayment transfers
+ * - Calculate next payment amounts using repayment schedule
+ * - Allow multiple repayment initiations until loan is fully paid
+ * - Track payment numbers and validate against total payment count
+ * - Integrate with ScheduleService for accurate payment calculations
  */
 @Injectable()
 export class RepaymentPaymentManager extends BaseLoanPaymentManager {
+
   constructor(protected readonly paymentDomainService: PaymentDomainService) {
     super(paymentDomainService, LoanPaymentTypeCodes.Repayment);
   }
 
+  /**
+   * Resolves account pair for the Borrower → Lender repayment payment flow.
+   * Repayments flow directly from the borrower's account to the lender's
+   * account, bypassing Zirtue's holding accounts since this is a direct
+   * peer-to-peer repayment transaction.
+   * 
+   * @param loan - Loan entity containing borrower and lender account information
+   * @returns Payment account pair with borrower as source and lender as target
+   */
   protected getAccountPairForPaymentType(loan: ILoan): PaymentAccountPair {
     return { 
       fromAccountId: loan.borrowerAccountId,
@@ -22,7 +42,18 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
     };
   }
 
-  protected canInitiateWhenPaymentsExist(loan: ILoan, completedPayments: ILoanPayment[]): boolean {
+  /**
+   * Determines if another repayment can be initiated after previous completions.
+   * Unlike single-payment types (funding, disbursement), repayments allow
+   * multiple initiations until all scheduled payments are completed. This
+   * method validates against the loan's total payment count to prevent
+   * over-payment and ensures payment number sequencing.
+   * 
+   * @param loan - Loan entity with payment count configuration
+   * @param completedPayments - Array of already completed repayment payments
+   * @returns True if more payments can be initiated, false if loan is fully paid
+   */
+  protected canInitiateAfterCompleted(loan: ILoan, completedPayments: ILoanPayment[]): boolean {
     const { id: loanId, paymentsCount } = loan;
     const highestPaymentNumber = Math.max(...completedPayments.map(p => p.paymentNumber || 0));
     if (highestPaymentNumber >= paymentsCount) { 
@@ -32,6 +63,16 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
     return true;
   }
 
+  /**
+   * Calculates the next repayment payment using the loan's repayment schedule.
+   * This method integrates with ScheduleService to determine accurate payment
+   * amounts and dates based on payment history. It handles payment number
+   * sequencing and schedules the next installment according to the loan's
+   * payment frequency and remaining balance.
+   * 
+   * @param loan - Loan entity with repayment configuration and payment history
+   * @returns Partial payment object with calculated amount and schedule, or null if calculation fails
+   */
   protected calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null {
     const { id: loanId, payments } = loan;
 
@@ -45,7 +86,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
       return null;
     }
 
-    // TODO: Attemts calc goes here
+    // TODO: Attempts calc goes here
     return {
       amount: nextPayment.amount,
       loanId,
@@ -57,10 +98,15 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
   }
 
   /**
-   * Gets the next payment for the loan based on the current state and paid payments
-   * @param loan The loan for which to get the next payment
-   * @param paidPayments The list of payments that have already been made
-   * @returns The next payment to be made, or null if it cannot be determined
+   * Calculates the next scheduled payment using the loan's repayment plan and
+   * payment history. This method builds the current loan state, maps completed
+   * payments to the required format, and uses ScheduleService to calculate
+   * remaining repayments. It returns the earliest remaining payment based on
+   * payment index to ensure proper payment sequencing.
+   * 
+   * @param loan - Loan entity with repayment configuration
+   * @param paidPayments - Array of completed repayment payments for history
+   * @returns Next scheduled payment with amount and date, or null if calculation fails
    */
   private getNextPayment(loan: ILoan, paidPayments: ILoanPayment[]): PlanPreviewOutputItem | null {
     const { id: loanId, amount, paymentsCount, paymentFrequency, feeMode, feeAmount, createdAt } = loan;
@@ -94,6 +140,4 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
       current.index < lowest.index ? current : lowest
     );
   }
-
-
 }
