@@ -1,8 +1,9 @@
+import { ILoanApplication } from '@library/entity/entity-interface';
 import { IRepositoryBase } from '@library/shared/common/data/ibase.repository';
-import { LoanApplication } from '@library/shared/domain/entity';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ILoanApplicationRepository extends IRepositoryBase<LoanApplication> {
+export interface ILoanApplicationRepository extends IRepositoryBase<ILoanApplication> {
+  getAllByUserId(userId: string): Promise<ILoanApplication[]>;
+  getPendingLoanApplications(userId: string): Promise<ILoanApplication[]>;
 }
 
 export const ILoanApplicationRepository = Symbol('ILoanApplicationRepository');

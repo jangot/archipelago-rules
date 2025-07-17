@@ -14,12 +14,13 @@ import {
 } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
 
+
 @Entity({ schema: DbSchemaCodes.Core })
 export class LoanApplication implements ILoanApplication {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, default: 'pending' }) //TODO: Should this be an enum for status
   status: string | null;
 
   // Biller
