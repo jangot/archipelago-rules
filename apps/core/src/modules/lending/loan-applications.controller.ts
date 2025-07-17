@@ -31,7 +31,7 @@ export class LoanApplicationsController {
     const userId = request.user!.id;
     this.logger.debug(`Getting pending loan applications for user ID: ${userId}`);
 
-    return this.loanApplicationService.getPendingLoanApplications(userId);
+    return this.loanApplicationService.getPendingLoanApplicationsByUserId(userId);
   }
 
   @Get(':id')

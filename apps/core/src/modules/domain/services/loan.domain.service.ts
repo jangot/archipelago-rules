@@ -278,8 +278,8 @@ export class LoanDomainService extends BaseDomainServices {
     return this.data.loanApplications.getAllByUserId(userId);
   }
 
-  public async getPendingLoanApplications(userId: string): Promise<ILoanApplication[]> {
-    return this.data.loanApplications.getPendingLoanApplications(userId);
+  public async getPendingLoanApplicationsByUserId(userId: string): Promise<ILoanApplication[]> {
+    return this.data.loanApplications.getPendingLoanApplicationsByUserId(userId);
   }
 
   public async createLoanApplication(data: Partial<LoanApplication>): Promise<ILoanApplication> {

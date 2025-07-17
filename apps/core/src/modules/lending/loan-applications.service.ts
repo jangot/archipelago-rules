@@ -33,10 +33,10 @@ export class LoanApplicationsService {
     return result.map((r) => DtoMapper.toDto(r, LoanApplicationResponseDto)).filter((dto) => dto !== null);
   }
 
-  public async getPendingLoanApplications(userId: string): Promise<LoanApplicationResponseDto[]> {
-    this.logger.debug(`getPendingLoanApplications: Getting pending loan applications for user ID: ${userId}`);
+  public async getPendingLoanApplicationsByUserId(userId: string): Promise<LoanApplicationResponseDto[]> {
+    this.logger.debug(`getPendingLoanApplicationsByUserId: Getting pending loan applications for user ID: ${userId}`);
 
-    const result = await this.domainServices.loanServices.getPendingLoanApplications(userId);
+    const result = await this.domainServices.loanServices.getPendingLoanApplicationsByUserId(userId);
 
     return result.map((r) => DtoMapper.toDto(r, LoanApplicationResponseDto)).filter((dto) => dto !== null);
   }

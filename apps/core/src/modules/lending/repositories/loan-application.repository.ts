@@ -27,7 +27,7 @@ export class LoanApplicationRepository extends RepositoryBase<LoanApplication> i
     });
   }
 
-  public async getPendingLoanApplications(userId: string): Promise<LoanApplication[]> {
+  public async getPendingLoanApplicationsByUserId(userId: string): Promise<LoanApplication[]> {
     return this.repository.find({
       where: {
         borrowerId: userId,
