@@ -1,11 +1,10 @@
 import { CoreDataService } from '@core/modules/data';
-import { ActionNotAllowedException } from '@core/modules/lending/exceptions';
 import { IBiller, ILoan, ILoanApplication } from '@library/entity/entity-interface';
 import { BillerTypeCodes, LoanPaymentFrequency, LoanStateCodes } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
-import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
 import { LoanApplication } from '@library/shared/domain/entity';
-import { LOAN_RELATIONS, LoanRelation } from '@library/shared/domain/entity/relation';
+import { LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
