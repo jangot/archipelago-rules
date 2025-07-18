@@ -1,7 +1,10 @@
 import { CoreDataService } from '@core/modules/data';
-import { ActionNotAllowedException } from '@core/modules/lending/exceptions';
-import { IApplicationUser, IBiller, ILoan, ILoanApplication, ILoanInvitee } from '@library/entity/entity-interface';
-import { BillerTypeCodes, ContactType, LoanAssignIntent, LoanAssignIntentCodes, LoanInviteeTypeCodes, LoanStateCodes, RegistrationStatus } from '@library/entity/enum';
+import { IBiller, ILoan, ILoanApplication } from '@library/entity/entity-interface';
+import {
+  BillerTypeCodes,
+  LoanPaymentFrequency,
+  LoanStateCodes,
+} from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
 import { LoanApplication } from '@library/shared/domain/entity';
@@ -103,7 +106,7 @@ export class LoanDomainService extends BaseDomainServices {
     return this.data.loanApplications.insertWithResult(data);
   }
 
-  public async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<ILoanApplication> {
+  public async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<ILoanApplication | null> {
     // Prevent borrowerId from being changed for v1
     const { borrowerId, ...updateData } = data;
 
