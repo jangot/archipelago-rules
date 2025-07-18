@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class TransferRepository extends RepositoryBase<Transfer> {
+  private readonly logger: Logger = new Logger(TransferRepository.name);
   constructor(@InjectRepository(Transfer) protected readonly repository: Repository<Transfer>) {
     super(repository, Transfer);
   }
