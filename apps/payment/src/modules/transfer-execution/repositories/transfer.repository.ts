@@ -2,7 +2,7 @@ import { TransferStateCodes } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Transfer } from '@library/shared/domain/entity';
 import { TransferRelation } from '@library/shared/domain/entity/relation';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
