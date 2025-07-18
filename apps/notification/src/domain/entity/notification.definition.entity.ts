@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { INotificationDefinition } from '@library/entity/entity-interface';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 /**
  * Entity representing a notification definition
@@ -7,7 +6,7 @@ import { INotificationDefinition } from '@library/entity/entity-interface';
  * @description This entity stores notification definitions used by the notification system
  */
 @Entity('notification_definitions', { schema: 'notifications' })
-export class NotificationDefinition implements INotificationDefinition {
+export class NotificationDefinition {
   /**
    * Unique identifier for the notification definition
    */

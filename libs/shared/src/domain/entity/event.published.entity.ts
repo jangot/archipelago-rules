@@ -1,9 +1,8 @@
-import { IEventPublished } from '@library/entity/entity-interface';
 import { EventPublishedStatus } from '@library/entity/enum/event-published-status';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('event_published', { schema: 'notifications' })
-export class EventPublished implements IEventPublished {
+export class EventPublished {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

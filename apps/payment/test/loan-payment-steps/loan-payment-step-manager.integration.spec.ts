@@ -4,10 +4,6 @@ import { addTransactionalDataSource, initializeTransactionalContext, StorageDriv
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  ILoanPaymentStep,
-  IPaymentAccount,
-} from '@library/entity/entity-interface';
-import {
   LoanPaymentStateCodes,
   LoanPaymentTypeCodes,
   PaymentAccountOwnershipTypeCodes,
@@ -17,7 +13,7 @@ import {
   PaymentStepStateCodes,
 } from '@library/entity/enum';
 import { EntityNotFoundException } from '@library/shared/common/exception/domain';
-import { AllEntities } from '@library/shared/domain/entity';
+import { AllEntities, LoanPaymentStep, PaymentAccount } from '@library/shared/domain/entity';
 import {
   FOUNDATION_TEST_IDS,
   memoryDataSourceSingle,
@@ -108,7 +104,7 @@ describe('Loan Payment Step Manager Integration', () => {
 
   // #region test data generation
 
-  async function createTestSourceAccount(): Promise<IPaymentAccount> {
+  async function createTestSourceAccount(): Promise<PaymentAccount> {
     const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
       type: PaymentAccountTypeCodes.BankAccount,
       ownership: PaymentAccountOwnershipTypeCodes.Personal,
@@ -133,7 +129,7 @@ describe('Loan Payment Step Manager Integration', () => {
     return account;
   }
 
-  async function createTestDestinationAccount(): Promise<IPaymentAccount> {
+  async function createTestDestinationAccount(): Promise<PaymentAccount> {
     const account = await domainServices.paymentServices.addPaymentAccount(testUserId, {
       type: PaymentAccountTypeCodes.BankAccount,
       ownership: PaymentAccountOwnershipTypeCodes.Internal,
@@ -157,7 +153,7 @@ describe('Loan Payment Step Manager Integration', () => {
 
   async function createTestPaymentStep(
     state: typeof PaymentStepStateCodes[keyof typeof PaymentStepStateCodes] = PaymentStepStateCodes.Created
-  ): Promise<ILoanPaymentStep> {
+  ): Promise<LoanPaymentStep> {
     // Create payment accounts
     const sourceAccount = await createTestSourceAccount();
     const destAccount = await createTestDestinationAccount();
@@ -197,7 +193,7 @@ describe('Loan Payment Step Manager Integration', () => {
   async function createTestPaymentWithMultipleSteps(
     stepCount: number = 2,
     baseAmount: number = 1000
-  ): Promise<{ payment: any; steps: ILoanPaymentStep[] }> {
+  ): Promise<{ payment: any; steps: LoanPaymentStep[] }> {
     // Create payment accounts
     const sourceAccount = await createTestSourceAccount();
     const destAccount = await createTestDestinationAccount();
@@ -238,7 +234,7 @@ describe('Loan Payment Step Manager Integration', () => {
     sourceAccountType: typeof PaymentAccountOwnershipTypeCodes[keyof typeof PaymentAccountOwnershipTypeCodes],
     targetAccountType: typeof PaymentAccountOwnershipTypeCodes[keyof typeof PaymentAccountOwnershipTypeCodes],
     state: typeof PaymentStepStateCodes[keyof typeof PaymentStepStateCodes] = PaymentStepStateCodes.Created
-  ): Promise<ILoanPaymentStep> {
+  ): Promise<LoanPaymentStep> {
     // Create custom payment accounts
     const sourceAccount = await domainServices.paymentServices.addPaymentAccount(testUserId, {
       type: PaymentAccountTypeCodes.BankAccount,
@@ -308,7 +304,7 @@ describe('Loan Payment Step Manager Integration', () => {
   // #endregion
 
   describe('LoanPaymentStepFactory', () => {
-    let testStep: ILoanPaymentStep;
+    let testStep: LoanPaymentStep;
 
     beforeEach(async () => {
       // Arrange - Create test payment step for each test
@@ -405,7 +401,7 @@ describe('Loan Payment Step Manager Integration', () => {
   });
 
   describe('CreatedStepManager', () => {
-    let testStep: ILoanPaymentStep;
+    let testStep: LoanPaymentStep;
 
     beforeEach(async () => {
       // Arrange - Create test payment step for each test
@@ -473,7 +469,7 @@ describe('Loan Payment Step Manager Integration', () => {
   });
 
   describe('PendingStepManager', () => {
-    let testStep: ILoanPaymentStep;
+    let testStep: LoanPaymentStep;
 
     beforeEach(async () => {
       // Arrange - Create test payment step in pending state
@@ -544,7 +540,7 @@ describe('Loan Payment Step Manager Integration', () => {
   });
 
   describe('CompletedStepManager', () => {
-    let testStep: ILoanPaymentStep;
+    let testStep: LoanPaymentStep;
 
     beforeEach(async () => {
       // Arrange - Create test payment step in completed state
@@ -605,7 +601,7 @@ describe('Loan Payment Step Manager Integration', () => {
   });
 
   describe('FailedStepManager', () => {
-    let testStep: ILoanPaymentStep;
+    let testStep: LoanPaymentStep;
 
     beforeEach(async () => {
       // Arrange - Create test payment step in failed state

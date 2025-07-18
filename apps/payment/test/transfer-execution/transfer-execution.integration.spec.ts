@@ -4,10 +4,6 @@ import { addTransactionalDataSource, initializeTransactionalContext, StorageDriv
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  IPaymentAccount,
-  ITransfer,
-} from '@library/entity/entity-interface';
-import {
   LoanPaymentStateCodes,
   LoanPaymentTypeCodes,
   PaymentAccountProviderCodes,
@@ -15,7 +11,7 @@ import {
   TransferStateCodes,
 } from '@library/entity/enum';
 import { EntityNotFoundException } from '@library/shared/common/exception/domain';
-import { AllEntities } from '@library/shared/domain/entity';
+import { AllEntities, PaymentAccount, Transfer } from '@library/shared/domain/entity';
 import { memoryDataSourceSingle } from '@library/shared/tests/postgress-memory-datasource';
 import { FOUNDATION_TEST_IDS, TestDataSeeder } from '@library/shared/tests/test-data-seeder';
 import { TestPaymentAccountFactory } from '@library/shared/tests/test-payment-account-factory';
@@ -104,7 +100,7 @@ describe('Transfer Execution Integration', () => {
 
   // #region test data generation
 
-  async function createTestCheckbookAccount(): Promise<IPaymentAccount> {
+  async function createTestCheckbookAccount(): Promise<PaymentAccount> {
     const accountData = TestPaymentAccountFactory.createCheckbookBankAccount('Test Checkbook Account');
     const account = await domainServices.paymentServices.addPaymentAccount(
       FOUNDATION_TEST_IDS.users.primaryUser,
@@ -118,7 +114,7 @@ describe('Transfer Execution Integration', () => {
     return account;
   }
 
-  async function createTestFiservAccount(): Promise<IPaymentAccount> {
+  async function createTestFiservAccount(): Promise<PaymentAccount> {
     const accountData = TestPaymentAccountFactory.createFiservDebitAccount('Test Fiserv Account');
     const account = await domainServices.paymentServices.addPaymentAccount(
       FOUNDATION_TEST_IDS.users.primaryUser,
@@ -132,7 +128,7 @@ describe('Transfer Execution Integration', () => {
     return account;
   }
 
-  async function createTestTransfer(sourceAccount: IPaymentAccount, destAccount: IPaymentAccount): Promise<ITransfer> {
+  async function createTestTransfer(sourceAccount: PaymentAccount, destAccount: PaymentAccount): Promise<Transfer> {
     const payment = await domainServices.paymentServices.createPayment({
       loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
       amount: 1000,
@@ -277,9 +273,9 @@ describe('Transfer Execution Integration', () => {
   });
 
   describe('Transfer Execution Providers', () => {
-    let testTransfer: ITransfer;
-    let sourceAccount: IPaymentAccount;
-    let destAccount: IPaymentAccount;
+    let testTransfer: Transfer;
+    let sourceAccount: PaymentAccount;
+    let destAccount: PaymentAccount;
 
     beforeEach(async () => {
       // Arrange - Create test data for each test
@@ -378,7 +374,7 @@ describe('Transfer Execution Integration', () => {
   });
 
   describe('Transfer State Management', () => {
-    let testTransfer: ITransfer;
+    let testTransfer: Transfer;
 
     beforeEach(async () => {
       // Arrange - Create test data for transfer state tests

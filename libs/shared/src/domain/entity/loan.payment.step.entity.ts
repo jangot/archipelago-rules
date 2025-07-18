@@ -1,13 +1,12 @@
 import { PaymentStepState } from '@library/entity/enum';
-import { ILoanPaymentStep } from '@library/entity/entity-interface';
+import { DbSchemaCodes } from '@library/shared/common/data';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { LoanPayment } from './loan.payment.entity';
 import { PaymentAccount } from './payment.account.entity';
 import { Transfer } from './transfer.entity';
-import { DbSchemaCodes } from '@library/shared/common/data';
 
 @Entity({ schema: DbSchemaCodes.Payment })
-export class LoanPaymentStep implements ILoanPaymentStep {
+export class LoanPaymentStep {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

@@ -1,16 +1,13 @@
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanStateCodes } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Loan } from '@library/shared/domain/entity';
-import { LoanRelation } from '@library/shared/domain/entity/relation';
-// import { LoansSetTargetUserInput } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ILoanRepository } from '../interface';
+import { LoanRelation } from '@library/shared/domain/entity/relation';
 
 @Injectable()
-export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {
+export class LoanRepository extends RepositoryBase<Loan> {
   private readonly logger: Logger = new Logger(LoanRepository.name);
 
   constructor(
@@ -20,15 +17,15 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     super(repository, Loan);
   }
 
-  public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> {
-    this.logger.debug(`getLoanById: ${loanId}`, relations);
+  public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<Loan | null> {
+    this.logger.debug(`getLoanById: ${loanId}`);
 
-    return this.repository.findOne({ where: { id: loanId }, relations: relations });
+    return this.repository.findOne({ where: { id: loanId }, relations });
   }
 
 
 
-  public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {
+  public async getByLenderId(lenderId: string): Promise<Loan[] | null> {
     this.logger.debug(`getByLenderId: ${lenderId}`);
 
     return this.repository.findBy({ lenderId });

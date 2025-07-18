@@ -1,7 +1,6 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
-import { ILoanApplication } from '@library/entity/entity-interface';
 import { ContactType, LoanApplicationStates } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
@@ -168,7 +167,7 @@ export class LoanApplicationsService {
     this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
   }
 
-  private validateLoanApplicationForAcceptance(loanApplication: ILoanApplication): void {
+  private validateLoanApplicationForAcceptance(loanApplication: LoanApplication): void {
     const missingFields: string[] = [];
 
     // Required loan information

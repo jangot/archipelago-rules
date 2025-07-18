@@ -1,19 +1,20 @@
 import { IDataService } from '@library/shared/common/data/idata.service';
-import { ILoanRepository, IPaymentAccountRepository } from '@library/shared/infrastructure/interface';
-import { Inject, Injectable } from '@nestjs/common';
-import { ILoanPaymentRepository, ILoanPaymentStepRepository, IPaymentsRouteRepository, IPaymentsRouteStepRepository, ITransferErrorRepository, ITransferRepository } from '@payment/shared/interfaces/repositories';
+import { LoanRepository, PaymentAccountRepository } from '@library/shared/infrastructure/repository';
+import { Injectable } from '@nestjs/common';
+import { LoanPaymentRepository, PaymentsRouteRepository, PaymentsRouteStepRepository } from '@payment/modules/loan-payments/repositories';
+import { LoanPaymentStepRepository, TransferErrorRepository, TransferRepository } from './repositories';
 
 @Injectable()
 export class PaymentDataService extends IDataService {
   constructor(
-    @Inject(ITransferRepository) public readonly transfers: ITransferRepository,
-    @Inject(ILoanPaymentRepository) public readonly loanPayments: ILoanPaymentRepository,
-    @Inject(ILoanPaymentStepRepository) public readonly loanPaymentSteps: ILoanPaymentStepRepository,
-    @Inject(IPaymentsRouteStepRepository) public readonly paymentsRouteSteps: IPaymentsRouteStepRepository,
-    @Inject(IPaymentsRouteRepository) public readonly paymentsRoute: IPaymentsRouteRepository,
-    @Inject(ITransferErrorRepository) public readonly transferErrors: ITransferErrorRepository,
-    @Inject(IPaymentAccountRepository) public readonly paymentAccounts: IPaymentAccountRepository,
-    @Inject(ILoanRepository) public readonly loans: ILoanRepository,
+    public readonly transfers: TransferRepository,
+    public readonly loanPayments: LoanPaymentRepository,
+    public readonly loanPaymentSteps: LoanPaymentStepRepository,
+    public readonly paymentsRouteSteps: PaymentsRouteStepRepository,
+    public readonly paymentsRoute: PaymentsRouteRepository,
+    public readonly transferErrors: TransferErrorRepository,
+    public readonly paymentAccounts: PaymentAccountRepository,
+    public readonly loans: LoanRepository
   ) {
     super();
   }

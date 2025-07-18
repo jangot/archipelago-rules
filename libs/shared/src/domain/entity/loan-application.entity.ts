@@ -1,4 +1,3 @@
-import { ILoanApplication } from '@library/entity/entity-interface';
 import { LoanApplicationStates, LoanApplicationStateType, LoanType } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Biller } from '@library/shared/domain/entity/biller.entity';
@@ -15,7 +14,7 @@ import {
 import { ApplicationUser } from './application.user.entity';
 
 @Entity({ schema: DbSchemaCodes.Core })
-export class LoanApplication implements ILoanApplication {
+export class LoanApplication {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

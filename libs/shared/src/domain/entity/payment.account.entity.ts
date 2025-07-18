@@ -1,12 +1,11 @@
-import { PaymentAccountType, PaymentAccountProvider, PaymentAccountOwnershipType, PaymentAccountState } from '@library/entity/enum';
-import { IPaymentAccount } from '@library/entity/entity-interface';
+import { PaymentAccountOwnershipType, PaymentAccountProvider, PaymentAccountState, PaymentAccountType } from '@library/entity/enum';
+import { DbSchemaCodes } from '@library/shared/common/data';
+import { PaymentAccountDetails } from '@library/shared/type/lending';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
-import { PaymentAccountDetails } from '@library/shared/type/lending';
-import { DbSchemaCodes } from '@library/shared/common/data';
 
 @Entity({ schema: DbSchemaCodes.Core })
-export class PaymentAccount implements IPaymentAccount {
+export class PaymentAccount {
 
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -1,8 +1,7 @@
-import { IEventStore } from '@library/entity/entity-interface/ievent-store';
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('event_store', { schema: 'notifications' })
-export class EventStore implements IEventStore {
+export class EventStore {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

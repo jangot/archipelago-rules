@@ -1,4 +1,3 @@
-import { IBillerName } from '@library/entity/entity-interface/ibiller-name';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -6,7 +5,7 @@ import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
  * BillerName entity implements IBillerName for the payment domain.
  */
 @Entity({ schema: DbSchemaCodes.Core })
-export class BillerName implements IBillerName {
+export class BillerName {
   /** UUID primary key */
   @PrimaryGeneratedColumn('uuid')
   id: string;

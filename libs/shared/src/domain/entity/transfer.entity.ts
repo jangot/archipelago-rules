@@ -1,4 +1,3 @@
-import { ITransfer } from '@library/entity/entity-interface/itransfer';
 import { TransferState } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
@@ -7,7 +6,7 @@ import { PaymentAccount } from './payment.account.entity';
 import { TransferError } from './transfer.error.entity';
 
 @Entity({ schema: DbSchemaCodes.Payment })
-export class Transfer implements ITransfer {
+export class Transfer {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

@@ -1,11 +1,10 @@
-import { PaymentAccountType, PaymentAccountOwnershipType, PaymentAccountProvider, LoanType, LoanPaymentType } from '@library/entity/enum';
-import { IPaymentsRoute } from '@library/entity/entity-interface';
+import { LoanPaymentType, LoanType, PaymentAccountOwnershipType, PaymentAccountProvider, PaymentAccountType } from '@library/entity/enum';
+import { DbSchemaCodes } from '@library/shared/common/data';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { PaymentsRouteStep } from './payments.route.step.entity';
-import { DbSchemaCodes } from '@library/shared/common/data';
 
 @Entity({ schema: DbSchemaCodes.Payment })
-export class PaymentsRoute implements IPaymentsRoute {
+export class PaymentsRoute {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

@@ -1,18 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
-import { ILoan } from '@library/entity/entity-interface';
-import { LoanType, LoanState, LoanClosure, LoanPaymentFrequency, LoanFeeMode, LoanClosureCodes } from '@library/entity/enum';
-import { ApplicationUser } from './application.user.entity';
-import { Biller } from './biller.entity';
-import { PaymentAccount } from './payment.account.entity';
-import { LoanPayment } from './loan.payment.entity';
-import { TransferError } from './transfer.error.entity';
+import { LoanClosure, LoanClosureCodes, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanType } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
+import { Check, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { ApplicationUser, Biller, LoanPayment, PaymentAccount, TransferError } from './';
 
 @Entity({ schema: DbSchemaCodes.Core })
 // When using @Check('<constraint_name>', '<expression') -- always specify a Constraint name
 // (not worth trying to parse the expression to generate a reasonable Check constraint name)
 @Check('loans_borrower_id_ne_lender_id_check', '"borrower_id" <> "lender_id"') // Ensures borrowerId and lenderId are different
-export class Loan implements ILoan {
+export class Loan {
 
   @PrimaryGeneratedColumn('uuid')
   id: string;

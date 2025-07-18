@@ -1,10 +1,9 @@
-import { IBiller, ILoan, IPaymentAccount } from '@library/entity/entity-interface';
 import { LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EventManager } from '@library/shared/common/event/event-manager';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { Loan } from '@library/shared/domain/entity';
+import { Biller, Loan, PaymentAccount } from '@library/shared/domain/entity';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -29,7 +28,7 @@ export class LoansService {
   public async createLoan(userId: string, input: LoanCreateRequestDto): Promise<LoanResponseDto | null> {
     LendingLogic.validateLoanCreateInput(input);
 
-    const loanCreateInput: Partial<ILoan> = EntityMapper.toEntity(input, Loan);
+    const loanCreateInput: Partial<Loan> = EntityMapper.toEntity(input, Loan);
     const { type } = input;
     
     if (type === LoanTypeCodes.Personal && !loanCreateInput.billerId) {
@@ -51,7 +50,7 @@ export class LoansService {
 
     const paymentAccount = await this.getPaymentAccount(sourcePaymentAccountId, userId);
     
-    const updates: Partial<ILoan> = {};
+    const updates: Partial<Loan> = {};
     updates.lenderAccountId = paymentAccount.id; // Will come from the loan application, refactor still pending
     updates.state = LoanStateCodes.Offered;
     
@@ -95,7 +94,7 @@ export class LoansService {
     return manager.advance(loanId);
   }
 
-  private async createPersonalBiller(createdById: string): Promise<IBiller> {
+  private async createPersonalBiller(createdById: string): Promise<Biller> {
     const personalBiller = await this.domainServices.loanServices.createPersonalBiller(createdById);
     if (!personalBiller) {
       this.logger.error('LoanCreateCommand: Failed to create personal Biller', { createdById });
@@ -104,7 +103,7 @@ export class LoansService {
     return personalBiller;
   }
 
-  private async getLoan(loanId: string | null): Promise<ILoan> {
+  private async getLoan(loanId: string | null): Promise<Loan> {
     if (!loanId) {
       throw new MissingInputException('Missing Loan Id');
     }
@@ -115,7 +114,7 @@ export class LoansService {
     return loan;
   }
 
-  private async getPaymentAccount(accountId: string, ownerId?: string): Promise<IPaymentAccount> {
+  private async getPaymentAccount(accountId: string, ownerId?: string): Promise<PaymentAccount> {
     const paymentAccount = await this.domainServices.userServices.getPaymentAccountById(accountId);
     if (!paymentAccount) {
       throw new EntityNotFoundException('Payment account not found');

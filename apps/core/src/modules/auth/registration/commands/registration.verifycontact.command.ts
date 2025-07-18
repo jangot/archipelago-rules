@@ -1,5 +1,4 @@
 import { VerificationEvent } from '@core/modules/auth/verification';
-import { ILogin } from '@library/entity/entity-interface';
 import { RegistrationStatus } from '@library/entity/enum';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { logSafeRegistration, logSafeUser } from '@library/shared/common/helper';
@@ -9,6 +8,7 @@ import { RegistrationTransitionResult } from '../registration-transition-result'
 import { RegistrationLogic } from '../registration.logic';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { VerifyContactCommand } from './registration.commands';
+import { Login } from '@library/shared/domain/entity';
 
 @CommandHandler(VerifyContactCommand)
 export class VerifyContactCommandHandler
@@ -106,7 +106,7 @@ export class VerifyContactCommandHandler
       login: newLogin,
     });
 
-    let userLogin: ILogin | null = null;
+    let userLogin: Login | null = null;
 
     if (shouldCreateLogin) {
       userLogin = await this.domainServices.userServices.createUserLoginOnRegistration(user, registration, newLogin);

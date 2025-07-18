@@ -1,8 +1,8 @@
-import { INotificationDefinition } from '@library/entity/entity-interface';
 import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NotificationDataService } from '@notification/data';
+import { NotificationDefinition } from '@notification/domain/entity';
 
 /**
  * Service for managing notification definitions
@@ -25,7 +25,7 @@ export class NotificationDomainService extends BaseDomainServices {
    * 
    * @returns Array of NotificationDefinitionResponseDto DTOs
    */
-  async getAllDefinitions(): Promise<INotificationDefinition[]> {
+  async getAllDefinitions(): Promise<NotificationDefinition[]> {
     return this.data.notificationDefinitions.getAll();
   }
 
@@ -36,7 +36,7 @@ export class NotificationDomainService extends BaseDomainServices {
    * @returns A NotificationDefinitionResponseDto DTO
    * @throws NotFoundException if no definition is found with the provided ID
    */
-  async getDefinitionById(id: string): Promise<INotificationDefinition | null> {
+  async getDefinitionById(id: string): Promise<NotificationDefinition | null> {
     return this.data.notificationDefinitions.getById(id);
   }
 
@@ -46,7 +46,7 @@ export class NotificationDomainService extends BaseDomainServices {
    * @param notificationDefinition - The DTO containing the data for the new definition
    * @returns A NotificationDefinitionResponseDto DTO for the created definition
    */
-  async createDefinition(notificationDefinition: INotificationDefinition): Promise<INotificationDefinition | null> {
+  async createDefinition(notificationDefinition: NotificationDefinition): Promise<NotificationDefinition | null> {
     return this.data.notificationDefinitions.insert(notificationDefinition, true);
   }
 
@@ -58,7 +58,7 @@ export class NotificationDomainService extends BaseDomainServices {
    * @returns A NotificationDefinitionResponseDto DTO for the updated definition
    * @throws NotFoundException if no definition is found with the provided ID
    */
-  async updateDefinition(id: string, notificationDefinition: Partial<INotificationDefinition>): Promise<boolean | null> {
+  async updateDefinition(id: string, notificationDefinition: Partial<NotificationDefinition>): Promise<boolean | null> {
     return this.data.notificationDefinitions.update(id, notificationDefinition);
   }
 
