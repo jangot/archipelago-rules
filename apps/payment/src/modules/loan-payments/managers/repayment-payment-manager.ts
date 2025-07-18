@@ -1,5 +1,5 @@
-import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { Loan, LoanPayment } from '@library/shared/domain/entity';
 import { LOAN_PAYMENT_RELATIONS, LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { ScheduleService } from '@library/shared/service';
 import { PlanPreviewInput, PlanPreviewOutputItem, RepaymentPlanPaidPayment } from '@library/shared/type/lending';
@@ -16,7 +16,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
     super(paymentDomainService, LoanPaymentTypeCodes.Repayment);
   }
 
-  public async initiate(loanId: string): Promise<ILoanPayment | null> {
+  public async initiate(loanId: string): Promise<LoanPayment | null> {
     this.logger.debug(`Initiating repayment payment for loan ${loanId}`);
     
     // Get loan with necessary relations
@@ -75,7 +75,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
    * @param loan The loan for which to get payment accounts
    * @returns Object containing fromAccountId and toAccountId
    */
-  protected async getPaymentAccounts(loan: ILoan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
+  protected async getPaymentAccounts(loan: Loan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
     const { lenderAccountId, borrowerAccountId } = loan;
     
     if (!lenderAccountId) {
@@ -100,7 +100,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
    * @param paidPayments The list of payments that have already been made
    * @returns The next payment to be made, or null if it cannot be determined
    */
-  private getNextPayment(loan: ILoan, paidPayments: ILoanPayment[]): PlanPreviewOutputItem | null {
+  private getNextPayment(loan: Loan, paidPayments: LoanPayment[]): PlanPreviewOutputItem | null {
     const { id: loanId, amount, paymentsCount, paymentFrequency, feeMode, feeAmount, createdAt } = loan;
     
     // Build the current state for repayment plan preview

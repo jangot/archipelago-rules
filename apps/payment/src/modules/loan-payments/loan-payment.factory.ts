@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { LoanPaymentType, LoanPaymentTypeCodes } from '@library/entity/enum';
-import { ILoanPaymentFactory, ILoanPaymentManager } from './interfaces';
-import { 
-  FundingPaymentManager, 
-  DisbursementPaymentManager, 
-  RepaymentPaymentManager, 
+import { ILoanPaymentFactory } from './interfaces';
+import {
+  FundingPaymentManager,
+  DisbursementPaymentManager,
+  RepaymentPaymentManager,
   FeePaymentManager,
-  RefundPaymentManager,
+  RefundPaymentManager, BaseLoanPaymentManager,
 } from './managers';
 
 /**
@@ -31,7 +31,7 @@ export class LoanPaymentFactory implements ILoanPaymentFactory {
    * @returns The appropriate loan payment manager for the specified lifecycle part
    * @throws Error if the lifecycle part is unsupported
    */
-  public getManager(paymentType: LoanPaymentType): ILoanPaymentManager {
+  public getManager(paymentType: LoanPaymentType): BaseLoanPaymentManager {
     switch (paymentType) {
       case LoanPaymentTypeCodes.Funding:
         return this.fundingManager;

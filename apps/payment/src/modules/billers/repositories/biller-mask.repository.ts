@@ -3,13 +3,12 @@ import { BillerMask } from '@library/shared/domain/entity/biller.mask.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IBillerMaskRepository } from '../../../shared/interfaces/repositories/ibiller.mask.repository';
 
 /**
  * BillerMaskRepository handles DB operations for BillerMask entities.
  */
 @Injectable()
-export class BillerMaskRepository extends RepositoryBase<BillerMask> implements IBillerMaskRepository {
+export class BillerMaskRepository extends RepositoryBase<BillerMask> {
   private readonly logger: Logger = new Logger(BillerMaskRepository.name);
 
   constructor(

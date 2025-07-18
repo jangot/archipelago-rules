@@ -1,5 +1,5 @@
-import { ITransfer } from '@library/entity/entity-interface';
 import { PaymentStepState, TransferState, TransferStateCodes } from '@library/entity/enum';
+import { Transfer } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { ILoanPaymentStepManager } from '../interfaces';
@@ -19,7 +19,7 @@ export abstract class BasePaymentStepManager implements ILoanPaymentStepManager 
     return this.advanceOnTransferState(stepId);
   }
 
-  protected async getLatestTransfer(stepId: string): Promise<ITransfer | null> {
+  protected async getLatestTransfer(stepId: string): Promise<Transfer | null> {
     return this.paymentDomainService.getLatestTransferForStep(stepId);
   }
 
