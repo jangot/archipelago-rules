@@ -1,6 +1,6 @@
 import { IDataService } from '@library/shared/common/data/idata.service';
 import { Injectable } from '@nestjs/common';
-import { LoanRepository, PaymentAccountRepository } from '../../../../../libs/shared/src/infrastructure/repository';
+import { LoanRepository, PaymentAccountRepository } from '@library/shared/infrastructure/repository';
 import { LoginRepository } from '../auth/repositories/login.repository';
 import { UserRegistrationRepository } from '../auth/repositories/user.registration.repository';
 import { BillerRepository } from '../lending/repositories/biller.repository';

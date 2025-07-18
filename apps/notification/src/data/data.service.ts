@@ -1,6 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { INotificationDefinitionRepository } from '../shared/interfaces/repositories/inotification.definition.repository';
 import { IDataService } from '@library/shared/common/data/idata.service';
+import { Injectable } from '@nestjs/common';
+import { NotificationDefinitionRepository } from '../infrastructure/repositories';
 
 /**
  * Data service for the Notification module
@@ -9,7 +9,7 @@ import { IDataService } from '@library/shared/common/data/idata.service';
 @Injectable()
 export class NotificationDataService extends IDataService {
   constructor(
-    @Inject(INotificationDefinitionRepository) public readonly notificationDefinitions: INotificationDefinitionRepository
+    public readonly notificationDefinitions: NotificationDefinitionRepository
   ) {
     super();
   }

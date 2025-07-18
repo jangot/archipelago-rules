@@ -16,6 +16,6 @@ export class UserRegistrationRepository extends RepositoryBase<UserRegistration>
   }
 
   public async getByUserId(userId: string): Promise<UserRegistration | null> {
-    return null;
+    return this.repository.findOneBy({ userId });
   }
 }

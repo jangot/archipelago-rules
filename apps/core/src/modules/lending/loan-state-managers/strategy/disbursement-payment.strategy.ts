@@ -1,5 +1,5 @@
 import { LoanPaymentType, LoanPaymentTypeCodes } from '@library/entity/enum';
-import { Loan } from '@library/shared/domain/entity/loan.entity';
+import { Loan } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { IPaymentEvaluationStrategy } from '../../interfaces';
 import { StatesManagersLogic } from '../states-managers-logic.service';
