@@ -4,20 +4,19 @@ import { v4 } from 'uuid';
 
 import { DataModule } from '@core/modules/data';
 import { CoreDataService } from '@core/modules/data/data.service';
-import { IUserRepository } from '@core/shared/interfaces/repositories';
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanClosureCodes, LoanPaymentFrequencyCodes, LoanStateCodes, LoanTypeCodes, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 import { withTransactionHandler } from '@library/shared/common/data/withtransaction.handler';
 import { AllEntities, ApplicationUser, Loan } from '@library/shared/domain/entity';
-import { ILoanRepository } from '@library/shared/infrastructure/interface';
 import { memoryDataSourceSimple } from '@library/shared/tests/postgress-memory-datasource';
 import { Test, TestingModule } from '@nestjs/testing';
+import { LoanRepository } from '@library/shared/infrastructure/repository';
+import { UserRepository } from '@core/modules/users/repositories/user.repository';
 
 describe('DataModule Integration Tests', () => {
   let module: TestingModule;
   let dataService: CoreDataService;
-  let loanRepository: ILoanRepository;
-  let userRepository: IUserRepository;
+  let loanRepository: LoanRepository;
+  let userRepository: UserRepository;
 
   beforeAll(async () => {
     const memoryDB = await memoryDataSourceSimple(AllEntities);
@@ -29,8 +28,8 @@ describe('DataModule Integration Tests', () => {
       .compile();
 
     dataService = module.get<CoreDataService>(CoreDataService);
-    loanRepository = module.get<ILoanRepository>(ILoanRepository);
-    userRepository = module.get<IUserRepository>(IUserRepository);
+    loanRepository = module.get<LoanRepository>(LoanRepository);
+    userRepository = module.get<UserRepository>(UserRepository);
   });
 
   afterAll(async () => {
@@ -74,8 +73,8 @@ describe('DataModule Integration Tests', () => {
       let lenderGetResult: ApplicationUser | null = {} as ApplicationUser;
       let borrowerResult: ApplicationUser | null = {} as ApplicationUser;
       let borrowerGetResult: ApplicationUser | null = {} as ApplicationUser;
-      let loanResult: ILoan | null = {} as ILoan;
-      let loanGetResult: ILoan | null = {} as ILoan;
+      let loanResult: Loan | null = {} as Loan;
+      let loanGetResult: Loan | null = {} as Loan;
 
       lenderUserId = v4();
       const lenderCreatedAt = new Date();
@@ -237,7 +236,7 @@ describe('DataModule Integration Tests', () => {
 
       // We set existing loan id to be the same as the one we created in previous test
       // This should cause a conflict and rollback the transaction
-      const fakeLoan: Partial<ILoan> = {
+      const fakeLoan: Partial<Loan> = {
         id: expectedLoanId,
         amount: 1000,
         borrowerId: fakeBorrowerId,

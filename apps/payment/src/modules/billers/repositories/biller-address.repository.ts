@@ -3,13 +3,12 @@ import { BillerAddress } from '@library/shared/domain/entity/biller.address.enti
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IBillerAddressRepository } from '../../../shared/interfaces/repositories/ibiller.address.repository';
 
 /**
  * BillerAddressRepository handles DB operations for BillerAddress entities.
  */
 @Injectable()
-export class BillerAddressRepository extends RepositoryBase<BillerAddress> implements IBillerAddressRepository {
+export class BillerAddressRepository extends RepositoryBase<BillerAddress> {
   private readonly logger: Logger = new Logger(BillerAddressRepository.name);
 
   constructor(

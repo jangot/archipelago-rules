@@ -1,5 +1,5 @@
-import { ILoan, ILoanPayment, IPaymentsRouteStep } from '@library/entity/entity-interface';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { Loan, LoanPayment, PaymentsRouteStep } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
@@ -18,7 +18,7 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
    * @param loanId The ID of the loan for which to initiate a funding payment
    * @returns The created loan payment or null if creation failed
    */
-  public async initiate(loanId: string): Promise<ILoanPayment | null> {
+  public async initiate(loanId: string): Promise<LoanPayment | null> {
     return this.initiatePayment(loanId);
   }
 
@@ -27,7 +27,7 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
    * @param loan The loan for which to get payment accounts
    * @returns Object containing fromAccountId and toAccountId
    */
-  protected async getPaymentAccounts(loan: ILoan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
+  protected async getPaymentAccounts(loan: Loan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
     const { lenderAccountId, biller } = loan;
     
     if (!lenderAccountId) {
@@ -54,7 +54,7 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
    * @param routeSteps Steps from the payment route
    * @returns The steps to apply for this payment type
    */
-  protected getStepsToApply(routeSteps: IPaymentsRouteStep[]): IPaymentsRouteStep[] {
+  protected getStepsToApply(routeSteps: PaymentsRouteStep[]): PaymentsRouteStep[] {
     if (routeSteps.length > 1) {
       return [routeSteps[0]];
     }

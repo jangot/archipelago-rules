@@ -1,5 +1,5 @@
-import { ITransfer } from '@library/entity/entity-interface';
 import { PaymentAccountProvider, PaymentAccountProviderCodes } from '@library/entity/enum';
+import { Transfer } from '@library/shared/domain/entity';
 import { TRANSFER_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '../domain/services';
@@ -43,7 +43,7 @@ export class TransferExecutionFactory implements ITransferExecutionFactory {
 
   // TODO: Implement
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private getProviderByTransfer(transfer: ITransfer): ITransferExecutionProvider {
+  private getProviderByTransfer(transfer: Transfer): ITransferExecutionProvider {
     return this.mockedProvider;
   }
 }

@@ -1,5 +1,5 @@
-import { ILoanPaymentManager } from './loan-payment-manager.interface';
 import { LoanPaymentType } from '@library/entity/enum';
+import { BaseLoanPaymentManager } from '@payment/modules/loan-payments';
 
 /**
  * Interface for the loan payment factory that creates appropriate payment managers
@@ -11,7 +11,7 @@ export interface ILoanPaymentFactory {
    * @param paymentType The type of loan payment being processed
    * @returns The appropriate loan payment manager for the specified payment type
    */
-  getManager(paymentType: LoanPaymentType): ILoanPaymentManager;
+  getManager(paymentType: LoanPaymentType): BaseLoanPaymentManager;
 }
 
 export const ILoanPaymentFactory = Symbol('ILoanPaymentFactory');

@@ -1,5 +1,5 @@
-import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
 import { LoanPaymentStateCodes, LoanPaymentTypeCodes } from '@library/entity/enum';
+import { Loan, LoanPayment } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager, PaymentOptions } from './base-loan-payment-manager';
@@ -18,7 +18,7 @@ export class FeePaymentManager extends BaseLoanPaymentManager {
    * @param loanId The ID of the loan for which to initiate a fee payment
    * @returns The created loan payment or null if creation failed
    */
-  public async initiate(loanId: string): Promise<ILoanPayment | null> {
+  public async initiate(loanId: string): Promise<LoanPayment | null> {
     return this.initiatePayment(loanId);
   }
 
@@ -27,7 +27,7 @@ export class FeePaymentManager extends BaseLoanPaymentManager {
    * @param loan The loan for which to get payment accounts
    * @returns Object containing fromAccountId and toAccountId
    */
-  protected async getPaymentAccounts(loan: ILoan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
+  protected async getPaymentAccounts(loan: Loan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
     const { lenderAccountId, biller } = loan;
     
     if (!lenderAccountId) {
@@ -51,7 +51,7 @@ export class FeePaymentManager extends BaseLoanPaymentManager {
    * @param loan The loan for which to get the payment amount
    * @returns The payment amount
    */
-  protected getPaymentAmount(loan: ILoan): number {
+  protected getPaymentAmount(loan: Loan): number {
     return loan.feeAmount || 0;
   }
   
@@ -62,7 +62,7 @@ export class FeePaymentManager extends BaseLoanPaymentManager {
    * @param amount The payment amount
    * @returns Object containing payment options
    */
-  protected getPaymentOptions(_loan: ILoan, amount: number): PaymentOptions {
+  protected getPaymentOptions(_loan: Loan, amount: number): PaymentOptions {
     // If amount is zero then create a completed payment without steps
     if (!amount) {
       const completionDate = new Date();

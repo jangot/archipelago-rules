@@ -4,13 +4,10 @@ import { addTransactionalDataSource, initializeTransactionalContext, StorageDriv
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  ILoanPayment,
-} from '@library/entity/entity-interface';
-import {
   LoanPaymentStateCodes,
   LoanPaymentTypeCodes,
 } from '@library/entity/enum';
-import { AllEntities } from '@library/shared/domain/entity';
+import { AllEntities, LoanPayment } from '@library/shared/domain/entity';
 import { FOUNDATION_TEST_IDS, ITestDataRegistry, memoryDataSourceSingle, TestDataSeeder } from '@library/shared/tests';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DataModule } from '@payment/modules/data';
@@ -110,7 +107,7 @@ describe('Loan Payment Managers Integration', () => {
     paymentType: typeof LoanPaymentTypeCodes[keyof typeof LoanPaymentTypeCodes] = LoanPaymentTypeCodes.Funding,
     amount: number = 1000,
     paymentNumber: number = 1
-  ): Promise<ILoanPayment> {
+  ): Promise<LoanPayment> {
     // Use foundation loan for payment creation
     const payment = await domainServices.paymentServices.createPayment({
       loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,

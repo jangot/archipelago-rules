@@ -1,5 +1,5 @@
-import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { Loan, LoanPayment } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager } from './base-loan-payment-manager';
@@ -20,7 +20,7 @@ export class RefundPaymentManager extends BaseLoanPaymentManager {
    * @param loanId The ID of the loan for which to initiate a refund payment
    * @returns The created loan payment or null if creation failed
    */
-  public async initiate(loanId: string): Promise<ILoanPayment | null> {
+  public async initiate(loanId: string): Promise<LoanPayment | null> {
     return this.initiatePayment(loanId);
   }
 
@@ -29,7 +29,7 @@ export class RefundPaymentManager extends BaseLoanPaymentManager {
    * @param loan The loan for which to get payment accounts
    * @returns Object containing fromAccountId and toAccountId
    */
-  protected async getPaymentAccounts(loan: ILoan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
+  protected async getPaymentAccounts(loan: Loan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
     const { lenderAccountId, biller } = loan;
     
     if (!lenderAccountId) {
