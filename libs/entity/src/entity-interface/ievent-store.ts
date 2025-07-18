@@ -7,4 +7,6 @@ export interface IEventStore {
   correlation_id?: string;
   causation_id?: string;
   deduplication_id: number;
+  completedAt?: Date | null;
+  isCompleted: boolean;
 }

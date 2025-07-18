@@ -274,12 +274,20 @@ export class LoanDomainService extends BaseDomainServices {
     return this.data.loanApplications.getById(id);
   }
 
-  public async createLoanApplication(data: Partial<LoanApplication>): Promise<ILoanApplication> {
-    return  this.data.loanApplications.insertWithResult(data);
+  public async getAllLoanApplicationsByUserId(userId: string): Promise<ILoanApplication[]> {
+    return this.data.loanApplications.getAllByUserId(userId);
   }
 
-  public async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<ILoanApplication> {
-    return  this.data.loanApplications.updateWithResult(id, data);
+  public async getPendingLoanApplicationsByUserId(userId: string): Promise<ILoanApplication[]> {
+    return this.data.loanApplications.getPendingLoanApplicationsByUserId(userId);
+  }
+
+  public async createLoanApplication(data: Partial<LoanApplication>): Promise<ILoanApplication> {
+    return this.data.loanApplications.insertWithResult(data);
+  }
+
+  public async updateLoanApplication(id: string, data: Partial<LoanApplication>): Promise<ILoanApplication | null> {
+    return this.data.loanApplications.updateWithResult(id, data);
   }
   // #endregion
 }

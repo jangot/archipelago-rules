@@ -1,7 +1,7 @@
 import { SingleDataSourceConfiguration } from '@library/shared/common/data';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
 import { AllEntities } from '@library/shared/domain/entity';
-import { SharedCoreRepositories } from '@library/shared/infrastructure/repository';
+import { SharedRepositories } from '@library/shared/infrastructure/repository';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CoreDataService } from './data.service';
@@ -16,7 +16,7 @@ import { CustomCoreRepositories } from './repositories';
     CoreDataService,
     ...registerCustomRepositoryProviders(AllEntities), 
     ...CustomCoreRepositories,
-    ...SharedCoreRepositories,
+    ...SharedRepositories,
   ],
   exports: [CoreDataService],
 })

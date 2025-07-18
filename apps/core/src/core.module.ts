@@ -9,6 +9,7 @@
 import { SharedModule } from '@library/shared';
 import { HealthModule } from '@library/shared/common/health/health.module';
 import { LoggerMiddleware } from '@library/shared/common/middleware/logger-middleware';
+import { EventModule } from '@library/shared/modules/events/event.module';
 import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
@@ -22,8 +23,9 @@ import { CoreModules } from './index.modules';
     CqrsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     GracefulShutdownModule.forRoot(),
-    // Bring in Shared stuff like IEventPublisher, pino Logger properly configured, more to follow
+    // Bring in Shared stuff like pino Logger properly configured, more to follow
     SharedModule.forRoot([CoreController]),
+    EventModule.forRoot('core', '<url to core event handler endpoint>'),
     HealthModule,
     ...CoreModules, // Add Core specific Modules here, and they will automatically get imported
   ],

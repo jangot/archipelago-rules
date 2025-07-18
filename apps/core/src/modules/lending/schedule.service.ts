@@ -1,6 +1,6 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { IEventPublisher } from '@library/shared/common/event/interface/ieventpublisher';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { EventManager } from '@library/shared/common/event/event-manager';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -9,7 +9,6 @@ export class ScheduleService {
     
   constructor(
     private readonly domainServices: IDomainServices, 
-    @Inject(IEventPublisher)
-    private readonly eventPublisher: IEventPublisher,
+    private readonly eventManager: EventManager,
     private readonly config: ConfigService,) {}
 }
