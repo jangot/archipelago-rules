@@ -1,17 +1,16 @@
-import { IBillerRepository, ILoginRepository, IUserRegistrationRepository, IUserRepository } from '@core/shared/interfaces/repositories';
-import { BillerRepository } from '../../lending/repositories/biller.repository';
 import { LoginRepository } from '../../auth/repositories/login.repository';
 import { UserRegistrationRepository } from '../../auth/repositories/user.registration.repository';
+import { BillerRepository } from '../../lending/repositories/biller.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
 
-export * from '../../users/repositories/user.repository';
 export * from '../../auth/repositories/login.repository';
 export * from '../../auth/repositories/user.registration.repository';
 export * from '../../lending/repositories/biller.repository';
+export * from '../../users/repositories/user.repository';
 
 export const CustomCoreRepositories = [
-  { provide: IUserRepository, useClass: UserRepository },
-  { provide: ILoginRepository, useClass: LoginRepository },
-  { provide: IUserRegistrationRepository, useClass: UserRegistrationRepository },
-  { provide: IBillerRepository, useClass: BillerRepository },
+  { provide: UserRepository, useClass: UserRepository },
+  { provide: LoginRepository, useClass: LoginRepository },
+  { provide: UserRegistrationRepository, useClass: UserRegistrationRepository },
+  { provide: BillerRepository, useClass: BillerRepository },
 ];

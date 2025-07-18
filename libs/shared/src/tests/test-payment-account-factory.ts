@@ -1,10 +1,10 @@
-import { 
+import {
   PaymentAccountOwnershipTypeCodes,
   PaymentAccountProviderCodes,
   PaymentAccountStateCodes,
   PaymentAccountTypeCodes,
 } from '@library/entity/enum';
-import { IPaymentAccount } from '@library/entity/entity-interface';
+import { PaymentAccount } from '@library/shared/domain/entity/payment.account.entity';
 
 /**
  * Factory for creating test payment accounts with standardized configurations
@@ -96,7 +96,7 @@ export class TestPaymentAccountFactory {
   static async createAccountPair(
     userId: string,
     domainServices: any
-  ): Promise<{ sourceAccount: IPaymentAccount; destAccount: IPaymentAccount }> {
+  ): Promise<{ sourceAccount: PaymentAccount; destAccount: PaymentAccount }> {
     const sourceAccount = await domainServices.paymentServices.addPaymentAccount(
       userId,
       TestPaymentAccountFactory.createCheckbookBankAccount('Source Account')
@@ -126,8 +126,8 @@ export class TestPaymentAccountFactory {
     userId: string,
     domainServices: any,
     count: number = 3
-  ): Promise<IPaymentAccount[]> {
-    const accounts: IPaymentAccount[] = [];
+  ): Promise<PaymentAccount[]> {
+    const accounts: PaymentAccount[] = [];
     const factories = [
       TestPaymentAccountFactory.createCheckbookBankAccount,
       TestPaymentAccountFactory.createFiservDebitAccount,

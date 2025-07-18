@@ -4,13 +4,15 @@ import { PaymentAccountRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IPaymentAccountRepository } from '../interface';
 
 @Injectable()
-export class PaymentAccountRepository extends RepositoryBase<PaymentAccount> implements IPaymentAccountRepository {
+export class PaymentAccountRepository extends RepositoryBase<PaymentAccount> {
   private readonly logger: Logger = new Logger(PaymentAccountRepository.name);
 
-  constructor(@InjectRepository(PaymentAccount) protected readonly repository: Repository<PaymentAccount>) {
+  constructor(
+    @InjectRepository(PaymentAccount)
+    protected readonly repository: Repository<PaymentAccount>
+  ) {
     super(repository, PaymentAccount);
   }
 

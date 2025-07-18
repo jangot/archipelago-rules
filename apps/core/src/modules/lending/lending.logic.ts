@@ -1,7 +1,7 @@
-import { ActionNotAllowedException, BillerNotSelectedException } from './exceptions/loan-domain.exceptions';
-import { LoanCreateRequestDto } from './dto/request/loan.create.request.dto';
 import { LoanTypeCodes } from '@library/entity/enum';
-import { ILoan } from '@library/entity/entity-interface';
+import { Loan } from '@library/shared/domain/entity';
+import { LoanCreateRequestDto } from './dto/request/loan.create.request.dto';
+import { ActionNotAllowedException, BillerNotSelectedException } from './exceptions/loan-domain.exceptions';
 
 export class LendingLogic {
 
@@ -14,7 +14,7 @@ export class LendingLogic {
     }
   }
 
-  public static validateLoanProposeInput(userId: string, loan: ILoan): void {
+  public static validateLoanProposeInput(userId: string, loan: Loan): void {
     const { lenderId } = loan;
     const canBeProposedBy = lenderId;
 

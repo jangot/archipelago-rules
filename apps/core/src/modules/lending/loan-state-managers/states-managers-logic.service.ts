@@ -1,5 +1,5 @@
-import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
 import { LoanPaymentStateCodes, LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes, PaymentAccountStateCodes } from '@library/entity/enum';
+import { Loan, LoanPayment } from '@library/shared/domain/entity';
 
 /**
  * Static utility service for loan state management logic
@@ -12,7 +12,7 @@ export class StatesManagersLogic {
    * @param paymentType - The type of payment to check
    * @returns True if payment is completed
    */
-  public static isPaymentCompleted(loan: ILoan, paymentType: LoanPaymentType): boolean {
+  public static isPaymentCompleted(loan: Loan, paymentType: LoanPaymentType): boolean {
     const relevantPayment = this.getStateEvaluationPayment(loan, paymentType);
     if (!relevantPayment) {
       return false;
@@ -26,7 +26,7 @@ export class StatesManagersLogic {
    * @param paymentType - The type of payment to check
    * @returns True if payment has failed
    */
-  public static isPaymentFailed(loan: ILoan, paymentType: LoanPaymentType): boolean {
+  public static isPaymentFailed(loan: Loan, paymentType: LoanPaymentType): boolean {
     const relevantPayment = this.getStateEvaluationPayment(loan, paymentType);
     if (!relevantPayment) {
       return false;
@@ -40,7 +40,7 @@ export class StatesManagersLogic {
    * @param paymentType - The type of payment to check
    * @returns True if payment is pending
    */
-  public static isPaymentPending(loan: ILoan, paymentType: LoanPaymentType): boolean {
+  public static isPaymentPending(loan: Loan, paymentType: LoanPaymentType): boolean {
     const relevantPayment = this.getStateEvaluationPayment(loan, paymentType);
     if (!relevantPayment) {
       return false;
@@ -54,7 +54,7 @@ export class StatesManagersLogic {
    * @param paymentType - The primary payment type for the current state
    * @returns True if this is the last payment, false otherwise
    */
-  public static isLastPayment(loan: ILoan, paymentType: LoanPaymentType): boolean {
+  public static isLastPayment(loan: Loan, paymentType: LoanPaymentType): boolean {
     const { paymentsCount } = loan;
     const currentPayment = this.getStateEvaluationPayment(loan, paymentType, true);
     if (!currentPayment) {
@@ -71,10 +71,10 @@ export class StatesManagersLogic {
    * @returns The latest payment of the specified type or null if none found
    */
   public static getStateEvaluationPayment(
-    loan: ILoan,
+    loan: Loan,
     paymentType: LoanPaymentType,
     sortByOrder = false
-  ): ILoanPayment | null {
+  ): LoanPayment | null {
     const { payments } = loan;
 
     // Check that there are any payments at all
@@ -172,7 +172,7 @@ export class StatesManagersLogic {
    * @param expectedState - The expected loan state
    * @returns True if the loan is in the expected state, false otherwise
    */
-  public static isActualStateValid(loan: ILoan, expectedState: LoanState): boolean {
+  public static isActualStateValid(loan: Loan, expectedState: LoanState): boolean {
     return loan.state === expectedState;
   }
 
@@ -181,7 +181,7 @@ export class StatesManagersLogic {
    * @param loan - The loan entity to validate
    * @returns True if all prerequisites are met, false otherwise
    */
-  public static hasValidAccountsConnected(loan: ILoan): boolean {
+  public static hasValidAccountsConnected(loan: Loan): boolean {
     const { billerId, lenderId, borrowerId, biller, lenderAccountId, borrowerAccountId, lenderAccount, borrowerAccount } = loan;
   
     // Validate biller existence

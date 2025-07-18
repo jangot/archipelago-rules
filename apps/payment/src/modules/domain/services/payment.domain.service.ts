@@ -1,8 +1,8 @@
-import { ILoan, ILoanPayment, ILoanPaymentStep, IPaymentAccount, IPaymentsRoute, ITransfer } from '@library/entity/entity-interface';
 import { LoanPaymentStateCodes, LoanPaymentType, LoanPaymentTypeCodes, LoanType, PaymentStepState, TransferStateCodes } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
+import { Loan, LoanPayment, LoanPaymentStep, PaymentAccount, PaymentsRoute, Transfer } from '@library/shared/domain/entity';
+import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PAYMENTS_ROUTE_RELATIONS, PaymentAccountRelation, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
 import { PlanPreviewOutputItem, TransferErrorDetails } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -21,35 +21,35 @@ export class PaymentDomainService extends BaseDomainServices {
   }
 
   // #region Accounts
-  public async addPaymentAccount(userId: string, input: Partial<IPaymentAccount>): Promise<IPaymentAccount | null> {
+  public async addPaymentAccount(userId: string, input: Partial<PaymentAccount>): Promise<PaymentAccount | null> {
     this.logger.debug(`Adding payment account for user ${userId}`, { input });
     return this.data.paymentAccounts.createPaymentAccount({ ...input, userId: userId });
   }
 
-  public async getPaymentAccountById(paymentAccountId: string, relations?: PaymentAccountRelation[]): Promise<IPaymentAccount | null> {
+  public async getPaymentAccountById(paymentAccountId: string, relations?: PaymentAccountRelation[]): Promise<PaymentAccount | null> {
     this.logger.debug(`Fetching payment account by ID ${paymentAccountId}`, relations);
     return this.data.paymentAccounts.getPaymentAccountById(paymentAccountId, relations);
   }
   // #endregion
 
   // #region Loan
-  public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> {
+  public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<Loan | null> {
     return this.data.loans.getLoanById(loanId, relations);
   }
   // #endregion
 
   // #region Loan Payment
-  public async getLoanPaymentById(paymentId: string, relations?: LoanPaymentRelation[]): Promise<ILoanPayment | null> {
+  public async getLoanPaymentById(paymentId: string, relations?: LoanPaymentRelation[]): Promise<LoanPayment | null> {
     return this.data.loanPayments.getPaymentById(paymentId, relations);
   }
 
-  public async getPaymentsByIds(paymentIds: string[], relations?: LoanPaymentRelation[]): Promise<ILoanPayment[] | null> {
+  public async getPaymentsByIds(paymentIds: string[], relations?: LoanPaymentRelation[]): Promise<LoanPayment[] | null> {
     return this.data.loanPayments.getPaymentsByIds(paymentIds, relations);
   }
 
 
 
-  public async updatePayment(paymentId: string, updates: Partial<ILoanPayment>): Promise<boolean | null> {
+  public async updatePayment(paymentId: string, updates: Partial<LoanPayment>): Promise<boolean | null> {
     this.logger.debug(`Updating loan payment ${paymentId}`, { updates });
     return this.data.loanPayments.updatePayment(paymentId, updates);
   }
@@ -59,7 +59,7 @@ export class PaymentDomainService extends BaseDomainServices {
     toAccountId: string, 
     state: LoanPaymentType, 
     loanType: LoanType
-  ): Promise<IPaymentsRoute  | null> {
+  ): Promise<PaymentsRoute  | null> {
     const [fromAccountResult, toAccountResult] = await Promise.all([
       this.data.paymentAccounts.getPaymentAccountById(fromAccountId), 
       this.data.paymentAccounts.getPaymentAccountById(toAccountId),
@@ -82,13 +82,13 @@ export class PaymentDomainService extends BaseDomainServices {
     return route;
   }
 
-  public async createPayment(input: Partial<ILoanPayment>): Promise<ILoanPayment | null> {
+  public async createPayment(input: Partial<LoanPayment>): Promise<LoanPayment | null> {
     this.logger.debug('Creating payment ', { input });
 
     return this.data.loanPayments.createPayment(input);
   }
 
-  public async createRepaymentByPreview(preview: PlanPreviewOutputItem, loanId: string): Promise<ILoanPayment | null> {
+  public async createRepaymentByPreview(preview: PlanPreviewOutputItem, loanId: string): Promise<LoanPayment | null> {
     this.logger.debug(`Creating repayment payment for loan ${loanId}`, { preview });
 
     if (!preview || !preview.amount || !preview.paymentDate) {
@@ -129,7 +129,7 @@ export class PaymentDomainService extends BaseDomainServices {
   // #endregion
 
   // #region Loan Payment Steps
-  public async getLoanPaymentStepById(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<ILoanPaymentStep> {
+  public async getLoanPaymentStepById(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<LoanPaymentStep> {
     if (!stepId) {
       throw new MissingInputException('Missing step ID');
     }
@@ -140,11 +140,11 @@ export class PaymentDomainService extends BaseDomainServices {
     return loanPaymentStep;
   }
 
-  public async createPaymentSteps(steps: Partial<ILoanPaymentStep>[]): Promise<ILoanPaymentStep[] | null> {
+  public async createPaymentSteps(steps: Partial<LoanPaymentStep>[]): Promise<LoanPaymentStep[] | null> {
     return this.data.loanPaymentSteps.createPaymentSteps(steps);
   }
 
-  public async getLatestTransferForStep(stepId: string): Promise<ITransfer | null> {
+  public async getLatestTransferForStep(stepId: string): Promise<Transfer | null> {
     return this.data.transfers.getLatestTransferForStep(stepId);
   }
 
@@ -157,7 +157,7 @@ export class PaymentDomainService extends BaseDomainServices {
 
   // #region Transfers
 
-  public async createTransferForStep(stepId: string): Promise<ITransfer | null> {
+  public async createTransferForStep(stepId: string): Promise<Transfer | null> {
     if (!stepId) {
       throw new MissingInputException('Missing step ID');
     }
@@ -165,7 +165,7 @@ export class PaymentDomainService extends BaseDomainServices {
     const step = await this.getLoanPaymentStepById(stepId, [LOAN_PAYMENT_STEP_RELATIONS.Transfers]);
     const { amount, sourcePaymentAccountId, targetPaymentAccountId, transfers } = step;
     const transferOrder = transfers ? transfers.length : 0;
-    const transferData: Partial<ITransfer> = {
+    const transferData: Partial<Transfer> = {
       amount,
       state: TransferStateCodes.Created,
       sourceAccountId: sourcePaymentAccountId,
@@ -176,7 +176,7 @@ export class PaymentDomainService extends BaseDomainServices {
     return this.data.transfers.createTransferForStep(transferData);
   }
 
-  public async getTransferById(transferId: string, relations?: TransferRelation[]): Promise<ITransfer> {
+  public async getTransferById(transferId: string, relations?: TransferRelation[]): Promise<Transfer> {
     if (!transferId) {
       throw new MissingInputException('Missing transfer ID');
     }

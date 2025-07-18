@@ -1,15 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { RepositoryBase } from '@library/shared/common/data/base.repository';
-import { InjectRepository } from '@nestjs/typeorm';
+import { IGetUserDetailByIdResult, getUserDetailById } from '@core/modules/data/sql_generated/get-user-detail.queries';
 import { ContactType } from '@library/entity/enum';
-import { getUserDetailById, IGetUserDetailByIdResult } from '@core/modules/data/sql_generated/get-user-detail.queries';
-import { IApplicationUser } from '@library/entity/entity-interface';
-import { ApplicationUser } from '@library/shared/domain/entity';
-import { IUserRepository } from '@core/shared/interfaces/repositories';
+import { RepositoryBase } from '@library/shared/common/data/base.repository';
+import { ApplicationUser } from '@library/shared/domain/entity/application.user.entity';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
-export class UserRepository extends RepositoryBase<ApplicationUser> implements IUserRepository {
+export class UserRepository extends RepositoryBase<ApplicationUser> {
   private readonly logger: Logger = new Logger(UserRepository.name);
 
   constructor(
@@ -19,7 +17,7 @@ export class UserRepository extends RepositoryBase<ApplicationUser> implements I
     super(repository, ApplicationUser);
   }
 
-  public async getUserByContact(contact: string, type: ContactType): Promise<IApplicationUser | null> {
+  public async getUserByContact(contact: string, type: string): Promise<ApplicationUser | null> {
     this.logger.debug(`getUserByContact: Getting User by ${type} Contact: ${contact}`);
 
     switch (type) {

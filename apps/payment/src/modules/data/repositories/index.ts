@@ -1,13 +1,22 @@
-import { LoanPaymentStepRepository } from '@payment/modules/loan-payment-steps/repositories';
-import { LoanPaymentRepository, PaymentsRouteRepository, PaymentsRouteStepRepository } from '@payment/modules/loan-payments/repositories';
-import { TransferErrorRepository, TransferRepository } from '@payment/modules/transfer-execution/repositories';
-import { ILoanPaymentRepository, ILoanPaymentStepRepository, IPaymentsRouteRepository, IPaymentsRouteStepRepository, ITransferErrorRepository, ITransferRepository } from '@payment/shared/interfaces/repositories';
+import { LoanPaymentStepRepository } from '../../loan-payment-steps/repositories/loan.payment.step.repository';
+import { LoanPaymentRepository } from '../../loan-payments/repositories/loan.payment.repository';
+import { PaymentsRouteRepository } from '../../loan-payments/repositories/payments.route.repository';
+import { PaymentsRouteStepRepository } from '../../loan-payments/repositories/payments.route.step.repository';
+import { TransferErrorRepository } from '../../transfer-execution/repositories/transfer.error.repository';
+import { TransferRepository } from '../../transfer-execution/repositories/transfer.repository';
+
+export * from '../../loan-payment-steps/repositories/loan.payment.step.repository';
+export * from '../../loan-payments/repositories/loan.payment.repository';
+export * from '../../loan-payments/repositories/payments.route.repository';
+export * from '../../loan-payments/repositories/payments.route.step.repository';
+export * from '../../transfer-execution/repositories/transfer.error.repository';
+export * from '../../transfer-execution/repositories/transfer.repository';
 
 export const CustomPaymentRepositories = [
-  { provide: ILoanPaymentRepository, useClass: LoanPaymentRepository },
-  { provide: IPaymentsRouteRepository, useClass: PaymentsRouteRepository },
-  { provide: IPaymentsRouteStepRepository, useClass: PaymentsRouteStepRepository },
-  { provide: ILoanPaymentStepRepository, useClass: LoanPaymentStepRepository },
-  { provide: ITransferRepository, useClass: TransferRepository },
-  { provide: ITransferErrorRepository, useClass: TransferErrorRepository },
+  { provide: LoanPaymentRepository, useClass: LoanPaymentRepository },
+  { provide: PaymentsRouteRepository, useClass: PaymentsRouteRepository },
+  { provide: PaymentsRouteStepRepository, useClass: PaymentsRouteStepRepository },
+  { provide: LoanPaymentStepRepository, useClass: LoanPaymentStepRepository },
+  { provide: TransferRepository, useClass: TransferRepository },
+  { provide: TransferErrorRepository, useClass: TransferErrorRepository },
 ];

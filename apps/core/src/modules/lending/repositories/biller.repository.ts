@@ -1,21 +1,22 @@
-import { IBillerRepository } from '@core/shared/interfaces/repositories';
-import { IBiller } from '@library/entity/entity-interface';
-import { BillerTypeCodes } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
-import { Biller } from '@library/shared/domain/entity';
+import { Biller } from '@library/shared/domain/entity/biller.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { BillerTypeCodes } from '@library/entity/enum';
 
 @Injectable()
-export class BillerRepository extends RepositoryBase<Biller> implements IBillerRepository {
+export class BillerRepository extends RepositoryBase<Biller> {
   private readonly logger: Logger = new Logger(BillerRepository.name);
 
-  constructor(@InjectRepository(Biller) protected readonly repository: Repository<Biller>) {
+  constructor(
+    @InjectRepository(Biller)
+    protected readonly repository: Repository<Biller>
+  ) {
     super(repository, Biller);
   }
 
-  public async getAllCustomBillers(createdById: string): Promise<IBiller[] | null> {
+  public async getAllCustomBillers(createdById: string): Promise<Biller[] | null> {
     return this.repository.find({ where: { createdById, type: BillerTypeCodes.Custom } });
   }
 

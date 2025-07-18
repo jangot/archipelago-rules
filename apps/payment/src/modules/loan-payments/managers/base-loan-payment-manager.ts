@@ -1,6 +1,6 @@
-import { ILoan, ILoanPayment, ILoanPaymentStep, IPaymentsRoute, IPaymentsRouteStep } from '@library/entity/entity-interface';
 import { LoanPaymentState, LoanPaymentStateCodes, LoanPaymentType, LoanType, PaymentStepStateCodes } from '@library/entity/enum';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { Loan, LoanPayment, LoanPaymentStep, PaymentsRoute, PaymentsRouteStep } from '@library/shared/domain/entity';
 import { LOAN_PAYMENT_RELATIONS, LOAN_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
@@ -47,7 +47,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param loanId The ID of the loan for which to initiate a payment
    * @returns The created loan payment or null if creation failed
    */
-  public abstract initiate(loanId: string): Promise<ILoanPayment | null>;
+  public abstract initiate(loanId: string): Promise<LoanPayment | null>;
 
   /**
    * Template method for initiating a payment - implements common steps while allowing
@@ -55,7 +55,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param loanId The ID of the loan for which to initiate a payment
    * @returns The created loan payment or null if creation failed
    */
-  protected async initiatePayment(loanId: string): Promise<ILoanPayment | null> {
+  protected async initiatePayment(loanId: string): Promise<LoanPayment | null> {
     this.logger.debug(`Initiating ${this.paymentType} payment for loan ${loanId}`);
     
     // Get loan with necessary relations
@@ -115,7 +115,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param payments Array of existing payments for the loan
    * @returns True if a duplicate payment exists, false otherwise
    */
-  protected hasDuplicatePayment(payments: ILoanPayment[] | null): boolean {
+  protected hasDuplicatePayment(payments: LoanPayment[] | null): boolean {
     return !!payments && payments.some(payment => payment.type === this.paymentType);
   }
 
@@ -125,7 +125,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param statesFilter Array of payment states to filter by
    * @returns Array of payments matching the type and states filter
    */
-  protected getSamePayments(payments: ILoanPayment[] | null, statesFilter: LoanPaymentState[]): ILoanPayment[] {
+  protected getSamePayments(payments: LoanPayment[] | null, statesFilter: LoanPaymentState[]): LoanPayment[] {
     if (!payments) return [];
     return payments.filter(payment => payment.type === this.paymentType && statesFilter.includes(payment.state));
   }
@@ -136,7 +136,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param loan The loan for which to get payment accounts
    * @returns Object containing fromAccountId and toAccountId
    */
-  protected abstract getPaymentAccounts(loan: ILoan): Promise<PaymentAccountPair>;
+  protected abstract getPaymentAccounts(loan: Loan): Promise<PaymentAccountPair>;
 
   /**
    * Gets the payment amount for this payment type
@@ -144,19 +144,19 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param loan The loan for which to get the payment amount
    * @returns The payment amount
    */
-  protected getPaymentAmount(loan: ILoan): number {
+  protected getPaymentAmount(loan: Loan): number {
     return loan.amount; // Default to loan amount, override in specific manager if needed
   }
 
   /**
    * Gets the payment options (state, timestamps) for this payment type
    * Override this method in child classes if the options differ from the defaults
-   * @param loan The loan for which to get payment options
-   * @param amount The payment amount
    * @returns Object containing payment options
+   * @param _loan
+   * @param _amount
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected getPaymentOptions(_loan: ILoan, _amount: number): PaymentOptions {
+  protected getPaymentOptions(_loan: Loan, _amount: number): PaymentOptions {
     // By default, return Created state with no timestamps
     return { state: LoanPaymentStateCodes.Created };
   }
@@ -168,7 +168,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param loanType Type of the loan
    * @returns The payment route or null if not found
    */
-  protected async findRouteForPayment(fromAccountId: string, toAccountId: string, loanType: LoanType): Promise<IPaymentsRoute | null> {
+  protected async findRouteForPayment(fromAccountId: string, toAccountId: string, loanType: LoanType): Promise<PaymentsRoute | null> {
     return this.paymentDomainService.findRouteForPayment(
       fromAccountId,
       toAccountId,
@@ -235,7 +235,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param steps Steps of the loan payment
    * @returns True if all steps are completed, false otherwise
    */
-  protected couldCompletePayment(steps: ILoanPaymentStep[] | null): boolean {
+  protected couldCompletePayment(steps: LoanPaymentStep[] | null): boolean {
     if (!steps || !steps.length) return true;
     return steps.every(step => step.state === PaymentStepStateCodes.Completed);
   }
@@ -250,7 +250,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param steps Steps of the loan payment
    * @returns The ID of the failed step that causes the payment to fail, or null if the payment should not fail
    */
-  protected couldFailPayment(steps: ILoanPaymentStep[] | null): string | null {
+  protected couldFailPayment(steps: LoanPaymentStep[] | null): string | null {
     if (!steps || !steps.length) return null;
     
     // Filter out steps that are in Created state
@@ -273,7 +273,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param steps All steps of the loan payment
    * @returns The ID of the next step that can be started, or null if no step can be started
    */
-  protected couldStartNextStep(steps: ILoanPaymentStep[] | null): string | null {
+  protected couldStartNextStep(steps: LoanPaymentStep[] | null): string | null {
     // Returns the ID of the next step that can be started, or null if no step can be started
     if (!steps || !steps.length) return null;
 
@@ -297,7 +297,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     return nextStep?.id || null;
   }
 
-  protected async getLoan(loanId: string, relations?: LoanRelation[]): Promise<ILoan> {
+  protected async getLoan(loanId: string, relations?: LoanRelation[]): Promise<Loan> {
     if (!loanId) {
       throw new MissingInputException('Missing Loan Id');
     }
@@ -308,7 +308,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     return loan;
   }
 
-  protected async getPayment(paymentId: string, relations?: LoanPaymentRelation[]): Promise<ILoanPayment> {
+  protected async getPayment(paymentId: string, relations?: LoanPaymentRelation[]): Promise<LoanPayment> {
     if (!paymentId) {
       throw new MissingInputException('Missing payment ID');
     }
@@ -319,7 +319,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     return loanPayment;
   }
 
-  protected async getStep(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<ILoanPaymentStep> {
+  protected async getStep(stepId: string, relations?: LoanPaymentStepRelation[]): Promise<LoanPaymentStep> {
     return this.paymentDomainService.getLoanPaymentStepById(stepId, relations);
   }
 
@@ -336,11 +336,11 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
   protected createPaymentStep(
     loanPaymentId: string,
     amount: number,
-    stepToApply: IPaymentsRouteStep,
+    stepToApply: PaymentsRouteStep,
     fromAccountId: string,
     toAccountId: string,
     order: number
-  ): Partial<ILoanPaymentStep> {
+  ): Partial<LoanPaymentStep> {
     const { fromId, toId } = stepToApply;
     return {
       id: v4(), // We generate id here as TypeORM sometimes fails to generate multiple uuids within one transaction
@@ -361,7 +361,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @param routeSteps Steps from the payment route
    * @returns The steps to apply for this payment type
    */
-  protected getStepsToApply(routeSteps: IPaymentsRouteStep[]): IPaymentsRouteStep[] {
+  protected getStepsToApply(routeSteps: PaymentsRouteStep[]): PaymentsRouteStep[] {
     return routeSteps; // By default, use all steps, override in specific managers
   }
 
@@ -375,11 +375,11 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @returns An array of loan payment steps to be created
    */
   protected generateStepsForPayment(
-    payment: ILoanPayment | null, 
-    route: IPaymentsRoute | null, 
+    payment: LoanPayment | null, 
+    route: PaymentsRoute | null, 
     fromAccountId: string, 
     toAccountId: string
-  ): Partial<ILoanPaymentStep>[] | null {
+  ): Partial<LoanPaymentStep>[] | null {
     if (!payment) {
       this.logger.error(`Failed to generate ${this.paymentType} payment steps for loan as payment was not provided`, 
         { payment, route, fromAccountId, toAccountId });
@@ -394,7 +394,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
 
     const { id: loanPaymentId, amount } = payment;
     const routeSteps = this.getStepsToApply(route.steps);
-    const paymentSteps: Partial<ILoanPaymentStep>[] = [];
+    const paymentSteps: Partial<LoanPaymentStep>[] = [];
 
     for (let index = 0; index < routeSteps.length; index++) {
       const stepToApply = routeSteps[index];

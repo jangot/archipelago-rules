@@ -46,7 +46,7 @@ export class CoreService {
         paymentsCount: 12,
         paymentFrequency: LoanPaymentFrequencyCodes.Monthly,
         closureType: LoanClosureCodes.Open,
-      });
+      }, true);
 
       // Do something after the transaction is committed
       this.logger.debug('Transaction committed - 1');
