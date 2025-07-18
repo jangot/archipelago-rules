@@ -5,4 +5,3 @@ export const EventSubscriberServiceNameCodes = {
 } as const;
 
 export type EventSubscriberServiceName = typeof EventSubscriberServiceNameCodes[keyof typeof EventSubscriberServiceNameCodes];
-
