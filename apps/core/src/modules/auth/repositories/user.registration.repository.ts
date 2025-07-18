@@ -1,5 +1,5 @@
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
-import { UserRegistration } from '@library/shared/domain/entity/user.registration.entity';
+import { UserRegistration } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';

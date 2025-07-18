@@ -5,7 +5,7 @@ import { ContactType, LoanApplicationStates } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { LoanApplication } from '@library/shared/domain/entity/loan-application.entity';
+import { LoanApplication } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InvalidUserForLoanApplicationException } from './exceptions';
 

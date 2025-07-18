@@ -1,5 +1,5 @@
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
-import { LoanApplication } from '@library/shared/domain/entity/loan-application.entity';
+import { LoanApplication } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';

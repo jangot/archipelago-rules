@@ -9,8 +9,8 @@ export * from '../../lending/repositories/biller.repository';
 export * from '../../users/repositories/user.repository';
 
 export const CustomCoreRepositories = [
-  { provide: UserRepository, useClass: UserRepository },
-  { provide: LoginRepository, useClass: LoginRepository },
-  { provide: UserRegistrationRepository, useClass: UserRegistrationRepository },
-  { provide: BillerRepository, useClass: BillerRepository },
+  UserRepository,
+  LoginRepository,
+  UserRegistrationRepository,
+  BillerRepository,
 ];
