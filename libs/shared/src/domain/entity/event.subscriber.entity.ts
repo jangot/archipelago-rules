@@ -34,6 +34,13 @@ export class EventSubscriber {
   @Column({ type: 'timestamptz', default: () => 'now()' })
   createdAt: Date;
 
+  /**
+   * Whether the event subscriber is deleted
+   *
+   * @description Whether the event subscriber is deleted.
+   * @type {boolean}
+   * @memberof EventSubscriber
+   */
   @Column({ type: 'boolean', default: false })
   isDeleted: boolean;
 }
