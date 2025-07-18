@@ -16,7 +16,6 @@ import { EventStore } from './event.store.entity';
 import { EventSubscriber } from './event.subscriber.entity';
 import { LoanApplication } from './loan-application.entity';
 import { Loan } from './loan.entity';
-import { LoanInvitee } from './loan.invitee.entity';
 import { LoanPayment } from './loan.payment.entity';
 import { LoanPaymentHistory } from './loan.payment.history.entity';
 import { LoanPaymentStep } from './loan.payment.step.entity';
@@ -38,7 +37,6 @@ export * from './event.store.entity';
 export * from './event.subscriber.entity';
 export * from './loan-application.entity';
 export * from './loan.entity';
-export * from './loan.invitee.entity';
 export * from './loan.payment.entity';
 export * from './loan.payment.history.entity';
 export * from './loan.payment.step.entity';
@@ -66,7 +64,6 @@ export const CoreEntities = [
   UserRegistration, 
   Biller, 
   PaymentAccount, 
-  LoanInvitee, 
 ];
 
 // Add all Payment Entities here

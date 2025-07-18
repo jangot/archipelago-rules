@@ -5,7 +5,6 @@ export * from './ievent-store';
 export * from './ievent-subscriber';
 export * from './iloan';
 export * from './iloan-application';
-export * from './iloan-invitee';
 export * from './iloan-payment';
 export * from './iloan-payment-step';
 export * from './ilogin';

@@ -4,7 +4,6 @@ import { LoanClosure, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanType } f
 import { IBiller } from './ibiller';
 import { IPaymentAccount } from './ipayment-account';
 import { ILoanPayment } from './iloan-payment';
-import { ILoanInvitee } from './iloan-invitee';
 import { ITransferError } from './itransfer-error';
 
 export interface ILoan extends EntityId<string> {
@@ -39,7 +38,6 @@ export interface ILoan extends EntityId<string> {
   // #endregion
 
   // #region Target/Source Assignment
-  invitee: ILoanInvitee;
   // #endregion
 
   // #region Bill-Pay info

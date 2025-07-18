@@ -4,7 +4,7 @@ import { LoanType } from '../enum';
 export interface ILoanApplication extends EntityId<string> {
   // Loan Application
   id: string;
-  status: string | null; //TODO: need to define this. enum?
+  status: string | null; // TODO: Update LoanApplicationStatusCodes to use enum type
 
   // Biller
   billerId: string | null;
