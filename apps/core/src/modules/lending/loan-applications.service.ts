@@ -127,11 +127,11 @@ export class LoanApplicationsService {
     const status = LoanApplicationStates.Submitted;
     if (lenderUser && lenderUser.id) {
       this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} was found. Will assign lenderId now.`);
-      await this.domainServices.loanServices.updateLoanApplicationNoResult(id, { lenderId: lenderUser.id, status });
+      await this.domainServices.loanServices.updateLoanApplication(id, { lenderId: lenderUser.id, status });
     } else {
       // TODO: Assign lenderId once the lender creates/authenticates a Zirtue account
       this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} not found. Will assign lenderId after registration.`);
-      await this.domainServices.loanServices.updateLoanApplicationNoResult(id, { status });
+      await this.domainServices.loanServices.updateLoanApplication(id, { status });
     }
     // TODO: Send email to lender
   }
