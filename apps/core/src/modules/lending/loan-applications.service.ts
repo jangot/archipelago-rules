@@ -8,6 +8,7 @@ import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputExc
 import { LoanApplication } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InvalidUserForLoanApplicationException } from './exceptions';
+import { LendingLogic } from './lending.logic';
 
 @Injectable()
 export class LoanApplicationsService {
@@ -156,8 +157,7 @@ export class LoanApplicationsService {
       this.logger.warn(`${userId} is not authorized to accept loan application ${loanApplicationId}`);
       throw new InvalidUserForLoanApplicationException('You are not authorized to accept this loan application');
     }
-
-    this.validateLoanApplicationForAcceptance(loanApplication);
+    LendingLogic.validateLoanApplicationForAcceptance(loanApplication);
     const createdLoan = await this.domainServices.loanServices.acceptLoanApplication(loanApplicationId, userId);
     if (!createdLoan) {
       this.logger.error(`Failed to create loan from application ${loanApplicationId}`);
@@ -165,58 +165,6 @@ export class LoanApplicationsService {
     }
 
     this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
-  }
-
-  private validateLoanApplicationForAcceptance(loanApplication: LoanApplication): void {
-    const missingFields: string[] = [];
-
-    // Required loan information
-    if (!loanApplication.loanAmount) {
-      missingFields.push('loanAmount');
-    }
-    if (!loanApplication.loanType) {
-      missingFields.push('loanType');
-    }
-
-    // Required user information
-    if (!loanApplication.lenderId) {
-      missingFields.push('lenderId');
-    }
-    if (!loanApplication.borrowerId) {
-      missingFields.push('borrowerId');
-    }
-
-    // Required payment account information
-    if (!loanApplication.lenderPaymentAccountId) {
-      missingFields.push('lenderPaymentAccountId');
-    }
-    if (!loanApplication.borrowerPaymentAccountId) {
-      missingFields.push('borrowerPaymentAccountId');
-    }
-
-    // Required payments frequency
-    if (!loanApplication.loanPaymentFrequency) {
-      missingFields.push('loanPaymentFrequency');
-    }
-    if (!loanApplication.loanPayments) {
-      missingFields.push('loanPayments');
-    }
-
-    // For non-personal loans, biller information is required
-    if (loanApplication.loanType !== 'personal') {
-      if (!loanApplication.billerId) {
-        missingFields.push('billerId');
-      }
-      if (!loanApplication.billAccountNumber) {
-        missingFields.push('billAccountNumber');
-      }
-    }
-
-    if (missingFields.length > 0) {
-      const errorMessage = `Loan application is missing required fields: ${missingFields.join(', ')}`;
-      this.logger.error(`Validation failed for loan application ${loanApplication.id}: ${errorMessage}`);
-      throw new MissingInputException(errorMessage);
-    }
   }
 
   // TODO: This is a placeholder for the actual loan fee calculation
