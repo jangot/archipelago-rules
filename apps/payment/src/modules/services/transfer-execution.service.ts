@@ -1,6 +1,8 @@
 import { PaymentAccountProvider } from '@library/entity/enum';
+import { EventManager } from '@library/shared/common/event/event-manager';
 import { TransferErrorPayload } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
+import { TransferExecutedEvent } from '@payment/shared/event-handlers/events';
 import { ManagementDomainService } from '../domain/services';
 
 /**
@@ -10,11 +12,13 @@ import { ManagementDomainService } from '../domain/services';
 export class TransferExecutionService {
   private readonly logger: Logger = new Logger(TransferExecutionService.name);
 
-  constructor(private readonly managementDomainService: ManagementDomainService) {}
+  constructor(private readonly managementDomainService: ManagementDomainService, private readonly eventManager: EventManager) {}
 
   /**
    * Executes a transfer by its ID, optionally specifying the provider type.
    * If no provider type is specified, the method will determine the appropriate provider based on the transfer's details.
+   * 
+   * IMPORTANT: Payment provider implementation should move Transfer to `pending` state on successfull execution.
    * 
    * @param transferId - The unique identifier of the transfer to execute
    * @param providerType - Optional provider type to use for the transfer execution
@@ -24,7 +28,21 @@ export class TransferExecutionService {
   public async executeTransfer(transferId: string, providerType: PaymentAccountProvider): Promise<boolean | null>;
   public async executeTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
     this.logger.debug(`Executing transfer ${transferId} ${providerType ? `with provider ${providerType}` : ''}`);
-    return this.managementDomainService.executeTransfer(transferId, providerType);
+    const executionResult = await this.managementDomainService.executeTransfer(transferId, providerType);
+
+    // Based on how transfer execution goes - we either send certain events or log about execution failure
+    if (executionResult === null) {
+      // If executionResult is null, it indicates that the transfer was not found or could not be executed
+      this.logger.error(`Transfer execution failed for transferId: ${transferId} with provider: ${providerType}`);
+    } else if (executionResult === false) {
+      // If executionResult is false, it indicates that the transfer was executed but resulted in a negative outcome
+      this.logger.debug(`Transfer executed but with negative result for transferId: ${transferId}`);
+    } else {
+      // If executionResult is true, it indicates that the transfer was successfully executed
+      this.logger.debug(`Transfer executed successfully for transferId: ${transferId}`);
+      this.eventManager.publish(new TransferExecutedEvent(transferId, providerType));
+    }
+    return executionResult;
   }
 
   /**
