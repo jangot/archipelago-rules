@@ -51,7 +51,7 @@ export class PendingStepManager extends BasePaymentStepManager {
    */
   protected async onTransferCompleted(stepId: string, transferId: string): Promise<boolean | null> {
     this.logger.debug(`Step: ${stepId} is in Pending state, Transfer: ${transferId} is Completed. Updating Step state to Completed.`);
-    return this.paymentDomainService.updatePaymentStepState(stepId, PaymentStepStateCodes.Completed);
+    return this.changeStepState(stepId, PaymentStepStateCodes.Completed);
   }
 
   /**
@@ -65,7 +65,7 @@ export class PendingStepManager extends BasePaymentStepManager {
   protected async onTransferFailed(stepId: string, transferId: string): Promise<boolean | null> {
     // TODO: Implement Error type validation
     this.logger.debug(`Step: ${stepId} is in Pending state, Transfer: ${transferId} is Failed. Updating Step state to Failed.`);
-    return this.paymentDomainService.updatePaymentStepState(stepId, PaymentStepStateCodes.Failed);
+    return this.changeStepState(stepId, PaymentStepStateCodes.Failed);
   }
 
   /**

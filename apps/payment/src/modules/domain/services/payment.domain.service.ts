@@ -1,5 +1,6 @@
-import { LoanPaymentStateCodes, LoanPaymentType, LoanType, PaymentStepState, TransferStateCodes } from '@library/entity/enum';
+import { LoanPaymentStateCodes, LoanPaymentType, LoanType, PaymentStepState, PaymentStepStateCodes, TransferStateCodes } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
+import { EventManager } from '@library/shared/common/event/event-manager';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { Loan, LoanPayment, LoanPaymentStep, PaymentAccount, PaymentsRoute, Transfer } from '@library/shared/domain/entity';
 import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PAYMENTS_ROUTE_RELATIONS, PaymentAccountRelation, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
@@ -7,6 +8,7 @@ import { TransferErrorDetails } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentDataService } from '@payment/modules/data';
+import { PaymentStepCompletedEvent, PaymentStepFailedEvent, PaymentStepPendingEvent } from '@payment/shared/events';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -14,7 +16,8 @@ export class PaymentDomainService extends BaseDomainServices {
 
   constructor(
     protected readonly data: PaymentDataService,
-    protected readonly config: ConfigService
+    protected readonly config: ConfigService,
+    private readonly eventManager: EventManager
   ) {
     super(data);
   }
@@ -128,9 +131,37 @@ export class PaymentDomainService extends BaseDomainServices {
     return this.data.transfers.getLatestTransferForStep(stepId);
   }
 
-  public async updatePaymentStepState(stepId: string, state: PaymentStepState): Promise<boolean | null> {
-    this.logger.debug(`Updating payment step ${stepId} to state ${state}`);
-    return this.data.loanPaymentSteps.updateStepState(stepId, state);
+  public async updatePaymentStepState(stepId: string, oldState: PaymentStepState, newState: PaymentStepState): Promise<boolean | null> {
+    this.logger.debug(`Updating payment step ${stepId} to state ${newState}`);
+    const updateResult = await this.data.loanPaymentSteps.updateStepState(stepId, newState);
+    if (updateResult === null) {
+      this.logger.error(`Failed to update step ${stepId} state to ${newState}. It may not exist or the update operation failed.`);
+      return null;
+    } else if (updateResult === false) {
+      this.logger.warn(`Step ${stepId} state change to ${newState} was not applied. It may already be in this state or the update operation was not successful.`);
+      return false;
+    } else {
+      this.logger.debug(`Step ${stepId} state successfully changed to ${newState}`);
+      await this.publishStepStateChangeEvent(stepId, oldState, newState);
+    }
+
+    return updateResult;
+  }
+
+  private async publishStepStateChangeEvent(stepId: string, oldState: PaymentStepState, newState: PaymentStepState): Promise<boolean | null> {
+    this.logger.debug(`Publishing step state change event for step ${stepId} from ${oldState} to ${newState}`);
+    switch (newState) {
+      case PaymentStepStateCodes.Pending:
+        return this.eventManager.publish<Promise<boolean | null>>(new PaymentStepPendingEvent(stepId, oldState));
+      case PaymentStepStateCodes.Completed:
+        return this.eventManager.publish<Promise<boolean | null>>(new PaymentStepCompletedEvent(stepId, oldState));
+      case PaymentStepStateCodes.Failed:
+        return this.eventManager.publish<Promise<boolean | null>>(new PaymentStepFailedEvent(stepId, oldState));
+      case PaymentStepStateCodes.Created:
+      default:
+        this.logger.error(`Unhandled step state: ${newState} for stepId: ${stepId}`);
+        return null;
+    }
   }
 
   // #endregion

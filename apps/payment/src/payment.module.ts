@@ -13,6 +13,7 @@ import { ServicesModule } from './modules/services';
 import { TransferExecutionModule } from './modules/transfer-execution';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
+import { PAYMENT_EVENT_HANDLERS } from './shared/event-handlers';
 
 @Module({ 
   imports: [
@@ -32,6 +33,11 @@ import { PaymentService } from './payment.service';
     BillersModule,
   ], 
   controllers: [PaymentController], 
-  providers: [PaymentService, Logger], 
+  providers: [
+    PaymentService,
+    Logger,
+    // EventHandlers
+    ...PAYMENT_EVENT_HANDLERS,
+  ], 
 })
 export class PaymentModule {}
