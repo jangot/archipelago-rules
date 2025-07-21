@@ -300,6 +300,106 @@ namespace Core {
   ```
 
 
+ ## Loan Applications
+
+A loan application is a request for a loan that is submitted by a borrower. It contains the borrower's information, the requested loan amount, and other relevant details. The application is reviewed by the lender, who can either approve or reject it.
+
+Loans can only be created by a loan application. 
+
+ ### Loan Application States
+- **Pending**: Loan application is pending review by the lender. Initial state before submission.
+- **Submitted**: Loan application was submitted by the borrower.
+- **Approved**: Loan application was approved by the lender.
+- **Rejected**: Loan application was rejected by the lender.
+
+
+## Loan Application Entity
+
+The **LoanApplication** entity is pretty similar to **Loan** since collects all the information required to create a Loan. 
+The main difference is that **LoanApplication** has a different set of states and is not directly related to the payment process.
+Other fields are added in order to support the loan application process, such as the date  in which the lender responded to the application.
+
+The structure of the **LoanApplication** entity is as follows:
+```typescript
+class LoanApplication {
+  /** Unique identifier for the loan application */
+  id: string;
+
+  /**
+   * The current state of the loan application (e.g., pending, submitted, approved, rejected).
+   * See LoanApplicationStates for possible values.
+   */
+  status: LoanApplicationStateType | null;
+
+  // Biller
+  /** The unique identifier of the biller, if applicable */
+  billerId: string | null;
+  /** The biller entity associated with this application */
+  biller: Biller | null;
+  /** The name of the biller */
+  billerName: string | null;
+  /** The postal code of the biller */
+  billerPostalCode: string | null;
+
+  // Bill
+  /** The account number with the biller for bill pay loans */
+  billAccountNumber: string | null;
+
+  // Lender
+  /** The unique identifier of the lender, if specified */
+  lenderId: string | null;
+  /** The lender user entity, if available */
+  lender: ApplicationUser | null;
+  /** The payment account ID for the lender */
+  lenderPaymentAccountId: string | null;
+  /** The payment account entity for the lender */
+  lenderPaymentAccount: PaymentAccount | null;
+  /** The first name of the lender (for invitation flows) */
+  lenderFirstName: string | null;
+  /** The last name of the lender (for invitation flows) */
+  lenderLastName: string | null;
+  /** The email address of the lender (for invitation flows) */
+  lenderEmail: string | null;
+  /** The relationship of the lender to the borrower */
+  lenderRelationship: string | null;
+  /** A note from the lender to the borrower */
+  lenderNote: string | null;
+  /** The date/time the lender responded to the application */
+  lenderRespondedAt: Date | null;
+
+  // Borrower
+  /** The unique identifier of the borrower */
+  borrowerId: string | null;
+  /** The borrower user entity */
+  borrower: ApplicationUser | null;
+  /** The payment account ID for the borrower */
+  borrowerPaymentAccountId: string | null;
+  /** The payment account entity for the borrower */
+  borrowerPaymentAccount: PaymentAccount | null;
+  /** The date/time the borrower submitted the application */
+  borrowerSubmittedAt: Date | null;
+
+  // Loan Info
+  /** The type of loan requested (e.g., personal, bill pay) */
+  loanType: LoanType | null;
+  /** The payment frequency for the loan (e.g., monthly, weekly) */
+  loanPaymentFrequency: string | null;
+  /** The amount of the loan requested */
+  loanAmount: number | null;
+  /** The number of payments for the loan */
+  loanPayments: number | null;
+  /** The calculated service fee for the loan */
+  loanServiceFee: number | null;
+
+  // Metadata
+  /** The date/time the application was created */
+  createdAt: Date;
+  /** The date/time the application was last updated */
+  updatedAt: Date | null;
+}
+```
+    
+}
 
   ## LoanPayments, LoanPaymentSteps and Transfers
 
