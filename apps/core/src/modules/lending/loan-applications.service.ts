@@ -167,6 +167,25 @@ export class LoanApplicationsService {
     this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
   }
 
+  /**
+   * Rejects a loan application by updating its status to 'rejected'.
+   * Validates that the user is authorized to perform the action.
+   *
+   * @param userId - The user performing the action
+   * @param id - The loan application ID
+   * @returns Promise<void>
+   */
+  public async rejectLoanApplication(userId: string, id: string): Promise<void> {
+    this.logger.debug(`rejectLoanApplication: Rejecting loan application ${id}`);
+    await this.validateApplicationLoanUser(id, userId);
+    const status = LoanApplicationStates.Rejected;
+    const result = await this.domainServices.loanServices.updateLoanApplication(id, { status });
+    if (!result) {
+      throw new EntityFailedToUpdateException('Failed to reject Loan application');
+    }
+    this.logger.debug(`Successfully rejected loan application ${id}`);
+  }
+
   // TODO: This is a placeholder for the actual loan fee calculation
   private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {
     // Round to 2 decimal places
