@@ -1,19 +1,13 @@
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanClosure, LoanClosureCodes, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanType } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Check, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { ApplicationUser } from './application.user.entity';
-import { Biller } from './biller.entity';
-import { LoanInvitee } from './loan.invitee.entity';
-import { LoanPayment } from './loan.payment.entity';
-import { PaymentAccount } from './payment.account.entity';
-import { TransferError } from './transfer.error.entity';
+import { ApplicationUser, Biller, LoanPayment, PaymentAccount, TransferError } from './';
 
 @Entity({ schema: DbSchemaCodes.Core })
 // When using @Check('<constraint_name>', '<expression') -- always specify a Constraint name
 // (not worth trying to parse the expression to generate a reasonable Check constraint name)
 @Check('loans_borrower_id_ne_lender_id_check', '"borrower_id" <> "lender_id"') // Ensures borrowerId and lenderId are different
-export class Loan implements ILoan {
+export class Loan {
 
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -60,9 +54,6 @@ export class Loan implements ILoan {
 
   @Column({ type: 'text', nullable: true })
   deeplink: string | null;
-
-  @OneToOne(() => LoanInvitee, (invitee) => invitee.loan, { nullable: false })
-  invitee: LoanInvitee;
 
   @Column({ type: 'uuid', nullable: true })
   billerId: string | null;

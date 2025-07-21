@@ -8,7 +8,6 @@
 
 import { RegistrationDto } from '@core/modules/auth/dto/request/registration.request.dto';
 import { VerificationEvent } from '@core/modules/auth/verification';
-import { IApplicationUser } from '@library/entity/entity-interface';
 import { ContactType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { logSafeRegistration, logSafeUser, safeTrim } from '@library/shared/common/helper';
@@ -17,6 +16,7 @@ import { ContactTakenException, UnableToCreateUserException } from '../../except
 import { RegistrationTransitionResult } from '../registration-transition-result';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { RegistrationInitiatedCommand } from './registration.commands';
+import { ApplicationUser } from '@library/shared/domain/entity';
 
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler
@@ -83,7 +83,7 @@ export class RegistrationInitiatedCommandHandler
     return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, userId, undefined, code);
   }
 
-  private async reInitiateEmailVerification(user: IApplicationUser, input: RegistrationDto): Promise<RegistrationTransitionResult> {
+  private async reInitiateEmailVerification(user: ApplicationUser, input: RegistrationDto): Promise<RegistrationTransitionResult> {
     const { firstName, lastName, email } = input;
 
     // This case is unexpected as we re-initiate email verification only by not empty email

@@ -1,22 +1,24 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IBillerRepository, ILoanInviteeRepository, ILoginRepository, IUserRegistrationRepository, IUserRepository } from '../../shared/interfaces/repositories';
 import { IDataService } from '@library/shared/common/data/idata.service';
-import { ILoanRepository, IPaymentAccountRepository } from '@library/shared/infrastructure/interface';
-import { ILoanApplicationRepository } from '@core/shared/interfaces/repositories/iloan-application.repository';
+import { Injectable } from '@nestjs/common';
+import { LoanRepository, PaymentAccountRepository } from '@library/shared/infrastructure/repository';
+import { LoginRepository } from '../auth/repositories/login.repository';
+import { UserRegistrationRepository } from '../auth/repositories/user.registration.repository';
+import { BillerRepository } from '../lending/repositories/biller.repository';
+import { LoanApplicationRepository } from '../lending/repositories/loan-application.repository';
+import { UserRepository } from '../users/repositories/user.repository';
 
 
 @Injectable()
 export class CoreDataService extends IDataService {
    
   constructor(
-    @Inject(IUserRepository) public readonly users: IUserRepository,
-    @Inject(ILoanRepository) public readonly loans: ILoanRepository,
-    @Inject(ILoginRepository) public readonly logins: ILoginRepository,
-    @Inject(IUserRegistrationRepository) public readonly userRegistrations: IUserRegistrationRepository,
-    @Inject(IBillerRepository) public readonly billers: IBillerRepository,
-    @Inject(IPaymentAccountRepository) public readonly paymentAccounts: IPaymentAccountRepository,
-    @Inject(ILoanInviteeRepository) public readonly loanInvitees: ILoanInviteeRepository,
-    @Inject(ILoanApplicationRepository) public readonly loanApplications: ILoanApplicationRepository
+    public readonly users: UserRepository,
+    public readonly loans: LoanRepository,
+    public readonly logins: LoginRepository,
+    public readonly userRegistrations: UserRegistrationRepository,
+    public readonly billers: BillerRepository,
+    public readonly paymentAccounts: PaymentAccountRepository,
+    public readonly loanApplications: LoanApplicationRepository
   ) {
     super();
   } 

@@ -3,11 +3,7 @@ import { DataSource } from 'typeorm';
 import { addTransactionalDataSource, initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 import { v4 as uuidv4 } from 'uuid';
 
-import {
-  ILoanPayment,
-  ILoanPaymentStep,
-  IPaymentAccount,
-} from '@library/entity/entity-interface';
+import { LoanPayment, LoanPaymentStep, PaymentAccount } from '@library/shared/domain/entity';
 import {
   LoanPaymentStateCodes,
   LoanPaymentTypeCodes,
@@ -96,9 +92,9 @@ describe('PaymentDomainService Integration', () => {
    * @returns Promise resolving to the created payment account
    * @throws Error if account creation fails due to constraint violations
    */
-  async function createTestPaymentAccount(userId?: string): Promise<IPaymentAccount> {
+  async function createTestPaymentAccount(userId?: string): Promise<PaymentAccount> {
     const userIdToUse = userId || FOUNDATION_TEST_IDS.users.primaryUser;
-    const accountData = TestPaymentAccountFactory.createCheckbookBankAccount('Test User Account') as Partial<IPaymentAccount>;
+    const accountData = TestPaymentAccountFactory.createCheckbookBankAccount('Test User Account') as Partial<PaymentAccount>;
     
     const result = await paymentDomainService.addPaymentAccount(userIdToUse, accountData);
     
@@ -115,16 +111,16 @@ describe('PaymentDomainService Integration', () => {
    * @returns Promise resolving to the created internal payment account
    * @throws Error if account creation fails due to constraint violations
    */
-  async function createTestInternalAccount(userId?: string): Promise<IPaymentAccount> {
+  async function createTestInternalAccount(userId?: string): Promise<PaymentAccount> {
     const userIdToUse = userId || FOUNDATION_TEST_IDS.users.primaryUser;
-    const accountData = TestPaymentAccountFactory.createFiservDebitAccount('Internal Platform Account') as Partial<IPaymentAccount>;
+    const accountData = TestPaymentAccountFactory.createFiservDebitAccount('Internal Platform Account') as Partial<PaymentAccount>;
     
     const result = await paymentDomainService.addPaymentAccount(userIdToUse, accountData);
     
     if (!result) {
       throw new Error('Failed to create test internal account - check entity constraints and required fields');
     }
-    
+
     return result;
   }
 
@@ -134,9 +130,9 @@ describe('PaymentDomainService Integration', () => {
    * @returns Promise resolving to the created loan payment
    * @throws Error if payment creation fails due to constraint violations
    */
-  async function createTestPayment(loanId?: string): Promise<ILoanPayment> {
+  async function createTestPayment(loanId?: string): Promise<LoanPayment> {
     const loanIdToUse = loanId || FOUNDATION_TEST_IDS.loans.disbursedLoan;
-    const paymentInput: Partial<ILoanPayment> = {
+    const paymentInput: Partial<LoanPayment> = {
       loanId: loanIdToUse,
       amount: 1000,
       type: LoanPaymentTypeCodes.Funding,
@@ -164,8 +160,8 @@ describe('PaymentDomainService Integration', () => {
    * @returns Promise resolving to array of created payment steps
    * @throws Error if step creation fails due to constraint violations
    */
-  async function createTestPaymentSteps(paymentId: string, sourceAccountId: string, targetAccountId: string): Promise<ILoanPaymentStep[]> {
-    const stepInputs: Partial<ILoanPaymentStep>[] = [
+  async function createTestPaymentSteps(paymentId: string, sourceAccountId: string, targetAccountId: string): Promise<LoanPaymentStep[]> {
+    const stepInputs: Partial<LoanPaymentStep>[] = [
       {
         loanPaymentId: paymentId,
         order: 0,
@@ -173,8 +169,6 @@ describe('PaymentDomainService Integration', () => {
         sourcePaymentAccountId: sourceAccountId,
         targetPaymentAccountId: targetAccountId,
         state: PaymentStepStateCodes.Created,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
       {
         loanPaymentId: paymentId,
@@ -183,8 +177,6 @@ describe('PaymentDomainService Integration', () => {
         sourcePaymentAccountId: sourceAccountId,
         targetPaymentAccountId: targetAccountId,
         state: PaymentStepStateCodes.Created,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
     ];
     
@@ -204,9 +196,9 @@ describe('PaymentDomainService Integration', () => {
    * @returns Promise resolving to the created repayment payment
    * @throws Error if payment creation fails due to constraint violations
    */
-  async function createTestRepaymentPayment(loanId?: string, amount: number = 200): Promise<ILoanPayment> {
+  async function createTestRepaymentPayment(loanId?: string, amount: number = 200): Promise<LoanPayment> {
     const loanIdToUse = loanId || FOUNDATION_TEST_IDS.loans.disbursedLoan;
-    const paymentInput: Partial<ILoanPayment> = {
+    const paymentInput: Partial<LoanPayment> = {
       loanId: loanIdToUse,
       amount: amount,
       type: LoanPaymentTypeCodes.Repayment,
@@ -232,10 +224,10 @@ describe('PaymentDomainService Integration', () => {
    * @throws Error if any entity creation fails due to constraint violations
    */
   async function createCompleteTestData(): Promise<{
-    payment: ILoanPayment;
-    sourceAccount: IPaymentAccount;
-    destAccount: IPaymentAccount;
-    steps: ILoanPaymentStep[];
+    payment: LoanPayment;
+    sourceAccount: PaymentAccount;
+    destAccount: PaymentAccount;
+    steps: LoanPaymentStep[];
   }> {
     const payment = await createTestPayment();
     const sourceAccount = await createTestPaymentAccount();
@@ -346,7 +338,7 @@ describe('PaymentDomainService Integration', () => {
     it('should update a payment state successfully', async () => {
       // Arrange
       const created = await createTestPayment();
-      const updates: Partial<ILoanPayment> = {
+      const updates: Partial<LoanPayment> = {
         state: LoanPaymentStateCodes.Pending,
       };
       
@@ -634,7 +626,7 @@ describe('PaymentDomainService Integration', () => {
     it('should handle concurrent payment creation gracefully', async () => {
       // Arrange & Act
       const paymentPromises = Array.from({ length: 3 }, (_, index) => {
-        const paymentInput: Partial<ILoanPayment> = {
+        const paymentInput: Partial<LoanPayment> = {
           loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
           amount: 100 * (index + 1),
           type: LoanPaymentTypeCodes.Repayment,
@@ -759,7 +751,7 @@ describe('PaymentDomainService Integration', () => {
 
     it('should handle edge cases with zero amounts gracefully', async () => {
       // Arrange
-      const paymentInput: Partial<ILoanPayment> = {
+      const paymentInput: Partial<LoanPayment> = {
         loanId: FOUNDATION_TEST_IDS.loans.disbursedLoan,
         amount: 0,
         type: LoanPaymentTypeCodes.Fee,

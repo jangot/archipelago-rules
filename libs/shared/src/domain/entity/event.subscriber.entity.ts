@@ -1,10 +1,9 @@
-import { IEventSubscriber } from '@library/entity/entity-interface/ievent-subscriber';
 import { EventSubscriberServiceName } from '@library/entity/enum/event-subscriber-service-name';
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('event_subscribers', { schema: 'notifications' })
 @Index(['subscriberService', 'name', 'destination'], { unique: true })
-export class EventSubscriber implements IEventSubscriber {
+export class EventSubscriber {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -35,6 +34,13 @@ export class EventSubscriber implements IEventSubscriber {
   @Column({ type: 'timestamptz', default: () => 'now()' })
   createdAt: Date;
 
+  /**
+   * Whether the event subscriber is deleted
+   *
+   * @description Whether the event subscriber is deleted.
+   * @type {boolean}
+   * @memberof EventSubscriber
+   */
   @Column({ type: 'boolean', default: false })
   isDeleted: boolean;
 }

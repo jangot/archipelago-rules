@@ -1,16 +1,14 @@
+import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { PaymentsRoute } from '@library/shared/domain/entity/payments.route.entity';
 import { PaymentsRouteRelation } from '@library/shared/domain/entity/relation';
-import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { PaymentRouteSearchInput } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArrayContains, Repository } from 'typeorm';
-import { IPaymentsRouteRepository } from '@payment/shared/interfaces/repositories';
 
 @Injectable()
-export class PaymentsRouteRepository extends RepositoryBase<PaymentsRoute> implements IPaymentsRouteRepository {
+export class PaymentsRouteRepository extends RepositoryBase<PaymentsRoute> {
   private readonly logger: Logger = new Logger(PaymentsRouteRepository.name);
-
   constructor(@InjectRepository(PaymentsRoute) protected readonly repository: Repository<PaymentsRoute>) {
     super(repository, PaymentsRoute);
   }

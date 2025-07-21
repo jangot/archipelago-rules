@@ -1,14 +1,12 @@
-import { ILoanPayment } from '@library/entity/entity-interface';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { LoanPayment } from '@library/shared/domain/entity';
 import { LoanPaymentRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILoanPaymentRepository } from '@payment/shared/interfaces/repositories';
 import { In, Repository } from 'typeorm';
 
 @Injectable()
-export class LoanPaymentRepository extends RepositoryBase<LoanPayment> implements ILoanPaymentRepository {
+export class LoanPaymentRepository extends RepositoryBase<LoanPayment> {
   private readonly logger: Logger = new Logger(LoanPaymentRepository.name);
 
   constructor(@InjectRepository(LoanPayment) protected readonly repository: Repository<LoanPayment>) {
@@ -19,7 +17,7 @@ export class LoanPaymentRepository extends RepositoryBase<LoanPayment> implement
     return this.repository.findOne({ where: { id }, relations });
   }
 
-  public async getPaymentsByIds(paymentIds: string[], relations: LoanPaymentRelation[] | undefined): Promise<ILoanPayment[] | null> {
+  public async getPaymentsByIds(paymentIds: string[], relations: LoanPaymentRelation[] | undefined): Promise<LoanPayment[] | null> {
     return this.repository.find({ where: { id: In(paymentIds) }, relations });
   }
 

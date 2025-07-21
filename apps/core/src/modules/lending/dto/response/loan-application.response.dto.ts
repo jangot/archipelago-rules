@@ -1,7 +1,7 @@
 import { LoanType, LoanTypeCodes } from '@library/entity/enum';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEmail, IsInt, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsDate, IsEmail, IsInt, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 @ApiSchema({ name: 'loanApplicationResponse' })
 export class LoanApplicationResponseDto {
@@ -18,6 +18,7 @@ export class LoanApplicationResponseDto {
   @Expose()
   status: string | null;
 
+  
   // Biller
   @ApiProperty({ description: 'Unique identifier for the biller', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001' })
   @IsUUID()
@@ -37,12 +38,14 @@ export class LoanApplicationResponseDto {
   @Expose()
   billerPostalCode: string | null;
 
+
   // Bill
   @ApiProperty({ description: 'Account number with the biller', type: 'string', example: '123456789' })
   @IsString()
   @IsOptional()
   @Expose()
   billAccountNumber: string | null;
+
 
   // Lender
   @ApiProperty({ description: 'Unique identifier for the lender user account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
@@ -87,6 +90,13 @@ export class LoanApplicationResponseDto {
   @Expose()
   lenderPaymentAccountId: string | null;
 
+  @ApiProperty({ description: 'The date when the lender responded to the application', type: 'string', format: 'date-time', example: '2023-01-01T00:00:00Z', required: false })
+  @IsDate()
+  @IsOptional()
+  @Expose()
+  lenderRespondedAt: Date | null;
+
+
   // Borrower
   @ApiProperty({ description: 'Unique identifier for the borrower user account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
   @IsUUID()
@@ -99,6 +109,13 @@ export class LoanApplicationResponseDto {
   @IsOptional()
   @Expose()
   borrowerAccountId: string | null;
+
+  @ApiProperty({ description: 'The date when the borrower submitted the application', type: 'string', format: 'date-time', example: '2023-01-01T00:00:00Z', required: false })
+  @IsDate()
+  @IsOptional()
+  @Expose()
+  borrowerSubmittedAt: Date | null;
+
 
   // Loan
   @ApiProperty({ description: 'Type of the loan', type: 'string', example: LoanTypeCodes.DirectBillPay })

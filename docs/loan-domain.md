@@ -9,7 +9,6 @@
 - **Loan** references a **Biller**.
 - **Loan** references **PaymentAccount** (for both lender and borrower accounts).
 - **Loan** has a collection of **LoanPayments**.
-- **LoanInvitee** references **Loan**.
 - **LoanPayment** references **Loan** and has a collection of **Transfers**.
 - **Transfer** references **PaymentAccount** for its source/destination, and an (optional) **LoanPayment**.
 - **PaymentAccount** belongs to **ApplicationUser** (the account owner).
@@ -26,7 +25,6 @@ config:
 ---
 erDiagram
     IApplicationUser ||--o{ ILoan : "lender / borrower"
-    ILoanInvitee }o--|| ILoan : "loan"
     ILoan ||--o| IBiller : "biller"
     IApplicationUser ||--o{ IBiller : "createdBy"
     ILoan ||--o{ ILoanPayment : "payments"
@@ -52,10 +50,6 @@ erDiagram
       string billerId FK
       string lenderAccountId FK
       string borrowerAccountId FK
-    }
-    ILoanInvitee {
-      string id PK
-      string loanId FK
     }
     IBiller {
       string id PK
@@ -141,16 +135,6 @@ namespace Core {
         acceptedAt: Date
     }
 
-    class ILoanInvitee {
-        id: string
-        loanId: string
-        type: LoanInviteeType
-        firstName: string
-        lastName: string
-        email: string
-        phone: string
-    }
-
     class IBiller {
         id: string
         name: string
@@ -202,9 +186,6 @@ namespace Core {
     ILoan "1" --> "0..1" IApplicationUser : lender
     ILoan "1" --> "0..1" IApplicationUser : borrower
 
-    %% ILoan <-> ILoanInvitee (invitee)
-    ILoan "1" --> "1" ILoanInvitee : invitee
-
     %% ILoan <-> IBiller (biller)
     ILoan "1" --> "0..1" IBiller : biller
 
@@ -217,9 +198,6 @@ namespace Core {
 
     %% IBiller <-> IApplicationUser (createdBy)
     IBiller "1" --> "0..1" IApplicationUser : createdBy
-
-    %% ILoanInvitee <-> ILoan (loan)
-    ILoanInvitee "1" --> "1" ILoan : loan
 
     %% ILoanPayment <-> ILoan (loan)
     ILoanPayment "1" --> "1" ILoan : loan

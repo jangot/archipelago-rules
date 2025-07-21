@@ -1,5 +1,5 @@
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { Loan } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
@@ -31,7 +31,7 @@ export class FeePaymentManager extends BaseLoanPaymentManager {
    * @returns Payment account pair with lender as source and Zirtue as target
    * @todo Use explicit Payment Account for Fee instead of biller account
    */
-  protected getAccountPairForPaymentType(loan: ILoan): PaymentAccountPair {
+  protected getAccountPairForPaymentType(loan: Loan): PaymentAccountPair {
     return { 
       fromAccountId: loan.lenderAccountId,
       toAccountId: loan.biller?.paymentAccountId || null,
@@ -48,7 +48,7 @@ export class FeePaymentManager extends BaseLoanPaymentManager {
    * @param loan - Loan entity containing fee amount configuration
    * @returns The fee amount to be paid, defaults to 0 if no fees configured
    */
-  protected getPaymentAmount(loan: ILoan): number {
+  protected getPaymentAmount(loan: Loan): number {
     return loan.feeAmount || 0;
   }
 }

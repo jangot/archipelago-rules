@@ -1,5 +1,5 @@
-import { ILoan, IPaymentsRouteStep } from '@library/entity/entity-interface';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { Loan, PaymentsRouteStep } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
@@ -32,7 +32,7 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
    * @param loan - Loan entity containing account information
    * @returns Payment account pair with lender as source and Zirtue as target
    */
-  protected getAccountPairForPaymentType(loan: ILoan): PaymentAccountPair {
+  protected getAccountPairForPaymentType(loan: Loan): PaymentAccountPair {
     return { 
       fromAccountId: loan.lenderAccountId,
       toAccountId: loan.biller?.paymentAccountId || null,
@@ -49,7 +49,7 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
    * @param routeSteps - Complete array of route steps from payment route
    * @returns Array containing only the first step, or empty if single-step route
    */
-  protected getStepsToApply(routeSteps: IPaymentsRouteStep[]): IPaymentsRouteStep[] {
+  protected getStepsToApply(routeSteps: PaymentsRouteStep[]): PaymentsRouteStep[] {
     if (routeSteps.length > 1) {
       return [routeSteps[0]];
     }
@@ -65,7 +65,7 @@ export class FundingPaymentManager extends BaseLoanPaymentManager {
    * @param loan - Loan entity containing amount and fee information
    * @returns Total funding amount (principal + fees)
    */
-  protected getPaymentAmount(loan: ILoan): number {
+  protected getPaymentAmount(loan: Loan): number {
     const { feeAmount, amount } = loan;
     return amount + (feeAmount || 0);
   }

@@ -1,5 +1,5 @@
-import { ILoan, ILoanPayment } from '@library/entity/entity-interface';
 import { LoanPaymentStateCodes, LoanPaymentTypeCodes } from '@library/entity/enum';
+import { Loan, LoanPayment } from '@library/shared/domain/entity';
 import { ScheduleService } from '@library/shared/service';
 import { PlanPreviewInput, PlanPreviewOutputItem, RepaymentPlanPaidPayment } from '@library/shared/type/lending';
 import { Injectable } from '@nestjs/common';
@@ -35,7 +35,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
    * @param loan - Loan entity containing borrower and lender account information
    * @returns Payment account pair with borrower as source and lender as target
    */
-  protected getAccountPairForPaymentType(loan: ILoan): PaymentAccountPair {
+  protected getAccountPairForPaymentType(loan: Loan): PaymentAccountPair {
     return { 
       fromAccountId: loan.borrowerAccountId,
       toAccountId: loan.lenderAccountId,
@@ -53,7 +53,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
    * @param completedPayments - Array of already completed repayment payments
    * @returns True if more payments can be initiated, false if loan is fully paid
    */
-  protected canInitiateAfterCompleted(loan: ILoan, completedPayments: ILoanPayment[]): boolean {
+  protected canInitiateAfterCompleted(loan: Loan, completedPayments: LoanPayment[]): boolean {
     const { id: loanId, paymentsCount } = loan;
     const highestPaymentNumber = Math.max(...completedPayments.map(p => p.paymentNumber || 0));
     if (highestPaymentNumber >= paymentsCount) { 
@@ -73,7 +73,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
    * @param loan - Loan entity with repayment configuration and payment history
    * @returns Partial payment object with calculated amount and schedule, or null if calculation fails
    */
-  protected calculateNewPayment(loan: ILoan): Partial<ILoanPayment> | null {
+  protected calculateNewPayment(loan: Loan): Partial<LoanPayment> | null {
     const { id: loanId, payments } = loan;
 
     const samePaymentsCompleted = this.getSameCompletedPayments(payments);
@@ -111,7 +111,7 @@ export class RepaymentPaymentManager extends BaseLoanPaymentManager {
    * @param paidPayments - Array of completed repayment payments for history
    * @returns Next scheduled payment with amount and date, or null if calculation fails
    */
-  private getNextPayment(loan: ILoan, paidPayments: ILoanPayment[]): PlanPreviewOutputItem | null {
+  private getNextPayment(loan: Loan, paidPayments: LoanPayment[]): PlanPreviewOutputItem | null {
     const { id: loanId, amount, paymentsCount, paymentFrequency, feeMode, feeAmount, createdAt } = loan;
     
     // Build the current state for repayment plan preview

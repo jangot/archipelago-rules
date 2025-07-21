@@ -1,8 +1,8 @@
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanState } from '@library/entity/enum';
+import { Loan } from '@library/shared/domain/entity';
 
 export interface StateDecision {
-  condition: (loan: ILoan) => boolean;
+  condition: (loan: Loan) => boolean;
   nextState: LoanState;
   priority: number; // For ordering decisions
 }

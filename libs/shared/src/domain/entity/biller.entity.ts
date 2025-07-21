@@ -1,4 +1,3 @@
-import { IBiller } from '@library/entity/entity-interface/ibiller';
 import { BillerType } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
@@ -11,10 +10,9 @@ import { PaymentAccount } from './payment.account.entity';
 /**
  * Biller entity implements IBiller for the core domain.
  *
- * @implements {IBiller}
  */
 @Entity({ schema: DbSchemaCodes.Core })
-export class Biller implements IBiller {
+export class Biller {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

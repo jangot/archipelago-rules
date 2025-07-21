@@ -1,16 +1,17 @@
-import { IEventSubscriber } from '@library/entity/entity-interface';
 import { EventSubscriberServiceName } from '@library/entity/enum/event-subscriber-service-name';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { EventSubscriber } from '../../domain/entity/event.subscriber.entity';
-import { IEventPublishedRepository } from '../../infrastructure/interface';
-import { IEventStoreRepository } from '../../infrastructure/interface/ievent-store.repository';
-import { IEventSubscriberRepository } from '../../infrastructure/interface/ievent-subscriber.repository';
 import { SubscriberDestination, SubscriberServiceName } from '../../modules/events/event.constants';
 import { EventSubscription } from './event-subscription';
 import { IEventPublisherService } from './interface/ievent-publisher.service';
 import { IEventSubscriberService } from './interface/ievent-subscriber.service';
 import { IZngEvent } from './interface/izng-event';
+import {
+  EventPublishedRepository,
+  EventStoreRepository,
+  EventSubscriberRepository
+} from '@library/shared/infrastructure/repository';
 
 @Injectable()
 export class EventManager implements IEventPublisherService, IEventSubscriberService {
@@ -22,12 +23,12 @@ export class EventManager implements IEventPublisherService, IEventSubscriberSer
     private readonly subscriberServiceName: EventSubscriberServiceName,
     @Inject(SubscriberDestination)
     private readonly subscriberDestination: string,
-    @Inject(IEventSubscriberRepository)
-    private readonly eventSubscribeRepository: IEventSubscriberRepository,
-    @Inject(IEventStoreRepository)
-    private readonly eventStoreRepository: IEventStoreRepository,
-    @Inject(IEventPublishedRepository)
-    private readonly eventPublishedRepository: IEventPublishedRepository
+    @Inject(EventSubscriberRepository)
+    private readonly eventSubscribeRepository: EventSubscriberRepository,
+    @Inject(EventStoreRepository)
+    private readonly eventStoreRepository: EventStoreRepository,
+    @Inject(EventPublishedRepository)
+    private readonly eventPublishedRepository: EventPublishedRepository
   ) { }
   
   public async subscribe(event: EventSubscription): Promise<boolean> {
@@ -84,7 +85,7 @@ export class EventManager implements IEventPublisherService, IEventSubscriberSer
   }
 
   private async getEventSubscriber(subscriberService: EventSubscriberServiceName, eventName: string, destination: string):
-  Promise<IEventSubscriber | null> {
+  Promise<EventSubscriber | null> {
     const result = await this.eventSubscribeRepository.getSubscriberForEvent(subscriberService, eventName, destination);
 
     return result;

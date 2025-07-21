@@ -1,4 +1,3 @@
-import { ILoanApplication } from '@library/entity/entity-interface';
 import { LoanApplicationStates, LoanApplicationStateType, LoanType } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Biller } from '@library/shared/domain/entity/biller.entity';
@@ -15,13 +14,14 @@ import {
 import { ApplicationUser } from './application.user.entity';
 
 @Entity({ schema: DbSchemaCodes.Core })
-export class LoanApplication implements ILoanApplication {
+export class LoanApplication {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'text', nullable: true, default: LoanApplicationStates.Pending }) //TODO: Should this be an enum for status
   status: LoanApplicationStateType | null;
 
+  
   // Biller
   @Column({ type: 'uuid', nullable: true })
   billerId: string | null;
@@ -36,9 +36,11 @@ export class LoanApplication implements ILoanApplication {
   @Column({ type: 'text', nullable: true })
   billerPostalCode: string | null;
 
+
   // Bill
   @Column({ type: 'text', nullable: true })
   billAccountNumber: string | null;
+
 
   // Lender
   @Column({ type: 'uuid', nullable: true })
@@ -70,6 +72,10 @@ export class LoanApplication implements ILoanApplication {
   @Column({ type: 'text', nullable: true })
   lenderNote: string | null;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  lenderRespondedAt: Date | null;
+
+
   // Borrower
   @Column({ type: 'uuid', nullable: true })
   borrowerId: string | null;
@@ -87,6 +93,7 @@ export class LoanApplication implements ILoanApplication {
 
   @Column({ name: 'borrower_submitted_at', type: 'timestamptz', nullable: true })
   borrowerSubmittedAt: Date | null;
+
 
   // Loan Info
   @Column({ type: 'text', nullable: true })

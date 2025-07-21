@@ -3,7 +3,7 @@ import { IRequest } from '@library/shared/type';
 import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards';
-import { LoanAcceptRequestDto, LoanCreateRequestDto, LoanProposeRequestDto } from './dto/request';
+import { LoanCreateRequestDto, LoanProposeRequestDto } from './dto/request';
 import { LoanResponseDto } from './dto/response';
 import { LoansService } from './loans.service';
 
@@ -55,16 +55,6 @@ export class LoansController {
 
     this.logger.debug('Creating loan', { input });
     return this.loansService.createLoan(userId, input);
-  }
-
-  // Accept loan and provide details required (target payment method, etc.)
-  @Patch('accept/:id')
-  @ApiOperation({ summary: 'Accept a loan and provide required details (e.g. target payment method)', description: 'Accept a loan and provide required details (e.g. target payment method)' })
-  public async acceptLoan(@UUIDParam('id') id: string, @Req() request: IRequest, @Body() input: LoanAcceptRequestDto): Promise<unknown> {
-    const userId = request.user!.id;
-    
-    this.logger.debug(`Accepting loan with ID: ${id}`, { input });
-    return this.loansService.acceptLoan(userId, id, input.paymentAccountId);
   }
 
   // Close loan and provide details required (closure reason, etc.)

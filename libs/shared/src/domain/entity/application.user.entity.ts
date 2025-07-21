@@ -1,10 +1,9 @@
 import { RegistrationStatus } from '@library/entity/enum/registration.status';
 import { VerificationStatus } from '@library/entity/enum/verification.status';
 import { VerificationType } from '@library/entity/enum/verification.type';
-import { IApplicationUser } from '@library/entity/entity-interface';
 import { DateTransformer } from '@library/extensions/typeorm/typeorm.date.transformer';
 import { DbSchemaCodes } from '@library/shared/common/data';
-import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, CreateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 // Thoughts to consider
 // Should we add additional `normalized` versions of some of these fields to the Database?
@@ -14,7 +13,7 @@ import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, CreateDateCol
 // while also keeping the originally entered value
 // Things to consider...
 @Entity('users', { schema: DbSchemaCodes.Core })
-export class ApplicationUser implements IApplicationUser {
+export class ApplicationUser {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

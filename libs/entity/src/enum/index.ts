@@ -12,7 +12,6 @@ export * from './registration.status';
 export * from './loan-application-state.type';
 export * from './loan-closure.type';
 export * from './loan-fee-mode';
-export * from './loan-invitee.type';
 export * from './loan-payment-frequency.type';
 export * from './loan.assign-intent.type';
 export * from './loan.state';

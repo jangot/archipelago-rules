@@ -1,10 +1,10 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanStateCodes } from '@library/entity/enum';
 import { LOAN_STANDARD_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { EVALUATION_CONTEXT_CODES, StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
+import { Loan } from '@library/shared/domain/entity';
 
 /**
  * State manager for loans in the 'Disbursed' state.
@@ -51,7 +51,7 @@ export class DisbursedLoanStateManager extends BaseLoanStateManager {
    * @param loan - The loan to evaluate
    * @returns True if repayment should start
    */
-  private shouldStartRepayment(loan: ILoan): boolean {
+  private shouldStartRepayment(loan: Loan): boolean {
     const isDisbursementCompleted = this.paymentStrategy.shouldTransitionToCompleted(loan, EVALUATION_CONTEXT_CODES.DISBURSEMENT.COMPLETION);
     const hasValidAccounts = this.hasValidAccountsConnected(loan);
     return isDisbursementCompleted && hasValidAccounts;

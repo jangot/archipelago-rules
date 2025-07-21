@@ -1,4 +1,3 @@
-import { IBillerMask } from '@library/entity/entity-interface/ibiller-mask';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -6,7 +5,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
  * BillerMask entity implements IBillerMask for the payment domain.
  */
 @Entity({ schema: DbSchemaCodes.Core })
-export class BillerMask implements IBillerMask {
+export class BillerMask {
   /** UUID primary key */
   @PrimaryGeneratedColumn('uuid')
   id: string;

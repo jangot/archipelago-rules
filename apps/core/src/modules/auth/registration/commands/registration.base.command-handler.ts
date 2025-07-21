@@ -7,7 +7,6 @@
  */
 
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { IApplicationUser } from '@library/entity/entity-interface';
 import { RegistrationStatus } from '@library/entity/enum';
 import { EventManager } from '@library/shared/common/event/event-manager';
 import { Injectable, Logger } from '@nestjs/common';
@@ -16,6 +15,7 @@ import { RegistrationDto } from '../../dto/request/registration.request.dto';
 import { VerificationEvent, VerificationEventFactory } from '../../verification';
 import { RegistrationTransitionResult } from '../registration-transition-result';
 import { RegistrationBaseCommand } from './registration.commands';
+import { ApplicationUser } from '@library/shared/domain/entity';
 
 export interface RegistrationExecuteParams {
   id: string | null;
@@ -56,7 +56,7 @@ export abstract class RegistrationBaseCommandHandler<TCommand extends Registrati
     return { state, isSuccessful, userId, loginId, code, accessToken, refreshToken };
   }
 
-  protected sendEvent(user: IApplicationUser | null, event: VerificationEvent | null): void {
+  protected sendEvent(user: ApplicationUser | null, event: VerificationEvent | null): void {
     if (!event || !user) return;
     const eventInstance = VerificationEventFactory.create(user, event);
     if (!eventInstance) return;

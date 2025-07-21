@@ -1,22 +1,19 @@
-import { ITransfer } from '@library/entity/entity-interface';
 import { TransferStateCodes } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Transfer } from '@library/shared/domain/entity';
 import { TransferRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ITransferRepository } from '@payment/shared/interfaces/repositories';
 import { Repository } from 'typeorm';
 
 @Injectable()
-export class TransferRepository extends RepositoryBase<Transfer> implements ITransferRepository {
+export class TransferRepository extends RepositoryBase<Transfer> {
   private readonly logger: Logger = new Logger(TransferRepository.name);
-
   constructor(@InjectRepository(Transfer) protected readonly repository: Repository<Transfer>) {
     super(repository, Transfer);
   }
 
-  public async getLatestTransferForStep(stepId: string): Promise<ITransfer | null> {
+  public async getLatestTransferForStep(stepId: string): Promise<Transfer | null> {
     return this.repository.findOne({ where: { loanPaymentStepId: stepId }, order: { order: 'DESC' } });
   }
 

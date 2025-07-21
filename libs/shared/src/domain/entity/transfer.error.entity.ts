@@ -1,12 +1,11 @@
 import { TransferErrorType, TransferErrorCode } from '@library/entity/enum';
-import { ITransferError } from '@library/entity/entity-interface/itransfer-error';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Transfer } from './transfer.entity';
 import { Loan } from './loan.entity';
 import { DbSchemaCodes } from '@library/shared/common/data';
 
 @Entity({ schema: DbSchemaCodes.Payment })
-export class TransferError implements ITransferError {
+export class TransferError {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

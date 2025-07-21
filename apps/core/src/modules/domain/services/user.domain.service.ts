@@ -6,8 +6,8 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { IApplicationUser, ILogin, IPaymentAccount, IUserRegistration } from '@library/entity/entity-interface';
 import { ContactType } from '@library/entity/enum';
+import { ApplicationUser, Login, PaymentAccount, UserRegistration } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 
@@ -37,7 +37,7 @@ export class UserDomainService extends BaseDomainServices {
   }
 
   @Transactional()
-  public async updateUserRegistration(registration: IUserRegistration, user: IApplicationUser): Promise<void> {
+  public async updateUserRegistration(registration: UserRegistration, user: ApplicationUser): Promise<void> {
     this.logger.debug(`Updating user registration for user ${user.id}`);
 
     await Promise.all([this.data.userRegistrations.update(registration.id, registration), this.data.users.update(user.id, user)]);
@@ -46,13 +46,13 @@ export class UserDomainService extends BaseDomainServices {
   //#region User Related Fetches
   @Transactional()
   public async createUserLoginOnRegistration(
-    user: IApplicationUser,
-    registration: IUserRegistration,
-    login: Partial<ILogin> | null
-  ): Promise<ILogin | null> {
+    user: ApplicationUser,
+    registration: UserRegistration,
+    login: Partial<Login> | null
+  ): Promise<Login | null> {
     this.logger.debug(`Creating login ${login?.loginType || '{already logged in - skipping}'} for user ${user.id}`);
 
-    let loginResult: ILogin | null = null;
+    let loginResult: Login | null = null;
 
     // Need to handle the Login creation here as we need to update the user registration with the loginId
     // If the login is null, it means the user is already logged in and we need to get the loginId from the registration
@@ -68,15 +68,15 @@ export class UserDomainService extends BaseDomainServices {
     return loginResult;
   }
 
-  public async getUserRegistration(userId: string): Promise<IUserRegistration | null> {
+  public async getUserRegistration(userId: string): Promise<UserRegistration | null> {
     return this.data.userRegistrations.getByUserId(userId);
   }
 
-  public async getUserById(userId: string): Promise<IApplicationUser | null> {
+  public async getUserById(userId: string): Promise<ApplicationUser | null> {
     return this.data.users.getById(userId);
   }
 
-  public async getUserByContact(contact: string, contactType: ContactType): Promise<IApplicationUser | null> {
+  public async getUserByContact(contact: string, contactType: ContactType): Promise<ApplicationUser | null> {
     return this.data.users.getUserByContact(contact, contactType);
   }
 
@@ -87,17 +87,17 @@ export class UserDomainService extends BaseDomainServices {
   //#endregion
 
   //#region User Related Creation Methods
-  public async createNewUser(user: Partial<IApplicationUser>): Promise<IApplicationUser | null> {
+  public async createNewUser(user: Partial<ApplicationUser>): Promise<ApplicationUser | null> {
     return this.data.users.insert(user, true);
   }
 
-  public async createNewUserRegistration(registration: Partial<IUserRegistration>): Promise<IUserRegistration | null> {
+  public async createNewUserRegistration(registration: Partial<UserRegistration>): Promise<UserRegistration | null> {
     return this.data.userRegistrations.insertWithResult(registration);
   }
   //#endregion
 
   //#region User Related Login Methods
-  public async createLogin(login: Partial<ILogin>, shouldHashSecrets = false): Promise<ILogin | null> {
+  public async createLogin(login: Partial<Login>, shouldHashSecrets = false): Promise<Login | null> {
     const { secret, sessionId } = this.generateRequiredHashes(login.secret || null, login.sessionId || null, shouldHashSecrets);
     login.secret = secret;
     login.sessionId = sessionId;
@@ -105,7 +105,7 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.logins.insertWithResult(login);
   }
 
-  public async updateLogin(loginId: string, login: Partial<ILogin>, shouldHashSecrets = false): Promise<boolean | null> {
+  public async updateLogin(loginId: string, login: Partial<Login>, shouldHashSecrets = false): Promise<boolean | null> {
     const { secret, sessionId } = this.generateRequiredHashes(login.secret || null, login.sessionId || null, shouldHashSecrets);
     login.secret = secret;
     login.sessionId = sessionId;
@@ -113,12 +113,12 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.logins.update(loginId, login);
   }
 
-  public async updateUser(user: IApplicationUser): Promise<boolean | null> {
+  public async updateUser(user: ApplicationUser): Promise<boolean | null> {
     return this.data.users.update(user.id, user);
   }
 
   // #region Login related fetches
-  public async getUserLoginByToken(userId: string, token: string, isTokenSecure = false, isAccessToken = false): Promise<ILogin | null> {
+  public async getUserLoginByToken(userId: string, token: string, isTokenSecure = false, isAccessToken = false): Promise<Login | null> {
     if (!isTokenSecure) {
       token = generateCRC32String(token);
     }
@@ -126,11 +126,11 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.logins.getUserLoginForSecret(userId, token, isAccessToken);
   }
 
-  public async getUserLogins(userId: string): Promise<ILogin[] | null> {
+  public async getUserLogins(userId: string): Promise<Login[] | null> {
     return this.data.logins.getAllUserLogins(userId);
   }
 
-  public async applyFailedLoginAttempt(user: IApplicationUser): Promise<boolean | null> {
+  public async applyFailedLoginAttempt(user: ApplicationUser): Promise<boolean | null> {
     user.verificationAttempts = user.verificationAttempts + 1;
     const maxAttempts = this.config.getOrThrow<number>('MAX_LOGIN_ATTEMPTS');
     const lockoutDuration = this.config.getOrThrow<number>('LOGIN_LOCKOUT_DURATION');
@@ -148,7 +148,7 @@ export class UserDomainService extends BaseDomainServices {
     return this.data.users.restore({ id: userId });
   }
 
-  public async searchUsers(filters?: SearchFilterDto[], paging?: PagingOptionsDto): Promise<IPaging<IApplicationUser>> {
+  public async searchUsers(filters?: SearchFilterDto[], paging?: PagingOptionsDto): Promise<IPaging<ApplicationUser>> {
     return this.data.users.search(filters, paging);
   }
   //#endregion
@@ -220,12 +220,12 @@ export class UserDomainService extends BaseDomainServices {
   //#endregion
 
   // #region Payment Accounts
-  public async addPaymentAccount(userId: string, input: Partial<IPaymentAccount>): Promise<IPaymentAccount | null> {
+  public async addPaymentAccount(userId: string, input: Partial<PaymentAccount>): Promise<PaymentAccount | null> {
     this.logger.debug(`Adding payment account for user ${userId}`, { input });
     return this.data.paymentAccounts.createPaymentAccount({ ...input, userId: userId });
   }
   
-  public async getPaymentAccountById(paymentAccountId: string, relations?: PaymentAccountRelation[]): Promise<IPaymentAccount | null> {
+  public async getPaymentAccountById(paymentAccountId: string, relations?: PaymentAccountRelation[]): Promise<PaymentAccount | null> {
     this.logger.debug(`Fetching payment account by ID ${paymentAccountId}`, relations);
     return this.data.paymentAccounts.getPaymentAccountById(paymentAccountId, relations);
   }

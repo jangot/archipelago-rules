@@ -117,7 +117,7 @@ describe('Payment Process Flow Integration', () => {
    * Creates a test lender payment account using TestPaymentAccountFactory
    * @returns Promise resolving to the created payment account
    */
-  async function createTestLenderAccount(): Promise<IPaymentAccount> {
+  async function createTestLenderAccount(): Promise<PaymentAccount> {
     const accountData = TestPaymentAccountFactory.createCheckbookBankAccount('Test Lender Account');
     const account = await domainServices.paymentServices.addPaymentAccount(
       FOUNDATION_TEST_IDS.users.lenderUser, 
@@ -135,7 +135,7 @@ describe('Payment Process Flow Integration', () => {
    * Creates a test borrower payment account using TestPaymentAccountFactory
    * @returns Promise resolving to the created payment account
    */
-  async function createTestBorrowerAccount(): Promise<IPaymentAccount> {
+  async function createTestBorrowerAccount(): Promise<PaymentAccount> {
     const accountData = TestPaymentAccountFactory.createCheckbookBankAccount('Test Borrower Account');
     const account = await domainServices.paymentServices.addPaymentAccount(
       FOUNDATION_TEST_IDS.users.borrowerUser, 
@@ -153,7 +153,7 @@ describe('Payment Process Flow Integration', () => {
    * Creates a test internal payment account using TestPaymentAccountFactory
    * @returns Promise resolving to the created internal payment account
    */
-  async function createTestInternalAccount(): Promise<IPaymentAccount> {
+  async function createTestInternalAccount(): Promise<PaymentAccount> {
     const accountData = TestPaymentAccountFactory.createFiservDebitAccount('Internal Platform Account');
     const account = await domainServices.paymentServices.addPaymentAccount(
       FOUNDATION_TEST_IDS.users.primaryUser, 

@@ -1,16 +1,13 @@
-import { ILoan } from '@library/entity/entity-interface';
-import { LoanInviteeTypeCodes, LoanStateCodes } from '@library/entity/enum';
+import { LoanStateCodes } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Loan } from '@library/shared/domain/entity';
-import { LoanRelation } from '@library/shared/domain/entity/relation';
-import { LoansSetTargetUserInput } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
-import { ILoanRepository } from '../interface';
+import { Repository } from 'typeorm';
+import { LoanRelation } from '@library/shared/domain/entity/relation';
 
 @Injectable()
-export class LoanRepository extends RepositoryBase<Loan> implements ILoanRepository {
+export class LoanRepository extends RepositoryBase<Loan> {
   private readonly logger: Logger = new Logger(LoanRepository.name);
 
   constructor(
@@ -20,15 +17,15 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     super(repository, Loan);
   }
 
-  public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> {
-    this.logger.debug(`getLoanById: ${loanId}`, relations);
+  public async getLoanById(loanId: string, relations?: LoanRelation[]): Promise<Loan | null> {
+    this.logger.debug(`getLoanById: ${loanId}`);
 
-    return this.repository.findOne({ where: { id: loanId }, relations: relations });
+    return this.repository.findOne({ where: { id: loanId }, relations });
   }
 
 
 
-  public async getByLenderId(lenderId: string): Promise<ILoan[] | null> {
+  public async getByLenderId(lenderId: string): Promise<Loan[] | null> {
     this.logger.debug(`getByLenderId: ${lenderId}`);
 
     return this.repository.findBy({ lenderId });
@@ -40,13 +37,16 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
     return this.insert({ ...loan, state: LoanStateCodes.Created }, true);
   }
 
+  // TODO: Need to check with AlexK if this will be still needed
+  /*
   public async assignUserToLoans(input: LoansSetTargetUserInput): Promise<void> {
-    const { userId, loansTargets } = input;
+     const { userId, loansTargets } = input;
     this.logger.debug(`assignUserToLoans: for User ${userId}`, loansTargets);
 
+
     // Make two arrays - for borrowerId and lenderId
-    const borrowerUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Borrower).map(t => t.loanId);
-    const lenderUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Lender).map(t => t.loanId);
+    // const borrowerUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Borrower).map(t => t.loanId);
+    // const lenderUpdates = loansTargets.filter(t => t.userType === LoanInviteeTypeCodes.Lender).map(t => t.loanId);
 
     // Run two bulk updates inside a transaction
     return this.repository.manager.transaction(async manager => {
@@ -60,5 +60,5 @@ export class LoanRepository extends RepositoryBase<Loan> implements ILoanReposit
         await repo.update({ id: In(lenderUpdates) }, { lenderId: userId, state: LoanStateCodes.LenderAssigned });
       }
     });
-  }
+  }*/
 }

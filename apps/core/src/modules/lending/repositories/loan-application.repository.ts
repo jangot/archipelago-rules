@@ -1,18 +1,17 @@
+import { RepositoryBase } from '@library/shared/common/data/base.repository';
+import { LoanApplication } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { RepositoryBase } from '@library/shared/common/data/base.repository';
 
-import { ILoanApplicationRepository } from '@core/shared/interfaces/repositories/iloan-application.repository';
 import { LoanApplicationStates } from '@library/entity/enum';
-import { LoanApplication } from '@library/shared/domain/entity';
 
 @Injectable()
-export class LoanApplicationRepository extends RepositoryBase<LoanApplication> implements ILoanApplicationRepository {
+export class LoanApplicationRepository extends RepositoryBase<LoanApplication> {
   constructor(
     @InjectRepository(LoanApplication)
-    protected readonly repository: Repository<LoanApplication>,
+    protected readonly repository: Repository<LoanApplication>
   ) {
     super(repository, LoanApplication);
   }

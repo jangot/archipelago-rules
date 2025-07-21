@@ -1,6 +1,6 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanPaymentType, LoanState, LoanStateCodes, PaymentAccountStateCodes } from '@library/entity/enum';
+import { Loan } from '@library/shared/domain/entity';
 import { LOAN_STANDARD_RELATIONS, LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ILoanStateManager, IPaymentEvaluationStrategy, StateDecision } from '../interfaces';
@@ -115,7 +115,7 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
    * @param loanId - The unique identifier of the loan
    * @returns The validated loan entity or null if validation fails
    */
-  protected async validateAndGetLoan(loanId: string): Promise<ILoan | null> {
+  protected async validateAndGetLoan(loanId: string): Promise<Loan | null> {
     const loan = await this.getLoan(loanId, this.getRequiredRelations());
     if (!loan || !this.isActualStateValid(loan)) return null;
     return loan;
@@ -150,7 +150,7 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
    * @param relations - Optional relations to include in the query
    * @returns The loan entity or null if not found
    */
-  protected async getLoan(loanId: string, relations?: LoanRelation[]): Promise<ILoan | null> { 
+  protected async getLoan(loanId: string, relations?: LoanRelation[]): Promise<Loan | null> { 
     const loan = await this.domainServices.loanServices.getLoanById(loanId, relations);
     if (!loan) {
       this.logger.error(`Loan with ID ${loanId} not found`);
@@ -168,7 +168,7 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
    * @param loan - The loan entity to validate
    * @returns True if the loan is in the expected state, false otherwise
    */
-  protected isActualStateValid(loan: ILoan): boolean {
+  protected isActualStateValid(loan: Loan): boolean {
     const isValid = StatesManagersLogic.isActualStateValid(loan, this.loanState);
     if (!isValid) {
       this.logger.error(`Loan ${loan.id} is not in expected state ${this.loanState}. Current state: ${loan.state}`);
@@ -181,7 +181,7 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
    * @param loan - The loan entity to validate
    * @returns True if all prerequisites are met, false otherwise
    */
-  protected hasValidAccountsConnected(loan: ILoan): boolean {
+  protected hasValidAccountsConnected(loan: Loan): boolean {
     const isValid = StatesManagersLogic.hasValidAccountsConnected(loan);
     const { id: loanId, billerId, lenderId, borrowerId, biller, lenderAccountId, borrowerAccountId, lenderAccount, borrowerAccount } = loan;
     

@@ -1,5 +1,5 @@
-import { ILoan, IPaymentsRouteStep } from '@library/entity/entity-interface';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { Loan, PaymentsRouteStep } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
@@ -32,7 +32,7 @@ export class DisbursementPaymentManager extends BaseLoanPaymentManager {
    * @param loan - Loan entity containing account information
    * @returns Payment account pair with Zirtue as source and biller as target
    */
-  protected getAccountPairForPaymentType(loan: ILoan): PaymentAccountPair {
+  protected getAccountPairForPaymentType(loan: Loan): PaymentAccountPair {
     return { 
       fromAccountId: loan.lenderAccountId,
       toAccountId: loan.biller?.paymentAccountId || null,
@@ -49,7 +49,7 @@ export class DisbursementPaymentManager extends BaseLoanPaymentManager {
    * @param routeSteps - Complete array of route steps from payment route
    * @returns Array containing steps 2 through N, or all steps if single-step route
    */
-  protected getStepsToApply(routeSteps: IPaymentsRouteStep[]): IPaymentsRouteStep[] {
+  protected getStepsToApply(routeSteps: PaymentsRouteStep[]): PaymentsRouteStep[] {
     if (routeSteps.length > 1) {
       return routeSteps.slice(1);
     }

@@ -1,5 +1,5 @@
-import { ILoan } from '@library/entity/entity-interface';
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { Loan } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
@@ -33,7 +33,7 @@ export class RefundPaymentManager extends BaseLoanPaymentManager {
    * @param loan - Loan entity containing account information
    * @returns Payment account pair with lender as source and biller as target
    */
-  protected getAccountPairForPaymentType(loan: ILoan): PaymentAccountPair {
+  protected getAccountPairForPaymentType(loan: Loan): PaymentAccountPair {
     return { 
       fromAccountId: loan.lenderAccountId,
       toAccountId: loan.biller?.paymentAccountId || null,
@@ -52,7 +52,7 @@ export class RefundPaymentManager extends BaseLoanPaymentManager {
    *       including partial refunds, fee reversals, interest adjustments,
    *       and payment history analysis for accurate refund determination
    */
-  protected getPaymentAmount(loan: ILoan): number {
+  protected getPaymentAmount(loan: Loan): number {
     return loan.amount || 0;
   }
 }

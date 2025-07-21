@@ -1,5 +1,5 @@
 // Import your event classes
-import { IApplicationUser } from '@library/entity/entity-interface';
+import { ApplicationUser } from '@library/shared/domain/entity';
 import { VerificationEventBase } from './verification-event.base';
 import { VerificationEmailCodeResentEvent } from './verification-event.email-code-resent';
 import { VerificationEmailVerifiedEvent } from './verification-event.email-verified';
@@ -21,7 +21,7 @@ export enum VerificationEvent {
 
 // Create a mapping from notification name to the class constructor.
 // The type "new (user: IApplicationUser) => VerificationEventBase" indicates that each constructor takes an IApplicationUser parameter.
-const eventMapping: Record<VerificationEvent, new (user: IApplicationUser, name: string) => VerificationEventBase> = {
+const eventMapping: Record<VerificationEvent, new (user: ApplicationUser, name: string) => VerificationEventBase> = {
   [VerificationEvent.EmailVerifying]: VerificationEmailVerifyingEvent,
   [VerificationEvent.EmailVerified]: VerificationEmailVerifiedEvent,
   [VerificationEvent.PhoneNumberVerifying]: VerificationPhoneNumberVerifyingEvent,
@@ -32,7 +32,7 @@ const eventMapping: Record<VerificationEvent, new (user: IApplicationUser, name:
 };
 
 export class VerificationEventFactory {
-  public static create(user: IApplicationUser, notificationName: VerificationEvent): VerificationEventBase | null {
+  public static create(user: ApplicationUser, notificationName: VerificationEvent): VerificationEventBase | null {
     if (!notificationName) return null;
 
     const EventClass = eventMapping[notificationName];

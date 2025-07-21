@@ -1,12 +1,11 @@
 import { RegistrationStatus } from '@library/entity/enum/registration.status';
-import { IUserRegistration } from '@library/entity/entity-interface';
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, OneToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
 import { DbSchemaCodes } from '@library/shared/common/data';
 
 @Entity('user_registrations', { schema: DbSchemaCodes.Core })
 @Unique('registrations_per_user_id_unique', ['id', 'userId'])
-export class UserRegistration implements IUserRegistration {
+export class UserRegistration {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
