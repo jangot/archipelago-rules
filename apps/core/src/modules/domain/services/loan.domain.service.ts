@@ -56,7 +56,7 @@ export class LoanDomainService extends BaseDomainServices {
       billingAccountNumber: loanApplication!.billAccountNumber,
       paymentsCount: loanApplication!.loanPayments!,
       paymentFrequency: loanApplication!.loanPaymentFrequency as LoanPaymentFrequency,
-      feeAmount: loanApplication!.loanServiceFee,
+      feeAmount: loanApplication!.loanServiceFee || 0,
       lenderAccountId: loanApplication!.lenderPaymentAccountId,
       borrowerAccountId: loanApplication!.borrowerPaymentAccountId,
     };
