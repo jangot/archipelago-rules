@@ -2,7 +2,6 @@ import { CoreDataService } from '@core/modules/data';
 import {
   BillerTypeCodes,
   LoanPaymentFrequency,
-  LoanStateCodes,
 } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
@@ -47,7 +46,6 @@ export class LoanDomainService extends BaseDomainServices {
     const loanData: Partial<Loan> = {
       amount: loanApplication!.loanAmount!,
       type: loanApplication!.loanType!,
-      state: LoanStateCodes.Created, // Initial state for new loan
       lenderId: loanApplication!.lenderId,
       borrowerId: loanApplication!.borrowerId,
       relationship: loanApplication!.lenderRelationship,

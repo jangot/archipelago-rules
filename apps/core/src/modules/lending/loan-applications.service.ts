@@ -157,12 +157,21 @@ export class LoanApplicationsService {
       throw new InvalidUserForLoanApplicationException('You are not authorized to accept this loan application');
     }
 
+    // Validate status to avoid creating double loans
+    if (loanApplication.status === LoanApplicationStates.Approved) {
+      this.logger.warn(`Loan application ${loanApplicationId} is already approved`);
+      throw new InvalidUserForLoanApplicationException('This loan application has already been accepted');
+    }
+
     this.validateLoanApplicationForAcceptance(loanApplication);
     const createdLoan = await this.domainServices.loanServices.acceptLoanApplication(loanApplicationId, userId);
     if (!createdLoan) {
       this.logger.error(`Failed to create loan from application ${loanApplicationId}`);
       throw new EntityFailedToUpdateException('Failed to create loan from application');
     }
+    
+    const status = LoanApplicationStates.Approved;
+    await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
 
     this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
   }
