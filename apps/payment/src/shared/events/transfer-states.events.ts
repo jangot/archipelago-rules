@@ -1,6 +1,6 @@
 import { PaymentAccountProvider } from '@library/entity/enum';
 import { IZngEvent } from '@library/shared/common/event/interface/izng-event';
-import { TransferEventName, TransferEventNameType } from './transfer-event-name';
+import { TransferEventName, TransferEventNameType } from './event-names';
 
 export class TransferEventBase implements IZngEvent {
   public readonly name: TransferEventNameType;

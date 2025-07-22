@@ -177,24 +177,22 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     if (shouldCompletePayment) {
       this.logger.debug(`Loan payment ${loanPaymentId} can be completed`);
       // Set Completed state and completion info (date)
-      return this.paymentDomainService.completePayment(loanPaymentId);
+      return this.paymentDomainService.updatePaymentState(loanPaymentId, state, LoanPaymentStateCodes.Completed);
     }
     // 2. should fail payment?
     const failReasonStepId = this.couldFailPayment(paymentSteps);
     if (failReasonStepId && state !== LoanPaymentStateCodes.Failed) {
       this.logger.debug(`Loan payment ${loanPaymentId} failed by ${failReasonStepId}`);
       // Set Failed state
-      return this.paymentDomainService.failPayment(loanPaymentId, failReasonStepId);
+      return this.paymentDomainService.updatePaymentState(loanPaymentId, state, LoanPaymentStateCodes.Failed);
     }
     // 3. should start next step?
-    const nextStepId = this.couldStartNextStep(paymentSteps);
+    // TODO: Pay attention to Stepped Payment 
+    const nextStepId = this.paymentDomainService.couldStartNextPaymentStep(paymentSteps);
     if (nextStepId && (state === LoanPaymentStateCodes.Created || state === LoanPaymentStateCodes.Pending)) {
       this.logger.debug(`Loan payment ${loanPaymentId} can start next step ${nextStepId}`);
-      // Set Pending state if needed - step advancement should be handled by management service
-      const paymentStateUpdate = state === LoanPaymentStateCodes.Pending 
-        ? true 
-        : await this.paymentDomainService.updatePayment(loanPaymentId, { state: LoanPaymentStateCodes.Pending });
-      return paymentStateUpdate;
+      // Set Pending state if needed - step advancement should be handled by PaymentStepped Event
+      return this.paymentDomainService.updatePaymentState(loanPaymentId, state, LoanPaymentStateCodes.Pending, !!nextStepId);
     }
     // 4. TODO: States artifacts
     return false; // No state change needed
@@ -480,42 +478,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     return lastActiveStep.state === PaymentStepStateCodes.Failed ? lastActiveStep.id : null;
   }
 
-  /**
-   * Identifies the next payment step that can be initiated.
-   * 
-   * This method implements the step sequencing logic for payment execution:
-   * 1. **First Step**: If no steps are completed, returns the first step (order 0) if it's in 'created' state
-   * 2. **Sequential Steps**: Finds the step that immediately follows the highest completed step
-   * 3. **State Validation**: Only returns steps in 'created' state that are ready for initiation
-   * 
-   * The sequential execution ensures that payment steps are processed in the correct
-   * order and that each step completes before the next one begins.
-   * 
-   * @param steps - All payment steps for analysis
-   * @returns The ID of the next step ready for initiation, or null if no step can be started
-   */
-  protected couldStartNextStep(steps: LoanPaymentStep[] | null): string | null {
-    if (!steps || !steps.length) return null;
 
-    // 1. Find the highest order completed step
-    const completedSteps = steps.filter(step => step.state === PaymentStepStateCodes.Completed);
-    if (!completedSteps.length) {
-      // If no steps are completed, check if we can start the first step
-      const firstStep = steps.find(step => step.order === 0);
-      return firstStep?.state === PaymentStepStateCodes.Created ? firstStep.id : null;
-    }
-
-    // Get max order of completed steps
-    const maxCompletedOrder = Math.max(...completedSteps.map(step => step.order));
-
-    // 2. Find the next step after the highest completed one
-    const nextStep = steps.find(step => 
-      step.order === maxCompletedOrder + 1 && 
-      step.state === PaymentStepStateCodes.Created
-    );
-
-    return nextStep?.id || null;
-  }
   
   // #endregion
 

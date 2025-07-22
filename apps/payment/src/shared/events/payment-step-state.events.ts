@@ -1,6 +1,6 @@
 import { PaymentStepState } from '@library/entity/enum';
 import { IZngEvent } from '@library/shared/common/event/interface/izng-event';
-import { PaymentStepEventName, PaymentStepEventNameType } from './payment-step-event-name';
+import { PaymentStepEventName, PaymentStepEventNameType } from './event-names';
 
 export class PaymentStepEventBase implements IZngEvent {
   public readonly name: PaymentStepEventNameType;
