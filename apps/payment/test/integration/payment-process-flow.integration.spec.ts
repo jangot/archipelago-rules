@@ -4,17 +4,13 @@ import { addTransactionalDataSource, initializeTransactionalContext, StorageDriv
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  ILoanPaymentStep,
-  IPaymentAccount,
-} from '@library/entity/entity-interface';
-import {
   LoanPaymentStateCodes,
   LoanPaymentTypeCodes,
   PaymentAccountProviderCodes,
   PaymentStepStateCodes,
 } from '@library/entity/enum';
 import { EntityNotFoundException } from '@library/shared/common/exception/domain';
-import { AllEntities } from '@library/shared/domain/entity';
+import { AllEntities, LoanPaymentStep, PaymentAccount } from '@library/shared/domain/entity';
 import {
   FOUNDATION_TEST_IDS,
   memoryDataSourceSingle,
@@ -215,7 +211,7 @@ describe('Payment Process Flow Integration', () => {
   });
 
   describe('Payment Step Service Integration', () => {
-    let testStep: ILoanPaymentStep;
+    let testStep: LoanPaymentStep;
 
     beforeEach(async () => {
       // Arrange - Create payment accounts using helper functions
@@ -421,9 +417,9 @@ describe('Payment Process Flow Integration', () => {
   });
 
   describe('End-to-End Payment Flow', () => {
-    let lenderAccount: IPaymentAccount;
-    let borrowerAccount: IPaymentAccount;
-    let platformAccount: IPaymentAccount;
+    let lenderAccount: PaymentAccount;
+    let borrowerAccount: PaymentAccount;
+    let platformAccount: PaymentAccount;
 
     beforeEach(async () => {
       // Create all payment accounts using helper functions

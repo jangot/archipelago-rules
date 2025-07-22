@@ -152,6 +152,12 @@ export class LoanApplicationsService {
       throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
     }
 
+    // Validate status to avoid creating double loans
+    if (loanApplication.status === LoanApplicationStates.Approved) {
+      this.logger.warn(`Loan application ${loanApplicationId} is already approved`);
+      throw new InvalidUserForLoanApplicationException('This loan application has already been accepted');
+    }
+
     // Validate that the user is the lender for v1
     this.validateApplicationLenderUser(loanApplication, userId);
     LendingLogic.validateLoanApplicationForAcceptance(loanApplication);
@@ -160,6 +166,9 @@ export class LoanApplicationsService {
       this.logger.error(`Failed to create loan from application ${loanApplicationId}`);
       throw new EntityFailedToUpdateException('Failed to create loan from application');
     }
+
+    const status = LoanApplicationStates.Approved;
+    await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
 
     this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
   }
