@@ -22,7 +22,6 @@ export type PaymentStepEventNameType = (typeof PaymentStepEventName)[keyof typeo
 
 
 export const PaymentEventName = {
-  PaymentPending: 'PaymentPending',
   PaymentStepped: 'PaymentStepped',
   PaymentCompleted: 'PaymentCompleted',
   PaymentFailed: 'PaymentFailed',

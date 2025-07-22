@@ -9,6 +9,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { BillersController } from './billers.controller';
 import { BillersService } from './billers.service';
+import { LENDING_EVENT_HANDLERS } from './event-handlers';
 import { ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
 import { LoanStateManagersFactory } from './loan-state-manager-factory';
 import { LOAN_STATE_MANAGERS, LoanStateManagers } from './loan-state-managers';
@@ -33,6 +34,7 @@ import { ScheduleController } from './schedule.controller';
     // State managers container and factory
     { provide: ILoanStateManagers, useClass: LoanStateManagers },
     { provide: ILoanStateManagersFactory, useClass: LoanStateManagersFactory },
+    ...LENDING_EVENT_HANDLERS, // Spread event handlers if any
   ],
 })
 export class LendingModule {}

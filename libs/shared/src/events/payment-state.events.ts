@@ -24,12 +24,6 @@ export class PaymentEventBase implements IZngEvent {
   }
 }
 
-export class PaymentPendingEvent extends PaymentEventBase {
-  constructor(loanId: string, paymentId: string, originalPaymentState?: LoanPaymentState) {
-    super(PaymentEventName.PaymentPending, loanId, paymentId, true, originalPaymentState);
-  }
-}
-
 export class PaymentSteppedEvent extends PaymentEventBase {
   constructor(loanId: string, paymentId: string, originalPaymentState?: LoanPaymentState) {
     super(PaymentEventName.PaymentStepped, loanId, paymentId, false, originalPaymentState);
