@@ -9,8 +9,9 @@
 - **Loan** references a **Biller**.
 - **Loan** references **PaymentAccount** (for both lender and borrower accounts).
 - **Loan** has a collection of **LoanPayments**.
-- **LoanPayment** references **Loan** and has a collection of **Transfers**.
-- **Transfer** references **PaymentAccount** for its source/destination, and an (optional) **LoanPayment**.
+- **LoanPayment** references **Loan** and has a collection of **LoanPaymentSteps**.
+- **LoanPaymentStep** references **LoanPayment** and has a collection of **Transfers**.
+- **Transfer** references **PaymentAccount** for its source/destination, and an (optional) **LoanPaymentStep**.
 - **PaymentAccount** belongs to **ApplicationUser** (the account owner).
 - **Biller** references **ApplicationUser** as the creator (createdBy).
 
@@ -24,25 +25,26 @@ config:
     theme: base
 ---
 erDiagram
-    IApplicationUser ||--o{ ILoan : "lender / borrower"
-    ILoan ||--o| IBiller : "biller"
-    IApplicationUser ||--o{ IBiller : "createdBy"
-    ILoan ||--o{ ILoanPayment : "payments"
-    ILoanPayment ||--o{ ITransfer : "transfers"
-    ILoanPayment }o--|| ILoan : "loan"
-    ILoan o|--|| IPaymentAccount : "lenderAccount"
-    ILoan o|--|| IPaymentAccount : "borrowerAccount"
-    ITransfer o|--|| IPaymentAccount : "sourceAccount"
-    ITransfer o|--|| IPaymentAccount : "destinationAccount"
-    IPaymentAccount }|--|| IApplicationUser : "owner"
+    ApplicationUser ||--o{ Loan : "lender / borrower"
+    Loan ||--o| Biller : "biller"
+    ApplicationUser ||--o{ Biller : "createdBy"
+    Loan ||--o{ LoanPayment : "payments"
+    LoanPayment ||--o{ LoanPaymentStep : "steps"
+    LoanPaymentStep ||--o{ Transfer : "transfers"
+    LoanPayment }o--|| Loan : "loan"
+    Loan o|--|| PaymentAccount : "lenderAccount"
+    Loan o|--|| PaymentAccount : "borrowerAccount"
+    Transfer o|--|| PaymentAccount : "sourceAccount"
+    Transfer o|--|| PaymentAccount : "destinationAccount"
+    PaymentAccount }|--|| ApplicationUser : "owner"
 
     %% Entity attributes (optional)
-    IApplicationUser {
+    ApplicationUser {
       string id PK
       string firstName
       string email
     }
-    ILoan {
+    Loan {
       string id PK
       number amount
       string lenderId FK
@@ -51,22 +53,26 @@ erDiagram
       string lenderAccountId FK
       string borrowerAccountId FK
     }
-    IBiller {
+    Biller {
       string id PK
       string name
       string createdById FK
     }
-    ILoanPayment {
+    LoanPayment {
       string id PK
       string loanId FK
     }
-    ITransfer {
+    LoanPaymentStep {
+      string id PK
+      string loanPaymentId FK
+    }
+    Transfer {
       string id PK
       string sourceAccountId FK
       string destinationAccountId FK
-      string loanPaymentId FK
+      string loanPaymentStepId FK
     }
-    IPaymentAccount {
+    PaymentAccount {
       string id PK
       string ownerId FK
     }
@@ -85,7 +91,7 @@ config:
 ---
 classDiagram
 namespace Core {
-    class IApplicationUser {
+    class ApplicationUser {
         id: string
         firstName: string
         lastName: string
@@ -109,7 +115,7 @@ namespace Core {
         verificationLockedUntil: Date
     }
 
-    class ILoan {
+    class Loan {
         id: string
         amount: number
         lenderId: string
@@ -135,7 +141,7 @@ namespace Core {
         acceptedAt: Date
     }
 
-    class IBiller {
+    class Biller {
         id: string
         name: string
         type: BillerType
@@ -144,21 +150,33 @@ namespace Core {
         createdById: string
     }
 
-    class ILoanPayment {
+    class LoanPayment {
         id: string
         amount: number
         loanId: string
-        paymentIndex: number
+        paymentNumber: number
         type: LoanPaymentType
-        stage: number
         state: LoanPaymentState
         createdAt: Date
         updatedAt: Date
-        executionDate: Date
-        originalExecutionDate: Date
+        initiatedAt: Date
+        scheduledAt: Date
+        completedAt: Date
     }
 
-    class ITransfer {
+    class LoanPaymentStep {
+        id: string
+        loanPaymentId: string
+        order: number
+        amount: number
+        sourcePaymentAccountId: string
+        targetPaymentAccountId: string
+        state: PaymentStepState
+        awaitStepState: PaymentStepState
+        awaitStepId: string
+    }
+
+    class Transfer {
         id: string
         amount: number
         state: TransferState
@@ -167,14 +185,12 @@ namespace Core {
         updatedAt: Date
         sourceAccountId: string
         destinationAccountId: string
-        sourceAccountType: string
-        destinationAccountType: string
-        loanPaymentId: string
+        loanPaymentStepId: string
     }
 
-    class IPaymentAccount {
+    class PaymentAccount {
         id: string
-        ownerId: string
+        userId: string
         type: PaymentAccountType
         provider: PaymentAccountProvider
     }
@@ -182,38 +198,41 @@ namespace Core {
 
     %% Relationships
 
-    %% ILoan <-> IApplicationUser (lender / borrower)
-    ILoan "1" --> "0..1" IApplicationUser : lender
-    ILoan "1" --> "0..1" IApplicationUser : borrower
+    %% Loan <-> ApplicationUser (lender / borrower)
+    Loan "1" --> "0..1" ApplicationUser : lender
+    Loan "1" --> "0..1" ApplicationUser : borrower
 
-    %% ILoan <-> IBiller (biller)
-    ILoan "1" --> "0..1" IBiller : biller
+    %% Loan <-> Biller (biller)
+    Loan "1" --> "0..1" Biller : biller
 
-    %% ILoan <-> IPaymentAccount (lender/borrower account)
-    ILoan "1" --> "0..1" IPaymentAccount : lenderAccount
-    ILoan "1" --> "0..1" IPaymentAccount : borrowerAccount
+    %% Loan <-> PaymentAccount (lender/borrower account)
+    Loan "1" --> "0..1" PaymentAccount : lenderAccount
+    Loan "1" --> "0..1" PaymentAccount : borrowerAccount
 
-    %% ILoan <-> ILoanPayment (payments)
-    ILoan "1" --> "0..*" ILoanPayment : payments
+    %% Loan <-> LoanPayment (payments)
+    Loan "1" --> "0..*" LoanPayment : payments
 
-    %% IBiller <-> IApplicationUser (createdBy)
-    IBiller "1" --> "0..1" IApplicationUser : createdBy
+    %% Biller <-> ApplicationUser (createdBy)
+    Biller "1" --> "0..1" ApplicationUser : createdBy
 
-    %% ILoanPayment <-> ILoan (loan)
-    ILoanPayment "1" --> "1" ILoan : loan
+    %% LoanPayment <-> Loan (loan)
+    LoanPayment "1" --> "1" Loan : loan
 
-    %% ILoanPayment <-> ITransfer (transfers)
-    ILoanPayment "1" --> "0..*" ITransfer : transfers
+    %% LoanPayment <-> LoanPaymentStep (steps)
+    LoanPayment "1" --> "0..*" LoanPaymentStep : steps
 
-    %% ITransfer <-> ILoanPayment (loanPayment)
-    ITransfer "1" --> "0..1" ILoanPayment : loanPayment
+    %% LoanPaymentStep <-> Transfer (transfers)
+    LoanPaymentStep "1" --> "0..*" Transfer : transfers
 
-    %% ITransfer <-> IPaymentAccount (source/destination)
-    ITransfer "1" --> "0..1" IPaymentAccount : sourceAccount
-    ITransfer "1" --> "0..1" IPaymentAccount : destinationAccount
+    %% Transfer <-> LoanPaymentStep (loanPaymentStep)
+    Transfer "1" --> "0..1" LoanPaymentStep : loanPaymentStep
 
-    %% IPaymentAccount <-> IApplicationUser (owner)
-    IPaymentAccount "1" --> "1" IApplicationUser : owner  
+    %% Transfer <-> PaymentAccount (source/destination)
+    Transfer "1" --> "0..1" PaymentAccount : sourceAccount
+    Transfer "1" --> "0..1" PaymentAccount : destinationAccount
+
+    %% PaymentAccount <-> ApplicationUser (owner)
+    PaymentAccount "1" --> "1" ApplicationUser : owner  
 ```
 
 ## Loan States
@@ -281,6 +300,106 @@ namespace Core {
   ```
 
 
+ ## Loan Applications
+
+A loan application is a request for a loan that is submitted by a borrower. It contains the borrower's information, the requested loan amount, and other relevant details. The application is reviewed by the lender, who can either approve or reject it.
+
+Loans can only be created by a loan application. 
+
+ ### Loan Application States
+- **Pending**: Loan application is pending review by the lender. Initial state before submission.
+- **Submitted**: Loan application was submitted by the borrower.
+- **Approved**: Loan application was approved by the lender.
+- **Rejected**: Loan application was rejected by the lender.
+
+
+## Loan Application Entity
+
+The **LoanApplication** entity is pretty similar to **Loan** since collects all the information required to create a Loan. 
+The main difference is that **LoanApplication** has a different set of states and is not directly related to the payment process.
+Other fields are added in order to support the loan application process, such as the date  in which the lender responded to the application.
+
+The structure of the **LoanApplication** entity is as follows:
+```typescript
+class LoanApplication {
+  /** Unique identifier for the loan application */
+  id: string;
+
+  /**
+   * The current state of the loan application (e.g., pending, submitted, approved, rejected).
+   * See LoanApplicationStates for possible values.
+   */
+  status: LoanApplicationStateType | null;
+
+  // Biller
+  /** The unique identifier of the biller, if applicable */
+  billerId: string | null;
+  /** The biller entity associated with this application */
+  biller: Biller | null;
+  /** The name of the biller */
+  billerName: string | null;
+  /** The postal code of the biller */
+  billerPostalCode: string | null;
+
+  // Bill
+  /** The account number with the biller for bill pay loans */
+  billAccountNumber: string | null;
+
+  // Lender
+  /** The unique identifier of the lender, if specified */
+  lenderId: string | null;
+  /** The lender user entity, if available */
+  lender: ApplicationUser | null;
+  /** The payment account ID for the lender */
+  lenderPaymentAccountId: string | null;
+  /** The payment account entity for the lender */
+  lenderPaymentAccount: PaymentAccount | null;
+  /** The first name of the lender (for invitation flows) */
+  lenderFirstName: string | null;
+  /** The last name of the lender (for invitation flows) */
+  lenderLastName: string | null;
+  /** The email address of the lender (for invitation flows) */
+  lenderEmail: string | null;
+  /** The relationship of the lender to the borrower */
+  lenderRelationship: string | null;
+  /** A note from the lender to the borrower */
+  lenderNote: string | null;
+  /** The date/time the lender responded to the application */
+  lenderRespondedAt: Date | null;
+
+  // Borrower
+  /** The unique identifier of the borrower */
+  borrowerId: string | null;
+  /** The borrower user entity */
+  borrower: ApplicationUser | null;
+  /** The payment account ID for the borrower */
+  borrowerPaymentAccountId: string | null;
+  /** The payment account entity for the borrower */
+  borrowerPaymentAccount: PaymentAccount | null;
+  /** The date/time the borrower submitted the application */
+  borrowerSubmittedAt: Date | null;
+
+  // Loan Info
+  /** The type of loan requested (e.g., personal, bill pay) */
+  loanType: LoanType | null;
+  /** The payment frequency for the loan (e.g., monthly, weekly) */
+  loanPaymentFrequency: string | null;
+  /** The amount of the loan requested */
+  loanAmount: number | null;
+  /** The number of payments for the loan */
+  loanPayments: number | null;
+  /** The calculated service fee for the loan */
+  loanServiceFee: number | null;
+
+  // Metadata
+  /** The date/time the application was created */
+  createdAt: Date;
+  /** The date/time the application was last updated */
+  updatedAt: Date | null;
+}
+```
+    
+}
 
   ## LoanPayments, LoanPaymentSteps and Transfers
 
@@ -310,7 +429,7 @@ For each layer there are the following rules:
 Here is the updated structure of LoanPayment:
 
 ```typescript
-interface ILoanPayment {
+class LoanPayment {
   /** UUID */
   id: string;
 
@@ -321,7 +440,7 @@ interface ILoanPayment {
   loanId: string; 
 
   /** Loan Entity */
-  loan: ILoan; 
+  loan: Loan; 
 
   /** Reflects the Payment Index for Loan Repayments.
    * `null` while Loan is not in Repayment state.
@@ -372,7 +491,7 @@ interface ILoanPayment {
    * Collection of LoanPaymentSteps that are part of this Loan Payment.
    * Each Step represents a specific transfer segment in the payment route.
    */
-  steps: ILoanPaymentStep[];
+  steps: LoanPaymentStep[];
 }
 ```
 
@@ -385,7 +504,7 @@ Notable changes:
 **LoanPaymentStep** - Entity that represents a single step in the payment route chain. Multiple steps may be required to complete a single LoanPayment, especially when transfers involve different payment providers or account types.
 
 ```typescript
-interface ILoanPaymentStep {
+class LoanPaymentStep {
   /** UUID */
   id: string;
   
@@ -412,7 +531,7 @@ interface ILoanPaymentStep {
    * Ideally contains only one Transfer.
    * If Transfer failed and re-attempt happened - new Transfer will be referenced to the same Step.
    */
-  transfers: ITransfer[] | null;
+  transfers: Transfer[] | null;
 
   /**
    * Current state of the Payment Step:
@@ -444,7 +563,7 @@ LoanPaymentSteps are an important addition that enable complex payment routes in
 **Transfer** Entity defines an explicit transfer of funds `amount` from `source` to `target` with as few extra references as possible. This maintains flexibility for funds transfer flows and allows the **Payments** microservice to execute transfers independently.
 
 ```typescript
-interface ITransfer {
+class Transfer {
   /** UUID */
   id: string;
 
@@ -473,19 +592,19 @@ interface ITransfer {
   sourceAccountId: string;
   
   /** Source payment account (relation) */
-  sourceAccount: IPaymentAccount;
+  sourceAccount: PaymentAccount;
 
   /** Destination payment account ID */
   destinationAccountId: string;
   
   /** Destination payment account (relation) */
-  destinationAccount: IPaymentAccount;
+  destinationAccount: PaymentAccount;
 }
 ```
 
 Key changes:
 - Removed direct reference to `loanPayment` as transfers are now linked to LoanPaymentSteps
-- Added optional `loanPaymentStepId` to link transfers to their respective steps. This field is optional due to support payements re-routing
+- Added optional `loanPaymentStepId` to link transfers to their respective steps. This field is optional due to support payments re-routing
 - Removed Payment Account Types as they are presented in referenced PaymentAccounts
 - Reference to `sourceAccount` and `destinationAccount` are not nullable now as all internal and external Payment Accounts are required to be linked to the Transfer
 - The transfer is now a more generic entity that can be used for any funds transfer
@@ -692,7 +811,7 @@ Created and controlled by:
 Actions:
 - **Calls [PaymentRouter](./loan-payment-flows.md#loan-payments-router)** before switching to further lifecycle state part
   - Calls Router each time when new `Repayment` Payment is scheduling
-  - Calls Router once other lifecycle state part is comming
+  - Calls Router once other lifecycle state part is coming
   - Validates that Route found
 - **Calls `LoanPaymentFactory` to create and initiate relevant `LoanPayment`** on own major state change
   - Also provide **PaymentRoute** `PK` 
@@ -713,7 +832,7 @@ Created and controlled by **LoanPaymentFactory**. Factory, depending on the `Loa
 
 While each **LoanPaymentManager** will provide certain, lifecycle-specific functionality, all of them will implement the following methods:
 - `initiate()`
-  - Checks the existance of **LoanPayment** for the current **Loan** and **Loan lifecycle part** to prevent duplicates
+  - Checks the existence of **LoanPayment** for the current **Loan** and **Loan lifecycle part** to prevent duplicates
   - Creates **LoanPayment** if it does not exist
   - Gets **PaymentRoute** by provided `PK` to generate the list of **LoanPaymentSteps** for the current **LoanPayment**
     - If the list is empty - throws an error that **LoanPayment** could not be routed
@@ -721,7 +840,7 @@ While each **LoanPaymentManager** will provide certain, lifecycle-specific funct
     - (`Funding + Disbursement specific`) if **LoanPayment** routes with multiple steps - we take `N-1` steps for `Funding` and only last step for `Disbursement`
 - `advance()`
   - Reacts to **LoanPaymentStep** 'signals' (ex. events) and updates **LoanPayment** state and other informational fields accordingly
-  - If recieves a signal that **LoanPaymentStep** is completed - checks if all requirements are met:
+  - If receives a signal that **LoanPaymentStep** is completed - checks if all requirements are met:
     - If all **LoanPaymentSteps** are completed - completes **LoanPayment**
     - If not all **LoanPaymentSteps** are completed - updates **LoanPayment** state and information accordingly
 - `complete()`
@@ -1109,11 +1228,15 @@ Also there are two cases of Error where the reason of the Error is `internal` or
 #### TransferError Entity
 To handle the errors we have `TransferError` entity which is created when the **Transfer** fails. The `TransferError` entity contains the following fields:
 ```typescript
-interface ITransferError {
-  id: string; // UUID
+class TransferError {
+  /** UUID */
+  id: string;
 
-  transferId: string; // FK to Transfer
-  loanId: string | null; // FK to Loan
+  /** FK to Transfer */
+  transferId: string;
+
+  /** FK to Loan */
+  loanId: string | null;
 
   // TODO: Block below is TBD
   // Main purposes are:
@@ -1130,11 +1253,13 @@ interface ITransferError {
 }
 ```
 
-To have the explicit way of identifying that is currently Loan has an error or not we extend `ILoan` with new fields:
+To have the explicit way of identifying that is currently Loan has an error or not we extend `Loan` with new fields:
 ```typescript
-interface ILoan {
-  currentError: ITransferError | null; // Current error of the Loan
-  retryCount: number; // Number of retries for the Loan. Includes only errors reasoned by personal accounts
+class Loan {
+  /** Current error of the Loan */
+  currentError: TransferError | null;
+  /** Number of retries for the Loan. Includes only errors reasoned by personal accounts */
+  retryCount: number;
 }
 ```
 while Loan has `currentError` - it is not possible to move forward in the lifecycle. The `currentError` should be cleared when the error is resolved and the process is continued.
@@ -1269,7 +1394,7 @@ This state machine ensures proper progression through the payment process while 
 ## Loan Payment Events
 
 ### Why Payment Events?
-Due to the variety of way how different Payment Providers work and how they response about transfer state we need to have a way to handle all of the possible cases. Some Payment Providers resposnes immediatly with the transfer state, some of them have a webhook which notifies us about the transfer state and some of them even do this via files. To handle all of these cases we need to have a way to process the updates and align the state of the transfer accordingly.
+Due to the variety of way how different Payment Providers work and how they response about transfer state we need to have a way to handle all of the possible cases. Some Payment Providers responses immediately with the transfer state, some of them have a webhook which notifies us about the transfer state and some of them even do this via files. To handle all of these cases we need to have a way to process the updates and align the state of the transfer accordingly.
 
 As LoanPaymentStep state relies on the Transfer state, LoanPayment state relies on the LoanPaymentStep state and Loan state relies on the LoanPayment state - all layers should support the events and be able to process them to not wait for the response from the Payment Provider.
 

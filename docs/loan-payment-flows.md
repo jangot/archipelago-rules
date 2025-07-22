@@ -43,7 +43,7 @@ flowchart LR
 ```
 
 ## RR (Repayment Request)
-Not a priority right now, but allows to check general functionality by supporting flow preiosuly requested (in Zirtue Legacy).
+Not a priority right now, but allows to check general functionality by supporting flow preciously requested (in Zirtue Legacy).
 The general difference - there is no `Funding` and `Disbursement` stages at all - Users want to setup only `Repayment` phase.
 
 ### Fee Paid by Lender Flow
@@ -77,7 +77,7 @@ Idea of `Loan Payments Router` - is to have a logic that allows to build all tra
 In some cases it is possible that single transfer will not be enough to complete the **Payment**. 
 For example: **Lender** has **Checkbook ACH** account while **Borrower** has **Fiserv Debit Card** account. To process `Lender -> Borrower` **Payment** it should be done in two `Payment Steps`:
 1. `Lender -> Zirtue ACH`
-2. *(Zirtue ACH reports that funds recieved)*
+2. *(Zirtue ACH reports that funds received)*
 3. `Zirtue Debit -> Borrower`
 
 Thus **Loan Payments Router** should take as INPUT:
@@ -101,18 +101,16 @@ To allow **Loan Payment Router** support certain level of flexibility (cross-pro
 **Route Key** - is unique combination of Loan Configuration and two Payment Account Configurations (*from* and *to*).
 
 ```typescript
-interface IPaymentsRouteStep {
-
+class PaymentsRouteStep {
     id: string; // uuid
     routeId: string; // FK to PaymentsRoute
-    route: IPaymentsRoute;
-
+    route: PaymentsRoute;
     order: number; // Order of a Route element in a chain
     fromId: string | null; // Id of the Payment Account if it is pre-defined (e.g. Zirtue Internal For Checkbook ACH Funding)    
     toId: string | null; // Id of the Payment Account if it is pre-defined (e.g. Zirtue Internal For Checkbook ACH Funding)
 }
 
-interface IPaymentsRoute {
+class PaymentsRoute {
     id: string; // uuid
 
     //TODO: Cover by indexes? Composite indexes (from & to) as all 6 fields expected to persist?
@@ -129,7 +127,7 @@ interface IPaymentsRoute {
     loanStagesSupported: LoanStage[]; // 'funding' | 'disbursement' | 'fee' | 'repayment' | 'refund'
     loanTypesSupported: LoanType[]; // 'dbp' | 'p2p' | 'rr'
     // #endregion
-    steps: IPaymentsRouteStep[];
+    steps: PaymentsRouteStep[];
 }
 ```
 
@@ -143,7 +141,7 @@ The idea of **Payment Route** requires `ALL` of following fields being provided 
 
 because as input before we have two **Payment Accounts** and we need to find a route that will allow to transfer funds from one to another.
 
-Basically saying **Route** is an ordered array of **Route Steps** each of which have up to two **PaymentAccount** referencies:
+Basically saying **Route** is an ordered array of **Route Steps** each of which have up to two **PaymentAccount** references:
 - If in **Route Step** both `fromId` and `toId` are `null` - it means that this **Route Step** must be the only step in the route, both **Payment Account**s came from **Loan**
 - If either `fromId` or `toId` is `null` - it means that for this route part **Payment Account** is not pre-defined and can be `lenderAccountId`, `borrowerAccountId` or `Biller's PaymentAccountId` - depending on **Loan** configuration and intended **Loan Stage**
 - If `fromId` or `toId` is not `null` - it means that for this route part **Payment Account** if pre-defined and fixed
@@ -168,10 +166,9 @@ Thus we will have pre-defined Tables for **Routes** and **Route Steps** that wil
 
 As **Payment Route** might require to be performed it in few steps - we add **Loan Payment Step** collection into **Loan Payment**
 ```typescript
-interface ILoanPaymentStep {
+class LoanPaymentStep {
     id: string; // uuid
-    loanPaymentId: string; // FK to ILoanPayment
-
+    loanPaymentId: string; // FK to LoanPayment
     /**
      * Integer order number of the step.
      * Starts with 0.
@@ -187,21 +184,18 @@ interface ILoanPaymentStep {
    * Ideally should contain only one Transfer. 
    * But if Transfer failed and re-attempt happened - new Transfer will be also referenced to the same Loan Payment Step.
    */
-    transfers: ITransfer[] | null;
-
+    transfers: Transfer[] | null;
     state: PaymentStepState; // 'created', 'confirmed', 'pending', 'completed', 'failed'
-
     awaitStepState: PaymentStepState; // 'none' | 'confirmation' | 'completion'. Default: 'completion'
     awaitStepId: string | null; // reference to previous Payment Step. If `null` order-1 will be taken
-
 }
 
-interface ILoanPayment {
+class LoanPayment {
     ...
-    steps: ILoanPaymentStep[];
+    steps: LoanPaymentStep[];
     step: number; // <-- Removed
     paymentNumber: number | null; // <-- Removed
-    transfers: ITransfer[] | null; // <-- Removed
+    transfers: Transfer[] | null; // <-- Removed
 
     /** Shows for what Loan lifecycle Payment is assigned
    * `funding` - Lender transfers funds to Zirtue
@@ -214,7 +208,7 @@ interface ILoanPayment {
 }
 ```
 
-**Loan** moves further in it's payments stages (`Funding`, `Disbursement`, `Fee`, `Repayment`) ONLY if:
+**Loan** moves further in its payments stages (`Funding`, `Disbursement`, `Fee`, `Repayment`) ONLY if:
 - Previous stage successfully completed
 OR
 - Previous stage was skipped
