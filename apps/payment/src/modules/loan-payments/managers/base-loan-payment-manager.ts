@@ -168,7 +168,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
       LOAN_PAYMENT_RELATIONS.StepsTransfers, 
       LOAN_PAYMENT_RELATIONS.StepsTransfersErrors,
     ]);
-    const { state, steps } = loanPayment;
+    const { state, steps, loanId } = loanPayment;
     // Sort steps by order ascending to process them in the correct sequence
     const paymentSteps = steps?.sort((a, b) => a.order - b.order) || null;
     
@@ -177,21 +177,21 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     if (shouldCompletePayment) {
       this.logger.debug(`Loan payment ${loanPaymentId} can be completed`);
       // Set Completed state and completion info (date)
-      return this.paymentDomainService.updatePaymentState(loanPaymentId, state, LoanPaymentStateCodes.Completed);
+      return this.paymentDomainService.updatePaymentState(loanId, loanPaymentId, state, LoanPaymentStateCodes.Completed);
     }
     // 2. should fail payment?
     const failReasonStepId = this.couldFailPayment(paymentSteps);
     if (failReasonStepId && state !== LoanPaymentStateCodes.Failed) {
       this.logger.debug(`Loan payment ${loanPaymentId} failed by ${failReasonStepId}`);
       // Set Failed state
-      return this.paymentDomainService.updatePaymentState(loanPaymentId, state, LoanPaymentStateCodes.Failed);
+      return this.paymentDomainService.updatePaymentState(loanId, loanPaymentId, state, LoanPaymentStateCodes.Failed);
     }
     // 3. should start next step?
     const nextStepId = this.paymentDomainService.couldStartNextPaymentStep(paymentSteps);
     if (nextStepId && (state === LoanPaymentStateCodes.Created || state === LoanPaymentStateCodes.Pending)) {
       this.logger.debug(`Loan payment ${loanPaymentId} can start next step ${nextStepId}`);
       // Set Pending state if needed - step advancement should be handled by PaymentStepped Event
-      return this.paymentDomainService.updatePaymentState(loanPaymentId, state, LoanPaymentStateCodes.Pending, !!nextStepId);
+      return this.paymentDomainService.updatePaymentState(loanId, loanPaymentId, state, LoanPaymentStateCodes.Pending, !!nextStepId);
     }
     // 4. TODO: States artifacts
     return false; // No state change needed

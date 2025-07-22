@@ -106,6 +106,7 @@ export class PaymentDomainService extends BaseDomainServices {
    * @returns True if update was successful, false if no change was made, null if update failed
    */
   public async updatePaymentState(
+    loanId: string,
     paymentId: string,
     oldState: LoanPaymentState,
     newState: LoanPaymentState,
@@ -142,7 +143,7 @@ export class PaymentDomainService extends BaseDomainServices {
       return false;
     } else {
       this.logger.debug(`Payment ${paymentId} state successfully changed to ${newState}`);
-      await this.publishPaymentStateChangeEvent(paymentId, oldState, newState, paymentStepped);
+      await this.publishPaymentStateChangeEvent(loanId, paymentId, oldState, newState, paymentStepped);
     }
 
     return updateResult;
@@ -164,6 +165,7 @@ export class PaymentDomainService extends BaseDomainServices {
    * @returns True if event was published, false if skipped, null if unhandled state
    */
   private async publishPaymentStateChangeEvent(
+    loanId: string,
     paymentId: string,
     oldState: LoanPaymentState,
     newState: LoanPaymentState,
