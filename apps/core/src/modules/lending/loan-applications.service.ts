@@ -8,6 +8,7 @@ import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputExc
 import { LoanApplication } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InvalidUserForLoanApplicationException } from './exceptions';
+import { LendingLogic } from './lending.logic';
 
 @Injectable()
 export class LoanApplicationsService {
@@ -151,81 +152,49 @@ export class LoanApplicationsService {
       throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
     }
 
-    // Validate that the user is the lender for v1
-    if (loanApplication.lenderId !== userId) {
-      this.logger.warn(`${userId} is not authorized to accept loan application ${loanApplicationId}`);
-      throw new InvalidUserForLoanApplicationException('You are not authorized to accept this loan application');
-    }
-
     // Validate status to avoid creating double loans
     if (loanApplication.status === LoanApplicationStates.Approved) {
       this.logger.warn(`Loan application ${loanApplicationId} is already approved`);
       throw new InvalidUserForLoanApplicationException('This loan application has already been accepted');
     }
 
-    this.validateLoanApplicationForAcceptance(loanApplication);
+    // Validate that the user is the lender for v1
+    this.validateApplicationLenderUser(loanApplication, userId);
+    LendingLogic.validateLoanApplicationForAcceptance(loanApplication);
     const createdLoan = await this.domainServices.loanServices.acceptLoanApplication(loanApplicationId, userId);
     if (!createdLoan) {
       this.logger.error(`Failed to create loan from application ${loanApplicationId}`);
       throw new EntityFailedToUpdateException('Failed to create loan from application');
     }
-    
+
     const status = LoanApplicationStates.Approved;
     await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
 
     this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
   }
 
-  private validateLoanApplicationForAcceptance(loanApplication: LoanApplication): void {
-    const missingFields: string[] = [];
-
-    // Required loan information
-    if (!loanApplication.loanAmount) {
-      missingFields.push('loanAmount');
+  /**
+   * Rejects a loan application by updating its status to 'rejected'.
+   * Validates that the user is authorized to perform the action.
+   *
+   * @param userId - The user performing the action
+   * @param loanApplicationId - The loan application ID
+   * @returns Promise<void>
+   */
+  public async rejectLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
+    this.logger.debug(`rejectLoanApplication: Rejecting loan application ${loanApplicationId}`);
+    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
+    if (!loanApplication) {
+      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
     }
-    if (!loanApplication.loanType) {
-      missingFields.push('loanType');
+    // Validate that the user is the lender for v1
+    this.validateApplicationLenderUser(loanApplication, userId);
+    const status = LoanApplicationStates.Rejected;
+    const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
+    if (!result) {
+      throw new EntityFailedToUpdateException('Failed to reject Loan application');
     }
-
-    // Required user information
-    if (!loanApplication.lenderId) {
-      missingFields.push('lenderId');
-    }
-    if (!loanApplication.borrowerId) {
-      missingFields.push('borrowerId');
-    }
-
-    // Required payment account information
-    if (!loanApplication.lenderPaymentAccountId) {
-      missingFields.push('lenderPaymentAccountId');
-    }
-    if (!loanApplication.borrowerPaymentAccountId) {
-      missingFields.push('borrowerPaymentAccountId');
-    }
-
-    // Required payments frequency
-    if (!loanApplication.loanPaymentFrequency) {
-      missingFields.push('loanPaymentFrequency');
-    }
-    if (!loanApplication.loanPayments) {
-      missingFields.push('loanPayments');
-    }
-
-    // For non-personal loans, biller information is required
-    if (loanApplication.loanType !== 'personal') {
-      if (!loanApplication.billerId) {
-        missingFields.push('billerId');
-      }
-      if (!loanApplication.billAccountNumber) {
-        missingFields.push('billAccountNumber');
-      }
-    }
-
-    if (missingFields.length > 0) {
-      const errorMessage = `Loan application is missing required fields: ${missingFields.join(', ')}`;
-      this.logger.error(`Validation failed for loan application ${loanApplication.id}: ${errorMessage}`);
-      throw new MissingInputException(errorMessage);
-    }
+    this.logger.debug(`Successfully rejected loan application ${loanApplicationId}`);
   }
 
   // TODO: This is a placeholder for the actual loan fee calculation
@@ -243,5 +212,12 @@ export class LoanApplicationsService {
 
     if (loanApplication.borrowerId !== userId && loanApplication.lenderId !== userId)
       throw new InvalidUserForLoanApplicationException('You are not authorized to update this loan application');
+  }
+
+  private validateApplicationLenderUser(loanApplication: LoanApplication, userId: string): void {
+    if (loanApplication.lenderId !== userId) {
+      this.logger.warn(`${userId} is not authorized to accept or reject loan application ${loanApplication.id}`);
+      throw new InvalidUserForLoanApplicationException('You are not authorized to accept or reject this loan application');
+    }
   }
 }

@@ -124,6 +124,6 @@ export class LoanApplicationsController {
   ): Promise<void> {
     const userId = request.user!.id;
     this.logger.debug(`Rejecting loan application ${id} by user ${userId}`);
-    // Service logic to be implemented
+    await this.loanApplicationService.rejectLoanApplication(userId, id);
   }
 }
