@@ -2,7 +2,7 @@
 export * from './event-names';
 
 // Loan
-export * from './loan-state-changed.event';
+export * from './loan-state.events';
 
 // Transfer
 export * from './transfer-states.events';

@@ -4,11 +4,11 @@ import { EventManager } from '@library/shared/common/event/event-manager';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { Loan, LoanPayment, LoanPaymentStep, PaymentAccount, PaymentsRoute, Transfer } from '@library/shared/domain/entity';
 import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
+import { PaymentCompletedEvent, PaymentFailedEvent, PaymentStepCompletedEvent, PaymentStepFailedEvent, PaymentSteppedEvent, PaymentStepPendingEvent } from '@library/shared/events';
 import { TransferErrorDetails } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentDataService } from '@payment/modules/data';
-import { PaymentCompletedEvent, PaymentFailedEvent, PaymentStepCompletedEvent, PaymentStepFailedEvent, PaymentSteppedEvent, PaymentStepPendingEvent } from '@payment/shared/events';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {

@@ -1,3 +1,9 @@
+export const LoanEventName = {
+  LoanStateChanged: 'LoanStateChanged',
+} as const;
+
+export type LoanEventNameType = (typeof LoanEventName)[keyof typeof LoanEventName];
+
 export const TransferEventName = {
   TransferExecuted: 'TransferExecuted',
   TransferCompleted: 'TransferCompleted',

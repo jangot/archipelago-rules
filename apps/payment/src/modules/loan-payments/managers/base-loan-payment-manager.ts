@@ -187,7 +187,6 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
       return this.paymentDomainService.updatePaymentState(loanPaymentId, state, LoanPaymentStateCodes.Failed);
     }
     // 3. should start next step?
-    // TODO: Pay attention to Stepped Payment 
     const nextStepId = this.paymentDomainService.couldStartNextPaymentStep(paymentSteps);
     if (nextStepId && (state === LoanPaymentStateCodes.Created || state === LoanPaymentStateCodes.Pending)) {
       this.logger.debug(`Loan payment ${loanPaymentId} can start next step ${nextStepId}`);

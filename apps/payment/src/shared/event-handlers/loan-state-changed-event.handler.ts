@@ -1,8 +1,8 @@
 import { LoanPaymentType, LoanPaymentTypeCodes, LoanState, LoanStateCodes } from '@library/entity/enum';
+import { LoanStateChangedEvent } from '@library/shared/events';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { LoanPaymentService } from '@payment/modules/services';
-import { LoanStateChangedEvent } from '../events';
 
 @Injectable()
 @EventsHandler(LoanStateChangedEvent)

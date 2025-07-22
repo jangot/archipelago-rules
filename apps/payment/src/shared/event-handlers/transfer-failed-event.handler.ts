@@ -1,9 +1,9 @@
 import { TRANSFER_RELATIONS } from '@library/shared/domain/entity/relation';
+import { TransferFailedEvent } from '@library/shared/events';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { IDomainServices } from '@payment/modules/domain';
 import { ManagementDomainService } from '@payment/modules/domain/services';
-import { TransferFailedEvent } from '../events';
 
 @Injectable()
 @EventsHandler(TransferFailedEvent)

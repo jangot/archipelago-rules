@@ -1,8 +1,8 @@
+import { TransferCompletedEvent } from '@library/shared/events';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { IDomainServices } from '@payment/modules/domain';
 import { ManagementDomainService } from '@payment/modules/domain/services';
-import { TransferCompletedEvent } from '../events';
 
 @Injectable()
 @EventsHandler(TransferCompletedEvent)

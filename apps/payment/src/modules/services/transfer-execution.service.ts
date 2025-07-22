@@ -1,8 +1,8 @@
 import { PaymentAccountProvider } from '@library/entity/enum';
 import { EventManager } from '@library/shared/common/event/event-manager';
+import { TransferCompletedEvent, TransferExecutedEvent, TransferFailedEvent } from '@library/shared/events';
 import { TransferErrorPayload } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
-import { TransferCompletedEvent, TransferExecutedEvent, TransferFailedEvent } from '@payment/shared/events';
 import { ManagementDomainService } from '../domain/services';
 
 /**
