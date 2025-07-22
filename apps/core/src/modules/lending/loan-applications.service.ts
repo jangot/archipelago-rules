@@ -153,10 +153,7 @@ export class LoanApplicationsService {
     }
 
     // Validate that the user is the lender for v1
-    if (loanApplication.lenderId !== userId) {
-      this.logger.warn(`${userId} is not authorized to accept loan application ${loanApplicationId}`);
-      throw new InvalidUserForLoanApplicationException('You are not authorized to accept this loan application');
-    }
+    this.validateApplicationLenderUser(loanApplication, userId);
     LendingLogic.validateLoanApplicationForAcceptance(loanApplication);
     const createdLoan = await this.domainServices.loanServices.acceptLoanApplication(loanApplicationId, userId);
     if (!createdLoan) {
@@ -172,18 +169,23 @@ export class LoanApplicationsService {
    * Validates that the user is authorized to perform the action.
    *
    * @param userId - The user performing the action
-   * @param id - The loan application ID
+   * @param loanApplicationId - The loan application ID
    * @returns Promise<void>
    */
-  public async rejectLoanApplication(userId: string, id: string): Promise<void> {
-    this.logger.debug(`rejectLoanApplication: Rejecting loan application ${id}`);
-    await this.validateApplicationLoanUser(id, userId);
+  public async rejectLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
+    this.logger.debug(`rejectLoanApplication: Rejecting loan application ${loanApplicationId}`);
+    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
+    if (!loanApplication) {
+      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
+    }
+    // Validate that the user is the lender for v1
+    this.validateApplicationLenderUser(loanApplication, userId);
     const status = LoanApplicationStates.Rejected;
-    const result = await this.domainServices.loanServices.updateLoanApplication(id, { status });
+    const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
     if (!result) {
       throw new EntityFailedToUpdateException('Failed to reject Loan application');
     }
-    this.logger.debug(`Successfully rejected loan application ${id}`);
+    this.logger.debug(`Successfully rejected loan application ${loanApplicationId}`);
   }
 
   // TODO: This is a placeholder for the actual loan fee calculation
@@ -201,5 +203,12 @@ export class LoanApplicationsService {
 
     if (loanApplication.borrowerId !== userId && loanApplication.lenderId !== userId)
       throw new InvalidUserForLoanApplicationException('You are not authorized to update this loan application');
+  }
+
+  private validateApplicationLenderUser(loanApplication: LoanApplication, userId: string): void {
+    if (loanApplication.lenderId !== userId) {
+      this.logger.warn(`${userId} is not authorized to accept or reject loan application ${loanApplication.id}`);
+      throw new InvalidUserForLoanApplicationException('You are not authorized to accept or reject this loan application');
+    }
   }
 }
