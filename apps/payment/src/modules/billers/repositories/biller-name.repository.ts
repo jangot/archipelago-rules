@@ -1,5 +1,5 @@
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
-import { BillerName } from '@library/shared/domain/entity/biller.name.entity';
+import { BillerName } from '@library/shared/domain/entity/biller-name.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';

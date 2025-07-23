@@ -2,9 +2,9 @@ import { BillerType } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { ApplicationUser } from './application.user.entity';
-import { BillerAddress } from './biller.address.entity';
-import { BillerMask } from './biller.mask.entity';
-import { BillerName } from './biller.name.entity';
+import { BillerAddress } from './biller-address.entity';
+import { BillerMask } from './biller-mask.entity';
+import { BillerName } from './biller-name.entity';
 import { PaymentAccount } from './payment.account.entity';
 
 /**
