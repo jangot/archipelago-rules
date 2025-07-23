@@ -85,7 +85,7 @@ export class CommandDiscoveryService {
     }
 
     // Try to get name from constructor
-    if (constructor.name && typeof constructor.name === 'string') {
+    if (constructor.name) {
       return constructor.name;
     }
 
