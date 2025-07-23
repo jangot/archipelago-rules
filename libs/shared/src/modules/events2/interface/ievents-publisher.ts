@@ -1,4 +1,4 @@
-import { ICoreEvent } from '@library/shared/modules/events2/interface/index';
+import { ICoreEvent } from './index';
 
 export interface IEventsPublisher {
   publish<T extends  ICoreEvent<any>>(event: T): Promise<void>;

@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
-import { ICoreEvent } from '@library/shared/modules/events2/interface';
-import { SnsPublisherService } from '@library/shared/modules/events2/services/sns-publisher.service';
+
+import { ICoreEvent, IEventsPublisher } from '../interface';
+import { SnsPublisherService } from './sns-publisher.service';
 
 @Injectable()
-export class EventsPublisherService {
+export class EventsPublisherService implements IEventsPublisher {
   constructor(
     private readonly eventBus: EventBus,
     private readonly snsPublisher: SnsPublisherService,

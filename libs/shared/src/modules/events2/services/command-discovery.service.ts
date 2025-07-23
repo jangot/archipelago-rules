@@ -18,7 +18,7 @@ export class CommandDiscoveryService {
     this.cache = new Map();
   }
 
-  // TODO finishe the logic
+  // TODO finish the logic
   public findEventByName(name: string): Event | undefined {
     if (this.cache.has(name)) {
       this.logger.debug(`Event with name "${name}" was taken from cache`);

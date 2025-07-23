@@ -13,7 +13,7 @@ export interface EventsModuleSQSConfig {
   waitTimeSeconds?: number;
 }
 
-export interface EventsModuleConfig {
+export interface IEventsModuleConfig {
   serviceName: string;
   sns?: EventsModuleSNSConfig;
   sqs?: EventsModuleSQSConfig;

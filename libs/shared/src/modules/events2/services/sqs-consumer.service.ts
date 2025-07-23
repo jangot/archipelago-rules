@@ -8,11 +8,10 @@ import {
 } from '@aws-sdk/client-sqs';
 import { plainToInstance } from 'class-transformer';
 
-import { EventsModuleConfig } from '@library/shared/modules/events2/interface';
-import { EVENTS_MODULE_CONFIG } from '@library/shared/modules/events2/constants';
-import { CoreAbstractEvent } from '@library/shared/modules/events2/classes';
-import { CommandDiscoveryService } from '@library/shared/modules/events2/services/command-discovery.service';
-import { ISnsNotification } from '@library/shared/modules/events2/interface/I-sns-notification';
+import { IEventsModuleConfig, ISnsNotification } from '../interface';
+import { EVENTS_MODULE_CONFIG } from '../constants';
+import { CoreAbstractEvent } from '../classes';
+import { CommandDiscoveryService } from './command-discovery.service';
 
 @Injectable()
 export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
@@ -26,7 +25,7 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly eventBus: EventBus,
     private readonly commandDiscovery: CommandDiscoveryService,
-    @Inject(EVENTS_MODULE_CONFIG) private readonly config: EventsModuleConfig,
+    @Inject(EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
   ) {}
 
   public onModuleInit() {
@@ -47,7 +46,6 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
 
     this.isRunning = false;
   }
-
 
   private async poll(): Promise<void> {
     while (this.isRunning) {
@@ -87,7 +85,7 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  public getCommand(message: Message): CoreAbstractEvent<any> | null {
+  private getCommand(message: Message): CoreAbstractEvent<any> | null {
     const body: ISnsNotification = JSON.parse(message.Body!);
     if (body.MessageAttributes.sourceService.Value === this.serviceName) {
       this.logger.warn(

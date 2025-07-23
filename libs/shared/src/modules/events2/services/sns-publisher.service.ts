@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
 import { EVENTS_MODULE_CONFIG } from '@library/shared/modules/events2/constants';
-import { EventsModuleConfig, IEventsPublisher } from '@library/shared/modules/events2/interface';
+import { IEventsModuleConfig, IEventsPublisher } from '@library/shared/modules/events2/interface';
 import { CorePublishedEvent } from '@library/shared/modules/events2/classes';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class SnsPublisherService implements OnModuleInit, IEventsPublisher {
   private topicArn?: string;
 
   constructor(
-    @Inject(EVENTS_MODULE_CONFIG) private readonly config: EventsModuleConfig,
+    @Inject(EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
   ) {}
 
   onModuleInit() {
