@@ -1,16 +1,16 @@
-import { LoanState, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
+import { LoanState, LoanStateCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EventManager } from '@library/shared/common/event/event-manager';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { Biller, Loan, PaymentAccount } from '@library/shared/domain/entity';
+import { Loan, PaymentAccount } from '@library/shared/domain/entity';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IDomainServices } from '../domain/idomain.services';
 import { LoanCreateRequestDto } from './dto/request/loan.create.request.dto';
 import { LoanResponseDto } from './dto/response/loan.response.dto';
-import { ActionNotAllowedException, UnableToCreatePersonalBillerException } from './exceptions/loan-domain.exceptions';
+import { ActionNotAllowedException } from './exceptions/loan-domain.exceptions';
 import { ILoanStateManagersFactory } from './interfaces';
 import { LendingLogic } from './lending.logic';
 
@@ -29,12 +29,6 @@ export class LoansService {
     LendingLogic.validateLoanCreateInput(input);
 
     const loanCreateInput: Partial<Loan> = EntityMapper.toEntity(input, Loan);
-    const { type } = input;
-    
-    if (type === LoanTypeCodes.Personal && !loanCreateInput.billerId) {
-      const personalBiller = await this.createPersonalBiller(userId);
-      loanCreateInput.billerId = personalBiller.id;
-    }
 
     // Link user who created a Loan to lender/borrower side
     loanCreateInput.lenderId = userId; // Will come from the loan application, refactor still pending
@@ -92,15 +86,6 @@ export class LoansService {
   public async advanceLoan(loanId: string, currentState?: LoanState): Promise<boolean | null> {
     const manager = await this.stateManagerFactory.getManager(loanId, currentState);
     return manager.advance(loanId);
-  }
-
-  private async createPersonalBiller(createdById: string): Promise<Biller> {
-    const personalBiller = await this.domainServices.loanServices.createPersonalBiller(createdById);
-    if (!personalBiller) {
-      this.logger.error('LoanCreateCommand: Failed to create personal Biller', { createdById });
-      throw new UnableToCreatePersonalBillerException('Failed to create personal biller');
-    }
-    return personalBiller;
   }
 
   private async getLoan(loanId: string | null): Promise<Loan> {

@@ -1,11 +1,8 @@
 import { CoreDataService } from '@core/modules/data';
-import {
-  BillerTypeCodes,
-  LoanPaymentFrequency,
-} from '@library/entity/enum';
+import { LoanPaymentFrequency } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
-import { Biller, Loan, LoanApplication } from '@library/shared/domain/entity';
+import { Loan, LoanApplication } from '@library/shared/domain/entity';
 import { LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -68,21 +65,6 @@ export class LoanDomainService extends BaseDomainServices {
 
     this.logger.debug(`Successfully created loan ${createdLoan.id} from application ${loanApplicationId}`);
     return createdLoan;
-  }
-  // #endregion
-
-  // #region Biller
-  public async createPersonalBiller(createdById: string, lenderName?: string): Promise<Biller | null> {
-    const billerName = `Personal offer to ${lenderName}`;
-    return this.data.billers.createBiller({ name: billerName, type: BillerTypeCodes.Personal, createdById });
-  }
-
-  public async createCustomBiller(createdById: string, billerName: string): Promise<Biller | null> {
-    return this.data.billers.createBiller({ name: billerName, type: BillerTypeCodes.Custom, createdById });
-  }
-
-  public async getCustomBillers(createdById: string): Promise<Array<Biller> | null> {
-    return this.data.billers.getAllCustomBillers(createdById);
   }
   // #endregion
 
