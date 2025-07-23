@@ -7,8 +7,6 @@ import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
-import { BillersController } from './billers.controller';
-import { BillersService } from './billers.service';
 import { ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
 import { LoanStateManagersFactory } from './loan-state-manager-factory';
 import { LOAN_STATE_MANAGERS, LoanStateManagers } from './loan-state-managers';
@@ -19,10 +17,9 @@ import { ScheduleController } from './schedule.controller';
 
 @Module({
   imports: [JwtModule, ConfigModule, DomainModule, CqrsModule, DataModule],
-  controllers: [BillersController, LoansController, LoanApplicationsController, ScheduleController],
+  controllers: [LoansController, LoanApplicationsController, ScheduleController],
   providers: [
-    Logger, 
-    BillersService, 
+    Logger,
     LoansService, 
     LoanApplicationsService,
     ScheduleService,
