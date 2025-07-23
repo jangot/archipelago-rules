@@ -107,7 +107,7 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
       return null;
     }
     this.logger.debug(`Setting next state for loan ${loanId} to ${nextState}.`);
-    return this.domainServices.loanServices.updateLoan(loanId, { state: nextState });
+    return this.domainServices.loanServices.updateLoanState(loanId, this.loanState, nextState);
   }
 
   /**

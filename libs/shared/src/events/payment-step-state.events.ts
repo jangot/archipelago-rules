@@ -3,33 +3,60 @@ import { IZngEvent } from '@library/shared/common/event/interface/izng-event';
 import { PaymentStepEventName, PaymentStepEventNameType } from './event-names';
 
 export class PaymentStepEventBase implements IZngEvent {
-  public readonly name: PaymentStepEventNameType;
-  public readonly isExternal: boolean;
-  public readonly stepId: string;
-  public readonly originalStepState?: PaymentStepState;
+  public name: PaymentStepEventNameType;
+  public isExternal: boolean;
+  public stepId: string;
+  public originalStepState?: PaymentStepState;
 
-  constructor(eventName: PaymentStepEventNameType, stepId: string, isExternal: boolean = false, originalStepState?: PaymentStepState) {
-    this.name = eventName;
-    this.stepId = stepId;
-    this.isExternal = isExternal;
-    this.originalStepState = originalStepState;
+  constructor() { }
+  
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static create(...args: any[]): PaymentStepEventBase {
+    return new PaymentStepEventBase();
   }
 }
 
 export class PaymentStepPendingEvent extends PaymentStepEventBase {
-  constructor(stepId: string, originalStepState?: PaymentStepState) {
-    super(PaymentStepEventName.PaymentStepPending, stepId, false, originalStepState);
+  constructor() {
+    super();
+  }
+
+  public static override create(stepId: string, originalStepState?: PaymentStepState): PaymentStepPendingEvent {
+    const event = new PaymentStepPendingEvent();
+    event.name = PaymentStepEventName.PaymentStepPending;
+    event.isExternal = false;
+    event.stepId = stepId;
+    event.originalStepState = originalStepState;
+    return event;
   }
 }
 
 export class PaymentStepCompletedEvent extends PaymentStepEventBase {
-  constructor(stepId: string, originalStepState?: PaymentStepState) {
-    super(PaymentStepEventName.PaymentStepCompleted, stepId, false, originalStepState);
+  constructor() {
+    super();
+  }
+
+  public static override create(stepId: string, originalStepState?: PaymentStepState): PaymentStepCompletedEvent {
+    const event = new PaymentStepCompletedEvent();
+    event.name = PaymentStepEventName.PaymentStepCompleted;
+    event.isExternal = false;
+    event.stepId = stepId;
+    event.originalStepState = originalStepState;
+    return event;
   }
 }
 
 export class PaymentStepFailedEvent extends PaymentStepEventBase {
-  constructor(stepId: string, originalStepState?: PaymentStepState) {
-    super(PaymentStepEventName.PaymentStepFailed, stepId, false, originalStepState);
+  constructor() {
+    super();
+  }
+
+  public static override create(stepId: string, originalStepState?: PaymentStepState): PaymentStepFailedEvent {
+    const event = new PaymentStepFailedEvent();
+    event.name = PaymentStepEventName.PaymentStepFailed;
+    event.isExternal = false;
+    event.stepId = stepId;
+    event.originalStepState = originalStepState;
+    return event;
   }
 }

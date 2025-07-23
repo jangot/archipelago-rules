@@ -178,11 +178,11 @@ export class PaymentDomainService extends BaseDomainServices {
           this.logger.debug(`Payment ${paymentId} is pending but not stepped, skipping event publication.`);
           return false; // Skip event if payment is pending but not stepped
         }
-        return this.eventManager.publish<Promise<boolean | null>>(new PaymentSteppedEvent(paymentId, oldState));
+        return this.eventManager.publish<Promise<boolean | null>>(PaymentSteppedEvent.create(paymentId, oldState));
       case LoanPaymentStateCodes.Completed:
-        return this.eventManager.publish<Promise<boolean | null>>(new PaymentCompletedEvent(paymentId, oldState));
+        return this.eventManager.publish<Promise<boolean | null>>(PaymentCompletedEvent.create(paymentId, oldState));
       case LoanPaymentStateCodes.Failed:
-        return this.eventManager.publish<Promise<boolean | null>>(new PaymentFailedEvent(paymentId, oldState));
+        return this.eventManager.publish<Promise<boolean | null>>(PaymentFailedEvent.create(paymentId, oldState));
       case LoanPaymentStateCodes.Created:
       default:
         this.logger.error(`Unhandled payment state: ${newState} for paymentId: ${paymentId}`);
@@ -271,11 +271,11 @@ export class PaymentDomainService extends BaseDomainServices {
     this.logger.debug(`Publishing step state change event for step ${stepId} from ${oldState} to ${newState}`);
     switch (newState) {
       case PaymentStepStateCodes.Pending:
-        return this.eventManager.publish<Promise<boolean | null>>(new PaymentStepPendingEvent(stepId, oldState));
+        return this.eventManager.publish<Promise<boolean | null>>(PaymentStepPendingEvent.create(stepId, oldState));
       case PaymentStepStateCodes.Completed:
-        return this.eventManager.publish<Promise<boolean | null>>(new PaymentStepCompletedEvent(stepId, oldState));
+        return this.eventManager.publish<Promise<boolean | null>>(PaymentStepCompletedEvent.create(stepId, oldState));
       case PaymentStepStateCodes.Failed:
-        return this.eventManager.publish<Promise<boolean | null>>(new PaymentStepFailedEvent(stepId, oldState));
+        return this.eventManager.publish<Promise<boolean | null>>(PaymentStepFailedEvent.create(stepId, oldState));
       case PaymentStepStateCodes.Created:
       default:
         this.logger.error(`Unhandled step state: ${newState} for stepId: ${stepId}`);

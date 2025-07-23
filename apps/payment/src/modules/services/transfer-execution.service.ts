@@ -42,7 +42,7 @@ export class TransferExecutionService {
       // If executionResult is true, it indicates that the transfer was successfully executed
       this.logger.debug(`Transfer executed successfully for transferId: ${transferId}`);
       // TODO: Reaction on event execution?
-      await this.eventManager.publish<Promise<boolean | null>>(new TransferExecutedEvent(transferId, providerType));
+      await this.eventManager.publish<Promise<boolean | null>>(TransferExecutedEvent.create(transferId, providerType));
     }
     return executionResult;
   }
@@ -71,7 +71,7 @@ export class TransferExecutionService {
       // If completionResult is true, it indicates that the transfer was successfully completed
       this.logger.debug(`Transfer completed successfully for transferId: ${transferId}`);
       // TODO: Reaction on event execution?
-      await this.eventManager.publish<Promise<boolean | null>>(new TransferCompletedEvent(transferId, providerType));
+      await this.eventManager.publish<Promise<boolean | null>>(TransferCompletedEvent.create(transferId, providerType));
     }
     return completionResult;
   }
@@ -100,7 +100,7 @@ export class TransferExecutionService {
     } else {
       // If failingResult is true, it indicates that the transfer was successfully marked as failed
       this.logger.debug(`Transfer failed successfully for transferId: ${transferId}`, { error });
-      await this.eventManager.publish<Promise<boolean | null>>(new TransferFailedEvent(transferId, providerType));
+      await this.eventManager.publish<Promise<boolean | null>>(TransferFailedEvent.create(transferId, providerType));
     }
 
     return failingResult;

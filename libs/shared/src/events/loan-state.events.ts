@@ -3,24 +3,33 @@ import { IZngEvent } from '@library/shared/common/event/interface/izng-event';
 import { LoanEventName, LoanEventNameType } from './event-names';
 
 export class LoanEventBase implements IZngEvent {
-  public readonly name: LoanEventNameType;
-  public readonly isExternal: boolean;
-  public readonly loanId: string;
+  public name: LoanEventNameType;
+  public isExternal: boolean;
+  public loanId: string;
 
-  constructor(eventName: LoanEventNameType, loanId: string, isExternal: boolean = false) {
-    this.name = eventName;
-    this.loanId = loanId;
-    this.isExternal = isExternal;
+  constructor() { }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static create(...args: any[]): LoanEventBase { 
+    return new LoanEventBase();
   }
 }
 
 export class LoanStateChangedEvent extends LoanEventBase {
-  public readonly newState: LoanState;
-  public readonly oldState: LoanState;
+  public newState: LoanState;
+  public oldState: LoanState;
 
-  constructor(loanId: string, newState: LoanState, oldState: LoanState) {
-    super(LoanEventName.LoanStateChanged, loanId, true);
-    this.newState = newState;
-    this.oldState = oldState;
+  constructor() {
+    super();
+  }
+
+  public static override create(loanId: string, oldState: LoanState, newState: LoanState): LoanStateChangedEvent {
+    const event = new LoanStateChangedEvent();
+    event.name = LoanEventName.LoanStateChanged;
+    event.isExternal = true;
+    event.loanId = loanId;
+    event.oldState = oldState;
+    event.newState = newState;
+    return event;
   }
 }

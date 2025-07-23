@@ -2,12 +2,15 @@ import { CoreDataService } from '@core/modules/data';
 import {
   BillerTypeCodes,
   LoanPaymentFrequency,
+  LoanState,
   LoanStateCodes,
 } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
+import { EventManager } from '@library/shared/common/event/event-manager';
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
 import { Biller, Loan, LoanApplication } from '@library/shared/domain/entity';
 import { LoanRelation } from '@library/shared/domain/entity/relation';
+import { LoanStateChangedEvent } from '@library/shared/events';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -17,7 +20,8 @@ export class LoanDomainService extends BaseDomainServices {
 
   constructor(
     protected readonly data: CoreDataService,
-    protected readonly config: ConfigService
+    protected readonly config: ConfigService,
+    protected readonly eventManager: EventManager,
   ) {
     super(data);
   }
@@ -36,6 +40,43 @@ export class LoanDomainService extends BaseDomainServices {
 
   public async updateLoan(loanId: string, loan: Partial<Loan>): Promise<boolean | null> {
     return this.data.loans.update(loanId, loan);
+  }
+
+
+  /**
+   * Updates the state of a loan from one state to another and fires a corresponding event.
+   * This is an explicit function for loan state changes that ensures proper event propagation
+   * when a loan transitions between states.
+   * 
+   * @param loanId - The unique identifier of the loan to update
+   * @param oldState - The current state of the loan before the update
+   * @param newState - The desired new state for the loan
+   * @returns Promise that resolves to true if update was successful, false if no change was needed, or null on failure
+   * @throws {EntityFailedToUpdateException} When the loan state update operation fails
+   * 
+   * @remarks
+   * - If oldState equals newState, the function returns false without making changes
+   * - Successfully fires a LoanStateChangedEvent after updating the loan state
+   */
+  public async updateLoanState(loanId: string, oldState: LoanState, newState: LoanState): Promise<boolean | null> {
+    this.logger.debug(`updateLoanState: Updating loan ${loanId} from state ${oldState} to ${newState}`);
+
+    if (oldState === newState) {
+      this.logger.warn(`Loan ${loanId} is already in state ${newState}`);
+      return false; // No change needed
+    }
+
+    // TODO: possibly will require add some timestamps for specific states transitions
+    const updated = await this.data.loans.update(loanId, { state: newState });
+    if (!updated) {
+      this.logger.error(`Failed to update loan ${loanId} to state ${newState}`);
+      throw new EntityFailedToUpdateException('Failed to update loan state');
+    }
+
+    await this.eventManager.publish<Promise<boolean | null>>(LoanStateChangedEvent.create(loanId, oldState, newState));
+
+    this.logger.debug(`Successfully updated loan ${loanId} to state ${newState}`);
+    return true;
   }
 
   public async acceptLoanApplication(loanApplicationId: string, userId: string): Promise<Loan | null> {

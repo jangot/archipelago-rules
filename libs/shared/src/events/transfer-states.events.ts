@@ -3,28 +3,46 @@ import { IZngEvent } from '@library/shared/common/event/interface/izng-event';
 import { TransferEventName, TransferEventNameType } from './event-names';
 
 export class TransferEventBase implements IZngEvent {
-  public readonly name: TransferEventNameType;
-  public readonly isExternal: boolean;
-  public readonly transferId: string;
-  public readonly providerType?: PaymentAccountProvider;
+  public name: TransferEventNameType;
+  public isExternal: boolean;
+  public transferId: string;
+  public providerType?: PaymentAccountProvider;
 
-  constructor(eventName: TransferEventNameType, transferId: string, isExternal: boolean = false, providerType?: PaymentAccountProvider) {
-    this.transferId = transferId;
-    this.name = eventName;
-    this.isExternal = isExternal;
-    this.providerType = providerType;
+  constructor() { }
+  
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static create(...args: any[]): TransferEventBase {
+    return new TransferEventBase();
   }
 }
 
 export class TransferExecutedEvent extends TransferEventBase {
-  constructor(transferId: string, providerType?: PaymentAccountProvider) {
-    super(TransferEventName.TransferExecuted, transferId, false, providerType);
+  constructor() { 
+    super();
+  }
+  
+  public static override create(transferId: string, providerType?: PaymentAccountProvider): TransferExecutedEvent {
+    const event = new TransferExecutedEvent();
+    event.name = TransferEventName.TransferExecuted;
+    event.isExternal = false;
+    event.transferId = transferId;
+    event.providerType = providerType;
+    return event;
   }
 }
 
 export class TransferCompletedEvent extends TransferEventBase {
-  constructor(transferId: string, providerType?: PaymentAccountProvider) {
-    super(TransferEventName.TransferCompleted, transferId, false, providerType);
+  constructor() { 
+    super();
+  } 
+
+  public static override create(transferId: string, providerType?: PaymentAccountProvider): TransferCompletedEvent {
+    const event = new TransferCompletedEvent();
+    event.name = TransferEventName.TransferCompleted;
+    event.isExternal = false;
+    event.transferId = transferId;
+    event.providerType = providerType;
+    return event;
   }
 }
 
@@ -32,7 +50,16 @@ export class TransferCompletedEvent extends TransferEventBase {
 // Error should be already attached to Transfer Entity when this event is emitted
 // Might be external to tell the Loan that it is time to pause the state \ attach error
 export class TransferFailedEvent extends TransferEventBase {
-  constructor(transferId: string, providerType?: PaymentAccountProvider) {
-    super(TransferEventName.TransferFailed, transferId, false, providerType);
+  constructor() { 
+    super();
+  }
+
+  public static override create(transferId: string, providerType?: PaymentAccountProvider): TransferFailedEvent {
+    const event = new TransferFailedEvent();
+    event.name = TransferEventName.TransferFailed;
+    event.isExternal = false;
+    event.transferId = transferId;
+    event.providerType = providerType;
+    return event;
   }
 }
