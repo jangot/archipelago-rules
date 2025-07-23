@@ -1,13 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DiscoveryService } from '@nestjs/core';
+import { EVENTS_HANDLER_METADATA } from '@nestjs/cqrs/dist/decorators/constants';
 
 interface Event {
   eventClass: any;
   handlerClass: any;
 }
-
-// const EVENT_METADATA_KEY = '__commandHandler__';
-const EVENT_METADATA_KEY = '__eventHandler__';
 
 @Injectable()
 export class CommandDiscoveryService {
@@ -18,7 +16,11 @@ export class CommandDiscoveryService {
     this.cache = new Map();
   }
 
-  // TODO finish the logic
+  /**
+   * Finds event by class name
+   * @param name - event class name
+   * @returns Event with eventClass and handlerClass or undefined
+   */
   public findEventByName(name: string): Event | undefined {
     if (this.cache.has(name)) {
       this.logger.debug(`Event with name "${name}" was taken from cache`);
@@ -31,21 +33,35 @@ export class CommandDiscoveryService {
       if (provider.instance) {
         const handlerClass = provider.instance.constructor;
 
-        const eventClass = Reflect.getMetadata(EVENT_METADATA_KEY, handlerClass);
+        // Get event handler metadata
+        const eventHandlerMetadata = Reflect.getMetadata(EVENTS_HANDLER_METADATA, handlerClass);
 
+        if (eventHandlerMetadata) {
+          // Extract event class from metadata (metadata can be an array)
+          const eventClass = Array.isArray(eventHandlerMetadata)
+            ? eventHandlerMetadata[0]
+            : eventHandlerMetadata;
 
-        if (eventClass && eventClass === name) {
-          this.logger.debug(`Event with name "${name}" was found`);
+          // Extract event class name
+          const eventClassName = eventClass.name || eventClass.constructor?.name;
 
-          const result = {
-            eventClass,
-            handlerClass,
-          };
+          // Compare event class name with searched name
+          if (eventClassName === name) {
+            this.logger.debug(`Event with name "${name}" was found`);
 
-          this.cache.set(name, result);
-          return result;
+            const result = {
+              eventClass,
+              handlerClass,
+            };
+
+            this.cache.set(name, result);
+            return result;
+          }
         }
       }
     }
+
+    this.logger.debug(`Event with name "${name}" was not found`);
+    return undefined;
   }
 }
