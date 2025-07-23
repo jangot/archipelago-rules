@@ -9,9 +9,9 @@ import { CorePublishedEvent } from '@library/shared/modules/events2/classes';
 export class SnsPublisherService implements OnModuleInit, IEventsPublisher {
   private logger = new Logger(SnsPublisherService.name);
 
-  private client: SNSClient;
-  private topicArn: string;
   private serviceName: string;
+  private client?: SNSClient;
+  private topicArn?: string;
 
   constructor(
     @Inject(EVENTS_MODULE_CONFIG) private readonly config: EventsModuleConfig,
@@ -21,7 +21,7 @@ export class SnsPublisherService implements OnModuleInit, IEventsPublisher {
     this.serviceName = this.config.serviceName;
     if (this.config.sns) {
       this.topicArn = this.config.sns.topicArn;
-      this.client = new SNSClient(this.config.sns.config);
+      this.client = new SNSClient(this.config.sns.clientConfig);
     }
   }
 

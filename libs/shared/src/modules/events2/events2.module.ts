@@ -5,6 +5,7 @@ import { EVENTS_MODULE_CONFIG } from './constants';
 import { EventsModuleOptions } from './interface';
 import { EventsPublisherService } from './services/events-publisher.service';
 import { SnsPublisherService } from '@library/shared/modules/events2/services/sns-publisher.service';
+import { CommandDiscoveryService } from '@library/shared/modules/events2/services/command-discovery.service';
 
 @Module({})
 export class Events2Module {
@@ -18,6 +19,7 @@ export class Events2Module {
           useFactory: options.useFactory,
           inject: options.inject,
         },
+        CommandDiscoveryService,
         SnsPublisherService,
         EventsPublisherService,
       ],
