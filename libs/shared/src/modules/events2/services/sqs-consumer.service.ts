@@ -1,16 +1,16 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject } from '@nestjs/common';
-import { EventBus } from '@nestjs/cqrs';
 import {
-  SQSClient,
-  ReceiveMessageCommand,
   DeleteMessageCommand,
   Message,
+  ReceiveMessageCommand,
+  SQSClient,
 } from '@aws-sdk/client-sqs';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { EventBus } from '@nestjs/cqrs';
 import { plainToInstance } from 'class-transformer';
 
-import { IEventsModuleConfig, ISnsNotification } from '../interface';
-import { EVENTS_MODULE_CONFIG } from '../constants';
 import { CoreAbstractEvent } from '../classes';
+import { EVENTS_MODULE_CONFIG } from '../constants';
+import { IEventsModuleConfig, ISnsNotification } from '../interface';
 import { CommandDiscoveryService } from './command-discovery.service';
 
 @Injectable()
@@ -97,11 +97,11 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     const commandType = body.MessageAttributes.eventType.Value;
 
     try {
-      const commandInfo = this.commandDiscovery.findEventByName(commandType);
+      const EventClass = this.commandDiscovery.findEventByName(commandType);
 
-      if (commandInfo) {
-        const command = plainToInstance(commandInfo.eventClass, {
-          data: body.Message,
+      if (EventClass) {
+        const command = plainToInstance(EventClass, {
+          payload: body.Message,
         });
 
         this.logger.debug(`Got command ${commandType} ${message.MessageId}`);

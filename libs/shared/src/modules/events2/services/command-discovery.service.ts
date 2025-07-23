@@ -2,26 +2,23 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DiscoveryService } from '@nestjs/core';
 import { EVENTS_HANDLER_METADATA } from '@nestjs/cqrs/dist/decorators/constants';
 
-interface Event {
-  eventClass: any;
-  handlerClass: any;
-}
+type EventConstructor = new (...args: any[]) => any;
 
 @Injectable()
 export class CommandDiscoveryService {
   private logger = new Logger(CommandDiscoveryService.name);
-  private readonly cache: Map<string, Event>;
+  private readonly cache: Map<string, EventConstructor>;
 
   constructor(private readonly discoveryService: DiscoveryService) {
     this.cache = new Map();
   }
 
   /**
-   * Finds event by class name
+   * Finds event class by class name
    * @param name - event class name
-   * @returns Event with eventClass and handlerClass or undefined
+   * @returns Event class constructor or undefined
    */
-  public findEventByName(name: string): Event | undefined {
+  public findEventByName(name: string): EventConstructor | undefined {
     if (this.cache.has(name)) {
       this.logger.debug(`Event with name "${name}" was taken from cache`);
       return this.cache.get(name);
@@ -42,26 +39,61 @@ export class CommandDiscoveryService {
             ? eventHandlerMetadata[0]
             : eventHandlerMetadata;
 
-          // Extract event class name
-          const eventClassName = eventClass.name || eventClass.constructor?.name;
+          // Validate that eventClass is actually a constructor function
+          if (!this.isConstructor(eventClass)) {
+            this.logger.warn(`Invalid event class found in metadata for handler ${handlerClass.name}: not a constructor`);
+            continue;
+          }
+
+          // Extract event class name safely
+          const eventClassName = this.getClassName(eventClass);
 
           // Compare event class name with searched name
           if (eventClassName === name) {
             this.logger.debug(`Event with name "${name}" was found`);
 
-            const result = {
-              eventClass,
-              handlerClass,
-            };
-
-            this.cache.set(name, result);
-            return result;
+            this.cache.set(name, eventClass);
+            return eventClass;
           }
         }
       }
     }
 
     this.logger.debug(`Event with name "${name}" was not found`);
+    return undefined;
+  }
+
+  /**
+   * Validates if the provided value is a constructor function
+   * @param value - value to check
+   * @returns true if value is a constructor function
+   */
+  private isConstructor(value: any): value is EventConstructor {
+    return typeof value === 'function' &&
+           value.prototype &&
+           value.prototype.constructor === value;
+  }
+
+  /**
+   * Safely extracts class name from constructor function
+   * @param constructor - constructor function
+   * @returns class name or undefined
+   */
+  private getClassName(constructor: EventConstructor): string | undefined {
+    if (!this.isConstructor(constructor)) {
+      return undefined;
+    }
+
+    // Try to get name from constructor
+    if (constructor.name && typeof constructor.name === 'string') {
+      return constructor.name;
+    }
+
+    // Fallback: try to get name from prototype
+    if (constructor.prototype && constructor.prototype.constructor && constructor.prototype.constructor.name) {
+      return constructor.prototype.constructor.name;
+    }
+
     return undefined;
   }
 }

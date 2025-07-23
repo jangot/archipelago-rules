@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+
 import { INestApplication, Module } from '@nestjs/common';
 import { DiscoveryService } from '@nestjs/core';
 import { CqrsModule, EventsHandler, IEventHandler } from '@nestjs/cqrs';
@@ -52,6 +53,13 @@ class PaymentProcessedEventHandler implements IEventHandler<PaymentProcessedEven
   }
 }
 
+// Test handler with invalid metadata simulation
+class InvalidEventHandler {
+  handle(event: any) {
+    return event;
+  }
+}
+
 @Module({
   imports: [CqrsModule],
   providers: [
@@ -60,6 +68,7 @@ class PaymentProcessedEventHandler implements IEventHandler<PaymentProcessedEven
     UserCreatedEventHandler,
     UserUpdatedEventHandler,
     PaymentProcessedEventHandler,
+    InvalidEventHandler,
   ],
   exports: [CommandDiscoveryService],
 })
@@ -90,8 +99,7 @@ describe('CommandDiscoveryService E2E', () => {
     it('should discover event handlers through real DiscoveryService', () => {
       const userCreatedResult = commandDiscoveryService.findEventByName('UserCreatedEvent');
       expect(userCreatedResult).toBeDefined();
-      expect(userCreatedResult?.eventClass).toBe(UserCreatedEvent);
-      expect(userCreatedResult?.handlerClass).toBe(UserCreatedEventHandler);
+      expect(userCreatedResult).toBe(UserCreatedEvent);
     });
 
     it('should discover all registered event handlers', () => {
@@ -103,9 +111,9 @@ describe('CommandDiscoveryService E2E', () => {
       expect(userUpdatedResult).toBeDefined();
       expect(paymentProcessedResult).toBeDefined();
 
-      expect(userCreatedResult?.eventClass).toBe(UserCreatedEvent);
-      expect(userUpdatedResult?.eventClass).toBe(UserUpdatedEvent);
-      expect(paymentProcessedResult?.eventClass).toBe(PaymentProcessedEvent);
+      expect(userCreatedResult).toBe(UserCreatedEvent);
+      expect(userUpdatedResult).toBe(UserUpdatedEvent);
+      expect(paymentProcessedResult).toBe(PaymentProcessedEvent);
     });
 
     it('should return undefined for non-existent events', () => {
@@ -120,6 +128,31 @@ describe('CommandDiscoveryService E2E', () => {
       const secondResult = commandDiscoveryService.findEventByName('UserCreatedEvent');
       expect(secondResult).toBeDefined();
       expect(firstResult).toBe(secondResult);
+    });
+
+    it('should return actual constructor functions', () => {
+      const userCreatedResult = commandDiscoveryService.findEventByName('UserCreatedEvent');
+      expect(userCreatedResult).toBeDefined();
+
+      const eventClass = userCreatedResult!;
+      expect(typeof eventClass).toBe('function');
+      expect(eventClass.prototype).toBeDefined();
+      expect(eventClass.prototype.constructor).toBe(eventClass);
+
+      // Verify it can be instantiated
+      const instance = new eventClass('test-user', 'test@example.com');
+      expect(instance).toBeInstanceOf(eventClass);
+      expect(instance.userId).toBe('test-user');
+      expect(instance.email).toBe('test@example.com');
+    });
+
+    it('should handle case sensitivity correctly', () => {
+      const userCreatedResult = commandDiscoveryService.findEventByName('UserCreatedEvent');
+      expect(userCreatedResult).toBeDefined();
+
+      // Should not find with different case
+      const wrongCaseResult = commandDiscoveryService.findEventByName('usercreatedevent');
+      expect(wrongCaseResult).toBeUndefined();
     });
   });
 });
