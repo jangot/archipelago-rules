@@ -11,7 +11,7 @@ import { plainToInstance } from 'class-transformer';
 import { CoreAbstractEvent } from '../classes';
 import { EVENTS_MODULE_CONFIG } from '../constants';
 import { IEventsModuleConfig, ISnsNotification } from '../interface';
-import { CommandDiscoveryService } from './command-discovery.service';
+import { EventsDiscoveryService } from './events-discovery.service';
 
 @Injectable()
 export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
@@ -24,7 +24,7 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly eventBus: EventBus,
-    private readonly commandDiscovery: CommandDiscoveryService,
+    private readonly eventsDiscovery: EventsDiscoveryService,
     @Inject(EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
   ) {}
 
@@ -97,7 +97,7 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     const commandType = body.MessageAttributes.eventType.Value;
 
     try {
-      const EventClass = this.commandDiscovery.findEventByName(commandType);
+      const EventClass = this.eventsDiscovery.findEventByName(commandType);
 
       if (EventClass) {
         const command = plainToInstance(EventClass, {

@@ -1,30 +1,33 @@
 import { DynamicModule, Module } from '@nestjs/common';
+import { DiscoveryModule } from '@nestjs/core';
 import { CqrsModule } from '@nestjs/cqrs';
 
 import { EVENTS_MODULE_CONFIG } from './constants';
 import { IEventsModuleOptions } from './interface';
-import { CommandDiscoveryService } from './services/command-discovery.service';
+import { EventsDiscoveryService } from './services/events-discovery.service';
 import { EventsPublisherService } from './services/events-publisher.service';
 import { SnsPublisherService } from './services/sns-publisher.service';
+import { SqsConsumerService } from './services/sqs-consumer.service';
 
 @Module({})
 export class Events2Module {
   static forRootAsync(options: IEventsModuleOptions): DynamicModule {
     return {
       module: Events2Module,
-      imports: [CqrsModule],
+      global: options.isGlobal ?? false,
+      imports: [CqrsModule, DiscoveryModule],
       providers: [
         {
           provide: EVENTS_MODULE_CONFIG,
           useFactory: options.useFactory,
           inject: options.inject,
         },
-        CommandDiscoveryService,
+        EventsDiscoveryService,
         SnsPublisherService,
+        SqsConsumerService,
         EventsPublisherService,
       ],
       exports: [EventsPublisherService],
-      global: options.isGlobal ?? false,
     };
   }
 }

@@ -5,7 +5,7 @@ import { DiscoveryService } from '@nestjs/core';
 import { CqrsModule, EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { CommandDiscoveryService } from './command-discovery.service';
+import { EventsDiscoveryService } from './events-discovery.service';
 
 class UserCreatedEvent {
   constructor(
@@ -63,20 +63,20 @@ class InvalidEventHandler {
 @Module({
   imports: [CqrsModule],
   providers: [
-    CommandDiscoveryService,
+    EventsDiscoveryService,
     DiscoveryService,
     UserCreatedEventHandler,
     UserUpdatedEventHandler,
     PaymentProcessedEventHandler,
     InvalidEventHandler,
   ],
-  exports: [CommandDiscoveryService],
+  exports: [EventsDiscoveryService],
 })
 class TestAppModule {}
 
 describe('CommandDiscoveryService E2E', () => {
   let app: INestApplication;
-  let commandDiscoveryService: CommandDiscoveryService;
+  let commandDiscoveryService: EventsDiscoveryService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -86,7 +86,7 @@ describe('CommandDiscoveryService E2E', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    commandDiscoveryService = app.get<CommandDiscoveryService>(CommandDiscoveryService);
+    commandDiscoveryService = app.get<EventsDiscoveryService>(EventsDiscoveryService);
   });
 
   afterAll(async () => {

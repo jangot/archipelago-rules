@@ -17,5 +17,4 @@ export interface IEventsModuleConfig {
   serviceName: string;
   sns?: EventsModuleSNSConfig;
   sqs?: EventsModuleSQSConfig;
-  isGlobal?: boolean;
 }
