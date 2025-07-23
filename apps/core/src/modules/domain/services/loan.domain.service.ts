@@ -3,7 +3,6 @@ import {
   BillerTypeCodes,
   LoanPaymentFrequency,
   LoanState,
-  LoanStateCodes,
 } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EventManager } from '@library/shared/common/event/event-manager';
@@ -88,7 +87,6 @@ export class LoanDomainService extends BaseDomainServices {
     const loanData: Partial<Loan> = {
       amount: loanApplication!.loanAmount!,
       type: loanApplication!.loanType!,
-      state: LoanStateCodes.Created, // Initial state for new loan
       lenderId: loanApplication!.lenderId,
       borrowerId: loanApplication!.borrowerId,
       relationship: loanApplication!.lenderRelationship,
