@@ -33,3 +33,25 @@ export class LoanStateChangedEvent extends LoanEventBase {
     return event;
   }
 }
+
+/**
+ * Event representing a progression within the same loan state.
+ * This event is used to indicate that a loan has stepped forward in its current state,
+ * such as moving to next Repayment Payment without changing the overall state
+ */
+export class LoanStateSteppedEvent extends LoanEventBase {
+  public state: LoanState;
+
+  constructor() {
+    super();
+  }
+
+  public static override create(loanId: string, state: LoanState): LoanStateSteppedEvent {
+    const event = new LoanStateSteppedEvent();
+    event.name = LoanEventName.LoanStateStepped;
+    event.isExternal = true;
+    event.loanId = loanId;
+    event.state = state;
+    return event;
+  }
+}

@@ -3,7 +3,7 @@ import { LoanPaymentType, LoanState, LoanStateCodes, PaymentAccountStateCodes } 
 import { Loan } from '@library/shared/domain/entity';
 import { LOAN_STANDARD_RELATIONS, LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
-import { ILoanStateManager, IPaymentEvaluationStrategy, StateDecision } from '../interfaces';
+import { ILoanStateManager, IPaymentEvaluationStrategy, StateDecision, StateDecisionResult } from '../interfaces';
 import { StatesManagersLogic } from './states-managers-logic.service';
 import { AcceptedLoanStrategy, ClosedLoanStrategy, DisbursementPaymentStrategy, FundingPaymentStrategy, RepaymentStrategy } from './strategy';
 
@@ -26,16 +26,21 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
   // #region Public Interface Methods
 
   /**
-   * Advances a loan to its next state in the loan lifecycle workflow
+   * Advances a loan to its next state or processes same-state progression in the loan lifecycle workflow
    * @param loanId - The unique identifier of the loan to advance
-   * @returns Promise indicating success (true), no change needed (false), or failure (null)
+   * @returns Promise indicating state change success (true), no change needed (false), or failure (null)
    */
-  // TODO: Might require additional generic payload for states handling additional input
   public async advance(loanId: string): Promise<boolean | null> {
-    const nextState = await this.getNextState(loanId);
+    const nextStateDecisionResult = await this.getNextState(loanId);
+    const { nextState, sameStateProgress } = nextStateDecisionResult || {};
     if (!nextState) {
       this.logger.error(`Failed to determine next state for loan ${loanId}. Current state: ${this.loanState}`);
       return null; // Update failed
+    }
+    // For same state progress, we notify but do not change the state
+    if (sameStateProgress) {
+      this.logger.debug(`Loan ${loanId} stepped in state ${this.loanState}.`);
+      return this.domainServices.loanServices.notifyLoanStateStepped(loanId, nextState);
     }
     if (nextState === this.loanState) {
       this.logger.debug(`No state change required for loan ${loanId}. Current state: ${this.loanState}`);
@@ -53,7 +58,7 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
    * @param loanId - The unique identifier of the loan to evaluate
    * @returns The next state, current state if no transition needed, or null on error
    */
-  protected async getNextState(loanId: string): Promise<LoanState | null> {
+  protected async getNextState(loanId: string): Promise<StateDecisionResult | null> {
     return this.evaluateStateTransition(loanId);
   }
 
@@ -126,18 +131,19 @@ export abstract class BaseLoanStateManager implements ILoanStateManager {
    * @param loanId - The unique identifier of the loan to evaluate
    * @returns The next state or current state if no transition is needed, null on error
    */
-  protected async evaluateStateTransition(loanId: string): Promise<LoanState | null> {
+  protected async evaluateStateTransition(loanId: string): Promise<StateDecisionResult | null> {
     const loan = await this.validateAndGetLoan(loanId);
     if (!loan) return null;
   
     const decisions = this.getStateDecisions();
     for (const decision of decisions.sort((a, b) => a.priority - b.priority)) {
       if (decision.condition(loan)) {
-        return decision.nextState;
+        const { nextState, sameStateProgress } = decision;
+        return { nextState, sameStateProgress };
       }
     }
     
-    return this.loanState; // Stay in current state
+    return { nextState: this.loanState, sameStateProgress: false }; // Stay in current state
   }
 
   // #endregion

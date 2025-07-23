@@ -26,16 +26,19 @@ export class FundingLoanStateManager extends BaseLoanStateManager {
       {
         condition: (loan) => this.paymentStrategy.shouldTransitionToCompleted(loan, EVALUATION_CONTEXT_CODES.FUNDING.COMPLETION),
         nextState: LoanStateCodes.Funded,
+        sameStateProgress: false,
         priority: 1,
       },
       {
         condition: (loan) => this.paymentStrategy.shouldTransitionToPaused(loan, EVALUATION_CONTEXT_CODES.FUNDING.PAUSE),
         nextState: LoanStateCodes.FundingPaused,
+        sameStateProgress: false,
         priority: 2,
       },
       {
         condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.FUNDING.FALLBACK),
         nextState: LoanStateCodes.Accepted,
+        sameStateProgress: false,
         priority: 3,
       },
     ];

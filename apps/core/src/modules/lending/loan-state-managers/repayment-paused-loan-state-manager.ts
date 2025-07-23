@@ -27,16 +27,19 @@ export class RepaymentPausedLoanStateManager extends BaseLoanStateManager {
         // RepaymentStrategy handles the special "last payment" logic
         condition: (loan) => this.paymentStrategy.shouldTransitionToCompleted(loan, EVALUATION_CONTEXT_CODES.REPAYMENT.COMPLETION),
         nextState: LoanStateCodes.Repaid,
+        sameStateProgress: false,
         priority: 1,
       },
       {
         condition: (loan) => this.paymentStrategy.shouldTransitionToResumed(loan, EVALUATION_CONTEXT_CODES.REPAYMENT.RESUME),
         nextState: LoanStateCodes.Repaying,
+        sameStateProgress: false,
         priority: 2,
       },
       {
         condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.REPAYMENT.FALLBACK),
         nextState: LoanStateCodes.Closed,
+        sameStateProgress: false,
         priority: 3,
       },
     ];
