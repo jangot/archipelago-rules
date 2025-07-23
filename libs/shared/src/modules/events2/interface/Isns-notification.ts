@@ -2,8 +2,8 @@ export interface ISnsNotification {
   Type: string;
   MessageId: string;
   TopicArn: string;
-  Message: string; // JSON-строка, которую можно дополнительно распарсить
-  Timestamp: string; // ISO строка
+  Message: string;
+  Timestamp: string;
   UnsubscribeURL: string;
   MessageAttributes: {
     eventType: {
