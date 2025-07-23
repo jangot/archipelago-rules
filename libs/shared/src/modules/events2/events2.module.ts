@@ -3,9 +3,9 @@ import { CqrsModule } from '@nestjs/cqrs';
 
 import { EVENTS_MODULE_CONFIG } from './constants';
 import { IEventsModuleOptions } from './interface';
+import { CommandDiscoveryService } from './services/command-discovery.service';
 import { EventsPublisherService } from './services/events-publisher.service';
 import { SnsPublisherService } from './services/sns-publisher.service';
-import { CommandDiscoveryService } from './services/command-discovery.service';
 
 @Module({})
 export class Events2Module {
@@ -24,6 +24,7 @@ export class Events2Module {
         EventsPublisherService,
       ],
       exports: [EventsPublisherService],
+      global: options.isGlobal ?? false,
     };
   }
 }
