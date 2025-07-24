@@ -8,7 +8,7 @@ import { FileSource } from '../interfaces/file-source.interface';
  */
 @Injectable()
 export class LocalFileSource implements FileSource {
-  async getFileStream(resource: string): Promise<Readable> {
+  public async getFileStream(resource: string): Promise<Readable> {
     return fs.createReadStream(resource);
   }
 } 

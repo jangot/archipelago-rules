@@ -21,7 +21,7 @@ export class BillerProviderFactory {
    * @returns The appropriate BillerProvider instance
    */
   public create(billerNetworkType: BillerNetworkType, fileOrigin: FileOriginType): IBillerProvider {
-    const fileSource = this.fileSourceFactory.getFileSource(fileOrigin);
+    const fileSource = this.fileSourceFactory.create(fileOrigin);
     switch (billerNetworkType) {
       case BillerNetworkTypeCodes.RPPS:
         return new RppsBillerProvider(fileSource);

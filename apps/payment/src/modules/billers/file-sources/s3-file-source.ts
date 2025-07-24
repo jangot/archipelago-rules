@@ -8,7 +8,7 @@ import { FileSource } from '../interfaces/file-source.interface';
  */
 @Injectable()
 export class S3FileSource implements FileSource {
-  async getFileStream(resource: string): Promise<Readable> {
+  public async getFileStream(resource: string): Promise<Readable> {
     // TODO: Implement S3 file retrieval as a stream
     throw new Error('S3 file streaming not implemented yet.');
   }

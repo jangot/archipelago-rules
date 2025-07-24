@@ -9,17 +9,12 @@ import { S3FileSource } from './s3-file-source';
  */
 @Injectable()
 export class FileSourceFactory {
-  constructor(
-    private readonly localFileSource: LocalFileSource,
-    private readonly s3FileSource: S3FileSource,
-  ) {}
-
-  getFileSource(origin: FileOriginType): FileSource {
+  public create(origin: FileOriginType): FileSource {
     switch (origin) {
       case FileOriginType.Local:
-        return this.localFileSource;
+        return new LocalFileSource();
       case FileOriginType.S3:
-        return this.s3FileSource;
+        return new S3FileSource();
       default:
         throw new Error(`Unsupported file origin: ${origin}`);
     }
