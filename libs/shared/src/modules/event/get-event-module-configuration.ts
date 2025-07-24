@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 
-export function getModuleConfiguration(configService: ConfigService) {
+export function getEventModuleConfiguration(configService: ConfigService) {
   // TODO check how we connect to AWS
   const clientConfig = {
     region: configService.getOrThrow<string>('AWS_REGION'),

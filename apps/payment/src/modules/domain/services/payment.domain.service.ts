@@ -8,7 +8,7 @@ import { TransferErrorDetails } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentDataService } from '@payment/modules/data';
-import { EventsPublisherService } from '@library/shared/modules/events';
+import { EventPublisherService } from 'libs/shared/src/modules/event';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -17,7 +17,7 @@ export class PaymentDomainService extends BaseDomainServices {
   constructor(
     protected readonly data: PaymentDataService,
     protected readonly config: ConfigService,
-    private readonly eventManager: EventsPublisherService
+    private readonly eventManager: EventPublisherService
   ) {
     super(data);
   }

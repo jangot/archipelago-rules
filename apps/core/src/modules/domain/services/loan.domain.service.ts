@@ -12,7 +12,7 @@ import { LOAN_RELATIONS, LoanRelation } from '@library/shared/domain/entity/rela
 import { LoanStateChangedEvent, LoanStateSteppedEvent } from '@library/shared/events';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EventsPublisherService } from '@library/shared/modules/events';
+import { EventPublisherService } from 'libs/shared/src/modules/event';
 
 @Injectable()
 export class LoanDomainService extends BaseDomainServices {
@@ -21,7 +21,7 @@ export class LoanDomainService extends BaseDomainServices {
   constructor(
     protected readonly data: CoreDataService,
     protected readonly config: ConfigService,
-    protected readonly eventManager: EventsPublisherService,
+    protected readonly eventManager: EventPublisherService,
   ) {
     super(data);
   }

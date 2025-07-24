@@ -9,7 +9,7 @@
 import { SharedModule } from '@library/shared';
 import { HealthModule } from '@library/shared/common/health/health.module';
 import { LoggerMiddleware } from '@library/shared/common/middleware/logger-middleware';
-import { EventsModule, getModuleConfiguration } from 'libs/shared/src/modules/events';
+import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
 import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
@@ -23,9 +23,9 @@ import { CoreModules } from './index.modules';
     GracefulShutdownModule.forRoot(),
     // Bring in Shared stuff like pino Logger properly configured, more to follow
     SharedModule.forRoot([CoreController]),
-    EventsModule.forRootAsync({
+    EventModule.forRootAsync({
       isGlobal: true,
-      useFactory: getModuleConfiguration,
+      useFactory: getEventModuleConfiguration,
       inject: [ConfigService],
     }),
     HealthModule,

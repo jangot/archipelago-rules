@@ -15,7 +15,7 @@ import { VerificationEvent, VerificationEventFactory } from '../../verification'
 import { RegistrationTransitionResult } from '../registration-transition-result';
 import { RegistrationBaseCommand } from './registration.commands';
 import { ApplicationUser } from '@library/shared/domain/entity';
-import { EventsPublisherService } from 'libs/shared/src/modules/events';
+import { EventPublisherService } from 'libs/shared/src/modules/event';
 
 export interface RegistrationExecuteParams {
   id: string | null;
@@ -26,7 +26,7 @@ export interface RegistrationExecuteParams {
 export abstract class RegistrationBaseCommandHandler<TCommand extends RegistrationBaseCommand = RegistrationBaseCommand> {
 
   constructor(protected readonly domainServices: IDomainServices, protected readonly logger: Logger,
-    protected readonly eventManager: EventsPublisherService, protected readonly config: ConfigService) {
+              protected readonly eventManager: EventPublisherService, protected readonly config: ConfigService) {
   }
 
   public abstract execute(command: TCommand): Promise<RegistrationTransitionResult>;

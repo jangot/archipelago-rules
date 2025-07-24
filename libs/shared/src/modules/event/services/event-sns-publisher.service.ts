@@ -1,21 +1,21 @@
 import { SNSClient } from '@aws-sdk/client-sns';
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
-import { ZirtueDistributedEvent } from '@library/shared/modules/events/classes';
-import { ZIRTUE_EVENTS_MODULE_CONFIG } from '@library/shared/modules/events/constants';
-import { IEventsModuleConfig, IEventsPublisher } from '@library/shared/modules/events/interface';
-import { EventsMapperService } from '@library/shared/modules/events/services/events-mapper.service';
+import { ZirtueDistributedEvent } from '@library/shared/modules/event/classes';
+import { ZIRTUE_EVENT_MODULE_CONFIG } from '@library/shared/modules/event/constants';
+import { IEventModuleConfig } from '@library/shared/modules/event/interface';
+import { EventMapperService } from '@library/shared/modules/event/services/event-mapper.service';
 
 @Injectable()
-export class SnsPublisherService implements OnModuleInit, OnModuleDestroy, IEventsPublisher {
-  private logger = new Logger(SnsPublisherService.name);
+export class EventSnsPublisherService implements OnModuleInit, OnModuleDestroy {
+  private logger = new Logger(EventSnsPublisherService.name);
 
   private client?: SNSClient;
   private topicArn?: string;
 
   constructor(
-    @Inject(ZIRTUE_EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
-    private readonly eventsMapper: EventsMapperService
+    @Inject(ZIRTUE_EVENT_MODULE_CONFIG) private readonly config: IEventModuleConfig,
+    private readonly eventsMapper: EventMapperService
   ) {}
 
   public onModuleInit() {
@@ -37,7 +37,6 @@ export class SnsPublisherService implements OnModuleInit, OnModuleDestroy, IEven
     }
 
     const publishCommand = this.eventsMapper.cqrsEventToSnsCommand(command, this.topicArn);
-
     await this.client.send(publishCommand);
 
     this.logger.debug(`${command.constructor.name} was published`);

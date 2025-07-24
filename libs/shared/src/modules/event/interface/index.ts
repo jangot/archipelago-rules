@@ -1,8 +1,7 @@
 import { IEvent } from '@nestjs/cqrs';
 
-export * from './ievents-module-options';
-export * from './ievents-module-config';
-export * from './ievents-publisher';
+export * from './ievent-module-options';
+export * from './ievent-module-config';
 export * from './isns-notification';
 export * from './isqs-concumer-instance';
 

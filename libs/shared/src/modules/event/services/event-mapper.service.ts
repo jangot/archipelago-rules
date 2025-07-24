@@ -4,19 +4,19 @@ import { Inject, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
 import {
-  ZirtueEventBase,
+  ZirtueBaseEvent,
   ZirtueDistributedEvent,
-  IEventsModuleConfig,
+  IEventModuleConfig,
   ISnsNotification,
 } from '../';
-import { ZIRTUE_EVENTS_MODULE_CONFIG } from '../constants';
-import { EventsDiscoveryService } from './events-discovery.service';
+import { ZIRTUE_EVENT_MODULE_CONFIG } from '../constants';
+import { EventDiscoveryService } from './event-discovery.service';
 
 @Injectable()
-export class EventsMapperService {
+export class EventMapperService {
   constructor(
-    private readonly eventsDiscovery: EventsDiscoveryService,
-    @Inject(ZIRTUE_EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
+    private readonly eventsDiscovery: EventDiscoveryService,
+    @Inject(ZIRTUE_EVENT_MODULE_CONFIG) private readonly config: IEventModuleConfig,
   ) {}
 
   public cqrsEventToSnsCommand<T extends ZirtueDistributedEvent<any>>(event: T, topicArn: string): PublishCommand {
@@ -53,7 +53,7 @@ export class EventsMapperService {
         payload: body.Message,
       });
 
-      return command as ZirtueEventBase<any>;
+      return command as ZirtueBaseEvent<any>;
     }
   }
 }

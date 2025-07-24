@@ -5,8 +5,8 @@ import { EVENTS_HANDLER_METADATA } from '@nestjs/cqrs/dist/decorators/constants'
 type EventConstructor = new (...args: any[]) => any;
 
 @Injectable()
-export class EventsDiscoveryService {
-  private logger = new Logger(EventsDiscoveryService.name);
+export class EventDiscoveryService {
+  private logger = new Logger(EventDiscoveryService.name);
   private cache: Map<string, EventConstructor>;
 
   constructor(private readonly discoveryService: DiscoveryService) {}

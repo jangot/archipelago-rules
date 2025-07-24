@@ -2,21 +2,21 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nest
 import { EventBus } from '@nestjs/cqrs';
 import { Message } from '@aws-sdk/client-sqs';
 
-import { ZIRTUE_EVENTS_MODULE_CONFIG } from '../constants';
-import { EventsModuleSQSConfig, IEventsModuleConfig, SqsInstance } from '../interface';
-import { SqsConsumerService } from './sqs-consumer.service';
-import { EventsMapperService } from './events-mapper.service';
+import { ZIRTUE_EVENT_MODULE_CONFIG } from '../constants';
+import { EventModuleSQSConfig, IEventModuleConfig, SqsInstance } from '../interface';
+import { EventSqsConsumerService } from './event-sqs-consumer.service';
+import { EventMapperService } from './event-mapper.service';
 
 @Injectable()
-export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
-  private logger = new Logger(EventsConsumerService.name);
+export class EventConsumerService implements OnModuleInit, OnModuleDestroy {
+  private logger = new Logger(EventConsumerService.name);
   private sqsInstances: SqsInstance[];
 
   constructor(
-    @Inject(ZIRTUE_EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
+    @Inject(ZIRTUE_EVENT_MODULE_CONFIG) private readonly config: IEventModuleConfig,
     private readonly eventBus: EventBus,
-    private readonly eventsMapper: EventsMapperService,
-    private readonly sqsConsumerService: SqsConsumerService,
+    private readonly eventsMapper: EventMapperService,
+    private readonly sqsConsumerService: EventSqsConsumerService,
   ) {}
 
   public onModuleInit() {
@@ -29,7 +29,7 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
     this.sqsInstances.forEach((instance) => instance.finish());
   }
 
-  private initInstance(cfg: EventsModuleSQSConfig) {
+  private initInstance(cfg: EventModuleSQSConfig) {
     const instance = this.sqsConsumerService.getInstance(cfg);
 
     void instance.start(async (event: Message) => {
