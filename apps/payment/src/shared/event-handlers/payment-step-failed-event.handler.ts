@@ -9,11 +9,11 @@ import { ManagementDomainService } from '@payment/modules/domain/services';
 @EventsHandler(PaymentStepFailedEvent)
 export class PaymentStepFailedEventHandler implements IEventHandler<PaymentStepFailedEvent> {
   private readonly logger = new Logger(PaymentStepFailedEventHandler.name);
-  
+
   constructor(private readonly domainServices: IDomainServices, private readonly managementServices: ManagementDomainService) {}
-  
+
   async handle(event: PaymentStepFailedEvent): Promise<boolean | null> {
-    const { stepId, originalStepState } = event;
+    const { stepId, originalStepState } = event.payload;
     this.logger.debug(`Handling PaymentStepFailedEvent for stepId: ${stepId}, originalStepState: ${originalStepState}`);
 
     // Load Payment Step by ID to then advance a Payment
@@ -26,7 +26,7 @@ export class PaymentStepFailedEventHandler implements IEventHandler<PaymentStepF
     const { loanPaymentId, loanPayment } = paymentStep;
     const { type } = loanPayment;
     this.logger.debug(`Advancing payment for loanPaymentId: ${loanPaymentId}`);
-    
+
     return this.managementServices.advancePayment(loanPaymentId, type);
   }
 }
