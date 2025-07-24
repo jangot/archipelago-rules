@@ -6,10 +6,10 @@ import { plainToInstance } from 'class-transformer';
 import {
   CoreAbstractEvent,
   CorePublishedEvent,
-  EVENTS_MODULE_CONFIG,
   IEventsModuleConfig,
   ISnsNotification,
 } from '../';
+import { EVENTS_MODULE_CONFIG } from '../constants';
 import { EventsDiscoveryService } from './events-discovery.service';
 
 @Injectable()

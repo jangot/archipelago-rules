@@ -1,18 +1,17 @@
 import {
-    DeleteMessageCommand,
-    Message,
-    ReceiveMessageCommand,
-    SQSClient,
+  DeleteMessageCommand,
+  Message,
+  ReceiveMessageCommand,
+  SQSClient,
 } from '@aws-sdk/client-sqs';
-import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 
-import { EVENTS_MODULE_CONFIG } from '../constants';
-import { IEventsModuleConfig } from '../interface';
+import { EventsModuleSQSConfig } from '../interface';
 import { EventsMapperService } from './events-mapper.service';
 
 @Injectable()
-export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
+export class SqsConsumerService {
   private logger = new Logger(SqsConsumerService.name);
 
   private client: SQSClient;
@@ -22,31 +21,15 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly eventBus: EventBus,
     private readonly eventsMapper: EventsMapperService,
-    @Inject(EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
   ) {}
 
-  public onModuleInit() {
-    if (this.config.sqs) {
-      this.queueUrl = this.config.sqs.queueUrl;
-      this.client = new SQSClient(this.config.sqs.clientConfig);
+  async start(queueUrl: string, clientConfig: EventsModuleSQSConfig): Promise<void> {
+    this.queueUrl = queueUrl;
+    this.client = new SQSClient(clientConfig.clientConfig);
 
-      this.isRunning = true;
-      void this.poll();
-    }
-  }
-
-  public onModuleDestroy() {
-    if (!this.isRunning) {
-      return;
-    }
-
-    this.isRunning = false;
-  }
-
-  private async poll(): Promise<void> {
     while (this.isRunning) {
       try {
-        const newSqsMessages = await this.extractEvents();
+        const newSqsMessages = await this.extractEvents(clientConfig.maxNumberOfMessages || 10, clientConfig.waitTimeSeconds || 3);
         if (!newSqsMessages) {
           continue;
         }
@@ -65,18 +48,19 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
         this.logger.error('SQS polling error:', err);
       }
     }
-
-    if (this.client) {
-      this.client.destroy();
-    }
+    this.client.destroy();
   }
 
-  private async extractEvents(): Promise<Message[] | undefined> {
+  stop() {
+    this.isRunning = false;
+  }
+
+  private async extractEvents(maxNumberOfMessages: number, waitTimeSeconds: number): Promise<Message[] | undefined> {
     const response = await this.client.send(
       new ReceiveMessageCommand({
         QueueUrl: this.queueUrl,
-        MaxNumberOfMessages: this.config.sqs?.maxNumberOfMessages || 10,
-        WaitTimeSeconds: this.config.sqs?.waitTimeSeconds || 3,
+        MaxNumberOfMessages: maxNumberOfMessages,
+        WaitTimeSeconds: waitTimeSeconds,
         MessageAttributeNames: ['All'],
       }),
     );
