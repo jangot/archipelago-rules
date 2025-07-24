@@ -9,12 +9,11 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { CoreService } from './core.service';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
-import { SqsService } from '@ssut/nestjs-sqs';
 
 @Controller()
 @ApiTags('core')
 export class CoreController {
-  constructor(private readonly coreService: CoreService, private readonly sqsService: SqsService) {}
+  constructor(private readonly coreService: CoreService) {}
 
   // Need to turn this into an Integration test!!!
   @Get('transactional')
@@ -27,8 +26,9 @@ export class CoreController {
 
   @Post('publish')
   public async publish(@Body() body: { id: string, body: string }): Promise<{ message: string }> {
-    const result = await this.sqsService.send('ZNG_Producer', body);
-
-    return { message: result ? 'Message published' : 'Message not published' };
+    // TODO figure out what is it
+    // const result = await this.sqsService.send('ZNG_Producer', body);
+    return { message: 'Message not published' };
+    // return { message: result ? 'Message published' : 'Message not published' };
   }
 }
