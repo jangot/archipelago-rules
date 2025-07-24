@@ -49,7 +49,6 @@ export class EventModule {
         { provide: SubscriberServiceName, useValue: subscriberServiceName },
         { provide: SubscriberDestination, useValue: subscriberDestination },
       ],
-      exports: [EventManager],
     };
   }
 }
