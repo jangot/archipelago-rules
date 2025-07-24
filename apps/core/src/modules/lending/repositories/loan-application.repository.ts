@@ -18,9 +18,10 @@ export class LoanApplicationRepository extends RepositoryBase<LoanApplication> {
 
   public async getAllByUserId(userId: string): Promise<LoanApplication[]> {
     return this.repository.find({
-      where: {
-        borrowerId: userId,
-      },
+      where: [
+        { borrowerId: userId },
+        { lenderId: userId },
+      ],
       order: {
         createdAt: 'DESC',
       },
