@@ -15,7 +15,7 @@ import { VerificationEvent, VerificationEventFactory } from '../../verification'
 import { RegistrationTransitionResult } from '../registration-transition-result';
 import { RegistrationBaseCommand } from './registration.commands';
 import { ApplicationUser } from '@library/shared/domain/entity';
-import { EventsPublisherService } from '@library/shared/modules/events2';
+import { EventsPublisherService } from 'libs/shared/src/modules/events';
 
 export interface RegistrationExecuteParams {
   id: string | null;

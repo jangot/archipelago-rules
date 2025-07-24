@@ -2,7 +2,7 @@ import { EventSubscriberServiceName } from '@library/entity/enum/event-subscribe
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { EventSubscriber } from '../../domain/entity/event.subscriber.entity';
-import { SubscriberDestination, SubscriberServiceName } from '../../modules/events/event.constants';
+import { SubscriberDestination, SubscriberServiceName } from '@library/shared/modules/_events/event.constants';
 import { EventSubscription } from './event-subscription';
 import { IEventPublisherService } from './interface/ievent-publisher.service';
 import { IEventSubscriberService } from './interface/ievent-subscriber.service';
@@ -16,7 +16,7 @@ import {
 @Injectable()
 export class EventManager implements IEventPublisherService, IEventSubscriberService {
   private readonly Logger = new Logger(EventManager.name);
-  
+
   constructor(
     private readonly eventBus: EventBus,
     @Inject(SubscriberServiceName)
@@ -30,7 +30,7 @@ export class EventManager implements IEventPublisherService, IEventSubscriberSer
     @Inject(EventPublishedRepository)
     private readonly eventPublishedRepository: EventPublishedRepository
   ) { }
-  
+
   public async subscribe(event: EventSubscription): Promise<boolean> {
     const eventSubscriber = await this.getEventSubscriber(this.subscriberServiceName, event.eventName, this.subscriberDestination);
 
@@ -41,7 +41,7 @@ export class EventManager implements IEventPublisherService, IEventSubscriberSer
         const result = await this.eventSubscribeRepository.update(eventSubscriber.id, eventSubscriber);
         return result;
       }
-      
+
       return false;
     }
 
@@ -80,7 +80,7 @@ export class EventManager implements IEventPublisherService, IEventSubscriberSer
   public publish<T>(event: IZngEvent): T {
     const result =  this.eventBus.publish(event);
 
-    
+
     return result as T;
   }
 

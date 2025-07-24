@@ -10,10 +10,10 @@ import { SnsPublisherService } from './services/sns-publisher.service';
 import { SqsConsumerService } from './services/sqs-consumer.service';
 
 @Module({})
-export class Events2Module {
+export class EventsModule {
   static forRootAsync(options: IEventsModuleOptions): DynamicModule {
     return {
-      module: Events2Module,
+      module: EventsModule,
       global: options.isGlobal ?? false,
       imports: [CqrsModule, DiscoveryModule],
       providers: [
