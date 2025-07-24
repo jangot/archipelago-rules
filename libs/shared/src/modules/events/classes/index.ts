@@ -7,9 +7,13 @@ export class ZirtueEventBase<T> implements IZirtueEvent<T> {
 }
 
 export class ZirtueDistributedEvent<T> extends ZirtueEventBase<T> {
-  type = 'ZirtueDistributedEvent';
+  static type = 'ZirtueDistributedEvent';
+
+  type = ZirtueDistributedEvent.type;
 }
 
 export class ZirtueEvent<T> extends ZirtueEventBase<T> {
-  type = 'ZirtueEvent';
+  static type = 'ZirtueEvent';
+
+  type = ZirtueEvent.type;
 }

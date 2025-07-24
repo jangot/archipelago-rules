@@ -3,6 +3,7 @@ import { EventBus, IEvent } from '@nestjs/cqrs';
 
 import { IZirtueEvent, IEventsPublisher } from '../interface';
 import { SnsPublisherService } from './sns-publisher.service';
+import { ZirtueDistributedEvent } from '@library/shared/modules/events';
 
 // TODO remove after changing all old events
 type Event = IEvent | IZirtueEvent<any>;
@@ -16,7 +17,7 @@ export class EventsPublisherService implements IEventsPublisher {
 
   public async publish<T extends Event>(event: T): Promise<void> {
     await this.eventBus.publish(event);
-    if (this.isCoreEvent(event) && event.type === 'ZirtueDistributedEvent') {
+    if (this.isCoreEvent(event) && event.type === ZirtueDistributedEvent.type) {
       await this.snsPublisher.publish(event);
     }
   }
