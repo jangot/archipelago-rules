@@ -50,30 +50,18 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
   private async poll(): Promise<void> {
     while (this.isRunning) {
       try {
-        const response = await this.client.send(
-          new ReceiveMessageCommand({
-            QueueUrl: this.queueUrl,
-            MaxNumberOfMessages: this.config.sqs?.maxNumberOfMessages || 10,
-            WaitTimeSeconds: this.config.sqs?.waitTimeSeconds || 3,
-            MessageAttributeNames: ['All'],
-          }),
-        );
+        const messages = await this.extractEvents();
+        if (!messages) {
+          continue;
+        }
 
-        if (response.Messages) {
-          for (const message of response.Messages) {
-            const command = this.getEvent(message);
-            if (command) {
-              await this.eventBus.publish(command);
-            }
-
-            await this.client.send(
-              new DeleteMessageCommand({
-                QueueUrl: this.queueUrl,
-                ReceiptHandle: message.ReceiptHandle!,
-              }),
-            );
-            this.logger.debug(`DeleteMessageCommand ${message.ReceiptHandle}`);
+        for (const message of messages) {
+          const event = this.getEvent(message);
+          if (event) {
+            await this.eventBus.publish(event);
           }
+
+          await this.completeEvent(message.ReceiptHandle!);
         }
       } catch (err) {
         this.logger.error('SQS polling error:', err);
@@ -83,6 +71,31 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     if (this.client) {
       this.client.destroy();
     }
+  }
+
+  private async extractEvents(): Promise<Message[] | undefined> {
+    const response = await this.client.send(
+      new ReceiveMessageCommand({
+        QueueUrl: this.queueUrl,
+        MaxNumberOfMessages: this.config.sqs?.maxNumberOfMessages || 10,
+        WaitTimeSeconds: this.config.sqs?.waitTimeSeconds || 3,
+        MessageAttributeNames: ['All'],
+      }),
+    );
+
+    this.logger.debug(`ReceiveMessageCommand: got ${response.Messages?.length || 0} events`);
+
+    return response.Messages;
+  }
+
+  private async completeEvent(receiptHandle: string): Promise<void> {
+    await this.client.send(
+      new DeleteMessageCommand({
+        QueueUrl: this.queueUrl,
+        ReceiptHandle: receiptHandle,
+      }),
+    );
+    this.logger.debug(`DeleteMessageCommand ${receiptHandle}`);
   }
 
   private getEvent(message: Message): CoreAbstractEvent<any> | null {
