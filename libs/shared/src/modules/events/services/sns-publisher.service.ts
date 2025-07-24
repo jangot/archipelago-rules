@@ -1,7 +1,7 @@
 import { SNSClient } from '@aws-sdk/client-sns';
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
-import { CorePublishedEvent } from '@library/shared/modules/events/classes';
+import { ZirtueDistributedEvent } from '@library/shared/modules/events/classes';
 import { EVENTS_MODULE_CONFIG } from '@library/shared/modules/events/constants';
 import { IEventsModuleConfig, IEventsPublisher } from '@library/shared/modules/events/interface';
 import { EventsMapperService } from '@library/shared/modules/events/services/events-mapper.service';
@@ -31,7 +31,7 @@ export class SnsPublisherService implements OnModuleInit, OnModuleDestroy, IEven
     }
   }
 
-  public async publish<T extends CorePublishedEvent<any>>(command: T): Promise<void> {
+  public async publish<T extends ZirtueDistributedEvent<any>>(command: T): Promise<void> {
     if (!this.client || !this.topicArn) {
       return;
     }

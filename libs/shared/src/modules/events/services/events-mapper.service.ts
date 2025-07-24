@@ -4,8 +4,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
 import {
-  CoreAbstractEvent,
-  CorePublishedEvent,
+  ZirtueEventBase,
+  ZirtueDistributedEvent,
   IEventsModuleConfig,
   ISnsNotification,
 } from '../';
@@ -19,7 +19,7 @@ export class EventsMapperService {
     @Inject(EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
   ) {}
 
-  public cqrsEventToSnsCommand<T extends CorePublishedEvent<any>>(event: T, topicArn: string): PublishCommand {
+  public cqrsEventToSnsCommand<T extends ZirtueDistributedEvent<any>>(event: T, topicArn: string): PublishCommand {
     const Message = JSON.stringify(event.payload);
     return new PublishCommand({
       TopicArn: topicArn,
@@ -37,7 +37,7 @@ export class EventsMapperService {
     });
   }
 
-  public sqsMessageToCqrsEvent(sqsMessage: Message): CorePublishedEvent<any> | null {
+  public sqsMessageToCqrsEvent(sqsMessage: Message): ZirtueDistributedEvent<any> | null {
     const body: ISnsNotification = JSON.parse(sqsMessage.Body!);
     if (body.MessageAttributes.sourceService.Value === this.config.serviceName) {
       return null;
@@ -53,7 +53,7 @@ export class EventsMapperService {
         payload: body.Message,
       });
 
-      return command as CoreAbstractEvent<any>;
+      return command as ZirtueEventBase<any>;
     }
   }
 }

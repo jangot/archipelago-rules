@@ -1,19 +1,15 @@
-import { ICoreEvent } from '../interface';
+import { IZirtueEvent } from '../interface';
 
-export class CoreAbstractEvent<T> implements ICoreEvent<T> {
+export class ZirtueEventBase<T> implements IZirtueEvent<T> {
   type: string;
 
   constructor(public readonly payload: T) {}
 }
 
-export class CorePublishedEvent<T> extends CoreAbstractEvent<T> {
-  type = 'CorePublishedEvent';
+export class ZirtueDistributedEvent<T> extends ZirtueEventBase<T> {
+  type = 'ZirtueDistributedEvent';
 }
 
-export class CoreLocalEvent<T> extends CoreAbstractEvent<T> {
-  type = 'CoreLocalEvent';
-}
-
-export class CoreExternalEvent<T> extends CoreAbstractEvent<T> {
-  type = 'CoreExternalEvent';
+export class ZirtueEvent<T> extends ZirtueEventBase<T> {
+  type = 'ZirtueEvent';
 }

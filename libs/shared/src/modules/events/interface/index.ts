@@ -6,7 +6,7 @@ export * from './ievents-publisher';
 export * from './isns-notification';
 export * from './isqs-concumer-instance';
 
-export interface ICoreEvent<T> extends IEvent {
+export interface IZirtueEvent<T> extends IEvent {
   type: string;
   payload: T;
 }
