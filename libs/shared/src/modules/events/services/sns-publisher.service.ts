@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject, OnModuleDestroy } from '@nestjs/common';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
 import { EVENTS_MODULE_CONFIG } from '@library/shared/modules/events/constants';
@@ -6,7 +6,7 @@ import { IEventsModuleConfig, IEventsPublisher } from '@library/shared/modules/e
 import { CorePublishedEvent } from '@library/shared/modules/events/classes';
 
 @Injectable()
-export class SnsPublisherService implements OnModuleInit, IEventsPublisher {
+export class SnsPublisherService implements OnModuleInit, OnModuleDestroy, IEventsPublisher {
   private logger = new Logger(SnsPublisherService.name);
 
   private serviceName: string;
@@ -17,7 +17,7 @@ export class SnsPublisherService implements OnModuleInit, IEventsPublisher {
     @Inject(EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
   ) {}
 
-  onModuleInit() {
+  public onModuleInit() {
     this.serviceName = this.config.serviceName;
     if (this.config.sns) {
       this.topicArn = this.config.sns.topicArn;
@@ -25,7 +25,13 @@ export class SnsPublisherService implements OnModuleInit, IEventsPublisher {
     }
   }
 
-  async publish<T extends CorePublishedEvent<any>>(command: T): Promise<void> {
+  public onModuleDestroy() {
+    if (this.client) {
+      this.client.destroy();
+    }
+  }
+
+  public async publish<T extends CorePublishedEvent<any>>(command: T): Promise<void> {
     if (!this.client) {
       return;
     }

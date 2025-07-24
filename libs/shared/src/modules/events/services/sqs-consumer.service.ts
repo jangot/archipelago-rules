@@ -61,7 +61,7 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
 
         if (response.Messages) {
           for (const message of response.Messages) {
-            const command = this.getCommand(message);
+            const command = this.getEvent(message);
             if (command) {
               await this.eventBus.publish(command);
             }
@@ -85,7 +85,7 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private getCommand(message: Message): CoreAbstractEvent<any> | null {
+  private getEvent(message: Message): CoreAbstractEvent<any> | null {
     const body: ISnsNotification = JSON.parse(message.Body!);
     if (body.MessageAttributes.sourceService.Value === this.serviceName) {
       this.logger.warn(
