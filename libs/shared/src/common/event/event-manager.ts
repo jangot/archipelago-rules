@@ -6,7 +6,7 @@ import { SubscriberDestination, SubscriberServiceName } from '@library/shared/mo
 import { EventSubscription } from './event-subscription';
 import { IEventPublisherService } from './interface/ievent-publisher.service';
 import { IEventSubscriberService } from './interface/ievent-subscriber.service';
-import { IZngEvent } from './interface/izng-event';
+import { IZngOldEvent } from './interface/i-zng-old-event';
 import {
   EventPublishedRepository,
   EventStoreRepository,
@@ -77,7 +77,7 @@ export class EventManager implements IEventPublisherService, IEventSubscriberSer
    * @param event - The event to publish.
    * @returns The event.
    */
-  public publish<T>(event: IZngEvent): T {
+  public publish<T>(event: IZngOldEvent): T {
     const result =  this.eventBus.publish(event);
 
 

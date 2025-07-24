@@ -1,15 +1,15 @@
 import { PaymentAccountProvider } from '@library/entity/enum';
-import { IZngEvent } from '@library/shared/common/event/interface/izng-event';
+import { IZngOldEvent } from '@library/shared/common/event/interface/i-zng-old-event';
 import { TransferEventName, TransferEventNameType } from './event-names';
 
-export class TransferEventBase implements IZngEvent {
+export class TransferEventBase implements IZngOldEvent {
   public name: TransferEventNameType;
   public isExternal: boolean;
   public transferId: string;
   public providerType?: PaymentAccountProvider;
 
   constructor() { }
-  
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static create(...args: any[]): TransferEventBase {
     return new TransferEventBase();
@@ -17,10 +17,10 @@ export class TransferEventBase implements IZngEvent {
 }
 
 export class TransferExecutedEvent extends TransferEventBase {
-  constructor() { 
+  constructor() {
     super();
   }
-  
+
   public static override create(transferId: string, providerType?: PaymentAccountProvider): TransferExecutedEvent {
     const event = new TransferExecutedEvent();
     event.name = TransferEventName.TransferExecuted;
@@ -32,9 +32,9 @@ export class TransferExecutedEvent extends TransferEventBase {
 }
 
 export class TransferCompletedEvent extends TransferEventBase {
-  constructor() { 
+  constructor() {
     super();
-  } 
+  }
 
   public static override create(transferId: string, providerType?: PaymentAccountProvider): TransferCompletedEvent {
     const event = new TransferCompletedEvent();
@@ -50,7 +50,7 @@ export class TransferCompletedEvent extends TransferEventBase {
 // Error should be already attached to Transfer Entity when this event is emitted
 // Might be external to tell the Loan that it is time to pause the state \ attach error
 export class TransferFailedEvent extends TransferEventBase {
-  constructor() { 
+  constructor() {
     super();
   }
 

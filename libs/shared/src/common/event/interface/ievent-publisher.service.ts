@@ -5,10 +5,10 @@
  *
  * Copyright (c) 2025 Zirtue, Inc.
  */
-import { IZngEvent } from './izng-event';
+import { IZngOldEvent } from './i-zng-old-event';
 
 export interface IEventPublisherService {
-  publish<T>(event: IZngEvent): T;
+  publish<T>(event: IZngOldEvent): T;
 }
 
 export const IEventPublisher = Symbol('IEventPublisher');

@@ -17,7 +17,7 @@ export class EventsPublisherService implements IEventsPublisher {
 
   public async publish<T extends Event>(event: T): Promise<boolean> {
     await this.eventBus.publish(event);
-    if (this.isCoreEvent(event) && event.type === ZirtueDistributedEvent.type) {
+    if (this.isCoreEvent(event) && event.type === ZirtueDistributedEvent.name) {
       await this.snsPublisher.publish(event);
     }
 

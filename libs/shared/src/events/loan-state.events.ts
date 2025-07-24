@@ -1,8 +1,8 @@
 import { LoanState } from '@library/entity/enum';
-import { IZngEvent } from '@library/shared/common/event/interface/izng-event';
+import { IZngOldEvent } from '@library/shared/common/event/interface/i-zng-old-event';
 import { LoanEventName, LoanEventNameType } from './event-names';
 
-export class LoanEventBase implements IZngEvent {
+export class LoanEventBase implements IZngOldEvent {
   public name: LoanEventNameType;
   public isExternal: boolean;
   public loanId: string;
@@ -10,7 +10,7 @@ export class LoanEventBase implements IZngEvent {
   constructor() { }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public static create(...args: any[]): LoanEventBase { 
+  public static create(...args: any[]): LoanEventBase {
     return new LoanEventBase();
   }
 }
