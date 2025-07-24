@@ -26,14 +26,14 @@ export class LoanStateChangedEventHandler implements IEventHandler<LoanStateChan
   constructor(private readonly paymentService: LoanPaymentService) {}
 
   async handle(event: LoanStateChangedEvent): Promise<boolean | null> {
-    const { loanId, newState, oldState } = event;
+    const { loanId, newState, oldState } = event.payload;
     this.logger.debug(`Handling LoanStateChangedEvent for loanId: ${loanId}, newState: ${newState}, oldState: ${oldState}`);
 
     // Fast return if no actual state change
     if (newState === oldState) {
       this.logger.debug(`Loan state for loanId: ${loanId} has not changed. No action taken.`);
       return false;
-    }    
+    }
 
     // Check that Loan changed state that requires payment initiation, return false otherwise
     const newStateTransition = this.supportedTransitions.get(oldState);
@@ -49,7 +49,7 @@ export class LoanStateChangedEventHandler implements IEventHandler<LoanStateChan
       this.logger.error(`No payment type found for new loan state: ${newState}`);
       return false;
     }
-    
+
     return this.paymentService.initiatePayment(loanId, newPaymentType);
   }
 }

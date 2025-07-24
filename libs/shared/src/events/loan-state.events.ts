@@ -1,36 +1,28 @@
 import { LoanState } from '@library/entity/enum';
-import { IZngOldEvent } from '@library/shared/common/event/interface/i-zng-old-event';
-import { LoanEventName, LoanEventNameType } from './event-names';
+import { ZirtueDistributedEvent } from '@library/shared/modules/event';
 
-export class LoanEventBase implements IZngOldEvent {
-  public name: LoanEventNameType;
-  public isExternal: boolean;
+class LoanEventPayload {
   public loanId: string;
+}
 
-  constructor() { }
+class LoanEventStateChangePayload extends LoanEventPayload {
+  public newState: LoanState;
+  public oldState: LoanState;
+}
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public static create(...args: any[]): LoanEventBase {
-    return new LoanEventBase();
+class LoanEventStateStoppedPayload extends LoanEventPayload {
+  public state: LoanState;
+}
+
+export class LoanEventBase extends ZirtueDistributedEvent<LoanEventPayload> {
+  public static create(payload: LoanEventPayload): LoanEventBase {
+    return new LoanEventBase(payload);
   }
 }
 
-export class LoanStateChangedEvent extends LoanEventBase {
-  public newState: LoanState;
-  public oldState: LoanState;
-
-  constructor() {
-    super();
-  }
-
-  public static override create(loanId: string, oldState: LoanState, newState: LoanState): LoanStateChangedEvent {
-    const event = new LoanStateChangedEvent();
-    event.name = LoanEventName.LoanStateChanged;
-    event.isExternal = true;
-    event.loanId = loanId;
-    event.oldState = oldState;
-    event.newState = newState;
-    return event;
+export class LoanStateChangedEvent extends ZirtueDistributedEvent<LoanEventStateChangePayload> {
+  public static create(loanId: string, oldState: LoanState, newState: LoanState): LoanStateChangedEvent {
+    return new LoanStateChangedEvent({ loanId, oldState, newState });
   }
 }
 
@@ -39,19 +31,8 @@ export class LoanStateChangedEvent extends LoanEventBase {
  * This event is used to indicate that a loan has stepped forward in its current state,
  * such as moving to next Repayment Payment without changing the overall state
  */
-export class LoanStateSteppedEvent extends LoanEventBase {
-  public state: LoanState;
-
-  constructor() {
-    super();
-  }
-
-  public static override create(loanId: string, state: LoanState): LoanStateSteppedEvent {
-    const event = new LoanStateSteppedEvent();
-    event.name = LoanEventName.LoanStateStepped;
-    event.isExternal = true;
-    event.loanId = loanId;
-    event.state = state;
-    return event;
+export class LoanStateSteppedEvent extends ZirtueDistributedEvent<LoanEventStateStoppedPayload> {
+  public static create(loanId: string, state: LoanState): LoanStateSteppedEvent {
+    return new LoanStateSteppedEvent({ loanId, state });
   }
 }
