@@ -25,11 +25,11 @@ export class EventsMapperService {
       TopicArn: topicArn,
       Message,
       MessageAttributes: {
-        eventType: {
+        eventClass: {
           DataType: 'String',
           StringValue: event.constructor.name,
         },
-        sourceService: {
+        eventSource: {
           DataType: 'String',
           StringValue: this.config.serviceName,
         },
@@ -39,11 +39,11 @@ export class EventsMapperService {
 
   public sqsMessageToCqrsEvent(sqsMessage: Message): ZirtueDistributedEvent<any> | null {
     const body: ISnsNotification = JSON.parse(sqsMessage.Body!);
-    if (body.MessageAttributes.sourceService.Value === this.config.serviceName) {
+    if (body.MessageAttributes.eventSource?.Value === this.config.serviceName || !body.MessageAttributes.eventClass) {
       return null;
     }
 
-    const EventClass = this.eventsDiscovery.findEventByName(body.MessageAttributes.eventType.Value);
+    const EventClass = this.eventsDiscovery.findEventByName(body.MessageAttributes.eventClass.Value);
     if (!EventClass) {
       return null;
     } else {

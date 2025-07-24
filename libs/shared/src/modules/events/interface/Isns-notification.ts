@@ -6,11 +6,11 @@ export interface ISnsNotification {
   Timestamp: string;
   UnsubscribeURL: string;
   MessageAttributes: {
-    eventType: {
+    eventClass?: {
       Type: string;
       Value: string;
     };
-    sourceService: {
+    eventSource?: {
       Type: string;
       Value: string;
     };
