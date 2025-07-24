@@ -15,11 +15,14 @@ export class EventsPublisherService implements IEventsPublisher {
     private readonly snsPublisher: SnsPublisherService,
   ) {}
 
-  public async publish<T extends Event>(event: T): Promise<void> {
+  public async publish<T extends Event>(event: T): Promise<boolean> {
     await this.eventBus.publish(event);
     if (this.isCoreEvent(event) && event.type === ZirtueDistributedEvent.type) {
       await this.snsPublisher.publish(event);
     }
+
+    // TODO fix after update all publisher
+    return true;
   }
 
   private isCoreEvent(event: Event): event is IZirtueEvent<any> {

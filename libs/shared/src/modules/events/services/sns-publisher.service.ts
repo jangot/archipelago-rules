@@ -31,9 +31,9 @@ export class SnsPublisherService implements OnModuleInit, OnModuleDestroy, IEven
     }
   }
 
-  public async publish<T extends ZirtueDistributedEvent<any>>(command: T): Promise<void> {
+  public async publish<T extends ZirtueDistributedEvent<any>>(command: T): Promise<boolean> {
     if (!this.client || !this.topicArn) {
-      return;
+      return true;
     }
 
     const publishCommand = this.eventsMapper.cqrsEventToSnsCommand(command, this.topicArn);
@@ -41,5 +41,7 @@ export class SnsPublisherService implements OnModuleInit, OnModuleDestroy, IEven
     await this.client.send(publishCommand);
 
     this.logger.debug(`${command.constructor.name} was published`);
+
+    return true;
   }
 }

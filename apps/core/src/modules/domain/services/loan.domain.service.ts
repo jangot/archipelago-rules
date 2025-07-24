@@ -6,13 +6,13 @@ import {
   LoanState,
 } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
-import { EventManager } from '@library/shared/common/event/event-manager';
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
 import { Loan, LoanApplication } from '@library/shared/domain/entity';
 import { LOAN_RELATIONS, LoanRelation } from '@library/shared/domain/entity/relation';
 import { LoanStateChangedEvent, LoanStateSteppedEvent } from '@library/shared/events';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventsPublisherService } from '@library/shared/modules/events';
 
 @Injectable()
 export class LoanDomainService extends BaseDomainServices {
@@ -21,7 +21,7 @@ export class LoanDomainService extends BaseDomainServices {
   constructor(
     protected readonly data: CoreDataService,
     protected readonly config: ConfigService,
-    protected readonly eventManager: EventManager,
+    protected readonly eventManager: EventsPublisherService,
   ) {
     super(data);
   }
@@ -100,13 +100,13 @@ export class LoanDomainService extends BaseDomainServices {
    * Updates the state of a loan from one state to another and fires a corresponding event.
    * This is an explicit function for loan state changes that ensures proper event propagation
    * when a loan transitions between states.
-   * 
+   *
    * @param loanId - The unique identifier of the loan to update
    * @param oldState - The current state of the loan before the update
    * @param newState - The desired new state for the loan
    * @returns Promise that resolves to true if update was successful, false if no change was needed, or null on failure
    * @throws {EntityFailedToUpdateException} When the loan state update operation fails
-   * 
+   *
    * @remarks
    * - If oldState equals newState, the function returns false without making changes
    * - Successfully fires a LoanStateChangedEvent after updating the loan state
@@ -126,7 +126,7 @@ export class LoanDomainService extends BaseDomainServices {
       throw new EntityFailedToUpdateException('Failed to update loan state');
     }
 
-    await this.eventManager.publish<Promise<boolean | null>>(LoanStateChangedEvent.create(loanId, oldState, newState));
+    await this.eventManager.publish(LoanStateChangedEvent.create(loanId, oldState, newState));
 
     this.logger.debug(`Successfully updated loan ${loanId} to state ${newState}`);
     return true;
@@ -136,14 +136,14 @@ export class LoanDomainService extends BaseDomainServices {
    * Notifies that a loan has stepped in its current state, such as moving to the next repayment payment.
    * This method is used to indicate that a loan has progressed within the same state without changing
    * the overall state of the loan.
-   * 
+   *
    * @param loanId - The unique identifier of the loan that stepped in state
    * @param state - The current state of the loan after stepping
    * @returns Promise that resolves to true if notification was successful, false if no change was needed, or null on failure
    */
   public async notifyLoanStateStepped(loanId: string, state: LoanState): Promise<boolean | null> {
     this.logger.debug(`notifyLoanStateStepped: Notifying that loan ${loanId} stepped in state ${state}`);
-    return this.eventManager.publish<Promise<boolean | null>>(LoanStateSteppedEvent.create(loanId, state));
+    return this.eventManager.publish(LoanStateSteppedEvent.create(loanId, state));
   }
 
   public async acceptLoanApplication(loanApplicationId: string, userId: string): Promise<Loan | null> {
