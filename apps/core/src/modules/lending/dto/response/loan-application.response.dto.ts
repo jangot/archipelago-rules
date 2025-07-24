@@ -104,11 +104,23 @@ export class LoanApplicationResponseDto {
   @Expose()
   borrowerId: string | null;
 
+  @ApiProperty({ description: 'First name of the borrower', type: 'string', example: 'John' })
+  @IsString()
+  @IsOptional()
+  @Expose()
+  borrowerFirstName: string | null;
+
+  @ApiProperty({ description: 'Last name of the borrower', type: 'string', example: 'Doe' })
+  @IsString()
+  @IsOptional()
+  @Expose()
+  borrowerLastName: string | null;
+
   @ApiProperty({ description: 'Unique identifier for the borrower payment account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
   @IsUUID()
   @IsOptional()
   @Expose()
-  borrowerAccountId: string | null;
+  borrowerPaymentAccountId: string | null;
 
   @ApiProperty({ description: 'The date when the borrower submitted the application', type: 'string', format: 'date-time', example: '2023-01-01T00:00:00Z', required: false })
   @IsDate()
