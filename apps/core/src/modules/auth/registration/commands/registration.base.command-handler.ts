@@ -25,9 +25,12 @@ export interface RegistrationExecuteParams {
 @Injectable()
 export abstract class RegistrationBaseCommandHandler<TCommand extends RegistrationBaseCommand = RegistrationBaseCommand> {
 
-  constructor(protected readonly domainServices: IDomainServices, protected readonly logger: Logger,
-              protected readonly eventManager: EventPublisherService, protected readonly config: ConfigService) {
-  }
+  constructor(
+    protected readonly domainServices: IDomainServices,
+    protected readonly logger: Logger,
+    protected readonly eventManager: EventPublisherService,
+    protected readonly config: ConfigService
+  ) {}
 
   public abstract execute(command: TCommand): Promise<RegistrationTransitionResult>;
 
