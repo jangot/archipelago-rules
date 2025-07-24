@@ -2,6 +2,8 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
 import { CqrsModule } from '@nestjs/cqrs';
 
+import { EventsConsumerService } from '@library/shared/modules/events/services/events-consumer.service';
+import { EventsMapperService } from '@library/shared/modules/events/services/events-mapper.service';
 import { EVENTS_MODULE_CONFIG } from './constants';
 import { IEventsModuleOptions } from './interface';
 import { EventsDiscoveryService } from './services/events-discovery.service';
@@ -23,8 +25,10 @@ export class EventsModule {
           inject: options.inject,
         },
         EventsDiscoveryService,
+        EventsMapperService,
         SnsPublisherService,
         SqsConsumerService,
+        EventsConsumerService,
         EventsPublisherService,
       ],
       exports: [EventsPublisherService],

@@ -1,24 +1,24 @@
-import { Injectable, Logger, OnModuleInit, Inject, OnModuleDestroy } from '@nestjs/common';
-import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+import { SNSClient } from '@aws-sdk/client-sns';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
+import { CorePublishedEvent } from '@library/shared/modules/events/classes';
 import { EVENTS_MODULE_CONFIG } from '@library/shared/modules/events/constants';
 import { IEventsModuleConfig, IEventsPublisher } from '@library/shared/modules/events/interface';
-import { CorePublishedEvent } from '@library/shared/modules/events/classes';
+import { EventsMapperService } from '@library/shared/modules/events/services/events-mapper.service';
 
 @Injectable()
 export class SnsPublisherService implements OnModuleInit, OnModuleDestroy, IEventsPublisher {
   private logger = new Logger(SnsPublisherService.name);
 
-  private serviceName: string;
   private client?: SNSClient;
   private topicArn?: string;
 
   constructor(
     @Inject(EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
+    private readonly eventsMapper: EventsMapperService
   ) {}
 
   public onModuleInit() {
-    this.serviceName = this.config.serviceName;
     if (this.config.sns) {
       this.topicArn = this.config.sns.topicArn;
       this.client = new SNSClient(this.config.sns.clientConfig);
@@ -32,28 +32,14 @@ export class SnsPublisherService implements OnModuleInit, OnModuleDestroy, IEven
   }
 
   public async publish<T extends CorePublishedEvent<any>>(command: T): Promise<void> {
-    if (!this.client) {
+    if (!this.client || !this.topicArn) {
       return;
     }
 
-    const Message = JSON.stringify(command.payload);
-    const publishCommand = new PublishCommand({
-      TopicArn: this.topicArn,
-      Message,
-      MessageAttributes: {
-        eventType: {
-          DataType: 'String',
-          StringValue: command.constructor.name,
-        },
-        sourceService: {
-          DataType: 'String',
-          StringValue: this.serviceName,
-        },
-      },
-    });
+    const publishCommand = this.eventsMapper.cqrsEventToSnsCommand(command, this.topicArn);
 
     await this.client.send(publishCommand);
 
-    this.logger.debug(`${command.constructor.name} was published: ${Message}`);
+    this.logger.debug(`${command.constructor.name} was published`);
   }
 }
