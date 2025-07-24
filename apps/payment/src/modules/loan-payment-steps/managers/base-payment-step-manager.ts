@@ -48,6 +48,31 @@ export abstract class BasePaymentStepManager implements ILoanPaymentStepManager 
 
   }
 
+  /**
+   * Centralized method to change payment step state.
+   * All specific managers should use this method to ensure consistent state changes and event emission.
+   * @param stepId The ID of the payment step to update
+   * @param newState The new state to transition to
+   * @returns Promise<boolean | null> indicating success of the state change
+   */
+  protected async changeStepState(stepId: string, newState: PaymentStepState): Promise<boolean | null> {
+    const previousState = this.stepState;
+
+    if (previousState === newState) {
+      this.logger.debug(`Step ${stepId} is already in state ${newState}, no change needed.`);
+      return false;
+    }
+    
+    this.logger.debug(`Changing step ${stepId} state from ${previousState} to ${newState}`, {
+      stepId,
+      previousState,
+      newState,
+    });
+
+    return this.paymentDomainService.updatePaymentStepState(stepId, previousState, newState);
+  }
+
+
   protected abstract onTransferCreated(stepId: string, transferId: string): Promise<boolean | null>;
   protected abstract onTransferCompleted(stepId: string, transferId: string): Promise<boolean | null>;
   protected abstract onTransferFailed(stepId: string, transferId: string): Promise<boolean | null>;

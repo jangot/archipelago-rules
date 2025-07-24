@@ -36,11 +36,13 @@ export class FundedLoanStateManager extends BaseLoanStateManager {
       {
         condition: (loan) => this.shouldStartDisbursement(loan),
         nextState: LoanStateCodes.Disbursing,
+        sameStateProgress: false,
         priority: 1,
       },
       {
         condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.FUNDING.FALLBACK),
         nextState: LoanStateCodes.Accepted,
+        sameStateProgress: false,
         priority: 2,
       },
     ];

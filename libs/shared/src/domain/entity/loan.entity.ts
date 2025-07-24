@@ -77,8 +77,14 @@ export class Loan {
   @Column({ type: 'text', nullable: true })
   feeMode: LoanFeeMode | null;
 
-  @Column({ type: 'decimal', nullable: true })
-  feeAmount: number | null;
+  @Column({ type: 'decimal', nullable: false, default: 0 })
+  feeAmount: number;
+
+  @Column({ type: 'decimal', default: 0 })
+  principalAmountLeft: number;
+
+  @Column({ type: 'decimal', default: 0 })    
+  feeAmountLeft: number;
 
   @Column({ type: 'uuid', nullable: true })
   lenderAccountId: string | null;

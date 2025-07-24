@@ -1,10 +1,10 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanStateCodes } from '@library/entity/enum';
+import { Loan } from '@library/shared/domain/entity';
 import { LOAN_STANDARD_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
 import { EVALUATION_CONTEXT_CODES, StateDecision } from '../interfaces';
 import { BaseLoanStateManager } from './base-loan-state-manager';
-import { Loan } from '@library/shared/domain/entity';
 
 /**
  * State manager for loans in the 'Disbursed' state.
@@ -36,11 +36,13 @@ export class DisbursedLoanStateManager extends BaseLoanStateManager {
       {
         condition: (loan) => this.shouldStartRepayment(loan),
         nextState: LoanStateCodes.Repaying,
+        sameStateProgress: false,
         priority: 1,
       },
       {
         condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.DISBURSEMENT.FALLBACK),
         nextState: LoanStateCodes.Funded,
+        sameStateProgress: false,
         priority: 2,
       },
     ];

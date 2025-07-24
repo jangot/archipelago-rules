@@ -18,30 +18,40 @@ export class ScheduleService {
     // TODO: Move control over that higher?
     const firstPaymentDate = repaymentStartDate || addMonths(new Date(), 1);
 
-
-    let totalBalance = amount + (feeAmount || 0);
-    // For 'Standard' fee mode we spread its amount to repayment process
-    let paymentAmount = round2(totalBalance / paymentsCount); 
+    // Calculate separate amounts per payment for principal and fees
+    const totalPrincipalBalance = amount;
+    const totalFeeBalance = feeAmount || 0;
+    
+    // For 'Standard' fee mode we spread principal and fee amounts separately to repayment process
+    let principalBalance = totalPrincipalBalance;
+    let feeBalance = totalFeeBalance;
+    let principalAmount = round2(totalPrincipalBalance / paymentsCount);
+    let feeAmountPerPayment = round2(totalFeeBalance / paymentsCount);
+    
     for (let i = 0; i < paymentsCount; i++) {
       const paymentDate = this.getRepaymentDate(firstPaymentDate, paymentFrequency, i);
 
-      const beginningBalance = totalBalance;
-      totalBalance = round2(totalBalance - paymentAmount);
+      const beginningBalance = principalBalance + feeBalance;
+      principalBalance = round2(principalBalance - principalAmount);
+      feeBalance = round2(feeBalance - feeAmountPerPayment);
 
-      // Last payment might be different than others beacuse of rounding tail
+      // Last payment might be different than others because of rounding tail
       // Ex: 1000 / 3 = 333.33, 333.33, 333.34
       if (i === paymentsCount - 1) {
-        paymentAmount = round2(totalBalance + paymentAmount);
-        totalBalance = 0;
+        principalAmount = round2(principalBalance + principalAmount);
+        feeAmountPerPayment = round2(feeBalance + feeAmountPerPayment);
+        principalBalance = 0;
+        feeBalance = 0;
       }
 
       payments.push({
-        amount: paymentAmount,
+        amount: principalAmount,
+        feeAmount: feeAmountPerPayment,
         index: i,
         paymentsLeft: paymentsCount - i - 1,
         paymentDate,
         beginningBalance,
-        endingBalance: totalBalance,
+        endingBalance: principalBalance + feeBalance,
       });
     }
     
@@ -52,20 +62,19 @@ export class ScheduleService {
    * Calculates and returns a preview of remaining repayments for a loan plan after accounting for payments already made.
    * 
    * This method takes the current loan state and a list of paid repayments, then generates a new repayment plan
-   * for the remaining balance. It combines the original loan amount and fee amount, subtracts any paid amounts,
+   * for the remaining balance. It separately tracks principal and fee amounts, subtracts paid amounts from each,
    * and creates a fresh repayment schedule starting from the next payment date.
    * 
    * @param currentLoanState - The current state of the loan containing amount, payment count, frequency, fee details, and start date.
    *                          The amount and feeAmount should remain unchanged from the original loan to ensure correct calculations.
    *                          The paymentsCount and paymentFrequency should reflect the new plan for remaining repayments.
-   * @param paidRepayments - Array of repayment payments that have already been made, containing amount and payment date information
+   * @param paidRepayments - Array of repayment payments that have already been made, containing amount, feeAmount and payment date information
    * 
    * @returns Array of remaining repayment plan items showing the schedule for unpaid repayments
    * 
    * @remarks
    * - The method assumes 'Standard' fee mode. Logic may need adjustment for other fee modes.
-   * - Since previous repayment plan changes are unknown, the method combines fee and loan amounts into remainingBalance,
-   *   sets feeAmount to 0, and calculates a new plan from that combined amount.
+   * - Principal and fee amounts are tracked separately throughout the calculation process.
    * - The next payment date is determined by either the original repayment start date (if no payments made) or
    *   one payment period after the last paid repayment date.
    */
@@ -73,12 +82,15 @@ export class ScheduleService {
     // TODO: !!! Logic changes if feeMode is not 'Standard'
 
     const { amount, paymentsCount, paymentFrequency, feeMode, feeAmount, repaymentStartDate } = currentLoanState;
-    const originalBalance = amount + (feeAmount || 0);
+    const originalPrincipalBalance = amount;
+    const originalFeeBalance = feeAmount || 0;
     const anyPaidAlready = paidRepayments && paidRepayments.length;
 
-    // Sum the paid repayments to get the total paid amount
-    const paidBalance = anyPaidAlready ? paidRepayments.reduce((sum, payment) => sum + payment.amount, 0) : 0;
-    const remainingBalance = originalBalance - paidBalance;
+    // Sum the paid repayments to get the total paid amounts (principal and fees separately)
+    const paidPrincipalBalance = anyPaidAlready ? paidRepayments.reduce((sum, payment) => sum + payment.amount, 0) : 0;
+    const paidFeeBalance = anyPaidAlready ? paidRepayments.reduce((sum, payment) => sum + payment.feeAmount, 0) : 0;
+    const remainingPrincipalBalance = originalPrincipalBalance - paidPrincipalBalance;
+    const remainingFeeBalance = originalFeeBalance - paidFeeBalance;
 
     // Get the date when next payment should happen
     let nextPaymentDate = repaymentStartDate;
@@ -92,11 +104,11 @@ export class ScheduleService {
 
     // Build the remaining repayments plan as a new plan by using calculated data
     return this.previewRepaymentPlan({
-      amount: remainingBalance,
+      amount: remainingPrincipalBalance,
       paymentsCount: paymentsCount,
       paymentFrequency,
       feeMode,
-      feeAmount: 0,
+      feeAmount: remainingFeeBalance,
       repaymentStartDate: nextPaymentDate,
     });
   }
