@@ -21,7 +21,7 @@ export function getModuleConfiguration(configService: ConfigService) {
       queueUrl: configService.getOrThrow<string>('AWS_QUEUE_URL'),
       clientConfig,
       maxNumberOfMessages: 10,
-      waitTimeSeconds: 10,
+      waitTimeSeconds: 3,
     },
   };
 }

@@ -9,8 +9,8 @@ export interface EventsModuleSNSConfig {
 export interface EventsModuleSQSConfig {
   queueUrl: string;
   clientConfig: SQSClientConfig;
-  maxNumberOfMessages?: number;
-  waitTimeSeconds?: number;
+  maxNumberOfMessages: number;
+  waitTimeSeconds: number;
 }
 
 export interface IEventsModuleConfig {

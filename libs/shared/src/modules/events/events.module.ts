@@ -8,7 +8,8 @@ import { IEventsModuleOptions } from './interface';
 import { EventsDiscoveryService } from './services/events-discovery.service';
 import { EventsPublisherService } from './services/events-publisher.service';
 import { SnsPublisherService } from './services/sns-publisher.service';
-import { SqsConsumerService } from './services/sqs-consumer.service';
+import { SqsConsumerService } from '@library/shared/modules/events/services/sqs-consumer.service';
+import { EventsConsumerService } from '@library/shared/modules/events/services/events-consumer.service';
 
 @Module({})
 export class EventsModule {
@@ -26,8 +27,9 @@ export class EventsModule {
         EventsDiscoveryService,
         EventsMapperService,
         SnsPublisherService,
-        SqsConsumerService,
         EventsPublisherService,
+        SqsConsumerService,
+        EventsConsumerService,
       ],
       exports: [EventsPublisherService],
     };

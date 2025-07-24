@@ -1,79 +1,69 @@
-import {
-  DeleteMessageCommand,
-  Message,
-  ReceiveMessageCommand,
-  SQSClient,
-} from '@aws-sdk/client-sqs';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { EventBus } from '@nestjs/cqrs';
+import { Injectable, Logger } from '@nestjs/common';
+import { DeleteMessageCommand, Message, ReceiveMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 
-import { EventsModuleSQSConfig } from '../interface';
-import { EventsMapperService } from './events-mapper.service';
+import { EventsModuleSQSConfig, SqsInstance } from '../';
 
 @Injectable()
 export class SqsConsumerService {
   private logger = new Logger(SqsConsumerService.name);
 
-  private client: SQSClient;
-  private queueUrl: string;
-  private isRunning = false;
+  getInstance(config: EventsModuleSQSConfig): SqsInstance {
+    let isRunning = true;
+    const client = new SQSClient(config.clientConfig);
 
-  constructor(
-    private readonly eventBus: EventBus,
-    private readonly eventsMapper: EventsMapperService,
-  ) {}
+    return {
+      start: async (cb: (e: Message) => Promise<void>) => {
+        this.logger.log(`Pulling from queueUrl: ${config.queueUrl} was started`);
 
-  async start(queueUrl: string, clientConfig: EventsModuleSQSConfig): Promise<void> {
-    this.queueUrl = queueUrl;
-    this.client = new SQSClient(clientConfig.clientConfig);
-
-    while (this.isRunning) {
-      try {
-        const newSqsMessages = await this.extractEvents(clientConfig.maxNumberOfMessages || 10, clientConfig.waitTimeSeconds || 3);
-        if (!newSqsMessages) {
-          continue;
-        }
-
-        for (const sqsMessage of newSqsMessages) {
-          const cqrsEvent = this.eventsMapper.sqsMessageToCqrsEvent(sqsMessage);
-          if (cqrsEvent) {
-            await this.eventBus.publish(cqrsEvent);
-          } else {
-            this.logger.warn({ info: 'Event is not correct', sqsMessage });
+        while (isRunning) {
+          const newSqsMessages = await this.extractEvents(
+            client,
+            config.queueUrl,
+            config.maxNumberOfMessages,
+            config.waitTimeSeconds,
+          );
+          if (!newSqsMessages) {
+            this.logger.debug(`No messages from queueUrl: ${config.queueUrl}`);
+            continue;
           }
 
-          await this.completeEvent(sqsMessage.ReceiptHandle!);
+          this.logger.debug(`Got ${newSqsMessages.length} messages from queueUrl: ${config.queueUrl}`);
+          for (const sqsMessage of newSqsMessages) {
+            await cb(sqsMessage);
+            await this.completeEvent(client, config.queueUrl, sqsMessage.ReceiptHandle!);
+          }
         }
-      } catch (err) {
-        this.logger.error('SQS polling error:', err);
-      }
-    }
-    this.client.destroy();
+        client.destroy();
+        this.logger.log(`Pulling from queueUrl: ${config.queueUrl} was finished`);
+      },
+      finish: () => {
+        isRunning = false;
+      },
+    };
   }
 
-  stop() {
-    this.isRunning = false;
-  }
-
-  private async extractEvents(maxNumberOfMessages: number, waitTimeSeconds: number): Promise<Message[] | undefined> {
-    const response = await this.client.send(
+  private async extractEvents(
+    client: SQSClient,
+    queueUrl: string,
+    maxNumberOfMessages: number,
+    waitTimeSeconds: number
+  ): Promise<Message[] | undefined> {
+    const response = await client.send(
       new ReceiveMessageCommand({
-        QueueUrl: this.queueUrl,
+        QueueUrl: queueUrl,
         MaxNumberOfMessages: maxNumberOfMessages,
         WaitTimeSeconds: waitTimeSeconds,
         MessageAttributeNames: ['All'],
       }),
     );
 
-    this.logger.debug(`ReceiveMessageCommand: got ${response.Messages?.length || 0} events`);
-
     return response.Messages;
   }
 
-  private async completeEvent(receiptHandle: string): Promise<void> {
-    await this.client.send(
+  private async completeEvent(client: SQSClient, queueUrl: string,  receiptHandle: string): Promise<void> {
+    await client.send(
       new DeleteMessageCommand({
-        QueueUrl: this.queueUrl,
+        QueueUrl: queueUrl,
         ReceiptHandle: receiptHandle,
       }),
     );
