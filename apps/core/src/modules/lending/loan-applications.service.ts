@@ -197,6 +197,30 @@ export class LoanApplicationsService {
     this.logger.debug(`Successfully rejected loan application ${loanApplicationId}`);
   }
 
+  /**
+   * Cancels a loan application by updating its status to 'cancelled'.
+   * Validates that the user is authorized to perform the action.
+   *
+   * @param userId - The user performing the action
+   * @param loanApplicationId - The loan application ID
+   * @returns Promise<void>
+   */
+  public async cancelLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
+    this.logger.debug(`cancelLoanApplication: Cancelling loan application ${loanApplicationId}`);
+    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
+    if (!loanApplication) {
+      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
+    }
+    // Validate that the user is the borrower for v1
+    await this.validateApplicationLoanUser(loanApplicationId, userId);
+    const status = LoanApplicationStates.Cancelled;
+    const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
+    if (!result) {
+      throw new EntityFailedToUpdateException('Failed to cancel Loan application');
+    }
+    this.logger.debug(`Successfully cancelled loan application ${loanApplicationId}`);
+  } 
+
   // TODO: This is a placeholder for the actual loan fee calculation
   private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {
     // Round to 2 decimal places
