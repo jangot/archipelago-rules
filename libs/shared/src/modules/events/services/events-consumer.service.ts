@@ -39,8 +39,6 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
       } else {
         this.logger.warn({ info: 'Event is not correct', event });
       }
-
-      this.eventBus.publish(event);
     });
 
     return instance;
