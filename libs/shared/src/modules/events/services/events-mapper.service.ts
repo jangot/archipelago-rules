@@ -9,14 +9,14 @@ import {
   IEventsModuleConfig,
   ISnsNotification,
 } from '../';
-import { EVENTS_MODULE_CONFIG } from '../constants';
+import { ZIRTUE_EVENTS_MODULE_CONFIG } from '../constants';
 import { EventsDiscoveryService } from './events-discovery.service';
 
 @Injectable()
 export class EventsMapperService {
   constructor(
     private readonly eventsDiscovery: EventsDiscoveryService,
-    @Inject(EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
+    @Inject(ZIRTUE_EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
   ) {}
 
   public cqrsEventToSnsCommand<T extends ZirtueDistributedEvent<any>>(event: T, topicArn: string): PublishCommand {

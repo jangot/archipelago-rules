@@ -7,89 +7,61 @@ type EventConstructor = new (...args: any[]) => any;
 @Injectable()
 export class EventsDiscoveryService {
   private logger = new Logger(EventsDiscoveryService.name);
-  private readonly cache: Map<string, EventConstructor>;
+  private cache: Map<string, EventConstructor>;
 
-  constructor(private readonly discoveryService: DiscoveryService) {
-    this.cache = new Map();
-  }
+  constructor(private readonly discoveryService: DiscoveryService) {}
 
-  /**
-   * Finds event class by class name
-   * @param name - event class name
-   * @returns Event class constructor or undefined
-   */
   public findEventByName(name: string): EventConstructor | undefined {
-    if (this.cache.has(name)) {
-      this.logger.debug(`Event with name "${name}" was taken from cache`);
-      return this.cache.get(name);
+    if (!this.cache) {
+      this.cache = this.getCash();
+      this.logger.debug(`Initialize cash: ${this.cache.keys()}`);
     }
 
-    const providers = this.discoveryService.getProviders();
+    if (!this.cache.has(name)) {
+      this.logger.debug(`Event with name "${name}" was not found`);
+      return undefined;
+    }
 
-    for (const provider of providers) {
-      if (provider.instance) {
+    return this.cache.get(name);
+  }
+
+  private getCash(): Map<string, EventConstructor> {
+    return this.discoveryService.getProviders()
+      .filter((provider) => !!provider.instance)
+      .map((provider) => {
         const handlerClass = provider.instance.constructor;
 
-        // Get event handler metadata
-        const eventHandlerMetadata = Reflect.getMetadata(EVENTS_HANDLER_METADATA, handlerClass);
+        return Reflect.getMetadata(EVENTS_HANDLER_METADATA, handlerClass);
+      })
+      .reduce((map, eventHandlerMetadata) => {
+        const eventClass = Array.isArray(eventHandlerMetadata)
+          ? eventHandlerMetadata[0]
+          : eventHandlerMetadata;
 
-        if (eventHandlerMetadata) {
-          // Extract event class from metadata (metadata can be an array)
-          const eventClass = Array.isArray(eventHandlerMetadata)
-            ? eventHandlerMetadata[0]
-            : eventHandlerMetadata;
-
-          // Validate that eventClass is actually a constructor function
-          if (!this.isConstructor(eventClass)) {
-            this.logger.warn(`Invalid event class found in metadata for handler ${handlerClass.name}: not a constructor`);
-            continue;
-          }
-
-          // Extract event class name safely
+        if (this.isConstructor(eventClass)) {
           const eventClassName = this.getClassName(eventClass);
-
-          // Compare event class name with searched name
-          if (eventClassName === name) {
-            this.logger.debug(`Event with name "${name}" was found`);
-
-            this.cache.set(name, eventClass);
-            return eventClass;
-          }
+          map.set(eventClassName, eventClass);
         }
-      }
-    }
 
-    this.logger.debug(`Event with name "${name}" was not found`);
-    return undefined;
+        return map;
+      }, new Map<string, EventConstructor>());
   }
 
-  /**
-   * Validates if the provided value is a constructor function
-   * @param value - value to check
-   * @returns true if value is a constructor function
-   */
   private isConstructor(value: any): value is EventConstructor {
     return typeof value === 'function' &&
-           value.prototype &&
-           value.prototype.constructor === value;
+      value.prototype &&
+      value.prototype.constructor === value;
   }
 
-  /**
-   * Safely extracts class name from constructor function
-   * @param constructor - constructor function
-   * @returns class name or undefined
-   */
   private getClassName(constructor: EventConstructor): string | undefined {
     if (!this.isConstructor(constructor)) {
       return undefined;
     }
 
-    // Try to get name from constructor
     if (constructor.name) {
       return constructor.name;
     }
 
-    // Fallback: try to get name from prototype
     if (constructor.prototype && constructor.prototype.constructor && constructor.prototype.constructor.name) {
       return constructor.prototype.constructor.name;
     }

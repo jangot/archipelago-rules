@@ -2,7 +2,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
 import { CqrsModule } from '@nestjs/cqrs';
 
-import { EVENTS_MODULE_CONFIG } from './constants';
+import { ZIRTUE_EVENTS_MODULE_CONFIG } from './constants';
 import { EventsMapperService } from './services/events-mapper.service';
 import { IEventsModuleOptions } from './interface';
 import { EventsDiscoveryService } from './services/events-discovery.service';
@@ -20,7 +20,7 @@ export class EventsModule {
       imports: [CqrsModule, DiscoveryModule],
       providers: [
         {
-          provide: EVENTS_MODULE_CONFIG,
+          provide: ZIRTUE_EVENTS_MODULE_CONFIG,
           useFactory: options.useFactory,
           inject: options.inject,
         },

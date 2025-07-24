@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nest
 import { EventBus } from '@nestjs/cqrs';
 import { Message } from '@aws-sdk/client-sqs';
 
-import { EVENTS_MODULE_CONFIG } from '../constants';
+import { ZIRTUE_EVENTS_MODULE_CONFIG } from '../constants';
 import { EventsModuleSQSConfig, IEventsModuleConfig, SqsInstance } from '../interface';
 import { SqsConsumerService } from './sqs-consumer.service';
 import { EventsMapperService } from './events-mapper.service';
@@ -13,7 +13,7 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
   private sqsInstances: SqsInstance[];
 
   constructor(
-    @Inject(EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
+    @Inject(ZIRTUE_EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
     private readonly eventBus: EventBus,
     private readonly eventsMapper: EventsMapperService,
     private readonly sqsConsumerService: SqsConsumerService,

@@ -2,7 +2,7 @@ import { SNSClient } from '@aws-sdk/client-sns';
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
 import { ZirtueDistributedEvent } from '@library/shared/modules/events/classes';
-import { EVENTS_MODULE_CONFIG } from '@library/shared/modules/events/constants';
+import { ZIRTUE_EVENTS_MODULE_CONFIG } from '@library/shared/modules/events/constants';
 import { IEventsModuleConfig, IEventsPublisher } from '@library/shared/modules/events/interface';
 import { EventsMapperService } from '@library/shared/modules/events/services/events-mapper.service';
 
@@ -14,7 +14,7 @@ export class SnsPublisherService implements OnModuleInit, OnModuleDestroy, IEven
   private topicArn?: string;
 
   constructor(
-    @Inject(EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
+    @Inject(ZIRTUE_EVENTS_MODULE_CONFIG) private readonly config: IEventsModuleConfig,
     private readonly eventsMapper: EventsMapperService
   ) {}
 
