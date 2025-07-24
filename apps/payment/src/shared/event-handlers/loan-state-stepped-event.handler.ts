@@ -11,9 +11,9 @@ export class LoanStateSteppedEventHandler implements IEventHandler<LoanStateStep
   private readonly supportedSteppedStates: Set<LoanState> = new Set([LoanStateCodes.Repaying]);
 
   constructor(private readonly paymentService: LoanPaymentService) {}
-  
+
   async handle(event: LoanStateSteppedEvent): Promise<boolean | null> {
-    const { loanId, state } = event;
+    const { loanId, state } = event.payload;
     this.logger.debug(`Handling LoanStateSteppedEvent for loanId: ${loanId}, state: ${state}`);
 
     // Fast return if the state is not supported for stepping
