@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { EventBus, IEvent } from '@nestjs/cqrs';
+import { EventBus } from '@nestjs/cqrs';
 
 import { IZirtueEvent } from '../interface';
 import { EventSnsPublisherService } from './event-sns-publisher.service';
 import { ZirtueDistributedEvent } from 'libs/shared/src/modules/event';
-
-// TODO remove after changing all old events
-type Event = IEvent | IZirtueEvent<any>;
 
 @Injectable()
 export class EventPublisherService {
@@ -15,7 +12,7 @@ export class EventPublisherService {
     private readonly snsPublisher: EventSnsPublisherService,
   ) {}
 
-  public async publish<T extends Event>(event: T): Promise<boolean> {
+  public async publish<T extends IZirtueEvent<any>>(event: T): Promise<boolean> {
     await this.eventBus.publish(event);
     if (this.isCoreEvent(event) && event.type === ZirtueDistributedEvent.name) {
       await this.snsPublisher.publish(event);
@@ -25,7 +22,7 @@ export class EventPublisherService {
     return true;
   }
 
-  private isCoreEvent(event: Event): event is IZirtueEvent<any> {
+  private isCoreEvent(event: IZirtueEvent<any>): event is IZirtueEvent<any> {
     return 'type' in event && 'payload' in event;
   }
 }
