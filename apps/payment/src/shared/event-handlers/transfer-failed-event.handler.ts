@@ -9,11 +9,11 @@ import { ManagementDomainService } from '@payment/modules/domain/services';
 @EventsHandler(TransferFailedEvent)
 export class TransferFailedEventHandler implements IEventHandler<TransferFailedEvent> {
   private readonly logger: Logger = new Logger(TransferFailedEventHandler.name);
-  
+
   constructor(private readonly domainServices: IDomainServices, private readonly managementServices: ManagementDomainService) {}
-  
+
   async handle(event: TransferFailedEvent): Promise<boolean | null> {
-    const { transferId, providerType } = event;
+    const { transferId, providerType } = event.payload;
     this.logger.debug(`Handling TransferFailedEvent for transferId: ${transferId}, providerType: ${providerType}`);
 
     // Load Transfer by ID to then advance a payment step
