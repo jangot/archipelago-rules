@@ -14,12 +14,11 @@ export class BillersService {
 
   /**
    * Upserts billers by processing a biller file.
-   * @param input The request DTO containing biller network type and path
+   * @param input The request DTO containing biller network type, file origin, and resource
    */
   public async upsertBillers(input: UpsertBillersRequestDto): Promise<ProcessBillersResult> {
-    const { billerNetworkType, path } = input;
-    
-    const billerProvider = this.billerProviderFactory.create(billerNetworkType);
-    return billerProvider.processBillers(billerNetworkType, path);
+    const { billerNetworkType, fileOrigin, resource } = input;
+    const billerProvider = this.billerProviderFactory.create(billerNetworkType, fileOrigin);
+    return billerProvider.processBillers(billerNetworkType, resource, fileOrigin);
   }
 } 
