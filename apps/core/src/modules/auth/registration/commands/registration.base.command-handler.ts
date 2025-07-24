@@ -60,7 +60,7 @@ export abstract class RegistrationBaseCommandHandler<TCommand extends Registrati
     if (!event || !user) return;
     const eventInstance = VerificationEventFactory.create(user, event);
     if (!eventInstance) return;
-    this.eventManager.publish(eventInstance);
+    void this.eventManager.publish(eventInstance);
   }
 
   protected isDevelopmentEnvironment(): boolean {
