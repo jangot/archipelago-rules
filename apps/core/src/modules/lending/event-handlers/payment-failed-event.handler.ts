@@ -7,11 +7,11 @@ import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 @EventsHandler(PaymentFailedEvent)
 export class PaymentFailedEventHandler implements IEventHandler<PaymentFailedEvent> {
   private readonly logger: Logger = new Logger(PaymentFailedEventHandler.name);
-  
+
   constructor(private readonly loansService: LoansService) { }
-  
+
   async handle(event: PaymentFailedEvent): Promise<boolean | null> {
-    const { loanId, paymentId, originalPaymentState } = event;
+    const { loanId, paymentId, originalPaymentState } = event.payload;
     this.logger.debug(`Handling PaymentFailedEvent in loan: ${loanId} for paymentId: ${paymentId}, originalPaymentState: ${originalPaymentState}`);
 
     return this.loansService.advanceLoan(loanId);
