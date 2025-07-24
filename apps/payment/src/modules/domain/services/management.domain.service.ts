@@ -70,8 +70,8 @@ export class ManagementDomainService {
     try {
       this.logger.debug(`Initiating step ${stepId} for payment ${paymentId} from state ${stepState}`);
       const stepManager = await this.loanPaymentStepFactory.getManager(stepId, stepState);
-      await stepManager.advance(stepId);
-      return paymentManager.advance(paymentId);
+      // Created step advancement will create a transfer and trigger Event to advance Payment as well
+      return stepManager.advance(stepId);
     } catch (error) {
       this.logger.error(`Error initiating step ${stepId} for payment ${paymentId}`, { error });
       return null;

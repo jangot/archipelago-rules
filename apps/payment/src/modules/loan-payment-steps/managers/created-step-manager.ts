@@ -22,7 +22,7 @@ export class CreatedStepManager extends BasePaymentStepManager {
    */
   protected async onTransferCreated(stepId: string, transferId: string): Promise<boolean | null> {
     this.logger.debug(`Step: ${stepId} is in Created state, Transfer: ${transferId} is Created. Updating Step state to Pending.`);
-    return this.paymentDomainService.updatePaymentStepState(stepId, PaymentStepStateCodes.Pending);
+    return this.changeStepState(stepId, PaymentStepStateCodes.Pending);
   }
 
   /**
@@ -52,13 +52,13 @@ export class CreatedStepManager extends BasePaymentStepManager {
   /**
    * Step: Created, Transfer: Pending
    * Possible cases:
-   * - state polling -> no action required (transfer will taken by CRON)
+   * - transfer in pending state -> update Step state to Pending
    * @param stepId 
    * @param transferId 
    */
   protected async onTransferPending(stepId: string, transferId: string): Promise<boolean | null> {
-    this.logger.debug(`Step: ${stepId} is in Created state, Transfer: ${transferId} is Pending. No action required.`);
-    return false;
+    this.logger.debug(`Step: ${stepId} is in Created state, Transfer: ${transferId} is Pending. Updating Step state to Pending.`);
+    return this.changeStepState(stepId, PaymentStepStateCodes.Pending);
   }
 
   /**
@@ -71,12 +71,13 @@ export class CreatedStepManager extends BasePaymentStepManager {
   protected async onTransferNotFound(stepId: string): Promise<boolean | null> {
     this.logger.debug(`Step: ${stepId} is in Created state, Transfer not found. Creating a new Transfer.`);
     const transfer = await this.paymentDomainService.createTransferForStep(stepId);
-    const stepUpdate = await this.paymentDomainService.updatePaymentStepState(stepId, PaymentStepStateCodes.Pending);
     if (!transfer) {
       this.logger.error(`Failed to create a transfer for step ${stepId}`);
       return false;
     }
     this.logger.debug(`Transfer created for step ${stepId} with ID ${transfer.id}`, { transfer });
+    
+    const stepUpdate = await this.changeStepState(stepId, PaymentStepStateCodes.Pending);
     return stepUpdate;
   }
 }

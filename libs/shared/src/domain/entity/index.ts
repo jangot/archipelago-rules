@@ -62,8 +62,7 @@ export const CoreEntities = [
   ApplicationUser, 
   Login, 
   UserRegistration, 
-  Biller, 
-  PaymentAccount, 
+  PaymentAccount,
 ];
 
 // Add all Payment Entities here

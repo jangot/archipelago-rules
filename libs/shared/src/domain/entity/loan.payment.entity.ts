@@ -12,6 +12,9 @@ export class LoanPayment {
   @Column({ type: 'decimal' })
   amount: number;
 
+  @Column({ type: 'decimal', default: 0 })
+  feeAmount: number;
+
   @Column({ type: 'uuid' })
   loanId: string;
 
@@ -24,6 +27,9 @@ export class LoanPayment {
 
   @Column({ type: 'text' })
   type: LoanPaymentType;
+
+  @Column({ type: 'integer', default: 0 })
+  attempt: number;
 
   @Column({ type: 'text' })
   state: LoanPaymentState;

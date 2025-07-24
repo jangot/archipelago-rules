@@ -1,78 +1,54 @@
-import { LoanPaymentStateCodes, LoanPaymentTypeCodes } from '@library/entity/enum';
-import { Loan, LoanPayment } from '@library/shared/domain/entity';
+import { LoanPaymentTypeCodes } from '@library/entity/enum';
+import { Loan } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
-import { BaseLoanPaymentManager, PaymentOptions } from './base-loan-payment-manager';
+import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
 
 /**
- * Handles loan fee payments
+ * FeePaymentManager handles loan fee payments where lenders pay processing
+ * fees and service charges to Zirtue for loan origination and management
+ * services.
+ * 
+ * Key responsibilities:
+ * - Process lender-to-Zirtue fee transfers
+ * - Handle processing fees, service charges, and other loan-related costs
+ * - Use loan's feeAmount field for payment calculation
  */
 @Injectable()
 export class FeePaymentManager extends BaseLoanPaymentManager {
+
   constructor(protected readonly paymentDomainService: PaymentDomainService) {
     super(paymentDomainService, LoanPaymentTypeCodes.Fee);
   }
 
   /**
-   * Initiates a new fee payment for a loan
-   * @param loanId The ID of the loan for which to initiate a fee payment
-   * @returns The created loan payment or null if creation failed
+   * Resolves account pair for the Lender → Zirtue fee payment flow.
+   * The source account is the lender's account, while the target should
+   * be Zirtue's fee collection account (currently using biller account
+   * as temporary implementation pending dedicated fee account setup).
+   * 
+   * @param loan - Loan entity containing lender account information
+   * @returns Payment account pair with lender as source and Zirtue as target
+   * @todo Use explicit Payment Account for Fee instead of biller account
    */
-  public async initiate(loanId: string): Promise<LoanPayment | null> {
-    return this.initiatePayment(loanId);
-  }
-
-  /**
-   * Gets the source and target payment account IDs for fee payment
-   * @param loan The loan for which to get payment accounts
-   * @returns Object containing fromAccountId and toAccountId
-   */
-  protected async getPaymentAccounts(loan: Loan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
-    const { lenderAccountId, biller } = loan;
-    
-    if (!lenderAccountId) {
-      this.logger.warn(`Lender account ID is missing for loan ${loan.id}`);
-      return { fromAccountId: null, toAccountId: null };
-    }
-
-    if (!biller || !biller.paymentAccountId) {
-      this.logger.warn(`Biller or Biller's payment Account is missing for loan ${loan.id}`);
-      return { fromAccountId: null, toAccountId: null };
-    }
-
+  protected getAccountPairForPaymentType(loan: Loan): PaymentAccountPair {
     return { 
-      fromAccountId: lenderAccountId,
-      toAccountId: biller.paymentAccountId,
+      fromAccountId: loan.lenderAccountId,
+      toAccountId: loan.biller?.paymentAccountId || null,
     };
   }
   
   /**
-   * Gets the payment amount for fee payment type
-   * @param loan The loan for which to get the payment amount
-   * @returns The payment amount
+   * Calculates the fee payment amount using the loan's configured fee amount.
+   * Fee payments use only the feeAmount field from the loan entity, which
+   * represents processing fees, service charges, or other costs associated
+   * with loan origination and management. This amount is separate from the
+   * loan principal handled by funding payments.
+   * 
+   * @param loan - Loan entity containing fee amount configuration
+   * @returns The fee amount to be paid, defaults to 0 if no fees configured
    */
   protected getPaymentAmount(loan: Loan): number {
     return loan.feeAmount || 0;
-  }
-  
-  /**
-   * Gets the payment options for fee payment
-   * For zero amount, automatically mark as completed
-   * @param _loan The loan for which to get payment options
-   * @param amount The payment amount
-   * @returns Object containing payment options
-   */
-  protected getPaymentOptions(_loan: Loan, amount: number): PaymentOptions {
-    // If amount is zero then create a completed payment without steps
-    if (!amount) {
-      const completionDate = new Date();
-      return { 
-        state: LoanPaymentStateCodes.Completed,
-        completedAt: completionDate,
-        scheduledAt: completionDate,
-        initiatedAt: completionDate,
-      };
-    }
-    return { state: LoanPaymentStateCodes.Created };
   }
 }

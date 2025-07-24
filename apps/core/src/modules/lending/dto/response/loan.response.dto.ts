@@ -1,8 +1,8 @@
+import { LoanClosure, LoanClosureCodes, LoanFeeMode, LoanFeeModeCodes, LoanPaymentFrequency, LoanPaymentFrequencyCodes, LoanState, LoanStateCodes, LoanType, LoanTypeCodes } from '@library/entity/enum';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { IsDate, IsDecimal, IsInt, IsOptional, IsString, IsUUID } from 'class-validator';
-import { LoanClosure, LoanFeeMode, LoanPaymentFrequency, LoanState, LoanStateCodes, LoanType, LoanTypeCodes, LoanClosureCodes, LoanPaymentFrequencyCodes, LoanFeeModeCodes } from '@library/entity/enum';
-import { NIL } from 'uuid';
 import { Expose } from 'class-transformer';
+import { IsDate, IsInt, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { NIL } from 'uuid';
 
 @ApiSchema({ name: 'loanResponse' })
 export class LoanResponseDto {
@@ -12,7 +12,7 @@ export class LoanResponseDto {
   id: string;
 
   @ApiProperty({ description: 'Amount of the loan', type: 'number', example: 1000.50 })
-  @IsDecimal()
+  @IsNumber({ maxDecimalPlaces: 2 })
   amount: number;
 
   @ApiProperty({ description: 'Unique identifier for the lender', type: 'string', format: 'uuid', example: NIL, required: false })
@@ -94,7 +94,7 @@ export class LoanResponseDto {
   feeMode: LoanFeeMode | null;
 
   @ApiProperty({ description: 'Total fee value for the loan', type: 'number', example: 50.00, required: false })
-  @IsDecimal()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsOptional()
   @Expose()
   feeAmount: number | null;

@@ -6,15 +6,15 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { HttpAdapterHost, NestFactory } from '@nestjs/core';
-import { CoreModule } from './core.module';
-import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
+import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filter';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/swagger';
 import { setupGracefulShutdown } from 'nestjs-graceful-shutdown';
-import { ConfigService } from '@nestjs/config';
+import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
-import { AllExceptionsFilter, DomainExceptionsFilter } from '@library/shared/common/filter';
+import { CoreModule } from './core.module';
 
 async function bootstrap() {
   // It is required to initialize the  TypeORM Transactional Context before application creation and initialization
@@ -38,6 +38,20 @@ async function bootstrap() {
       transform: true, // Automatically transforms types
     })
   );
+  const isLocalEnvironment = configService.get<string>('NODE_ENV') === 'local';
+  app.enableCors({
+    origin: isLocalEnvironment
+      ? true // Allow all origins in local environment for development purposes
+      : (origin, callback) => { 
+        const allowedDomain = /\.zirtue\.com$/;
+        if (!origin || allowedDomain.test(new URL(origin).hostname)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+    credentials: true,
+  });
 
   configureSwagger(app);
 
