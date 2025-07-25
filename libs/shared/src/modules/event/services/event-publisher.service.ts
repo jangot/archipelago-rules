@@ -63,7 +63,6 @@ export class EventPublisherService {
       await this.snsPublisher.publish(event);
     }
 
-    // TODO fix after update all publisher
     return true;
   }
 
