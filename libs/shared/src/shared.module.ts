@@ -1,7 +1,6 @@
 import { DynamicModule, Global, Logger, Module } from '@nestjs/common';
 import { MiddlewareConfigProxy } from '@nestjs/common/interfaces';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { CqrsModule, EventBus } from '@nestjs/cqrs';
 import { LoggerModule, Params } from 'nestjs-pino';
 import { v4 as uuidv4 } from 'uuid';
 import { getPinoTransports } from './pino.transport.config';
@@ -18,7 +17,6 @@ export class SharedModule {
     return {
       module: SharedModule,
       imports: [
-        CqrsModule,
         LoggerModule.forRootAsync({
           imports: [ConfigModule],
           inject: [ConfigService],
@@ -37,8 +35,7 @@ export class SharedModule {
         }),
       ],
       providers: [
-        EventBus,
-        Logger,        
+        Logger,
         SharedService,
       ],
       exports: [
