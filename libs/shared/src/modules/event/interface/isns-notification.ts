@@ -1,3 +1,10 @@
+/**
+ * SNS Notification interface
+ *
+ * @description SNS Notification interface
+ * @export
+ * @interface ISnsNotification
+ */
 export interface ISnsNotification {
   Type: string;
   MessageId: string;
