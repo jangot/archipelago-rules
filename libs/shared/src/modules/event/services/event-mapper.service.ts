@@ -82,9 +82,8 @@ export class EventMapperService {
     const eventClass = this.eventsDiscovery.findEventByName(body.MessageAttributes.eventClass.Value);
     if (!eventClass) {
       return null;
-    } else {
-      const event = plainToInstance(eventClass, { payload: JSON.parse(body.Message) });
-      return event as ZirtueBaseEvent<any>;
     }
+
+    return plainToInstance(eventClass, { payload: JSON.parse(body.Message) });
   }
 }
