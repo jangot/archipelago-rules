@@ -5,7 +5,7 @@ export interface ISnsNotification {
   Message: string;
   Timestamp: string;
   UnsubscribeURL: string;
-  MessageAttributes: {
+  MessageAttributes?: {
     eventClass?: {
       Type: string;
       Value: string;
