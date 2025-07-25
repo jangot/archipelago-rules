@@ -6,7 +6,6 @@ import { plainToInstance } from 'class-transformer';
 import {
   IEventModuleConfig,
   ISnsNotification,
-  ZirtueBaseEvent,
   ZirtueDistributedEvent,
 } from '../';
 import { ZIRTUE_EVENT_MODULE_CONFIG } from '../constants';

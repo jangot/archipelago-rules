@@ -13,7 +13,7 @@ export class EventDiscoveryService {
 
   public findEventByName(name: string): EventConstructor | undefined {
     if (!this.cache) {
-      this.cache = this.getCache();
+      this.cache = this.getCachedEventHandlers();
       this.logger.debug(`Initialize cash: ${this.cache.keys()}`);
     }
 
@@ -22,10 +22,10 @@ export class EventDiscoveryService {
       this.logger.log(`Event with name "${name}" was not found`);
     }
 
-    return this.cache.get(name);
+    return result;
   }
 
-  private getCache(): Map<string, EventConstructor> {
+  private getCachedEventHandlers(): Map<string, EventConstructor> {
     return this.discoveryService.getProviders()
       .filter((provider) => !!provider.instance)
       .map((provider) => {

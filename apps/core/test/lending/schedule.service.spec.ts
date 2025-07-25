@@ -3,6 +3,7 @@ import { ScheduleService } from '@library/shared/service/schedule.service';
 import { addMonths, addWeeks } from 'date-fns';
 
 describe('ScheduleService - previewRepaymentPlan', () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let service: ScheduleService;
 
   beforeEach(() => {
