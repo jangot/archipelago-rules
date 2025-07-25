@@ -3,7 +3,7 @@ import { SQSClientConfig } from '@aws-sdk/client-sqs';
 import { ConfigService } from '@nestjs/config';
 
 export function getAWSClientConfiguration(configService: ConfigService): SNSClientConfig | SQSClientConfig {
-  const credentials = configService.get('AWS_PROFILE') === 'localstack' ? {
+  const credentials = configService.get('IS_LOCAL') === '1' ? {
     accessKeyId: configService.get<string>('AWS_ACCESS_KEY_ID', 'test'),
     secretAccessKey: configService.get<string>('AWS_ACCESS_KEY', 'test'),
   } : undefined;
