@@ -1,7 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { DeleteMessageCommand, Message, ReceiveMessageCommand, SQSClient, SQSClientConfig } from '@aws-sdk/client-sqs';
-
-import { EventModuleSQSQueueOptions, SqsInstance } from '../';
+import { Injectable, Logger } from '@nestjs/common';
+import { EventModuleSQSQueueOptions, SqsInstance } from '../interface';
 
 @Injectable()
 export class EventSqsConsumerService {
