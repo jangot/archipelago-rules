@@ -7,13 +7,15 @@
  */
 
 import { Controller, Get, Query } from '@nestjs/common';
-import { CoreService } from './core.service';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CoreService } from './core.service';
 
 @Controller()
 @ApiTags('core')
 export class CoreController {
-  constructor(private readonly coreService: CoreService) {}
+  constructor(
+    private readonly coreService: CoreService,
+  ) {}
 
   // Need to turn this into an Integration test!!!
   @Get('transactional')

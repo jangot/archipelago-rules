@@ -1,7 +1,6 @@
 import { PublishCommand } from '@aws-sdk/client-sns';
 import { Message } from '@aws-sdk/client-sqs';
 import { Inject, Injectable } from '@nestjs/common';
-import { plainToInstance } from 'class-transformer';
 
 import {
   ZirtueBaseEvent,
@@ -30,7 +29,7 @@ export class EventMapperService {
         },
         eventSource: {
           DataType: 'String',
-          StringValue: this.config.serviceName,
+          StringValue: this.config.serviceName + '_',
         },
       },
     });
@@ -48,9 +47,7 @@ export class EventMapperService {
     } else {
       // TODO add body.Message validation
       // But a structure of the data must be described manually for all events
-      const event = plainToInstance(eventClass, {
-        payload: body.Message,
-      });
+      const event = new eventClass(JSON.parse(body.Message));
 
       return event as ZirtueBaseEvent<any>;
     }

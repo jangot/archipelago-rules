@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 
 import { ZirtueDistributedEvent } from 'libs/shared/src/modules/event';
@@ -7,6 +7,8 @@ import { EventSnsPublisherService } from './event-sns-publisher.service';
 
 @Injectable()
 export class EventPublisherService {
+  logger = new Logger(EventSnsPublisherService.name);
+
   constructor(
     private readonly eventBus: EventBus,
     private readonly snsPublisher: EventSnsPublisherService,
@@ -55,7 +57,9 @@ export class EventPublisherService {
    */
   public async publish<T extends IZirtueEvent<any>>(event: T): Promise<boolean> {
     await this.eventBus.publish(event);
+    this.logger.debug({ event, info: 'event published locally.' });
     if (this.isCoreEvent(event) && event.type === ZirtueDistributedEvent.name) {
+      this.logger.debug({ event, info: 'event published globally.' });
       await this.snsPublisher.publish(event);
     }
 
