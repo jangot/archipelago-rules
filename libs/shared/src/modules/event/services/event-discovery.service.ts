@@ -13,19 +13,19 @@ export class EventDiscoveryService {
 
   public findEventByName(name: string): EventConstructor | undefined {
     if (!this.cache) {
-      this.cache = this.getCash();
+      this.cache = this.getCache();
       this.logger.debug(`Initialize cash: ${this.cache.keys()}`);
     }
 
-    if (!this.cache.has(name)) {
-      this.logger.debug(`Event with name "${name}" was not found`);
-      return undefined;
+    const result = this.cache.get(name);
+    if (!result) {
+      this.logger.log(`Event with name "${name}" was not found`);
     }
 
     return this.cache.get(name);
   }
 
-  private getCash(): Map<string, EventConstructor> {
+  private getCache(): Map<string, EventConstructor> {
     return this.discoveryService.getProviders()
       .filter((provider) => !!provider.instance)
       .map((provider) => {
@@ -39,33 +39,17 @@ export class EventDiscoveryService {
           : eventHandlerMetadata;
 
         if (this.isConstructor(eventClass)) {
-          const eventClassName = this.getClassName(eventClass);
-          map.set(eventClassName, eventClass);
+          map.set(eventClass.name, eventClass);
         }
 
         return map;
       }, new Map<string, EventConstructor>());
   }
 
-  private isConstructor(value: any): value is EventConstructor {
-    return typeof value === 'function' &&
-      value.prototype &&
-      value.prototype.constructor === value;
-  }
-
-  private getClassName(constructor: EventConstructor): string | undefined {
-    if (!this.isConstructor(constructor)) {
-      return undefined;
-    }
-
-    if (constructor.name) {
-      return constructor.name;
-    }
-
-    if (constructor.prototype && constructor.prototype.constructor && constructor.prototype.constructor.name) {
-      return constructor.prototype.constructor.name;
-    }
-
-    return undefined;
+  private isConstructor(value: unknown): value is EventConstructor {
+    return (
+      typeof value === 'function' &&
+      /^class\s/.test(Function.prototype.toString.call(value))
+    );
   }
 }

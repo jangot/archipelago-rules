@@ -20,10 +20,9 @@ export class EventMapperService {
   ) {}
 
   public cqrsEventToSnsCommand<T extends ZirtueDistributedEvent<any>>(event: T, topicArn: string): PublishCommand {
-    const Message = JSON.stringify(event.payload);
     return new PublishCommand({
       TopicArn: topicArn,
-      Message,
+      Message: JSON.stringify(event.payload),
       MessageAttributes: {
         eventClass: {
           DataType: 'String',
@@ -43,17 +42,17 @@ export class EventMapperService {
       return null;
     }
 
-    const EventClass = this.eventsDiscovery.findEventByName(body.MessageAttributes.eventClass.Value);
-    if (!EventClass) {
+    const eventClass = this.eventsDiscovery.findEventByName(body.MessageAttributes.eventClass.Value);
+    if (!eventClass) {
       return null;
     } else {
       // TODO add body.Message validation
       // But a structure of the data must be described manually for all events
-      const command = plainToInstance(EventClass, {
+      const event = plainToInstance(eventClass, {
         payload: body.Message,
       });
 
-      return command as ZirtueBaseEvent<any>;
+      return event as ZirtueBaseEvent<any>;
     }
   }
 }
