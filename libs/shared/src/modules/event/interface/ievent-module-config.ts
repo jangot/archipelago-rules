@@ -2,7 +2,7 @@ import { SNSClientConfig } from '@aws-sdk/client-sns';
 import { SQSClientConfig } from '@aws-sdk/client-sqs';
 
 export interface EventModuleSNSConfig {
-  topicArn: string,
+  topics: string[],
   clientConfig: SNSClientConfig,
 }
 

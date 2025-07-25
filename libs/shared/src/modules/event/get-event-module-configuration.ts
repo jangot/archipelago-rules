@@ -15,7 +15,7 @@ export function getEventModuleConfiguration(configService: ConfigService): IEven
   return {
     serviceName: configService.getOrThrow<string>('SERVICE_NAME'),
     sns: {
-      topicArn: configService.getOrThrow<string>('AWS_EVENTS_TOPIC'),
+      topics: [configService.getOrThrow<string>('AWS_EVENTS_TOPIC')],
       clientConfig,
     },
     sqs: {

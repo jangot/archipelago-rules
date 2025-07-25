@@ -11,7 +11,7 @@ export class EventSnsPublisherService implements OnModuleInit, OnModuleDestroy {
   private logger = new Logger(EventSnsPublisherService.name);
 
   private client?: SNSClient;
-  private topicArn?: string;
+  private topics?: string[];
 
   constructor(
     @Inject(ZIRTUE_EVENT_MODULE_CONFIG) private readonly config: IEventModuleConfig,
@@ -20,7 +20,7 @@ export class EventSnsPublisherService implements OnModuleInit, OnModuleDestroy {
 
   public onModuleInit() {
     if (this.config.sns) {
-      this.topicArn = this.config.sns.topicArn;
+      this.topics = this.config.sns.topics;
       this.client = new SNSClient(this.config.sns.clientConfig);
     }
   }
@@ -32,13 +32,21 @@ export class EventSnsPublisherService implements OnModuleInit, OnModuleDestroy {
   }
 
   public async publish<T extends ZirtueDistributedEvent<any>>(event: T) {
-    if (!this.client || !this.topicArn) {
+    const client = this.client;
+    if (!client || !this.topics) {
       this.logger.warn(`${event.constructor.name} was not published: SQS was not configured`);
       return;
     }
 
-    const publishCommand = this.eventsMapper.cqrsEventToSnsCommand(event, this.topicArn);
-    await this.client.send(publishCommand);
+    const publishedPromises = this.topics
+      .map((topicArn) => {
+        const publishCommand = this.eventsMapper.cqrsEventToSnsCommand(event, topicArn);
+        return client.send(publishCommand).catch((error) => {
+          this.logger.error(`${event.constructor.name} was not published in ${topicArn}`, error);
+        });
+      });
+
+    await Promise.all(publishedPromises);
 
     this.logger.debug(`${event.constructor.name} was published`);
   }
