@@ -16,6 +16,11 @@ export class LoanApplicationRequestDto {
   @IsOptional()
   status: string | null;
 
+  @ApiProperty({ description: 'Unique identifier for the loan associated with the application', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000', required: false })
+  @IsString()
+  @IsOptional()
+  loanId: string | null;
+
   // Biller
   @ApiProperty({ description: 'Unique identifier for the biller', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
   @IsString()
@@ -126,4 +131,9 @@ export class LoanApplicationRequestDto {
   @IsNumber()
   @IsOptional()
   loanServiceFee: number | null;
+
+  @ApiProperty({ description: 'Date of the first payment for the loan', type: 'string', format: 'date-time', example: '2023-10-15T12:00:00Z', required: false })
+  @IsDate()
+  @IsOptional()
+  loanFirstPaymentDate: Date | null;
 }
