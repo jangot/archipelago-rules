@@ -80,6 +80,12 @@ export class LoanApplication {
   @Column({ type: 'uuid', nullable: true })
   borrowerId: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  borrowerFirstName: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  borrowerLastName: string | null;
+
   @ManyToOne(() => ApplicationUser, { nullable: true })
   @JoinColumn({ name: 'borrower_id' })
   borrower: ApplicationUser | null;

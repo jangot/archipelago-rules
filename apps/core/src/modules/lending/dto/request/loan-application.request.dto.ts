@@ -80,6 +80,16 @@ export class LoanApplicationRequestDto {
   @IsOptional()
   borrowerId: string | null;
 
+  @ApiProperty({ description: 'First name of the borrower', type: 'string', example: 'John', required: false })
+  @IsString()
+  @IsOptional()
+  borrowerFirstName: string | null;
+
+  @ApiProperty({ description: 'Last name of the borrower', type: 'string', example: 'Doe', required: false })
+  @IsString()
+  @IsOptional()
+  borrowerLastName: string | null;
+
   @ApiProperty({ description: 'Unique identifier for the borrower payment account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
   @IsString()
   @IsOptional()
