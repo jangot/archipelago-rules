@@ -15,7 +15,6 @@ import { NotificationService } from './notification.service';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    // EventModule.forRoot('notification', '<url to notification event handler endpoint>'),
     EventModule.forRootAsync({
       isGlobal: true,
       useFactory: getEventModuleConfiguration,

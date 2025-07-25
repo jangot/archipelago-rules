@@ -2,7 +2,7 @@ import { LoanState } from '@library/entity/enum';
 import { ZirtueDistributedEvent } from '@library/shared/modules/event';
 
 class LoanEventPayload {
-  public loanId: string;
+  constructor(public loanId: string) {}
 }
 
 class LoanEventStateChangePayload extends LoanEventPayload {
@@ -12,12 +12,6 @@ class LoanEventStateChangePayload extends LoanEventPayload {
 
 class LoanEventStateStoppedPayload extends LoanEventPayload {
   public state: LoanState;
-}
-
-export class LoanEventBase extends ZirtueDistributedEvent<LoanEventPayload> {
-  public static create(payload: LoanEventPayload): LoanEventBase {
-    return new LoanEventBase(payload);
-  }
 }
 
 export class LoanStateChangedEvent extends ZirtueDistributedEvent<LoanEventStateChangePayload> {
