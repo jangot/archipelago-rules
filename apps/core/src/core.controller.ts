@@ -9,12 +9,14 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CoreService } from './core.service';
+import { EventPublisherService } from '@library/shared/modules/event';
 
 @Controller()
 @ApiTags('core')
 export class CoreController {
   constructor(
     private readonly coreService: CoreService,
+    private readonly p: EventPublisherService,
   ) {}
 
   // Need to turn this into an Integration test!!!
@@ -26,3 +28,4 @@ export class CoreController {
     return { message: result ? 'Transaction committed' : 'Transaction rolled back' };
   }
 }
+
