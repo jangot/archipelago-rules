@@ -6,11 +6,15 @@ export interface EventModuleSNSConfig {
   clientConfig: SNSClientConfig,
 }
 
-export interface EventModuleSQSConfig {
-  queueUrl: string;
-  clientConfig: SQSClientConfig;
+export interface EventModuleSQSQueueOptions {
+  url: string;
   maxNumberOfMessages: number;
   waitTimeSeconds: number;
+}
+
+export interface EventModuleSQSConfig {
+  queues: EventModuleSQSQueueOptions[];
+  clientConfig: SQSClientConfig;
 }
 
 export interface IEventModuleConfig {

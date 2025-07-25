@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
+import { IEventModuleConfig } from '@library/shared/modules/event/interface';
 
-export function getEventModuleConfiguration(configService: ConfigService) {
+export function getEventModuleConfiguration(configService: ConfigService): IEventModuleConfig {
   // TODO check how we connect to AWS
   const clientConfig = {
     region: configService.getOrThrow<string>('AWS_REGION'),
@@ -18,10 +19,14 @@ export function getEventModuleConfiguration(configService: ConfigService) {
       clientConfig,
     },
     sqs: {
-      queueUrl: configService.getOrThrow<string>('AWS_QUEUE_URL'),
+      queues: [
+        {
+          url: configService.getOrThrow<string>('AWS_EVENTS_QUEUE_URL'),
+          maxNumberOfMessages: 10,
+          waitTimeSeconds: 5,
+        },
+      ],
       clientConfig,
-      maxNumberOfMessages: 10,
-      waitTimeSeconds: 5,
     },
   };
 }

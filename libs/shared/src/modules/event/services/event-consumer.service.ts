@@ -1,16 +1,16 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
-import { Message } from '@aws-sdk/client-sqs';
+import { Message, SQSClientConfig } from '@aws-sdk/client-sqs';
 
 import { ZIRTUE_EVENT_MODULE_CONFIG } from '../constants';
-import { EventModuleSQSConfig, IEventModuleConfig, SqsInstance } from '../interface';
+import { EventModuleSQSQueueOptions, IEventModuleConfig, SqsInstance } from '../interface';
 import { EventSqsConsumerService } from './event-sqs-consumer.service';
 import { EventMapperService } from './event-mapper.service';
 
 @Injectable()
 export class EventConsumerService implements OnModuleInit, OnModuleDestroy {
   private logger = new Logger(EventConsumerService.name);
-  private sqsInstances: SqsInstance[];
+  private sqsInstances: SqsInstance[] = [];
 
   constructor(
     @Inject(ZIRTUE_EVENT_MODULE_CONFIG) private readonly config: IEventModuleConfig,
@@ -20,17 +20,22 @@ export class EventConsumerService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   public onModuleInit() {
-    this.sqsInstances = [this.config.sqs]
-      .filter((it) => !!it)
-      .map((cfg) => this.initInstance(cfg));
+    const sqsConfig = this.config.sqs;
+
+    if (sqsConfig) {
+      this.sqsInstances = sqsConfig.queues
+        .map((options: EventModuleSQSQueueOptions) => {
+          return this.initInstance(sqsConfig.clientConfig, options);
+        });
+    }
   }
 
   public onModuleDestroy() {
     this.sqsInstances.forEach((instance) => instance.finish());
   }
 
-  private initInstance(cfg: EventModuleSQSConfig) {
-    const instance = this.sqsConsumerService.getInstance(cfg);
+  private initInstance(config: SQSClientConfig, options: EventModuleSQSQueueOptions) {
+    const instance = this.sqsConsumerService.getInstance(config, options);
 
     void instance.start(async (event: Message) => {
       const cqrsEvent = this.eventsMapper.sqsMessageToCqrsEvent(event);
