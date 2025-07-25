@@ -1,6 +1,5 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { ContactType, LoginType, VerificationType } from '@library/entity/enum';
-import { EventManager } from '@library/shared/common/event/event-manager';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -9,9 +8,9 @@ import { LoginCommand } from './login.commands';
 
 @Injectable()
 export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = LoginCommand> {
-  
-  constructor(protected readonly domainServices: IDomainServices, protected readonly jwtService: JwtService, protected readonly logger: Logger, 
-    protected readonly eventManager: EventManager, protected readonly config: ConfigService) {
+
+  constructor(protected readonly domainServices: IDomainServices, protected readonly jwtService: JwtService, protected readonly logger: Logger,
+    protected readonly config: ConfigService) {
   }
 
   public abstract execute(command: TCommand): Promise<UserLoginPayloadDto>;

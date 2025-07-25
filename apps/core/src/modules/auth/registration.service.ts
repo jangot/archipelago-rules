@@ -110,8 +110,8 @@ export class RegistrationService {
    * @param userId - The ID of the user.
    * @returns A promise that resolves to a JwtResponseDto or null.
    */
-  private async handleVerificationResult(result: RegistrationTransitionResult | null, userId: string)
-  : Promise<UserLoginPayloadDto | ApiStatusResponseDto | null> {
+  private async handleVerificationResult(result: RegistrationTransitionResult | null, userId: string):
+  Promise<UserLoginPayloadDto | ApiStatusResponseDto | null> {
     if (!result || !result.isSuccessful) {
       // This section is expected to be unreachable as any registration verification failure should be handled by the command handler
       // But for the case when handling missed - we take care about this here

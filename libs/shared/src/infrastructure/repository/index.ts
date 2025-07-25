@@ -16,11 +16,11 @@ export * from './payment.account.repository';
 export const SharedRepositories = [
   PaymentAccountRepository,
   LoanRepository,
-  LoanApplicationRepository
+  LoanApplicationRepository,
 ];
 
 export const EventRepositories = [
   EventPublishedRepository,
   EventStoreRepository,
-  EventSubscriberRepository
+  EventSubscriberRepository,
 ];

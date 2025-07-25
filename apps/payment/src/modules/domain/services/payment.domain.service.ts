@@ -1,6 +1,5 @@
 import { LoanPaymentState, LoanPaymentStateCodes, LoanPaymentType, LoanType, PaymentStepState, PaymentStepStateCodes, TransferStateCodes } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
-import { EventManager } from '@library/shared/common/event/event-manager';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { Loan, LoanPayment, LoanPaymentStep, PaymentAccount, PaymentsRoute, Transfer } from '@library/shared/domain/entity';
 import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
@@ -9,6 +8,7 @@ import { TransferErrorDetails } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentDataService } from '@payment/modules/data';
+import { EventPublisherService } from 'libs/shared/src/modules/event';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -17,7 +17,7 @@ export class PaymentDomainService extends BaseDomainServices {
   constructor(
     protected readonly data: PaymentDataService,
     protected readonly config: ConfigService,
-    private readonly eventManager: EventManager
+    private readonly eventManager: EventPublisherService
   ) {
     super(data);
   }
@@ -57,13 +57,13 @@ export class PaymentDomainService extends BaseDomainServices {
   }
 
   public async findRouteForPayment(
-    fromAccountId: string, 
-    toAccountId: string, 
-    state: LoanPaymentType, 
+    fromAccountId: string,
+    toAccountId: string,
+    state: LoanPaymentType,
     loanType: LoanType
   ): Promise<PaymentsRoute  | null> {
     const [fromAccountResult, toAccountResult] = await Promise.all([
-      this.data.paymentAccounts.getPaymentAccountById(fromAccountId), 
+      this.data.paymentAccounts.getPaymentAccountById(fromAccountId),
       this.data.paymentAccounts.getPaymentAccountById(toAccountId),
     ]);
     if (!fromAccountResult || !toAccountResult) {
@@ -75,10 +75,10 @@ export class PaymentDomainService extends BaseDomainServices {
     const { type: toAccount, ownership: toOwnership, provider: toProvider } = toAccountResult;
 
     const route = await this.data.paymentsRoute.findRoute(
-      { 
-        fromAccount, fromOwnership, fromProvider, toAccount, toOwnership, toProvider, 
-        loanStage: state, loanType, 
-      }, 
+      {
+        fromAccount, fromOwnership, fromProvider, toAccount, toOwnership, toProvider,
+        loanStage: state, loanType,
+      },
       [PAYMENTS_ROUTE_RELATIONS.Steps]);
 
     return route;
@@ -92,13 +92,13 @@ export class PaymentDomainService extends BaseDomainServices {
 
   /**
    * Updates the state of a loan payment and publishes the corresponding event.
-   * 
+   *
    * This method handles the state transition logic for loan payments, including:
    * - Pending: Only updates if the old state is different
    * - Failed: Always updates to failed state
    * - Completed: Updates to completed state with timestamp
    * - Created: Logs an error for unhandled states
-   * 
+   *
    * @param paymentId - The ID of the payment to update
    * @param oldState - The current state of the payment before update
    * @param newState - The new state to set for the payment
@@ -151,13 +151,13 @@ export class PaymentDomainService extends BaseDomainServices {
 
   /**
    * Publishes an event for the payment state change.
-   * 
+   *
    * This method handles the logic for publishing events based on the new state of the payment:
    * - **Pending**: Only publishes if payment is stepped
    * - **Completed**: Publishes PaymentCompletedEvent
    * - **Failed**: Publishes PaymentFailedEvent
    * - **Created**: Logs an error for unhandled states
-   * 
+   *
    * @param paymentId - The ID of the payment whose state has changed
    * @param oldState - The previous state of the payment
    * @param newState - The new state of the payment
@@ -178,11 +178,11 @@ export class PaymentDomainService extends BaseDomainServices {
           this.logger.debug(`Payment ${paymentId} is pending but not stepped, skipping event publication.`);
           return false; // Skip event if payment is pending but not stepped
         }
-        return this.eventManager.publish<Promise<boolean | null>>(PaymentSteppedEvent.create(paymentId, oldState));
+        return this.eventManager.publish(PaymentSteppedEvent.create(paymentId, oldState));
       case LoanPaymentStateCodes.Completed:
-        return this.eventManager.publish<Promise<boolean | null>>(PaymentCompletedEvent.create(paymentId, oldState));
+        return this.eventManager.publish(PaymentCompletedEvent.create(paymentId, oldState));
       case LoanPaymentStateCodes.Failed:
-        return this.eventManager.publish<Promise<boolean | null>>(PaymentFailedEvent.create(paymentId, oldState));
+        return this.eventManager.publish(PaymentFailedEvent.create(paymentId, oldState));
       case LoanPaymentStateCodes.Created:
       default:
         this.logger.error(`Unhandled payment state: ${newState} for paymentId: ${paymentId}`);
@@ -192,15 +192,15 @@ export class PaymentDomainService extends BaseDomainServices {
 
   /**
    * Identifies the next payment step that can be initiated.
-   * 
+   *
    * This method implements the step sequencing logic for payment execution:
    * 1. **First Step**: If no steps are completed, returns the first step (order 0) if it's in 'created' state
    * 2. **Sequential Steps**: Finds the step that immediately follows the highest completed step
    * 3. **State Validation**: Only returns steps in 'created' state that are ready for initiation
-   * 
+   *
    * The sequential execution ensures that payment steps are processed in the correct
    * order and that each step completes before the next one begins.
-   * 
+   *
    * @param steps - All payment steps for analysis
    * @returns The ID of the next step ready for initiation, or null if no step can be started
    */
@@ -219,8 +219,8 @@ export class PaymentDomainService extends BaseDomainServices {
     const maxCompletedOrder = Math.max(...completedSteps.map(step => step.order));
 
     // 2. Find the next step after the highest completed one
-    const nextStep = steps.find(step => 
-      step.order === maxCompletedOrder + 1 && 
+    const nextStep = steps.find(step =>
+      step.order === maxCompletedOrder + 1 &&
       step.state === PaymentStepStateCodes.Created
     );
 
@@ -271,11 +271,11 @@ export class PaymentDomainService extends BaseDomainServices {
     this.logger.debug(`Publishing step state change event for step ${stepId} from ${oldState} to ${newState}`);
     switch (newState) {
       case PaymentStepStateCodes.Pending:
-        return this.eventManager.publish<Promise<boolean | null>>(PaymentStepPendingEvent.create(stepId, oldState));
+        return this.eventManager.publish(PaymentStepPendingEvent.create(stepId, oldState));
       case PaymentStepStateCodes.Completed:
-        return this.eventManager.publish<Promise<boolean | null>>(PaymentStepCompletedEvent.create(stepId, oldState));
+        return this.eventManager.publish(PaymentStepCompletedEvent.create(stepId, oldState));
       case PaymentStepStateCodes.Failed:
-        return this.eventManager.publish<Promise<boolean | null>>(PaymentStepFailedEvent.create(stepId, oldState));
+        return this.eventManager.publish(PaymentStepFailedEvent.create(stepId, oldState));
       case PaymentStepStateCodes.Created:
       default:
         this.logger.error(`Unhandled step state: ${newState} for stepId: ${stepId}`);

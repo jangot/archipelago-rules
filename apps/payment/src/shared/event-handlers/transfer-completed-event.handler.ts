@@ -12,7 +12,7 @@ export class TransferCompletedEventHandler implements IEventHandler<TransferComp
   constructor(private readonly domainServices: IDomainServices, private readonly managementService: ManagementDomainService) {}
 
   async handle(event: TransferCompletedEvent): Promise<boolean | null> {
-    const { transferId, providerType } = event;
+    const { transferId, providerType } = event.payload;
     this.logger.debug(`Handling TransferCompletedEvent for transferId: ${transferId}, providerType: ${providerType}`);
 
     // Load Transfer by ID to then advance a payment step

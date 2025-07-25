@@ -9,11 +9,11 @@ import { ManagementDomainService } from '@payment/modules/domain/services';
 @EventsHandler(PaymentSteppedEvent)
 export class PaymentSteppedEventHandler implements IEventHandler<PaymentSteppedEvent> {
   private readonly logger: Logger = new Logger(PaymentSteppedEventHandler.name);
-    
+
   constructor(private readonly domainServices: IDomainServices, private readonly managementServices: ManagementDomainService) { }
-  
+
   async handle(event: PaymentSteppedEvent): Promise<boolean | null> {
-    const { paymentId, originalPaymentState } = event;
+    const { paymentId, originalPaymentState } = event.payload;
     this.logger.debug(`Handling PaymentSteppedEvent for paymentId: ${paymentId}, originalPaymentState: ${originalPaymentState}`);
 
     // Load Payment by ID to then advance a new Payment Step if found

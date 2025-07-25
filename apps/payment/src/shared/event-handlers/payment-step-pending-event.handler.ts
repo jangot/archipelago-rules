@@ -13,7 +13,7 @@ export class PaymentStepPendingEventHandler implements IEventHandler<PaymentStep
   constructor(private readonly domainServices: IDomainServices, private readonly managementServices: ManagementDomainService) {}
 
   async handle(event: PaymentStepPendingEvent): Promise<boolean | null> {
-    const { stepId } = event;
+    const { stepId } = event.payload;
     this.logger.debug(`Handling PaymentStepPendingEvent for stepId: ${stepId}`);
 
     // Load Payment Step by ID to then advance a Payment
@@ -26,7 +26,7 @@ export class PaymentStepPendingEventHandler implements IEventHandler<PaymentStep
     const { loanPaymentId, loanPayment } = paymentStep;
     const { type } = loanPayment;
     this.logger.debug(`Advancing payment for loanPaymentId: ${loanPaymentId}`);
-    
+
     return this.managementServices.advancePayment(loanPaymentId, type);
   }
 }

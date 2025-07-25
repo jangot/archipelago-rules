@@ -11,7 +11,7 @@ export class PaymentCompletedEventHandler implements IEventHandler<PaymentComple
   constructor(private readonly loansService: LoansService) { }
 
   async handle(event: PaymentCompletedEvent): Promise<boolean | null> {
-    const { loanId, paymentId, originalPaymentState } = event;
+    const { loanId, paymentId, originalPaymentState } = event.payload;
     this.logger.debug(`Handling PaymentCompletedEvent in loan: ${loanId} for paymentId: ${paymentId}, originalPaymentState: ${originalPaymentState}`);
 
     return this.loansService.advanceLoan(loanId);

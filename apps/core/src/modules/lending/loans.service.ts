@@ -1,7 +1,6 @@
 import { LoanState, LoanStateCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
-import { EventManager } from '@library/shared/common/event/event-manager';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { Loan, PaymentAccount } from '@library/shared/domain/entity';
 import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
@@ -17,14 +16,13 @@ import { LendingLogic } from './lending.logic';
 @Injectable()
 export class LoansService {
   private readonly logger: Logger = new Logger(LoansService.name);
-    
+
   constructor(
-    private readonly domainServices: IDomainServices, 
-    private readonly eventManager: EventManager,
+    private readonly domainServices: IDomainServices,
     private readonly config: ConfigService,
     @Inject(ILoanStateManagersFactory)
     private readonly stateManagerFactory: ILoanStateManagersFactory) {}
-    
+
   public async createLoan(userId: string, input: LoanCreateRequestDto): Promise<LoanResponseDto | null> {
     LendingLogic.validateLoanCreateInput(input);
 
@@ -43,11 +41,11 @@ export class LoansService {
     LendingLogic.validateLoanProposeInput(userId, loan);
 
     const paymentAccount = await this.getPaymentAccount(sourcePaymentAccountId, userId);
-    
+
     const updates: Partial<Loan> = {};
     updates.lenderAccountId = paymentAccount.id; // Will come from the loan application, refactor still pending
     updates.state = LoanStateCodes.Offered;
-    
+
     const updateResult = await this.domainServices.loanServices.updateLoan(loan.id, updates);
     if (!updateResult) {
       throw new EntityFailedToUpdateException('Failed to update loan');
@@ -59,12 +57,12 @@ export class LoansService {
 
   /**
    * Advances a loan through its state machine lifecycle by delegating to the appropriate state manager.
-   * 
+   *
    * This method uses the State Pattern to handle loan state transitions. It retrieves the correct
    * state manager instance from the factory based on the loan ID and optional current state,
    * then delegates the advancement logic to that manager. Each state manager is responsible for
    * validating if a transition is possible and executing the appropriate business logic.
-   * 
+   *
    * The method supports the following state transitions:
    *  - `accepted` -> `funding`
    *  - `funding` -> `funded`
@@ -74,7 +72,7 @@ export class LoansService {
    *  - `repaying` -> `repaid`
    *  - `repaid` -> `closed`
    *  - Plus all related error/paused states (e.g., `funding_paused`, `disbursing_paused`)
-   * 
+   *
    * @param loanId - The unique identifier of the loan to advance
    * @param currentState - Optional current state to optimize manager selection. If not provided,
    *                      the factory will retrieve the current state from the database
