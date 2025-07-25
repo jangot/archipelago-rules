@@ -19,7 +19,7 @@ export class EventSqsConsumerService {
           try {
             await this.executePullIteration(client, options, cb);
           } catch (error) {
-            this.logger.error('Pulling and execution error', error);
+            this.logger.error({ info: 'Pulling and execution error', error });
           }
         }
         client.destroy();
@@ -45,7 +45,7 @@ export class EventSqsConsumerService {
         await this.completeEvent(client, options.url, sqsMessage.ReceiptHandle!);
         this.logger.debug(`${sqsMessage.ReceiptHandle} execution was finished`);
       } catch (error) {
-        this.logger.error(`${sqsMessage.ReceiptHandle} execution error`, error);
+        this.logger.error({ info: `${sqsMessage.ReceiptHandle} execution error`, error });
       }
     }
   }

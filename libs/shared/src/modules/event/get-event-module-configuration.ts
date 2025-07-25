@@ -1,9 +1,9 @@
-import { ConfigService } from '@nestjs/config';
+import { getAWSClientConfiguration } from '@library/shared/infrastructure/configuration/get-aws-clients-configuration';
 import { IEventModuleConfig } from '@library/shared/modules/event/interface';
-import { getAwsClientsConfiguration } from '@library/shared/infrastructure/configuration/get-aws-clients-configuration';
+import { ConfigService } from '@nestjs/config';
 
 export function getEventModuleConfiguration(configService: ConfigService): IEventModuleConfig {
-  const clientConfig = getAwsClientsConfiguration(configService);
+  const clientConfig = getAWSClientConfiguration(configService);
 
   return {
     serviceName: configService.getOrThrow<string>('SERVICE_NAME'),

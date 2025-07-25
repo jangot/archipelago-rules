@@ -38,7 +38,7 @@ export class EventMapperService {
 
   public sqsMessageToCqrsEvent(sqsMessage: Message): ZirtueDistributedEvent<any> | null {
     const body: ISnsNotification = JSON.parse(sqsMessage.Body!);
-    if (body.MessageAttributes.eventSource?.Value === this.config.serviceName || !body.MessageAttributes.eventClass) {
+    if (body.MessageAttributes?.eventSource?.Value === this.config.serviceName || !body.MessageAttributes?.eventClass) {
       return null;
     }
 
