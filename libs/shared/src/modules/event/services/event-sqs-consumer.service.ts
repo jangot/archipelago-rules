@@ -16,21 +16,10 @@ export class EventSqsConsumerService {
         this.logger.log(`Pulling from queueUrl: ${config.queueUrl} was started`);
 
         while (isRunning) {
-          const newSqsMessages = await this.extractEvents(
-            client,
-            config.queueUrl,
-            config.maxNumberOfMessages,
-            config.waitTimeSeconds,
-          );
-          if (!newSqsMessages) {
-            this.logger.debug(`No messages from queueUrl: ${config.queueUrl}`);
-            continue;
-          }
-
-          this.logger.debug(`Got ${newSqsMessages.length} messages from queueUrl: ${config.queueUrl}`);
-          for (const sqsMessage of newSqsMessages) {
-            await cb(sqsMessage);
-            await this.completeEvent(client, config.queueUrl, sqsMessage.ReceiptHandle!);
+          try {
+            await this.executePullIteration(client, config, cb);
+          } catch (error) {
+            this.logger.error('Pulling and execution error', error);
           }
         }
         client.destroy();
@@ -42,17 +31,31 @@ export class EventSqsConsumerService {
     };
   }
 
-  private async extractEvents(
-    client: SQSClient,
-    queueUrl: string,
-    maxNumberOfMessages: number,
-    waitTimeSeconds: number
-  ): Promise<Message[] | undefined> {
+  private async executePullIteration(client: SQSClient, config: EventModuleSQSConfig, cb: (e: Message) => Promise<void>) {
+    const newSqsMessages = await this.extractEvents(client, config);
+    if (!newSqsMessages) {
+      this.logger.debug(`No messages from queueUrl: ${config.queueUrl}`);
+      return;
+    }
+
+    this.logger.debug(`Got ${newSqsMessages.length} messages from queueUrl: ${config.queueUrl}`);
+    for (const sqsMessage of newSqsMessages) {
+      try {
+        await cb(sqsMessage);
+        await this.completeEvent(client, config.queueUrl, sqsMessage.ReceiptHandle!);
+        this.logger.debug(`${sqsMessage.ReceiptHandle} execution was finished`);
+      } catch (error) {
+        this.logger.error(`${sqsMessage.ReceiptHandle} execution error`, error);
+      }
+    }
+  }
+
+  private async extractEvents(client: SQSClient, config: EventModuleSQSConfig): Promise<Message[] | undefined> {
     const response = await client.send(
       new ReceiveMessageCommand({
-        QueueUrl: queueUrl,
-        MaxNumberOfMessages: maxNumberOfMessages,
-        WaitTimeSeconds: waitTimeSeconds,
+        QueueUrl: config.queueUrl,
+        MaxNumberOfMessages: config.maxNumberOfMessages,
+        WaitTimeSeconds: config.waitTimeSeconds,
         MessageAttributeNames: ['All'],
       }),
     );

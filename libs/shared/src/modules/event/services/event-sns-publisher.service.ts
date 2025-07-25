@@ -31,16 +31,15 @@ export class EventSnsPublisherService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  public async publish<T extends ZirtueDistributedEvent<any>>(command: T): Promise<boolean> {
+  public async publish<T extends ZirtueDistributedEvent<any>>(event: T) {
     if (!this.client || !this.topicArn) {
-      return true;
+      this.logger.warn(`${event.constructor.name} was not published: SQS was not configured`);
+      return;
     }
 
-    const publishCommand = this.eventsMapper.cqrsEventToSnsCommand(command, this.topicArn);
+    const publishCommand = this.eventsMapper.cqrsEventToSnsCommand(event, this.topicArn);
     await this.client.send(publishCommand);
 
-    this.logger.debug(`${command.constructor.name} was published`);
-
-    return true;
+    this.logger.debug(`${event.constructor.name} was published`);
   }
 }
