@@ -2,13 +2,9 @@ import { PublishCommand } from '@aws-sdk/client-sns';
 import { Message } from '@aws-sdk/client-sqs';
 import { Inject, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
-
-import {
-  IEventModuleConfig,
-  ISnsNotification,
-  ZirtueDistributedEvent,
-} from '../';
+import { ZirtueDistributedEvent } from '../classes';
 import { ZIRTUE_EVENT_MODULE_CONFIG } from '../constants';
+import { IEventModuleConfig, ISnsNotification } from '../interface';
 import { EventDiscoveryService } from './event-discovery.service';
 
 @Injectable()
