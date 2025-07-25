@@ -6,6 +6,14 @@ import { FileOriginType } from '../../interfaces/file-origin-type.enum';
 /**
  * DTO for upserting billers by processing a biller file or resource.
  * This DTO might be used temporarily to test the biller file processing functionality.
+ *
+ * POST BODY EXAMPLE:
+ * {
+ *     "billerNetworkType": "rpps",
+ *     "fileOrigin": "s3",
+ *     "resource":"uploads/tabapay/billers.txt",
+ *     "outputBasePath": "test/"
+ * }
  */
 export class UpsertBillersRequestDto {
   /**
@@ -35,9 +43,20 @@ export class UpsertBillersRequestDto {
    */
   @ApiProperty({
     description: 'The resource identifier (file path, S3 key, etc)',
-    example: 'path/to/biller/file.txt',
+    example: 'path/uploads',
   })
   @IsString()
   @IsNotEmpty()
   resource!: string;
+
+  /**
+   * The resource identifier (file path, S3 key, etc).
+   */
+  @ApiProperty({
+    description: 'The path where the output files will be saved',
+    example: 'path/billers',
+  })
+  @IsString()
+  @IsNotEmpty()
+  outputBasePath!: string;
 } 

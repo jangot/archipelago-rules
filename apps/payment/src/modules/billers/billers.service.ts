@@ -17,8 +17,9 @@ export class BillersService {
    * @param input The request DTO containing biller network type, file origin, and resource
    */
   public async upsertBillers(input: UpsertBillersRequestDto): Promise<ProcessBillersResult> {
-    const { billerNetworkType, fileOrigin, resource } = input;
+    // All this should be triggered when a file is uploaded to the S3 bucket
+    const { billerNetworkType, fileOrigin, resource, outputBasePath } = input;
     const billerProvider = this.billerProviderFactory.create(billerNetworkType, fileOrigin);
-    return billerProvider.processBillers(billerNetworkType, resource, fileOrigin);
+    return billerProvider.processBillers(billerNetworkType, resource, fileOrigin, outputBasePath);
   }
 } 

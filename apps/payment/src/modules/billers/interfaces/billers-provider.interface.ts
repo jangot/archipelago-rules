@@ -12,11 +12,13 @@ export interface IBillerProvider {
    * @param billerNetworkType The type of biller network
    * @param resource The resource identifier (file path, S3 key, etc)
    * @param fileOrigin The origin of the file
+   * @param outputBasePath The base path for output files
    * @returns Promise<ProcessBillersResult>
    */
   processBillers(
     billerNetworkType: BillerNetworkType,
     resource: string,
-    fileOrigin: FileOriginType
+    fileOrigin: FileOriginType,
+    outputBasePath: string
   ): Promise<ProcessBillersResult>;
 }
