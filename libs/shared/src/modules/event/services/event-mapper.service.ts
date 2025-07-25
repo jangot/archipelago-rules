@@ -30,7 +30,7 @@ export class EventMapperService {
         },
         eventSource: {
           DataType: 'String',
-          StringValue: this.config.serviceName + '_',
+          StringValue: this.config.serviceName,
         },
       },
     });
@@ -39,8 +39,8 @@ export class EventMapperService {
   /**
    * Converts SQS message to CQRS event.
    *
-   * Automatically restores data types in payload if payload is a class.
-   * For Date fields, use @Type(() => Date) decorator in the payload class.
+   * Automatically restores data types in payload using class-transformer.
+   * For proper type conversion, use @Type() decorators in both payload class and event class.
    *
    * @param sqsMessage - SQS message to convert
    * @returns Converted event or null if event is not found or not suitable for current service
@@ -62,9 +62,10 @@ export class EventMapperService {
    *   activityType: string;
    * }
    *
-   * // Creating event with payload type specification
+   * // Creating event with payload type specification using @Type decorator
    * export class UserActivityEvent extends ZirtueDistributedEvent<UserActivityPayload> {
-   *   static readonly payloadType = UserActivityPayload;
+   *   @Type(() => UserActivityPayload)
+   *   declare payload: UserActivityPayload;
    * }
    *
    * // During deserialization, Date fields are automatically converted from strings to Date objects
@@ -82,21 +83,8 @@ export class EventMapperService {
     if (!eventClass) {
       return null;
     } else {
-      const rawPayload = JSON.parse(body.Message);
-
-      const payloadType = this.getPayloadType(eventClass);
-
-      const transformedPayload = payloadType
-        ? plainToInstance(payloadType, rawPayload)
-        : rawPayload;
-
-      const event = new eventClass(transformedPayload);
+      const event = plainToInstance(eventClass, { payload: JSON.parse(body.Message) });
       return event as ZirtueBaseEvent<any>;
     }
-  }
-
-  private getPayloadType(eventClass: any): any {
-    // Получаем тип payload из generic параметра события
-    return eventClass.payloadType || null;
   }
 }

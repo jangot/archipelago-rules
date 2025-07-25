@@ -6,10 +6,10 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
+import { EventPublisherService } from '@library/shared/modules/event';
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CoreService } from './core.service';
-import { EventPublisherService } from '@library/shared/modules/event';
 
 @Controller()
 @ApiTags('core')

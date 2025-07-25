@@ -9,9 +9,9 @@
 import { SharedModule } from '@library/shared';
 import { HealthModule } from '@library/shared/common/health/health.module';
 import { LoggerMiddleware } from '@library/shared/common/middleware/logger-middleware';
-import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
 import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
 import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
 import { CoreController } from './core.controller';
 import { CoreService } from './core.service';
