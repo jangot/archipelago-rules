@@ -1,7 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
-import { LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
-import { ContactType, LoanApplicationStates } from '@library/entity/enum';
+import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
+import { ContactType, LoanApplicationStates, LoanPaymentFrequencyCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
@@ -31,7 +31,15 @@ export class LoanApplicationsService {
 
     if (!result) throw new EntityNotFoundException(`Loan application: ${id} not found`);
 
-    return DtoMapper.toDto(result, LoanApplicationResponseDto);
+    const resultDto = DtoMapper.toDto(result, LoanApplicationResponseDto);
+    if (!resultDto) {
+      return null;
+    }
+
+    resultDto.loanFirstPaymentDate = resultDto.loanFirstPaymentDate || this.addMonths(new Date(), 1);
+    resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
+
+    return resultDto;
   }
 
   public async getAllLoanApplicationsByUserId(userId: string): Promise<LoanApplicationResponseDto[]> {
@@ -47,7 +55,19 @@ export class LoanApplicationsService {
 
     const result = await this.domainServices.loanServices.getPendingLoanApplicationsByUserId(userId);
 
-    return result.map((r) => DtoMapper.toDto(r, LoanApplicationResponseDto)).filter((dto) => dto !== null);
+    return result
+      .map((app) => {
+        const dto = DtoMapper.toDto(app, LoanApplicationResponseDto);
+        if (!dto) {
+          return null;
+        }
+
+        dto.loanFirstPaymentDate = dto.loanFirstPaymentDate || this.addMonths(new Date(), 1);
+        dto.loanPaymentSchedule = this.generatePaymentSchedule(dto);
+
+        return dto;
+      })
+      .filter((dto): dto is LoanApplicationResponseDto => dto !== null);
   }
 
   //TODO: Mike, can you review this to confirm the work is done at the right level?
@@ -96,7 +116,15 @@ export class LoanApplicationsService {
 
     if (!result) throw new EntityFailedToUpdateException('Failed to update Loan application');
 
-    return DtoMapper.toDto(result, LoanApplicationResponseDto);
+    const resultDto = DtoMapper.toDto(result, LoanApplicationResponseDto);
+    if (!resultDto) {
+      return null;
+    }
+
+    resultDto.loanFirstPaymentDate = resultDto.loanFirstPaymentDate || this.addMonths(new Date(), 1);
+    resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
+
+    return resultDto;
   }
 
 
@@ -221,15 +249,6 @@ export class LoanApplicationsService {
     this.logger.debug(`Successfully cancelled loan application ${loanApplicationId}`);
   } 
 
-  // TODO: This is a placeholder for the actual loan fee calculation
-  private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {
-    // Round to 2 decimal places
-    const loanFee = (data.loanAmount || 0) * 0.05;
-    const loanFeeRounded = Math.round(loanFee * 100) / 100;
-
-    return loanFeeRounded;
-  }
-
   private async validateApplicationLoanUser(id: string, userId: string) {
     const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(id);
     if (!loanApplication) throw new EntityNotFoundException(`Loan application: ${id} not found`);
@@ -244,4 +263,66 @@ export class LoanApplicationsService {
       throw new InvalidUserForLoanApplicationException('You are not authorized to accept or reject this loan application');
     }
   }
+
+  // #region Loan Application Payments (temporary implementation until the backend team revisits)
+
+  // TODO: This is a placeholder for the actual loan fee calculation
+  private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {
+    // Round to 2 decimal places
+    const loanFee = (data.loanAmount || 0) * 0.05;
+    const loanFeeRounded = Math.round(loanFee * 100) / 100;
+
+    return loanFeeRounded;
+  }
+
+
+  //TODO: This is a placeholder for future actual implementation of payment schedule generation
+  private generatePaymentSchedule(loanApplication: LoanApplicationResponseDto): LoanApplicationPaymentItemDto[] {
+    const { loanPaymentFrequency, loanAmount, loanServiceFee, loanPayments, loanFirstPaymentDate } = loanApplication;
+    if (!loanPaymentFrequency || !loanAmount || !loanServiceFee || !loanPayments || !loanFirstPaymentDate || loanPayments <= 0) {
+      return [];
+    }
+
+    if (loanPaymentFrequency === LoanPaymentFrequencyCodes.OneTime) {
+      return [{
+        paymentDate: loanFirstPaymentDate,
+        paymentAmount: loanAmount + loanServiceFee,
+        loanBalance: loanAmount + loanServiceFee,
+      }];
+    }
+
+    if (loanPaymentFrequency !== LoanPaymentFrequencyCodes.Monthly) {
+      this.logger.warn(`Unsupported loan payment frequency: ${loanPaymentFrequency}`);
+      return [];
+    }
+
+    const total = Number(loanAmount) + Number(loanServiceFee);
+    const round = (n: number) => Number(n.toFixed(2));
+    const basePayment = round(total / Number(loanPayments));
+
+    const paymentSchedule: LoanApplicationPaymentItemDto[] = [];
+    let balance = total;
+
+    for (let i = 0; i < loanPayments; i++) {
+      const payment = i === loanPayments - 1 ? round(balance) : basePayment;
+
+      paymentSchedule.push({
+        paymentDate: this.addMonths(loanFirstPaymentDate, i),
+        paymentAmount: payment,
+        loanBalance: balance,
+      });
+      balance = round(balance - payment);
+    }
+
+    return paymentSchedule;
+  }
+
+  // helper
+  public addMonths(d: Date, months: number): Date {
+    const res = new Date(d);
+    res.setMonth(res.getMonth() + months);
+    return res;
+  }
+
+  // #endregion  
 }

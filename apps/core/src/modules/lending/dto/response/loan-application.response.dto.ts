@@ -1,7 +1,8 @@
+import { LoanApplicationPaymentItemDto } from '@core/modules/lending/dto/response/';
 import { LoanType, LoanTypeCodes } from '@library/entity/enum';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
-import { IsDate, IsEmail, IsInt, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsDate, IsEmail, IsInt, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 @ApiSchema({ name: 'loanApplicationResponse' })
 export class LoanApplicationResponseDto {
@@ -170,4 +171,13 @@ export class LoanApplicationResponseDto {
   @IsOptional()
   @Expose()
   loanFirstPaymentDate: Date | null;
+
+  //loanPaymentSchedule
+  @ApiProperty({ description: 'Payment schedule for the loan application', type: [LoanApplicationPaymentItemDto], isArray: true, required: false })
+  @IsArray()
+  @Type(() => LoanApplicationPaymentItemDto)
+  @IsOptional()
+  @Expose()
+  loanPaymentSchedule: LoanApplicationPaymentItemDto[] | null;
 }
+  
