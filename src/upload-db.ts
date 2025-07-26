@@ -5,6 +5,9 @@ import { configuration } from './configuration';
 import { getAllMarkdownFiles, splitMarkdownToChunks, Chunk } from './read-md';
 import { getEmbedding } from './openai-api'
 
+// Флаг для принудительной перезагрузки (можно установить через переменную окружения)
+const FORCE_RELOAD = process.env.FORCE_RELOAD === 'true';
+
 async function checkServices() {
     console.log('🔍 Проверяю доступность сервисов...');
 
@@ -27,8 +30,37 @@ async function checkServices() {
     }
 }
 
+async function deleteCollectionIfExists(collectionName: string): Promise<boolean> {
+    try {
+        await qdrant.getCollection(collectionName);
+        console.log(`🗑️  Удаляю существующую коллекцию "${collectionName}"...`);
+        await qdrant.deleteCollection(collectionName);
+        console.log(`✅ Коллекция "${collectionName}" успешно удалена`);
+        return true;
+    } catch (error) {
+        // Коллекция не существует
+        console.log(`ℹ️  Коллекция "${collectionName}" не существует`);
+        return false;
+    }
+}
+
+async function createCollection(collectionName: string) {
+    console.log(`📚 Создаю новую коллекцию "${collectionName}"...`);
+    await qdrant.createCollection(collectionName, {
+        vectors: {
+            size: 1536,
+            distance: 'Cosine',
+        },
+    });
+    console.log(`✅ Коллекция "${collectionName}" успешно создана`);
+}
+
 async function main() {
     console.log('🚀 Запуск импорта markdown файлов в векторную базу данных...');
+
+    if (FORCE_RELOAD) {
+        console.log('🔄 Режим принудительной перезагрузки включен');
+    }
 
     // Проверяем доступность сервисов
     await checkServices();
@@ -44,22 +76,27 @@ async function main() {
 
     try {
         // Проверяем существование коллекции
+        let collectionExists = false;
         try {
             await qdrant.getCollection(configuration.vectorDBName);
+            collectionExists = true;
             console.log('📚 Коллекция уже существует');
 
-            // Спрашиваем пользователя, хочет ли он перезаписать коллекцию
-            console.log('⚠️  Коллекция уже существует. Для перезаписи удалите её вручную или измените VECTOR_DB_NAME в .env');
-            return;
+            if (FORCE_RELOAD) {
+                // Принудительная перезагрузка - удаляем существующую коллекцию
+                await deleteCollectionIfExists(configuration.vectorDBName);
+                await createCollection(configuration.vectorDBName);
+            } else {
+                // Спрашиваем пользователя, хочет ли он перезаписать коллекцию
+                console.log('⚠️  Коллекция уже существует. Для перезаписи:');
+                console.log('   1. Установите переменную окружения FORCE_RELOAD=true');
+                console.log('   2. Или удалите коллекцию вручную');
+                console.log('   3. Или измените VECTOR_DB_NAME в .env');
+                return;
+            }
         } catch {
             // Коллекция не существует, создаём новую
-            await qdrant.createCollection(configuration.vectorDBName, {
-                vectors: {
-                    size: 1536,
-                    distance: 'Cosine',
-                },
-            });
-            console.log('📚 Создана новая коллекция');
+            await createCollection(configuration.vectorDBName);
         }
 
         // Обрабатываем каждый файл

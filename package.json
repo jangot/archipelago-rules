@@ -6,6 +6,8 @@
     "test": "tsc && node ./dist/test.js",
     "build": "tsc",
     "upload-db": "tsc && node ./dist/upload-db.js",
+    "reload-db": "tsc && node ./dist/reload-db.js",
+    "upload-db:force": "FORCE_RELOAD=true tsc && node ./dist/upload-db.js",
     "check-qdrant": "tsc && node ./dist/check-qdrant.js",
     "migrate-users": "tsc && node ./dist/migrate-users.js",
     "manage-users": "tsc && node ./dist/manage-users.js",
