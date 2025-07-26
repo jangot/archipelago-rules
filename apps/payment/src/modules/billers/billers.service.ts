@@ -20,6 +20,6 @@ export class BillersService {
     // All this should be triggered when a file is uploaded to the S3 bucket
     const { billerNetworkType, fileOrigin, resource, outputBasePath } = input;
     const billerProvider = this.billerProviderFactory.create(billerNetworkType, fileOrigin);
-    return billerProvider.processBillers(billerNetworkType, resource, fileOrigin, outputBasePath);
+    return billerProvider.processBillers(resource, outputBasePath);
   }
 } 

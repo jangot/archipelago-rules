@@ -1,8 +1,6 @@
-import { BillerNetworkType } from '@library/entity/enum/biller-network.type';
 import { IFileStorageService } from '@library/shared/common/helper/ifile-storage.service';
 import { Readable } from 'stream';
 import { ProcessBillersResult } from '../interfaces/billers-provider.interface';
-import { FileOriginType } from '../interfaces/file-origin-type.enum';
 import { BillerFileInfo, RppsBillerSplitter } from '../processors/rpps-biller-splitter';
 import { RppsFileProcessor } from '@payment/modules/billers/processors';
 import { BillerRepository } from '../repositories/biller.repository';
@@ -23,16 +21,12 @@ export class RppsBillerProvider extends BaseBillerProvider {
 
   /**
    * Processes billers for the RPPS network.
-   * @param billerNetworkType The type of biller network
    * @param resource The resource identifier (file path, S3 key, etc)
-   * @param fileOrigin The origin of the file
    * @param outputBasePath The base path for output files
    * @returns ProcessBillersResult
    */
   public async processBillers(
-    billerNetworkType: BillerNetworkType,
     resource: string,
-    fileOrigin: FileOriginType,
     outputBasePath: string
   ): Promise<ProcessBillersResult> {
     let processed = 0;
@@ -41,7 +35,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
     const errors: string[] = [];
     try {
       const fileStream: Readable = await this.fileStorage.readStream(resource);
-      // Step 1: Parse TXT to JSON
+      // Step 1: Parse TXT to JSONÏ
       const jsonFilePath = await this.rppsFileProcessor.parseBillersFile(fileStream, outputBasePath, this.fileStorage);
       // Step 2: Split JSON file into per-biller files
       const billerFiles: BillerFileInfo[] = await this.rppsBillerSplitter.splitJsonFileByBiller(jsonFilePath, outputBasePath, this.fileStorage);

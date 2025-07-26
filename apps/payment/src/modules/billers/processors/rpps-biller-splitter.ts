@@ -11,20 +11,20 @@ export interface BillerFileInfo {
 }
 
 /**
- * RppsBillerSplitter splits a big JSON file into per-biller files and returns their info.
+ * RppsBillerSplitter splits a JSON file into per-biller files and returns their info.
  */
 @Injectable()
 export class RppsBillerSplitter {
   private readonly logger: Logger = new Logger(RppsBillerSplitter.name);
 
   /**
-   * Splits the big JSON file by biller, writes each as a JSON file, and returns their info.
-   * @param bigJsonFilePath The path to the big JSON file
+   * Splits the JSON file by biller, writes each as a JSON file, and returns their info.
+   * @param jsonFilePath The path to the JSON file
    * @param outputBasePath The base path for output folders
    * @param fileStorage The file storage service to use
    * @returns Array of biller file info
    */
-  public async splitJsonFileByBiller(bigJsonFilePath: string, outputBasePath: string, fileStorage: IFileStorageService): Promise<BillerFileInfo[]> {
+  public async splitJsonFileByBiller(jsonFilePath: string, outputBasePath: string, fileStorage: IFileStorageService): Promise<BillerFileInfo[]> {
     // Determine output folder name (date + increment)
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10);
@@ -37,8 +37,8 @@ export class RppsBillerSplitter {
     const outputFolder = join(outputBasePath, folderName);
     await fileStorage.ensureDir(outputFolder);
 
-    // Stream the big JSON file and split by biller
-    const readStream = await fileStorage.readStream(bigJsonFilePath);
+    // Stream the JSON file and split by biller
+    const readStream = await fileStorage.readStream(jsonFilePath);
     const pipeline = readStream.pipe(jsonParser()).pipe(streamArray());
 
     const billerFiles: BillerFileInfo[] = [];
