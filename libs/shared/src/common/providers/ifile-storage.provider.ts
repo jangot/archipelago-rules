@@ -3,7 +3,7 @@ import { Readable } from 'stream';
 /**
  * Interface for file storage operations, supporting both local and S3 backends.
  */
-export interface IFileStorageService {
+export interface IFileStorageProvider {
   /**
    * Writes a stream to the specified path.
    * @param path The destination path (relative or bucket key).

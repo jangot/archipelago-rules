@@ -1,6 +1,6 @@
-import { IFileStorageService } from '@library/shared/common/helper/ifile-storage.service';
-import { LocalFileStorageService } from '@library/shared/common/helper/local-file-storage.service';
-import { S3FileStorageService } from '@library/shared/common/helper/s3-file-storage.service';
+import { IFileStorageProvider } from '@library/shared/common/providers/ifile-storage.provider';
+import { LocalFileStorageProvider } from '@library/shared/common/providers/local-file-storage.provider';
+import { S3FileStorageProvider } from '@library/shared/common/providers/s3-file-storage.provider';
 import { Injectable } from '@nestjs/common';
 import { FileOriginType } from '../interfaces/file-origin-type.enum';
 
@@ -9,12 +9,12 @@ import { FileOriginType } from '../interfaces/file-origin-type.enum';
  */
 @Injectable()
 export class FileStorageFactory {
-  public create(origin: FileOriginType): IFileStorageService {
+  public create(origin: FileOriginType): IFileStorageProvider {
     switch (origin) {
       case FileOriginType.Local:
-        return new LocalFileStorageService();
+        return new LocalFileStorageProvider();
       case FileOriginType.S3:
-        return new S3FileStorageService();
+        return new S3FileStorageProvider();
       default:
         throw new Error(`Unsupported file origin: ${origin}`);
     }

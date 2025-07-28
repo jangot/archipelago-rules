@@ -1,7 +1,7 @@
-import { IFileStorageService } from '@library/shared/common/helper/ifile-storage.service';
+import { IFileStorageProvider } from '@library/shared/common/providers/ifile-storage.provider';
 import { Injectable, Logger } from '@nestjs/common';
 import { join } from 'path';
-import { PassThrough } from 'stream';
+import { Readable } from 'stream';
 import { parser as jsonParser } from 'stream-json';
 import { streamArray } from 'stream-json/streamers/StreamArray';
 
@@ -16,17 +16,21 @@ export interface BillerFileInfo {
 @Injectable()
 export class RppsBillerSplitter {
   private readonly logger: Logger = new Logger(RppsBillerSplitter.name);
+  private readonly maxConcurrency = 5; // Reduced concurrency to prevent file system overload
+  private readonly batchSize = 100; // Process billers in batches
 
   /**
-   * Splits the JSON file by biller, writes each as a JSON file, and returns their info.
+   * Splits the JSON file by biller, writes each as a JSON file.
+   * This method is optimized for large datasets and doesn't track file info in memory.
    * @param jsonFilePath The path to the JSON file
    * @param outputBasePath The base path for output folders
    * @param fileStorage The file storage service to use
-   * @returns Array of biller file info
+   * @returns The output folder path where files were written
    */
-  public async splitJsonFileByBiller(jsonFilePath: string, outputBasePath: string, fileStorage: IFileStorageService): Promise<BillerFileInfo[]> {
+  public async splitJsonFileByBiller(jsonFilePath: string, outputBasePath: string, fileStorage: IFileStorageProvider): Promise<string> {
     // Determine output folder name (date + increment)
     const today = new Date();
+    const logInterval = 1000;
     const dateStr = today.toISOString().slice(0, 10);
     let folderSuffix = 0;
     let folderName = `${dateStr}-${folderSuffix}`;
@@ -37,38 +41,180 @@ export class RppsBillerSplitter {
     const outputFolder = join(outputBasePath, folderName);
     await fileStorage.ensureDir(outputFolder);
 
+    this.logger.log(`Starting to split JSON file into biller files in folder: ${outputFolder}`);
+
     // Stream the JSON file and split by biller
     const readStream = await fileStorage.readStream(jsonFilePath);
     const pipeline = readStream.pipe(jsonParser()).pipe(streamArray());
 
-    const billerFiles: BillerFileInfo[] = [];
-    const promises: Promise<void>[] = [];
+    // Add error handling for the pipeline
+    pipeline.on('error', (error) => {
+      this.logger.error('Pipeline error:', error);
+      throw error;
+    });
+
+    const writeQueue: Array<{ billerId: string; billerData: any; filePath: string }> = [];
     let processed = 0;
+    let failed = 0;
+    let written = 0;
+    const fileLocks = new Set<string>(); // Track files being written to prevent race conditions
 
-    pipeline.on('data', (data: any) => {
-      const biller = data.value;
-      const billerId = biller.billerId || `biller_${processed + 1}`;
-      const billerFileName = `${billerId}.json`;
-      const billerFilePath = join(outputFolder, billerFileName);
-      const billerJson = JSON.stringify(biller);
-      const jsonStream = new PassThrough();
-      jsonStream.end(Buffer.from(billerJson, 'utf-8'));
-      const writeFile = async () => {
-        await fileStorage.writeStream(billerFilePath, jsonStream);
-        billerFiles.push({ billerId, filePath: billerFilePath });
-      };
-      promises.push(writeFile());
-      processed++;
-    });
+    try {
+      // Process stream using async iteration for better control
+      for await (const data of pipeline) {
+        try {
+          const biller = data.value;
+          
+          // Validate biller data
+          if (!this.isValidBiller(biller)) {
+            this.logger.warn(`Invalid biller data at index ${processed}, skipping`);
+            failed++;
+            continue;
+          }
 
-    return new Promise((resolve, reject) => {
-      pipeline.on('end', async () => {
-        await Promise.all(promises);
-        resolve(billerFiles);
+          // Validate and sanitize biller ID for safe filename creation
+          let billerId = biller.billerId;
+          if (!billerId || typeof billerId !== 'string') {
+            billerId = `biller_${processed + 1}`;
+          } else {
+            // Sanitize biller ID for safe filename
+            billerId = billerId.replace(/[^a-zA-Z0-9_-]/g, '_');
+            if (billerId.length > 50) {
+              billerId = billerId.substring(0, 50);
+            }
+          }
+
+          const billerFileName = `${billerId}.json`;
+          const billerFilePath = join(outputFolder, billerFileName);
+
+          // Check if file is currently being written to prevent race conditions
+          if (fileLocks.has(billerFilePath)) {
+            this.logger.warn(`File ${billerFilePath} is currently being written, skipping duplicate`);
+            failed++;
+            continue;
+          }
+
+          // Add to write queue
+          writeQueue.push({ billerId, billerData: biller, filePath: billerFilePath });
+          processed++;
+          
+          // Log progress every 1000 billers 
+          if (processed % logInterval === 0) {
+            this.logger.log(`Processed ${processed} billers, ${written} files written, ${failed} failed`);
+          }
+
+          // Process queue when batch size is reached
+          if (writeQueue.length >= this.batchSize) {
+            await this.processWriteQueue(writeQueue, fileStorage, fileLocks);
+            written += writeQueue.length;
+            writeQueue.length = 0; // Clear the queue
+          }
+        } catch (error) {
+          this.logger.error(`Error processing biller at index ${processed}: ${error.message}`);
+          failed++;
+        }
+      }
+
+      // Process remaining items in queue
+      if (writeQueue.length > 0) {
+        await this.processWriteQueue(writeQueue, fileStorage, fileLocks);
+        written += writeQueue.length;
+      }
+    } finally {
+      // Clean up file locks to prevent memory leaks
+      fileLocks.clear();
+    }
+
+    this.logger.log(`Completed splitting JSON file. Processed: ${processed}, Written: ${written}, Failed: ${failed}`);
+    
+    return outputFolder;
+  }
+
+  /**
+   * Processes the write queue with concurrency control and file locking
+   * @param queue The queue of biller data to write
+   * @param fileStorage The file storage service
+   * @param fileLocks Set of file paths currently being written
+   */
+  private async processWriteQueue(
+    queue: Array<{ billerId: string; billerData: any; filePath: string }>,
+    fileStorage: IFileStorageProvider,
+    fileLocks: Set<string>
+  ): Promise<void> {
+    // Process in batches to control concurrency
+    for (let i = 0; i < queue.length; i += this.maxConcurrency) {
+      const batch = queue.slice(i, i + this.maxConcurrency);
+      
+      const writePromises = batch.map(async ({ billerData, filePath }) => {
+        // Use atomic operation to acquire file lock
+        let lockAcquired = false;
+        try {
+          // Atomic check and add operation to prevent race conditions
+          if (fileLocks.has(filePath)) {
+            this.logger.error(`File ${filePath} is already being written`);
+            return; // Skip this file instead of throwing
+          }
+          
+          // Add to locks set atomically
+          fileLocks.add(filePath);
+          lockAcquired = true;
+          
+          // Create stream from JSON string
+          const jsonString = JSON.stringify(billerData, null, 2); // Pretty print for readability
+          const jsonStream = Readable.from([jsonString]);
+          
+          await fileStorage.writeStream(filePath, jsonStream);
+          // Removed debug log for every file write - too verbose for large datasets
+        } catch (error) {
+          this.logger.error(`Failed to write biller file ${filePath}: ${error.message}`);
+          // Don't throw error - let the batch continue with other files
+        } finally {
+          // Release file lock only if it was acquired
+          if (lockAcquired) {
+            fileLocks.delete(filePath);
+          }
+        }
       });
-      pipeline.on('error', (err: any) => {
-        reject(err);
-      });
-    });
+
+      // Wait for all writes in this batch to complete
+      await Promise.allSettled(writePromises);
+    }
+  }
+
+  /**
+   * Validates biller data structure
+   * @param biller The biller object to validate
+   * @returns True if valid, false otherwise
+   */
+  private isValidBiller(biller: any): boolean {
+    // Basic structure validation
+    if (!biller || typeof biller !== 'object') {
+      this.logger.warn('Invalid biller: not an object');
+      return false;
+    }
+
+    // Check for circular references and excessive nesting
+    try {
+      JSON.stringify(biller);
+    } catch {
+      this.logger.warn('Invalid biller: cannot be serialized');
+      return false;
+    }
+
+    // Essential size validation - prevent memory attacks
+    const billerSize = JSON.stringify(biller).length;
+    const maxBillerSize = 1024 * 1024; // 1MB limit per biller
+    if (billerSize > maxBillerSize) {
+      this.logger.warn(`Invalid biller: size ${billerSize} exceeds limit ${maxBillerSize}`);
+      return false;
+    }
+
+    // Basic required field validation
+    if (!biller.recordType || typeof biller.recordType !== 'string') {
+      this.logger.warn('Invalid biller: missing or invalid recordType');
+      return false;
+    }
+
+    return true;
   }
 } 

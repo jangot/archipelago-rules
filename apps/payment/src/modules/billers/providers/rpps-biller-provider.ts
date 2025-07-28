@@ -1,8 +1,8 @@
-import { IFileStorageService } from '@library/shared/common/helper/ifile-storage.service';
+import { IFileStorageProvider } from '@library/shared/common/providers/ifile-storage.provider';
+import { RppsFileProcessor } from '@payment/modules/billers/processors';
 import { Readable } from 'stream';
 import { ProcessBillersResult } from '../interfaces/billers-provider.interface';
-import { BillerFileInfo, RppsBillerSplitter } from '../processors/rpps-biller-splitter';
-import { RppsFileProcessor } from '@payment/modules/billers/processors';
+import { RppsBillerSplitter } from '../processors/rpps-biller-splitter';
 import { BillerRepository } from '../repositories/biller.repository';
 import { BaseBillerProvider } from './base-biller-provider';
 
@@ -11,7 +11,7 @@ import { BaseBillerProvider } from './base-biller-provider';
  */
 export class RppsBillerProvider extends BaseBillerProvider {
   constructor(
-    private readonly fileStorage: IFileStorageService,
+    private readonly fileStorage: IFileStorageProvider,
     private readonly rppsFileProcessor: RppsFileProcessor,
     private readonly rppsBillerSplitter: RppsBillerSplitter,
     private readonly billerRepository: BillerRepository,
@@ -29,23 +29,87 @@ export class RppsBillerProvider extends BaseBillerProvider {
     resource: string,
     outputBasePath: string
   ): Promise<ProcessBillersResult> {
-    let processed = 0;
+    const processed = 0;
     const updated = 0;
     const skipped = 0;
     const errors: string[] = [];
+    let fileStream: Readable | null = null;
+    let jsonFilePath: string | null = null;
+    let billerFilesFolder: string | null = null;
+
     try {
-      const fileStream: Readable = await this.fileStorage.readStream(resource);
-      // Step 1: Parse TXT to JSONÏ
-      const jsonFilePath = await this.rppsFileProcessor.parseBillersFile(fileStream, outputBasePath, this.fileStorage);
-      // Step 2: Split JSON file into per-biller files
-      const billerFiles: BillerFileInfo[] = await this.rppsBillerSplitter.splitJsonFileByBiller(jsonFilePath, outputBasePath, this.fileStorage);
-      processed = billerFiles.length;
-      // Step 3: For each biller file, calculate CRC32 and update DB if needed
+      // Essential security validation - minimal but critical
+      if (!resource || typeof resource !== 'string') {
+        this.logger.error('Invalid resource parameter');
+        return { processedCount: 0, errors: ['Invalid resource parameter'] };
+      }
+
+      // Path traversal protection - critical security
+      if (resource.includes('..') || resource.includes('//')) {
+        this.logger.error('Invalid resource path: contains path traversal characters');
+        return { processedCount: 0, errors: ['Invalid resource path'] };
+      }
+
+      if (!(await this.fileStorage.exists(resource))) {
+        this.logger.error(`${resource} does not exist`);
+        return { processedCount: processed, errors };
+      }
+      this.logger.log(`Starting biller processing for resource: ${resource}`);
+      
+      // Step 1: Read the input file stream
+      fileStream = await this.fileStorage.readStream(resource);
+      
+      // Step 2: Parse TXT to JSON
+      jsonFilePath = await this.rppsFileProcessor.parseBillersFile(fileStream, outputBasePath, this.fileStorage);
+      this.logger.log(`Successfully parsed TXT to JSON: ${jsonFilePath}`);
+      
+      // Step 3: Split JSON file into per-biller files
+      billerFilesFolder = await this.rppsBillerSplitter.splitJsonFileByBiller(jsonFilePath, outputBasePath, this.fileStorage);
+      this.logger.log(`Successfully split JSON into biller files: ${billerFilesFolder}`);
+      
+      // Step 4: For each biller file, calculate CRC32 and update DB if needed
       // TODO Add logic to calculate CRC32 and update DB
+      // This would involve:
+      // - Reading each biller file from billerFilesFolder
+      // - Calculating CRC32 checksum
+      // - Comparing with existing biller in DB
+      // - Updating if different
+      
+      this.logger.log(`Biller processing completed successfully. Processed: ${processed}, Updated: ${updated}, Skipped: ${skipped}`);
       return { processedCount: processed, errors };
     } catch (error) {
-      errors.push(error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const fullErrorMessage = `Biller processing failed: ${errorMessage}`;
+      errors.push(fullErrorMessage);
+      
+      this.logger.error('Biller processing failed', {
+        resource,
+        outputBasePath,
+        jsonFilePath,
+        billerFilesFolder,
+        error: error instanceof Error ? error.stack : error,
+      });
+      
       return { processedCount: processed, errors };
+    } finally {
+      // Clean up resources
+      if (fileStream) {
+        fileStream.destroy();
+        this.logger.debug('File stream destroyed');
+      }
+      
+      // Optionally clean up temporary files if processing failed
+      if (errors.length > 0) {
+        try {
+          if (jsonFilePath && await this.fileStorage.exists(jsonFilePath)) {
+            // In a production we might want to keep temporary files for debugging. If not needed just remove it.
+            // await this.fileStorage.delete(jsonFilePath);
+            this.logger.debug(`Temporary JSON file preserved for debugging: ${jsonFilePath}`);
+          }
+        } catch (cleanupError) {
+          this.logger.warn('Failed to cleanup temporary files', { error: cleanupError });
+        }
+      }
     }
   }
 }

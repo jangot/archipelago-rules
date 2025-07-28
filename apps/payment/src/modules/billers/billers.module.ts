@@ -1,4 +1,4 @@
-import { LocalFileStorageService } from '@library/shared/common/helper/local-file-storage.service';
+import { LocalFileStorageProvider } from '@library/shared/common/providers/local-file-storage.provider';
 import { Biller } from '@library/shared/domain/entity/biller.entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -25,7 +25,7 @@ import { BillerRepository } from './repositories/biller.repository';
     RppsFileProcessor,
     RppsBillerSplitter,
     BillerRepository,
-    LocalFileStorageService,
+    LocalFileStorageProvider,
   ],
 })
 export class BillersModule {} 
