@@ -7,6 +7,7 @@ import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
 import { NotificationModules } from './index.modules';
 import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
+import { NOTIFICATION_EVENT_HANDLERS } from './event-handlers';
 
 /**
  * Main notification module that provides endpoints for notification management
@@ -29,6 +30,7 @@ import { NotificationService } from './notification.service';
   providers: [
     NotificationService,
     Logger,
+    ...NOTIFICATION_EVENT_HANDLERS,
   ],
   exports: [NotificationService],
 })

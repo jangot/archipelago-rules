@@ -1,5 +1,6 @@
 import { NotificationType } from '@library/entity/enum/notification.type';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { NotificationDefinition } from './notification.definition.entity';
 
 /**
  * Entity representing a notification definition item
@@ -19,6 +20,13 @@ export class NotificationDefinitionItem {
    */
   @Column('uuid', { nullable: false })
   notificationDefinitionId: string;
+
+  /**
+   * Parent notification definition
+   */
+  @ManyToOne(() => NotificationDefinition, (definition) => definition.items)
+  @JoinColumn({ name: 'notificationDefinitionId' })
+  notificationDefinition: NotificationDefinition;
 
   /**
    * Order index for sorting notification items within a definition

@@ -31,7 +31,7 @@ export class NotificationService {
 
     const definition = EntityMapper.toEntity(notificationDefinition, NotificationDefinition);
     const result = await this.domainServices.notificationServices.createDefinition(definition);
-    
+
     return DtoMapper.toDto(result, NotificationDefinitionResponseDto);
   }
 
@@ -55,5 +55,10 @@ export class NotificationService {
     const result = await this.domainServices.notificationServices.deleteDefinition(id);
 
     return result;
+  }
+
+  async findByNameWithItems(name: string): Promise<NotificationDefinition | null> {
+    this.logger.debug(`Finding notification definition by name: ${name}`);
+    return this.domainServices.notificationServices.findByNameWithItems(name);
   }
 }

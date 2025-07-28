@@ -1,8 +1,9 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { NotificationDefinitionItem } from './notification.definition.item.entity';
 
 /**
  * Entity representing a notification definition
- * 
+ *
  * @description This entity stores notification definitions used by the notification system
  */
 @Entity('notification_definitions', { schema: 'notifications' })
@@ -18,6 +19,12 @@ export class NotificationDefinition {
    */
   @Column('text', { nullable: false })
   name: string;
+
+  /**
+   * Notification definition items associated with this definition
+   */
+  @OneToMany(() => NotificationDefinitionItem, (item) => item.notificationDefinition)
+  items: NotificationDefinitionItem[];
 
   /**
    * Timestamp when this notification definition was created
