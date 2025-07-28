@@ -1,20 +1,20 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Body, 
-  Param, 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
   HttpStatus,
   HttpCode,
   HttpException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiOkResponse, ApiNoContentResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse } from '@nestjs/swagger';
-import { NotificationService } from './notification.service';
-import { CreateNotificationDefinitionRequestDto } from './dto/request/create-notification-definition.request.dto';
-import { UpdateNotificationDefinitionRequestDto } from './dto/request/update-notification-definition.request.dto';
-import { NotificationDefinitionResponseDto } from './dto/response/notification-definition.response.dto';
+import { NotificationService } from '../services/notification.service';
+import { CreateNotificationDefinitionRequestDto } from '../dto/request/create-notification-definition.request.dto';
+import { UpdateNotificationDefinitionRequestDto } from '../dto/request/update-notification-definition.request.dto';
+import { NotificationDefinitionResponseDto } from '../dto/response/notification-definition.response.dto';
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
 
 @ApiTags('notifications')
@@ -26,7 +26,7 @@ export class NotificationController {
 
   /**
    * Retrieve all notification definitions
-   * 
+   *
    * @returns Array of NotificationDefinitionResponseDto DTOs
    */
   @Get('notification-definitions')
@@ -45,7 +45,7 @@ export class NotificationController {
 
   /**
    * Retrieve a notification definition by ID
-   * 
+   *
    * @param id - The ID of the notification definition to retrieve
    * @returns A NotificationDefinitionResponseDto DTO
    */
@@ -70,7 +70,7 @@ export class NotificationController {
 
   /**
    * Create a new notification definition
-   * 
+   *
    * @param createDto - The DTO containing the data for the new definition
    * @returns A NotificationDefinitionResponseDto DTO for the created definition
    */
@@ -86,7 +86,7 @@ export class NotificationController {
 
   /**
    * Update an existing notification definition
-   * 
+   *
    * @param id - The ID of the notification definition to update
    * @param updateDto - The DTO containing the update data
    * @returns A NotificationDefinitionResponseDto DTO for the updated definition
@@ -111,7 +111,7 @@ export class NotificationController {
 
   /**
    * Delete a notification definition
-   * 
+   *
    * @param id - The ID of the notification definition to delete
    */
   @Delete('notification-definitions/:id')
@@ -122,7 +122,7 @@ export class NotificationController {
   @ApiNotFoundResponse({ description: 'The notification definition was not found', isArray: false })
   async deleteDefinition(@Param('id') id: string): Promise<boolean> {
     const result = await this.notificationService.deleteDefinition(id);
-    
+
     if (!result) {
       throw new HttpException('Notification Definition not found', HttpStatus.NOT_FOUND);
     }

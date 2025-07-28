@@ -2,7 +2,7 @@ import { NotificationEvent } from '@library/shared/events/notification.event';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventsHandler } from '@nestjs/cqrs';
 
-import { NotificationService } from '@notification/notification.service';
+import { NotificationService } from '@notification/services/notification.service';
 
 @Injectable()
 @EventsHandler(NotificationEvent)

@@ -2,17 +2,17 @@ import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NotificationDefinition } from '@notification/domain/entity';
+import { NotificationDefinition } from '../../domain/entity';
 
 /**
  * Implementation of the NotificationDefinition repository
- * 
+ *
  * @description Handles database operations for NotificationDefinition entities using TypeORM
  */
 @Injectable()
 export class NotificationDefinitionRepository extends RepositoryBase<NotificationDefinition> {
   private readonly logger: Logger = new Logger(NotificationDefinitionRepository.name);
-  
+
   constructor(
     @InjectRepository(NotificationDefinition)
     protected readonly repository: Repository<NotificationDefinition>,

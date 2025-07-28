@@ -1,9 +1,12 @@
 
+import { NotificationDefinitionItemRepository } from './notification.definition.item.repository';
 import { NotificationDefinitionRepository } from './notification.definition.repository';
 
+export * from './notification.definition.item.repository';
 export * from './notification.definition.repository';
 
 export const CustomNotificationRepositories = [
-  { provide: NotificationDefinitionRepository, useClass: NotificationDefinitionRepository },
+  NotificationDefinitionRepository,
+  NotificationDefinitionItemRepository,
   // Add other notification repositories here
 ];

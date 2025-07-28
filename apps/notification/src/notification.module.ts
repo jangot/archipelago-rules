@@ -1,13 +1,15 @@
 import { SharedModule } from '@library/shared';
 import { HealthModule } from '@library/shared/common/health/health.module';
-import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
 import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
-import { NotificationModules } from './index.modules';
-import { NotificationController } from './notification.controller';
-import { NotificationService } from './notification.service';
 import { NOTIFICATION_EVENT_HANDLERS } from './event-handlers';
+import { NotificationModules } from './index.modules';
+import { NotificationDefinitionItemController } from './controllers/notification-definition-item.controller';
+import { NotificationDefinitionItemService } from './services/notification-definition-item.service';
+import { NotificationController } from './controllers/notification.controller';
+import { NotificationService } from './services/notification.service';
 
 /**
  * Main notification module that provides endpoints for notification management
@@ -22,16 +24,17 @@ import { NOTIFICATION_EVENT_HANDLERS } from './event-handlers';
       inject: [ConfigService],
     }),
     GracefulShutdownModule.forRoot(),
-    SharedModule.forRoot([NotificationController]),
+    SharedModule.forRoot([NotificationController, NotificationDefinitionItemController]),
     HealthModule,
     ...NotificationModules,
   ],
-  controllers: [NotificationController],
+  controllers: [NotificationController, NotificationDefinitionItemController],
   providers: [
     NotificationService,
+    NotificationDefinitionItemService,
     Logger,
     ...NOTIFICATION_EVENT_HANDLERS,
   ],
-  exports: [NotificationService],
+  exports: [NotificationService, NotificationDefinitionItemService],
 })
 export class NotificationModule {}
