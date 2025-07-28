@@ -2,13 +2,9 @@ import { DbSchemaCodes, TypeOrmModuleConfiguration } from '@library/shared/commo
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { NotificationDefinition } from '../domain/entity/notification.definition.entity';
+import { NotificationEntities } from '../domain/entity';
 import { CustomNotificationRepositories } from '../infrastructure/repositories';
 import { NotificationDataService } from './data.service';
-
-export const NotificationEntities = [
-  NotificationDefinition,
-];
 
 /**
  * Data module for the Notification service
@@ -24,7 +20,7 @@ export const NotificationEntities = [
 
   ],
   providers: [
-    NotificationDataService, 
+    NotificationDataService,
     ...registerCustomRepositoryProviders(NotificationEntities), ...CustomNotificationRepositories,
   ],
   exports: [NotificationDataService],
