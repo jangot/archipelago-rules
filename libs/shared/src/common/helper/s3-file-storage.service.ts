@@ -9,9 +9,29 @@ export class S3FileStorageService implements IFileStorageService {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
-  constructor(s3: S3Client, bucket: string) {
-    this.s3 = s3;
-    this.bucket = bucket;
+  constructor() {
+    // TODO: Confirm way in which we're going to connect to AWS
+    // Configuration values from environment
+    const region = process.env.AWS_REGION;
+    const endpoint = process.env.AWS_ENDPOINT_URL ;
+    const bucket = process.env.AWS_S3_BUCKET ;
+    const isLocal = process.env.IS_LOCAL === '1';
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID || 'test';
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || 'test';
+    
+    this.bucket = bucket!;
+    
+    const credentials = isLocal ? {
+      accessKeyId,
+      secretAccessKey,
+    } : undefined;
+
+    this.s3 = new S3Client({
+      region,
+      endpoint,
+      forcePathStyle: true,
+      credentials,
+    });
   }
 
   /**
