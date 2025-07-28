@@ -100,11 +100,6 @@ export class LoanApplicationRequestDto {
   @IsOptional()
   borrowerPaymentAccountId: string | null;
 
-  @ApiProperty({ description: 'Date when the borrower submitted the application', type: 'string', format: 'date-time', example: '2023-10-01T12:00:00Z', required: false })
-  @IsDate()
-  @IsOptional()
-  borrowerSubmittedAt: Date | null;
-
   // Loan fields
   @ApiProperty({ description: 'Type of the loan', type: 'string', example: 'DirectBillPay', required: false })
   @IsString()

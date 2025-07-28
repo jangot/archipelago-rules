@@ -137,31 +137,37 @@ export class LoanApplicationsService {
    * @param id - The loan application ID
    * @returns Promise<void>
    */
+  //TODO: submitLoanApplication is called when the borrower completes the application and should send to the Lender. No lender is assigned yet.
   public async submitLoanApplication(userId: string, id: string): Promise<void> {
     this.logger.debug(`submitLoanApplication: Submitting loan application ${id}`);
 
+    //TODO: validateApplicationLoanUser performs a getLoanApplicationById and then we perform the same request again ??
     await this.validateApplicationLoanUser(id, userId);
 
     const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(id);
+    //TODO: Should we throw an error if the loan application is not found?
 
     if (!loanApplication!.lenderEmail && !loanApplication!.lenderFirstName) {
       throw new MissingInputException('Lender information is required to submit loan application');
     }
 
+    //TODO: The lender may or may not have a Zirtue account yet... regardless, we just need to send a notification to the lender
     const lenderUser = await this.domainServices.userServices.getUserByContact(
       loanApplication!.lenderEmail!,
       ContactType.EMAIL
     );
     const status = LoanApplicationStates.Submitted;
+    const borrowerSubmittedAt = new Date();
     if (lenderUser && lenderUser.id) {
       this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} was found. Will assign lenderId now.`);
-      await this.domainServices.loanServices.updateLoanApplication(id, { lenderId: lenderUser.id, status });
+      await this.domainServices.loanServices.updateLoanApplication(id, { lenderId: lenderUser.id, status, borrowerSubmittedAt });
     } else {
       // TODO: Assign lenderId once the lender creates/authenticates a Zirtue account
       this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} not found. Will assign lenderId after registration.`);
-      await this.domainServices.loanServices.updateLoanApplication(id, { status });
+      await this.domainServices.loanServices.updateLoanApplication(id, { status, borrowerSubmittedAt });
     }
-    // TODO: Send email to lender
+    
+    // TODO: Queue notification to send email to the lender
   }
 
   /**
