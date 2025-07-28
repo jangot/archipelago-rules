@@ -7,6 +7,8 @@ import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
+import { BillersController } from './billers.controller';
+import { BillersService } from './billers.service';
 import { LENDING_EVENT_HANDLERS } from './event-handlers';
 import { ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
 import { LoanStateManagersFactory } from './loan-state-manager-factory';
@@ -18,12 +20,13 @@ import { ScheduleController } from './schedule.controller';
 
 @Module({
   imports: [JwtModule, ConfigModule, DomainModule, CqrsModule, DataModule],
-  controllers: [LoansController, LoanApplicationsController, ScheduleController],
+  controllers: [LoansController, LoanApplicationsController, ScheduleController, BillersController],
   providers: [
     Logger,
     LoansService, 
     LoanApplicationsService,
     ScheduleService,
+    BillersService,
     // Individual state managers (spread from array)
     ...LOAN_STATE_MANAGERS,
     // Loan state strategies
