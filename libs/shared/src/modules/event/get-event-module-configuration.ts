@@ -5,8 +5,8 @@ import { ConfigService } from '@nestjs/config';
 export function getEventModuleConfiguration(configService: ConfigService): IEventModuleConfig {
   const clientConfig = getAWSClientConfiguration(configService);
 
-  const topic = configService.get<string>('SERVICE_NAME');
-  const queueUrl = configService.get<string>('AWS_EVENTS_QUEUE_URL');
+  const topic = configService.get<string>('AWS_SERVICE_EVENTS_SNS_TOPIC_ARN');
+  const queueUrl = configService.get<string>('AWS_QUEUE_URL');
 
   const sns = topic ? { topics: [topic], clientConfig } : undefined;
   const sqs = queueUrl ? {
