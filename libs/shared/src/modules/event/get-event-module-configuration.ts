@@ -12,7 +12,7 @@ export function getEventModuleConfiguration(configService: ConfigService): IEven
   const sqs = queueUrl ? {
     queues: [
       {
-        url: configService.getOrThrow<string>('AWS_EVENTS_QUEUE_URL'),
+        url: queueUrl,
         maxNumberOfMessages: 10,
         waitTimeSeconds: 5,
       },
