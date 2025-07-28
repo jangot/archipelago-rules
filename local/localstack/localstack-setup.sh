@@ -13,10 +13,10 @@ QUEUE_URL=${AWS_EVENTS_QUEUE_URL:-"http://sqs.us-east-1.localhost.localstack.clo
 TOPIC_ARN=${AWS_EVENTS_TOPIC:-"arn:aws:sns:us-east-1:000000000000:$TOPIC_NAME"}
 
 echo "Creating SQS queue: $QUEUE_NAME"
-awslocal sqs create-queue --queue-name "$QUEUE_NAME" --no-cli-pager
+awslocal sqs create-queue --queue-name "$QUEUE_NAME"
 
 echo "Creating SNS topic: $TOPIC_NAME"
-awslocal sns create-topic --name "$TOPIC_NAME" --no-cli-pager
+awslocal sns create-topic --name "$TOPIC_NAME"
 
 echo "Queue URL: $QUEUE_URL"
 echo "Topic ARN: $TOPIC_ARN"
@@ -25,8 +25,7 @@ QUEUE_ARN=$(awslocal sqs get-queue-attributes \
   --queue-url "$QUEUE_URL" \
   --attribute-name QueueArn \
   --query "Attributes.QueueArn" \
-  --output text \
-  --no-cli-pager)
+  --output text)
 
 echo "Queue ARN: $QUEUE_ARN"
 
@@ -51,15 +50,13 @@ POLICY_ESCAPED=$(echo "$POLICY" | tr -d '\n' | sed 's/"/\\"/g')
 
 awslocal sqs set-queue-attributes \
   --queue-url "$QUEUE_URL" \
-  --attributes "Policy=\"$POLICY_ESCAPED\"" \
-  --no-cli-pager
+  --attributes "Policy=\"$POLICY_ESCAPED\""
 
 echo "Policy set on queue"
 
 awslocal sns subscribe \
   --topic-arn "$TOPIC_ARN" \
   --protocol sqs \
-  --notification-endpoint "$QUEUE_ARN" \
-  --no-cli-pager
+  --notification-endpoint "$QUEUE_ARN"
 
 echo "Subscription complete"
