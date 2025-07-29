@@ -65,9 +65,7 @@ export class NotificationHandler implements IEventHandler<NotificationEvent> {
       header,
       body,
       message,
-      attributes: {
-        template: !!definition.template, // Если есть template, то используем шаблон
-      },
+      attributes: definition.attributes,
     };
   }
 }
