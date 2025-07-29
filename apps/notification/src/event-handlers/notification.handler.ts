@@ -1,6 +1,6 @@
 import { NotificationEvent, NotificationEventPayload } from '@library/shared/events/notification.event';
 import { Injectable, Logger } from '@nestjs/common';
-import { EventsHandler } from '@nestjs/cqrs';
+import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { template } from 'lodash';
 
 import { IDomainServices } from '@notification/domain/domain.iservices';
@@ -11,7 +11,7 @@ import { NotificationService } from '@notification/services/notification.service
 
 @Injectable()
 @EventsHandler(NotificationEvent)
-export class NotificationHandler {
+export class NotificationHandler implements IEventHandler<NotificationEvent> {
   private readonly logger: Logger = new Logger(NotificationHandler.name);
 
   constructor(
@@ -54,7 +54,7 @@ export class NotificationHandler {
   }
 
   private createMessageByDefinitionItem(definition: NotificationDefinitionItem, payload: NotificationEventPayload): INotificationMessageRequest {
-    const message = template(definition.template)(payload);
+    const message = definition.template ? template(definition.template)(payload) : '';
     const metadata = definition.metadata ? template(definition.metadata)(payload) : '';
     const header = definition.header ? template(definition.header)(payload) : '';
     const body = definition.body ? template(definition.body)(payload) : '';
