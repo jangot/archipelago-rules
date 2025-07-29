@@ -1,6 +1,6 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
-import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto } from '@core/modules/lending/dto/response';
+import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto, LoanApplicationUnauthResponseDto } from '@core/modules/lending/dto/response';
 import { ContactType, LoanApplicationStates, LoanPaymentFrequencyCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
@@ -40,6 +40,12 @@ export class LoanApplicationsService {
     resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
 
     return resultDto;
+  }
+
+  public async getLoanApplicationUnauthById(id: string): Promise<LoanApplicationUnauthResponseDto | null> {
+    const result = await this.domainServices.loanServices.getLoanApplicationById(id);
+
+    return DtoMapper.toDto(result, LoanApplicationUnauthResponseDto);
   }
 
   public async getAllLoanApplicationsByUserId(userId: string): Promise<LoanApplicationResponseDto[]> {
@@ -166,7 +172,7 @@ export class LoanApplicationsService {
       this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} not found. Will assign lenderId after registration.`);
       await this.domainServices.loanServices.updateLoanApplication(id, { status, borrowerSubmittedAt });
     }
-    
+
     // TODO: Queue notification to send email to the lender
   }
 
