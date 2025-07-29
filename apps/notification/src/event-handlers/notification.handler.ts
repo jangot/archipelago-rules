@@ -3,10 +3,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventsHandler } from '@nestjs/cqrs';
 import { template } from 'lodash';
 
-import { NotificationService } from '@notification/services/notification.service';
-import { NotificationProviderFactory } from '@notification/providers/notification-provider-factory';
+import { IDomainServices } from '@notification/domain/domain.iservices';
 import { NotificationDefinition, NotificationDefinitionItem } from '@notification/domain/entity';
-import { INotificationMessageRequest } from '@notification/interfaces/inotification-message';
+import { INotificationMessageRequest, INotificationMessageResult } from '@notification/interfaces/inotification-message';
+import { NotificationProviderFactory } from '@notification/providers/notification-provider-factory';
+import { NotificationService } from '@notification/services/notification.service';
 
 @Injectable()
 @EventsHandler(NotificationEvent)
@@ -16,6 +17,7 @@ export class NotificationHandler {
   constructor(
     private readonly notificationService: NotificationService,
     private readonly providersFactory: NotificationProviderFactory,
+    private readonly domainServices: IDomainServices,
   ) {}
 
   async handle(event: NotificationEvent): Promise<void> {
@@ -31,10 +33,18 @@ export class NotificationHandler {
     }
 
     for (const item of definition.items) {
-      const provider = this.providersFactory.getProvider(item.notificationType);
-      const message = this.createMessageByDefinitionItem(item, event.payload);
+      try {
+        const provider = this.providersFactory.getProvider(item.notificationType);
+        const message = this.createMessageByDefinitionItem(item, event.payload);
 
-      await provider.sendMessage(message);
+        const result = await provider.sendMessage(message);
+
+        await this.domainServices.notificationLogServices.logNotificationResult(result);
+
+        this.logger.debug(`Notification sent successfully to ${result.target} via ${result.transport}`);
+      } catch (error) {
+        this.logger.error(`Failed to send notification via ${item.notificationType}: ${error.message}`);
+      }
     }
 
     this.logger.debug(definition);

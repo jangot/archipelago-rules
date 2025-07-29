@@ -13,6 +13,7 @@ export class MailChimpNotificationProvider implements INotificationProvider {
     this.logger.log(`Sending message to ${message.user.email}: ${message.header} to ${message} (${message.body})`);
 
     return {
+      transport: 'mailchimp',
       target: message.user.email,
       userId: message.user.id,
       ...message,
