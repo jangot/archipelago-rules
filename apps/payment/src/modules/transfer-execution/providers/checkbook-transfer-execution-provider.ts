@@ -1,3 +1,4 @@
+import { PaymentAccountProviderCodes } from '@library/entity/enum';
 import { TransferErrorDetails, TransferErrorPayload, TransferUpdateDetails, TransferUpdatePayload } from '@library/shared/type/lending';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
@@ -7,7 +8,7 @@ import { BaseTransferExecutionProvider } from './base-transfer-execution-provide
 export class CheckbookTransferExecutionProvider extends BaseTransferExecutionProvider {
 
   constructor(protected readonly paymentDomainService: PaymentDomainService) {
-    super(paymentDomainService);
+    super(paymentDomainService, PaymentAccountProviderCodes.Checkbook);
   }
 
   public async executeTransfer(transferId: string): Promise<boolean | null> {

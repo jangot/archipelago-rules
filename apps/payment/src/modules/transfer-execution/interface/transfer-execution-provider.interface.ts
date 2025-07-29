@@ -2,11 +2,11 @@ import { TransferErrorPayload, TransferUpdateDetails, TransferUpdatePayload } fr
 
 export interface ITransferExecutionProvider {
   /**
-     * Executes a transfer based on the provided transfer ID.
+     * Initiates a transfer based on the provided transfer ID.
      * @param transferId The ID of the transfer to execute.
      * @returns A promise that resolves to a boolean indicating success or failure, or null if the execution failed.
      */
-  executeTransfer(transferId: string): Promise<boolean | null>;
+  initiateTransfer(transferId: string): Promise<boolean | null>;
   
   /**
    * Completes a transfer based on the provided transfer ID.
@@ -23,8 +23,6 @@ export interface ITransferExecutionProvider {
    */
   failTransfer(transferId: string, error: TransferErrorPayload): Promise<boolean | null>;
 
-  parseTransferUpdate(update: TransferUpdatePayload): TransferUpdateDetails | null;
-
   /**
    * Processes an update for a transfer based on the provided transfer ID and update payload.
    * Updates could be a paylaod from webhooks or other sources that provide information about the transfer status.
@@ -33,4 +31,6 @@ export interface ITransferExecutionProvider {
    * @returns A promise that resolves to a boolean indicating success or failure, or null if the operation failed.
    */
   applyTransferUpdate(transferId: string, update: TransferUpdateDetails): Promise<boolean | null>;
+
+  parseTransferUpdate(update: TransferUpdatePayload): TransferUpdateDetails | null;
 }

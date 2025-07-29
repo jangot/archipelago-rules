@@ -1,4 +1,3 @@
-import { TransferStateCodes } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Transfer } from '@library/shared/domain/entity';
 import { TransferRelation } from '@library/shared/domain/entity/relation';
@@ -23,17 +22,6 @@ export class TransferRepository extends RepositoryBase<Transfer> {
 
   public async getTransferById(transferId: string, relations?: TransferRelation[]): Promise<Transfer | null> {
     return this.repository.findOne({ where: { id: transferId }, relations });
-  }
-
-  public async completeTransfer(transferId: string): Promise<boolean | null> {
-    const result = await this.repository.update({ id: transferId }, { state: TransferStateCodes.Completed });
-    return this.actionResult(result);
-  }
-
-  public async failTransfer(transferId: string): Promise<boolean | null> {
-    const result = await this.repository.update({ id: transferId }, { state: TransferStateCodes.Failed });
-    return this.actionResult(result);
-
   }
 
   public async updateTransfer(transferId: string, updates: Partial<Transfer>): Promise<boolean | null> {

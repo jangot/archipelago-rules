@@ -1,9 +1,9 @@
-import { LoanPaymentState, LoanPaymentStateCodes, LoanPaymentType, LoanType, PaymentStepState, PaymentStepStateCodes, TransferStateCodes } from '@library/entity/enum';
+import { LoanPaymentState, LoanPaymentStateCodes, LoanPaymentType, LoanType, PaymentAccountProvider, PaymentStepState, PaymentStepStateCodes, TransferState, TransferStateCodes } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { Loan, LoanPayment, LoanPaymentStep, PaymentAccount, PaymentsRoute, Transfer } from '@library/shared/domain/entity';
 import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
-import { PaymentCompletedEvent, PaymentFailedEvent, PaymentStepCompletedEvent, PaymentStepFailedEvent, PaymentSteppedEvent, PaymentStepPendingEvent } from '@library/shared/events';
+import { PaymentCompletedEvent, PaymentFailedEvent, PaymentStepCompletedEvent, PaymentStepFailedEvent, PaymentSteppedEvent, PaymentStepPendingEvent, TransferCompletedEvent, TransferExecutedEvent, TransferFailedEvent } from '@library/shared/events';
 import { TransferErrorDetails } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -321,12 +321,17 @@ export class PaymentDomainService extends BaseDomainServices {
     return transfer;
   }
 
-  public async completeTransfer(transferId: string): Promise<boolean | null> {
+  public async completeTransfer(transferId: string, provider: PaymentAccountProvider): Promise<boolean | null> {
     this.logger.debug(`Completing transfer ${transferId}`);
-    return this.data.transfers.completeTransfer(transferId);
+    const transfer = await this.data.transfers.getTransferById(transferId);
+    if (!transfer) {
+      throw new EntityNotFoundException('Transfer not found');
+    }
+    const { state } = transfer;
+    return this.updateTransferState(transferId, state, TransferStateCodes.Completed, provider);
   }
 
-  public async failTransfer(transferId: string, error: TransferErrorDetails): Promise<boolean | null> {
+  public async failTransfer(transferId: string, error: TransferErrorDetails, provider: PaymentAccountProvider): Promise<boolean | null> {
     this.logger.debug(`Failing transfer ${transferId}`, { error });
     // Check transfer existence and state (prevent double-fail)
     // Get Loan Id attached to Transfer if any
@@ -340,11 +345,13 @@ export class PaymentDomainService extends BaseDomainServices {
       return null; // Transfer already failed, no action needed
     }
 
-    const loanId = transfer.loanPaymentStep?.loanPayment.loanId;
+    const { loanPaymentStep, state } = transfer;
+
+    const loanId = loanPaymentStep?.loanPayment.loanId;
     // Save TransferError
     await this.data.transferErrors.createTransferError(transferId, error, loanId || null);
     // Save Transfer
-    return this.data.transfers.failTransfer(transferId);
+    return this.updateTransferState(transferId, state, TransferStateCodes.Failed, provider);
   }
 
   public async processTransferUpdate(transferId: string, updates: Partial<Transfer> | null): Promise<boolean | null> {
@@ -355,6 +362,52 @@ export class PaymentDomainService extends BaseDomainServices {
     }
     this.logger.debug(`Updating transfer ${transferId} with details`, { updates });    
     return this.data.transfers.updateTransfer(transferId, updates);
+  }
+
+  public async updateTransferState(
+    transferId: string,
+    oldState: TransferState,
+    newState: TransferState,
+    provider: PaymentAccountProvider
+  ): Promise<boolean | null> {
+    if (oldState === newState) {
+      this.logger.warn(`Transfer ${transferId} state is already ${newState}, no update needed.`);
+      return false; // No state change needed
+    }
+    this.logger.debug(`Updating transfer ${transferId} from ${oldState} to ${newState}`, { provider });
+    const updateResult = await this.data.transfers.updateTransfer(transferId, { state: newState });
+    if (updateResult === null) {
+      this.logger.error(`Failed to update transfer ${transferId} state to ${newState}. It may not exist or the update operation failed.`);
+      return null;
+    } else if (updateResult === false) {
+      this.logger.warn(`Transfer ${transferId} state change to ${newState} was not applied. It may already be in this state or the update operation was not successful.`);
+      return false;
+    } else {
+      this.logger.debug(`Transfer ${transferId} state successfully changed to ${newState}`);
+      await this.publishTransferStateChangeEvent(transferId, oldState, newState, provider);
+    }
+    return updateResult;
+  }
+
+  private async publishTransferStateChangeEvent(
+    transferId: string,
+    oldState: TransferState,
+    newState: TransferState,
+    provider: PaymentAccountProvider
+  ): Promise<boolean | null> {
+    this.logger.debug(`Publishing transfer state change event for transfer ${transferId} from ${oldState} to ${newState}`, { provider });
+    switch (newState) {
+      case TransferStateCodes.Pending:
+        return this.eventManager.publish(TransferExecutedEvent.create(transferId, provider));
+      case TransferStateCodes.Completed:
+        return this.eventManager.publish(TransferCompletedEvent.create(transferId, provider));
+      case TransferStateCodes.Failed:
+        return this.eventManager.publish(TransferFailedEvent.create(transferId, provider));
+      case TransferStateCodes.Created:
+      default:
+        this.logger.warn(`Unhandled transfer state: ${newState} for transferId: ${transferId}`);
+        return null;
+    }
   }
 
   // #endregion

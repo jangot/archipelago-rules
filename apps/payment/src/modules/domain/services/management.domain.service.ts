@@ -122,11 +122,11 @@ export class ManagementDomainService {
    * @param providerType - Type of payment account provider to use for executing the transfer
    * @returns Promise resolving to boolean indicating success, or null if execution fails
    */
-  public async executeTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
+  public async initiateTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
     this.logger.debug(`Executing transfer ${transferId} with provider ${providerType}`);
     
     const transferExecutionProvider = await this.transferExecutionFactory.getProvider(transferId, providerType);
-    return transferExecutionProvider.executeTransfer(transferId);
+    return transferExecutionProvider.initiateTransfer(transferId);
   }
 
   public async completeTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {

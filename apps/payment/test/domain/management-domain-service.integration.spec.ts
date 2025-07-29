@@ -312,7 +312,7 @@ describe('ManagementDomainService Integration', () => {
       await createTestData();
       
       // Act - Test actual ManagementDomainService.executeTransfer method
-      const result = await managementDomainService.executeTransfer(testTransferId);
+      const result = await managementDomainService.initiateTransfer(testTransferId);
       
       // Assert - Method returns boolean | null based on actual implementation
       expect(typeof result === 'boolean' || result === null).toBe(true);
@@ -323,7 +323,7 @@ describe('ManagementDomainService Integration', () => {
       await createTestData();
       
       // Act
-      const result = await managementDomainService.executeTransfer(testTransferId, PaymentAccountProviderCodes.Checkbook);
+      const result = await managementDomainService.initiateTransfer(testTransferId, PaymentAccountProviderCodes.Checkbook);
       
       // Assert - Based on actual provider execution behavior
       expect(typeof result === 'boolean' || result === null).toBe(true);
@@ -334,7 +334,7 @@ describe('ManagementDomainService Integration', () => {
       await createTestData();
       
       // Act
-      const result = await managementDomainService.executeTransfer(testTransferId, PaymentAccountProviderCodes.Fiserv);
+      const result = await managementDomainService.initiateTransfer(testTransferId, PaymentAccountProviderCodes.Fiserv);
       
       // Assert - Based on actual provider execution behavior
       expect(typeof result === 'boolean' || result === null).toBe(true);
@@ -345,7 +345,7 @@ describe('ManagementDomainService Integration', () => {
       await createTestData();
       
       // Act
-      const result = await managementDomainService.executeTransfer(testTransferId, PaymentAccountProviderCodes.Tabapay);
+      const result = await managementDomainService.initiateTransfer(testTransferId, PaymentAccountProviderCodes.Tabapay);
       
       // Assert - Based on actual provider execution behavior
       expect(typeof result === 'boolean' || result === null).toBe(true);
@@ -354,7 +354,7 @@ describe('ManagementDomainService Integration', () => {
     it('should throw EntityNotFoundException when transfer does not exist', async () => {
       // Act & Assert - Test with non-existent transfer ID
       await expect(
-        managementDomainService.executeTransfer(nonExistentTransferId)
+        managementDomainService.initiateTransfer(nonExistentTransferId)
       ).rejects.toThrow(EntityNotFoundException);
     });
   });
@@ -384,7 +384,7 @@ describe('ManagementDomainService Integration', () => {
       
       // Act & Assert - PaymentDomainService.getTransferById throws EntityNotFoundException
       await expect(
-        managementDomainService.executeTransfer(nonExistentTransferId)
+        managementDomainService.initiateTransfer(nonExistentTransferId)
       ).rejects.toThrow('Transfer not found');    
     });
   });
