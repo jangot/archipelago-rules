@@ -1,8 +1,22 @@
 #!/bin/bash
 set -e
 
-QUEUE_URL=${AWS_EVENTS_QUEUE_URL:-"http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/zng-events-queue"}
-TOPIC_ARN=${AWS_EVENTS_TOPIC:-"arn:aws:sns:us-east-1:000000000000:zng-events-topic"}
+# Set AWS environment variables for LocalStack
+export AWS_DEFAULT_REGION=us-east-1
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_ENDPOINT_URL=http://localhost:4566
+
+QUEUE_NAME="zng-events-queue"
+TOPIC_NAME="zng-events-topic"
+QUEUE_URL=${AWS_EVENTS_QUEUE_URL:-"http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/$QUEUE_NAME"}
+TOPIC_ARN=${AWS_EVENTS_TOPIC:-"arn:aws:sns:us-east-1:000000000000:$TOPIC_NAME"}
+
+echo "Creating SQS queue: $QUEUE_NAME"
+awslocal sqs create-queue --queue-name "$QUEUE_NAME"
+
+echo "Creating SNS topic: $TOPIC_NAME"
+awslocal sns create-topic --name "$TOPIC_NAME"
 
 echo "Queue URL: $QUEUE_URL"
 echo "Topic ARN: $TOPIC_ARN"
