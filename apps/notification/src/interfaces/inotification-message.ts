@@ -9,6 +9,7 @@ export interface INotificationMessage {
 
 export interface INotificationMessageRequest extends INotificationMessage {
   user: INotificationUser;
+  attributes: object;
 }
 
 export interface INotificationMessageResult extends INotificationMessage {

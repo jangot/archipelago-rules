@@ -1,7 +1,7 @@
 import * as mailchimp from '@mailchimp/mailchimp_transactional';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { isPlainObject } from 'lodash';
+import { isArray, isPlainObject } from 'lodash';
 
 import {
   INotificationMessageRequest,
@@ -36,7 +36,12 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
 
     try {
       const globalVars = this.formatTemplateVars(message);
-      await this.sendEmail(messageBody, target, title, globalVars);
+
+      if (message.attributes['template'] === true) {
+        await this.sendEmailWithTemplate(target, title, globalVars);
+      } else {
+        await this.sendEmail(messageBody, target, title, globalVars);
+      }
 
       this.logger.debug(`Email sent successfully to ${target}`);
       return this.buildResult(message, target, 'success');
@@ -79,11 +84,13 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
     title: string,
     globalVars: mailchimp.MergeVar[],
   ): Promise<void> {
+    const emailTargets = this.getEmailToList(target);
+
     const message: mailchimp.MessagesSendRequest = {
       message: {
         subject: title,
         html: messageBody,
-        to: target,
+        to: emailTargets,
         from_email: 'team@zirtue.com',
         from_name: 'Zirtue',
         merge: true,
@@ -94,7 +101,7 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
 
     const result = await this.mailchimpClient.messages.send(message);
 
-    if (Array.isArray(result) && result.length > 0) {
+    if (isArray(result) && result.length > 0) {
       result.forEach(response => {
         if (response.status === 'rejected') {
           this.logger.error(`Email rejected for ${target}`, { response });
@@ -102,6 +109,71 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
         }
       });
     }
+  }
+
+  private async sendEmailWithTemplate(
+    target: string,
+    templateId: string,
+    globalVars: mailchimp.MergeVar[],
+  ): Promise<void> {
+    if (!target) {
+      return;
+    }
+
+    const emailTargets = this.getEmailToList(target);
+
+    const message: mailchimp.MessagesSendTemplateRequest = {
+      template_name: templateId,
+      template_content: [],
+      message: {
+        subject: undefined,
+        to: emailTargets,
+        from_email: 'team@zirtue.com',
+        from_name: 'Zirtue',
+        merge: true,
+        merge_language: 'handlebars',
+        global_merge_vars: globalVars,
+      },
+    };
+
+    try {
+      const result = await this.mailchimpClient.messages.sendTemplate(message);
+      let hasErrors = false;
+
+      if (isArray(result) && result.length > 0) {
+        result.forEach(response => {
+          if (response.status === 'rejected') {
+            hasErrors = true;
+            this.logger.error(`Error when sending templated email to ${target}`, {
+              response,
+            });
+          }
+        });
+      }
+
+      if (!hasErrors) {
+        this.logger.debug(`Successfully sent templated email: ${JSON.stringify(message, null, 2)}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error when sending templated email to ${target}`, {
+        error,
+      });
+      throw error;
+    }
+  }
+
+  private getEmailToList(target: string): mailchimp.MessageRecipient[] {
+    if (!target) {
+      return [];
+    }
+
+    const debugEmail = this.configService.get<string>('DEBUG_EMAIL');
+    const targets = target.split(',');
+
+    return targets.map(emailTarget => ({
+      email: this.isTestEmail(emailTarget) ? debugEmail : emailTarget.trim(),
+      type: 'to',
+    }));
   }
 
   private flattenObject(obj: Record<string, any>, parentKey = '', result: Record<string, any> = {}): Record<string, any> {

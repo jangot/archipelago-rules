@@ -3,6 +3,7 @@ import { INotificationDefinitionItem } from '@library/entity/interface/notificat
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 import { NotificationDefinition } from '@notification/domain/entity/notification.definition.entity';
+import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
 
 /**
  * Entity representing a notification definition item
@@ -71,6 +72,9 @@ export class NotificationDefinitionItem implements INotificationDefinitionItem {
    */
   @Column('text', { nullable: true })
   metadata?: string;
+
+  @Column('jsonb', { nullable: false, default: '{}' })
+  attributes: object;
 
   /**
    * Timestamp when this notification definition item was created

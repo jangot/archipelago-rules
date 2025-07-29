@@ -5,7 +5,7 @@ import { template } from 'lodash';
 
 import { IDomainServices } from '@notification/domain/domain.iservices';
 import { NotificationDefinition, NotificationDefinitionItem } from '@notification/domain/entity';
-import { INotificationMessageRequest, INotificationMessageResult } from '@notification/interfaces/inotification-message';
+import { INotificationMessageRequest } from '@notification/interfaces/inotification-message';
 import { NotificationProviderFactory } from '@notification/providers/notification-provider-factory';
 import { NotificationService } from '@notification/services/notification.service';
 
@@ -65,6 +65,9 @@ export class NotificationHandler implements IEventHandler<NotificationEvent> {
       header,
       body,
       message,
+      attributes: {
+        template: !!definition.template, // Если есть template, то используем шаблон
+      },
     };
   }
 }
