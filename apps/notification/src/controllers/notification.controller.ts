@@ -34,10 +34,6 @@ export class NotificationController {
   async getAllDefinitions(): Promise<NotificationDefinitionResponseDto[]> {
     const result = await this.notificationService.getAllDefinitions();
 
-    if (result?.length === 0) {
-      throw new HttpException('No Notification Definitions found', HttpStatus.NO_CONTENT);
-    }
-
     return result;
   }
 
