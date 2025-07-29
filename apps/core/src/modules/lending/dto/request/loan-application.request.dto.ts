@@ -1,7 +1,8 @@
 import { LoanType } from '@library/entity/enum';
+import { IsValidDateString } from '@library/shared/common/validator/date-string.validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDate, IsEmail, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 
 @ApiSchema({ name: 'loanApplicationRequest' })
 export class LoanApplicationRequestDto {
@@ -100,11 +101,6 @@ export class LoanApplicationRequestDto {
   @IsOptional()
   borrowerPaymentAccountId: string | null;
 
-  @ApiProperty({ description: 'Date when the borrower submitted the application', type: 'string', format: 'date-time', example: '2023-10-01T12:00:00Z', required: false })
-  @IsDate()
-  @IsOptional()
-  borrowerSubmittedAt: Date | null;
-
   // Loan fields
   @ApiProperty({ description: 'Type of the loan', type: 'string', example: 'DirectBillPay', required: false })
   @IsString()
@@ -132,8 +128,8 @@ export class LoanApplicationRequestDto {
   @IsOptional()
   loanServiceFee: number | null;
 
-  @ApiProperty({ description: 'Date of the first payment for the loan', type: 'string', format: 'date-time', example: '2023-10-15T12:00:00Z', required: false })
-  @IsDate()
+  @ApiProperty({ description: 'Date of the first payment for the loan', type: 'string', example: '10/15/2025', required: false })
+  @IsValidDateString()
   @IsOptional()
   loanFirstPaymentDate: Date | null;
 }
