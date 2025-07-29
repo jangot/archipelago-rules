@@ -1,9 +1,9 @@
 import { PaymentAccountProvider } from '@library/entity/enum';
 import { TransferCompletedEvent, TransferExecutedEvent, TransferFailedEvent } from '@library/shared/events';
-import { TransferErrorPayload } from '@library/shared/type/lending';
+import { EventPublisherService } from '@library/shared/modules/event';
+import { TransferErrorPayload, TransferUpdatePayload } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ManagementDomainService } from '../domain/services';
-import { EventPublisherService } from '@library/shared/modules/event';
 
 /**
  * Service responsible for executing and monitoring transfers for loan payment steps
@@ -104,5 +104,46 @@ export class TransferExecutionService {
     }
 
     return failingResult;
+  }
+
+  public async processTransferUpdates(transferId: string, update: TransferUpdatePayload): Promise<boolean | null>;
+  public async processTransferUpdates(
+    transferId: string,
+    update: TransferUpdatePayload,
+    providerType: PaymentAccountProvider
+  ): Promise<boolean | null>;
+
+  public async processTransferUpdates(
+    transferId: string,
+    update: TransferUpdatePayload,
+    providerType?: PaymentAccountProvider
+  ): Promise<boolean | null> {
+    this.logger.debug(`Processing transfer update for ${transferId}`, { update });
+    const parsedUpdate = await this.managementDomainService.parseTransferUpdate(transferId, update, providerType);
+    if (parsedUpdate === null) {
+      this.logger.error(`Transfer update parsing failed for transferId: ${transferId} with provider: ${providerType}`, { update });
+      return null; // If parsing fails, we cannot proceed with processing
+    }
+
+    // If parsedUpdate contains an error, we should handle it accordingly
+    const { error } = parsedUpdate;
+    if (error) {
+      return providerType ? this.failTransfer(transferId, error, providerType) : this.failTransfer(transferId, error);
+    }
+
+    const applyResult = await this.managementDomainService.applyTransferUpdate(transferId, parsedUpdate, providerType);
+
+    // If applyResult is null, it indicates that the transfer was not found or could not be processed
+    if (applyResult === null) {
+      this.logger.error(`Transfer update processing failed for transferId: ${transferId} with provider: ${providerType}`, { update });
+    } else if (applyResult === false) {
+      // If applyResult is false, it indicates that the transfer update was processed but resulted in a negative outcome
+      this.logger.debug(`Transfer update processed but with negative result for transferId: ${transferId}`, { update });
+    } else {
+      // If processResult is true, it indicates that the transfer update was successfully processed
+      this.logger.debug(`Transfer update processed successfully for transferId: ${transferId}`, { update });
+    }
+
+    return applyResult;
   }
 }

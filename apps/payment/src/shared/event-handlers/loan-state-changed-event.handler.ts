@@ -15,6 +15,7 @@ export class LoanStateChangedEventHandler implements IEventHandler<LoanStateChan
     [LoanStateCodes.Funded, LoanStateCodes.Disbursing], // on transition from Funding to Disbursment
     [LoanStateCodes.DisbursingPaused, LoanStateCodes.Disbursing], // on Disbursing Pause resumed
     [LoanStateCodes.Disbursed, LoanStateCodes.Repaying], // on transition from Disbursement to Repayment
+    [LoanStateCodes.RepaymentPaused, LoanStateCodes.Repaying], // on Repayment Pause resumed
   ]);
 
   private readonly supportedLoanStateToPaymentType: Map<LoanState, LoanPaymentType> = new Map([

@@ -347,6 +347,16 @@ export class PaymentDomainService extends BaseDomainServices {
     return this.data.transfers.failTransfer(transferId);
   }
 
+  public async processTransferUpdate(transferId: string, updates: Partial<Transfer> | null): Promise<boolean | null> {
+    this.logger.debug(`Processing transfer update for ${transferId}`, { updates });
+    if (!updates || Object.keys(updates).length === 0) {
+      this.logger.warn(`No updates provided for transfer ${transferId}`);
+      return false; // No updates to apply
+    }
+    this.logger.debug(`Updating transfer ${transferId} with details`, { updates });    
+    return this.data.transfers.updateTransfer(transferId, updates);
+  }
+
   // #endregion
 
 }

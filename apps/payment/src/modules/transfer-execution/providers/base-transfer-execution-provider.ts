@@ -1,4 +1,4 @@
-import { TransferErrorDetails, TransferErrorPayload } from '@library/shared/type/lending';
+import { TransferErrorDetails, TransferErrorPayload, TransferUpdateDetails, TransferUpdatePayload } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { ITransferExecutionProvider } from '../interface';
@@ -23,6 +23,20 @@ export abstract class BaseTransferExecutionProvider implements ITransferExecutio
     return this.paymentDomainService.failTransfer(transferId, parsedError);
   }
 
+  public async applyTransferUpdate(transferId: string, update: TransferUpdateDetails): Promise<boolean | null> {
+    this.logger.debug(`Processing transfer update for ${transferId}`, update);
+    const { error, updates } = update;
+
+    // Doublecheck that updates do not contain an error
+    // Previously it is already checked on service level
+    if (error) {
+      this.logger.error(`Transfer update for ${transferId} contains error`, error);
+      return this.failTransfer(transferId, error);
+    }
+
+    return this.paymentDomainService.processTransferUpdate(transferId, updates);
+  }
+
   /**
    * Function to parse the transfer error payload into a structured error details object.
    * This method should be implemented by subclasses to handle specific error parsing logic.
@@ -30,4 +44,12 @@ export abstract class BaseTransferExecutionProvider implements ITransferExecutio
    * @returns Parsed error details.
    */
   protected abstract parseTransferError(error: TransferErrorPayload): TransferErrorDetails;
+
+  /**
+   * Function to parse the transfer update payload into a structured update details object.
+   * This method should be implemented by subclasses to handle specific update parsing logic.
+   * @param update Raw update payload from the transfer execution.
+   * @returns Parsed transfer update details.
+   */
+  abstract parseTransferUpdate(update: TransferUpdatePayload): TransferUpdateDetails | null;
 }

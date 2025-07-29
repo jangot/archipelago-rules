@@ -35,4 +35,9 @@ export class TransferRepository extends RepositoryBase<Transfer> {
     return this.actionResult(result);
 
   }
+
+  public async updateTransfer(transferId: string, updates: Partial<Transfer>): Promise<boolean | null> {
+    const result = await this.repository.update({ id: transferId }, updates);
+    return this.actionResult(result);
+  }
 }

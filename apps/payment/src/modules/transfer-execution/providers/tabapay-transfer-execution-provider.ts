@@ -1,4 +1,4 @@
-import { TransferErrorDetails, TransferErrorPayload } from '@library/shared/type/lending';
+import { TransferErrorDetails, TransferErrorPayload, TransferUpdateDetails, TransferUpdatePayload } from '@library/shared/type/lending';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseTransferExecutionProvider } from './base-transfer-execution-provider';
@@ -15,6 +15,9 @@ export class TabapayTransferExecutionProvider extends BaseTransferExecutionProvi
     return true; // Indicating success
   }
 
+  public parseTransferUpdate(update: TransferUpdatePayload): TransferUpdateDetails | null {
+    throw new Error('Method not implemented.');
+  }
 
   protected parseTransferError(error: TransferErrorPayload): TransferErrorDetails {
     throw new Error('Method not implemented.');
