@@ -4,12 +4,12 @@ import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
 import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
-import { NOTIFICATION_EVENT_HANDLERS } from './event-handlers';
-import { NotificationModules } from './index.modules';
-import { NotificationDefinitionItemController } from './controllers/notification-definition-item.controller';
-import { NotificationDefinitionItemService } from './services/notification-definition-item.service';
-import { NotificationController } from './controllers/notification.controller';
-import { NotificationService } from './services/notification.service';
+import { NOTIFICATION_EVENT_HANDLERS } from '@notification/event-handlers';
+import { NotificationModules } from '@notification/index.modules';
+import { NotificationDefinitionItemController } from '@notification/controllers/notification-definition-item.controller';
+import { NotificationDefinitionItemService } from '@notification/services/notification-definition-item.service';
+import { NotificationController } from '@notification/controllers/notification.controller';
+import { NotificationService } from '@notification/services/notification.service';
 
 /**
  * Main notification module that provides endpoints for notification management

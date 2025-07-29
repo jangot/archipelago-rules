@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { NotificationDefinitionItem } from './notification.definition.item.entity';
+import { NotificationDefinitionItem } from '@notification/domain/entity/notification.definition.item.entity';
 
 /**
  * Entity representing a notification definition

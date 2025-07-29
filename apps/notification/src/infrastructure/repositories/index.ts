@@ -1,9 +1,9 @@
 
-import { NotificationDefinitionItemRepository } from './notification.definition.item.repository';
-import { NotificationDefinitionRepository } from './notification.definition.repository';
+import { NotificationDefinitionItemRepository } from '@notification/infrastructure/repositories/notification.definition.item.repository';
+import { NotificationDefinitionRepository } from '@notification/infrastructure/repositories/notification.definition.repository';
 
-export * from './notification.definition.item.repository';
-export * from './notification.definition.repository';
+export * from '@notification/infrastructure/repositories/notification.definition.item.repository';
+export * from '@notification/infrastructure/repositories/notification.definition.repository';
 
 export const CustomNotificationRepositories = [
   NotificationDefinitionRepository,

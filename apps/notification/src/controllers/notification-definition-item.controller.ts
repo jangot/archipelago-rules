@@ -1,21 +1,21 @@
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpCode,
-    HttpException,
-    HttpStatus,
-    Param,
-    Post,
-    Put,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpException,
+  HttpStatus,
+  Param,
+  Post,
+  Put,
 } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCreatedResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CreateNotificationDefinitionItemRequestDto } from '../dto/request/create-notification-definition-item.request.dto';
-import { UpdateNotificationDefinitionItemRequestDto } from '../dto/request/update-notification-definition-item.request.dto';
-import { NotificationDefinitionItemResponseDto } from '../dto/response/notification-definition-item.response.dto';
-import { NotificationDefinitionItemService } from '../services/notification-definition-item.service';
+import { CreateNotificationDefinitionItemRequestDto } from '@notification/dto';
+import { UpdateNotificationDefinitionItemRequestDto } from '@notification/dto';
+import { NotificationDefinitionItemResponseDto } from '@notification/dto';
+import { NotificationDefinitionItemService } from '@notification/services/notification-definition-item.service';
 
 @ApiTags('notification-definition-items')
 @Controller()

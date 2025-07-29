@@ -1,5 +1,5 @@
 /**
  * Data module index exports
  */
-export * from './data.module';
-export * from './data.service';
+export * from '@notification/data/data.module';
+export * from '@notification/data/data.service';

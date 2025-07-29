@@ -2,8 +2,9 @@ import { INotificationDefinitionItem } from '@library/entity/interface/notificat
 import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { NotificationDataService } from '../../data';
-import { NotificationDefinitionItem } from '../entity';
+
+import { NotificationDataService } from '@notification/data';
+import { NotificationDefinitionItem } from '@notification/domain/entity';
 
 /**
  * Service for managing notification definition items

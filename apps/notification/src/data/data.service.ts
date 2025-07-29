@@ -1,7 +1,7 @@
 import { IDataService } from '@library/shared/common/data/idata.service';
 import { Injectable } from '@nestjs/common';
-import { NotificationDefinitionItemRepository } from '../infrastructure/repositories/notification.definition.item.repository';
-import { NotificationDefinitionRepository } from '../infrastructure/repositories/notification.definition.repository';
+import { NotificationDefinitionItemRepository } from '@notification/infrastructure/repositories';
+import { NotificationDefinitionRepository } from '@notification/infrastructure/repositories';
 
 /**
  * Data service for the Notification module

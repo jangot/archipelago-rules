@@ -12,9 +12,9 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiOkResponse, ApiNoContentResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse } from '@nestjs/swagger';
 import { NotificationService } from '../services/notification.service';
-import { CreateNotificationDefinitionRequestDto } from '../dto/request/create-notification-definition.request.dto';
-import { UpdateNotificationDefinitionRequestDto } from '../dto/request/update-notification-definition.request.dto';
-import { NotificationDefinitionResponseDto } from '../dto/response/notification-definition.response.dto';
+import { CreateNotificationDefinitionRequestDto } from '@notification/dto';
+import { UpdateNotificationDefinitionRequestDto } from '@notification/dto';
+import { NotificationDefinitionResponseDto } from '@notification/dto';
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
 
 @ApiTags('notifications')
