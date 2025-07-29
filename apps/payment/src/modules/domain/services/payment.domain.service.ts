@@ -118,8 +118,12 @@ export class PaymentDomainService extends BaseDomainServices {
       case LoanPaymentStateCodes.Pending:
         if (oldState !== newState) {
           updateResult = await this.data.loanPayments.updatePayment(paymentId, { state: newState });
-          break;
+        } else if (paymentStepped) {
+          // If payment is stepped, we still want to publish the event
+          updateResult =  true; // Indicate that we handled the stepped payment
         }
+        break;
+
       case LoanPaymentStateCodes.Failed:
         updateResult = await this.data.loanPayments.updatePayment(paymentId, { state: newState });
         break;
