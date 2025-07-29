@@ -1,5 +1,7 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { INotificationDefinition, NotificationType } from '@library/entity';
 import { NotificationDefinitionItem } from '@notification/domain/entity/notification.definition.item.entity';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
 
 /**
  * Entity representing a notification definition
@@ -7,7 +9,7 @@ import { NotificationDefinitionItem } from '@notification/domain/entity/notifica
  * @description This entity stores notification definitions used by the notification system
  */
 @Entity('notification_definitions', { schema: 'notifications' })
-export class NotificationDefinition {
+export class NotificationDefinition implements INotificationDefinition {
   /**
    * Unique identifier for the notification definition
    */
@@ -19,6 +21,13 @@ export class NotificationDefinition {
    */
   @Column('text', { nullable: false })
   name: string;
+
+  /**
+   * Array of notification types that this definition supports
+   * Stored as JSON array in the database
+   */
+  @Column('jsonb', { nullable: false, default: '[]' })
+  dataItems: NotificationDataItems[];
 
   /**
    * Notification definition items associated with this definition

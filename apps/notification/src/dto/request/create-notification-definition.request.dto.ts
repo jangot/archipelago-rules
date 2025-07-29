@@ -1,19 +1,21 @@
-import { IsNotEmpty, IsString } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
 
 /**
- * DTO for creating a new notification definition
+ * DTO for creating a notification definition
  */
 export class CreateNotificationDefinitionRequestDto {
   /**
    * Name of the notification definition
-   * @example 'Payment Reminder'
    */
-  @ApiProperty({
-    description: 'Name of the notification definition',
-    example: 'Payment Reminder',
-  })
-  @IsNotEmpty({ message: 'Name is required' })
-  @IsString({ message: 'Name must be a string' })
+  @IsString()
+  @IsNotEmpty()
   name: string;
+
+  /**
+   * Array of notification types that this definition supports
+   */
+  @IsArray()
+  @IsEnum(NotificationDataItems, { each: true })
+  dataItems: NotificationDataItems[];
 }
