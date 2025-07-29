@@ -1,5 +1,6 @@
 
 import { LoanApplicationRepository } from '@core/modules/lending/repositories/loan-application.repository';
+import { BillersRepository } from '@library/shared/modules/billers/billers.repository';
 import { EventPublishedRepository } from './event-published.repository';
 import { EventStoreRepository } from './event-store.repository';
 import { EventSubscriberRepository } from './event-subscriber.repository';
@@ -17,6 +18,7 @@ export const SharedRepositories = [
   PaymentAccountRepository,
   LoanRepository,
   LoanApplicationRepository,
+  BillersRepository,
 ];
 
 export const EventRepositories = [
