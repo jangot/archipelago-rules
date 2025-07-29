@@ -4,6 +4,7 @@ import { AllEntities } from '@library/shared/domain/entity';
 import { SharedRepositories } from '@library/shared/infrastructure/repository';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BillersModule } from '@payment/modules/billers';
 import { CoreDataService } from './data.service';
 import { CustomCoreRepositories } from './repositories';
 
@@ -11,6 +12,7 @@ import { CustomCoreRepositories } from './repositories';
   imports: [
     // Single connection that can access all schemas
     TypeOrmModule.forRootAsync(SingleDataSourceConfiguration(AllEntities)),
+    BillersModule,
   ],
   providers: [
     CoreDataService,
@@ -18,6 +20,6 @@ import { CustomCoreRepositories } from './repositories';
     ...CustomCoreRepositories,
     ...SharedRepositories,
   ],
-  exports: [CoreDataService],
+  exports: [CoreDataService ],
 })
 export class DataModule {}

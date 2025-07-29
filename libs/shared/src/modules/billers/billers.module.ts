@@ -8,7 +8,7 @@ import { BillersDomainService } from './billers.domain.service';
  */
 @Module({
   controllers: [],
-  providers: [BillersDomainService, BillersRepository, SharedDataService],
-  exports: [BillersDomainService, BillersRepository, SharedDataService],
+  providers: [BillersDomainService, BillersRepository, SharedDataService ],
+  exports: [BillersDomainService, BillersRepository, SharedDataService ],
 })
 export class BillersModule {} 
