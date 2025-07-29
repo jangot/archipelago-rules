@@ -8,16 +8,19 @@ import { INotificationProvider } from '@notification/interfaces/inotification-pr
 import { decode } from 'he';
 import { Twilio } from 'twilio';
 import { MessageListInstanceCreateOptions } from 'twilio/lib/rest/api/v2010/account/message';
+import { BaseNotificationProvider } from '@notification/providers/base-notification-provider';
 
 const failedStatuses = new Set(['failed', 'undelivered', 'canceled']);
 
 @Injectable()
-export class TwilioNotificationProvider implements INotificationProvider, OnModuleInit {
+export class TwilioNotificationProvider extends BaseNotificationProvider implements INotificationProvider, OnModuleInit {
   private readonly logger: Logger = new Logger(TwilioNotificationProvider.name);
   private twilioClient?: Twilio;
   private from: string;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {
+    super();
+  }
 
   onModuleInit(): any {
     const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
@@ -79,16 +82,7 @@ export class TwilioNotificationProvider implements INotificationProvider, OnModu
     }
   }
 
-  private buildResult(message: INotificationMessageRequest, target: string, status: string): INotificationMessageResult {
-    return {
-      transport: 'twilio',
-      status,
-      target,
-      userId: message.user.id,
-      metadata: message.metadata,
-      header: message.header,
-      body: message.body,
-      message: message.message,
-    };
+  protected buildResult(message: INotificationMessageRequest, target: string, status: string): INotificationMessageResult {
+    return super.buildResult(message, target, status, 'twilio');
   }
 }

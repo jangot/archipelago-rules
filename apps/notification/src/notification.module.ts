@@ -2,8 +2,10 @@ import { SharedModule } from '@library/shared';
 import { HealthModule } from '@library/shared/common/health/health.module';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
+import { HttpModule } from '@nestjs/axios';
 import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
+
+import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
 import { NOTIFICATION_EVENT_HANDLERS } from '@notification/event-handlers';
 import { NOTIFICATION_PROVIDERS } from '@notification/providers';
 import { NotificationModules } from '@notification/index.modules';
@@ -20,6 +22,7 @@ import { NotificationProviderFactory } from '@notification/providers/notificatio
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    HttpModule,
     EventModule.forRootAsync({
       isGlobal: true,
       useFactory: getEventModuleConfiguration,
