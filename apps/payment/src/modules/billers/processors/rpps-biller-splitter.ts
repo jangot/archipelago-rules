@@ -203,7 +203,7 @@ export class RppsBillerSplitter {
 
     // Essential size validation - prevent memory attacks
     const billerSize = JSON.stringify(biller).length;
-    const maxBillerSize = 1024 * 1024; // 1MB limit per biller
+    const maxBillerSize = 7 * 1024 * 1024; // 7MB limit per biller since there are some large billers.
     if (billerSize > maxBillerSize) {
       this.logger.warn(`Invalid biller: size ${billerSize} exceeds limit ${maxBillerSize}`);
       return false;
