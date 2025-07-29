@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { INotificationProvider } from '@notification/interfaces/inotification-provider';
-import { AmplitudeNotificationProvider, MailChimpNotificationProvider, TwilioNotificationProvider } from '@notification/providers/index';
+import { AmplitudeNotificationProvider, MandrillNotificationProvider, TwilioNotificationProvider } from '@notification/providers/index';
 import { NotificationType } from '@library/entity';
 
 @Injectable()
 export class NotificationProviderFactory {
   constructor(
-    private readonly mailChimpNotificationProvider: MailChimpNotificationProvider,
+    private readonly mailChimpNotificationProvider: MandrillNotificationProvider,
     private readonly twilioNotificationProvider: TwilioNotificationProvider,
     private readonly amplitudeNotificationProvider: AmplitudeNotificationProvider,
   ) {}
