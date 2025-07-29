@@ -1,5 +1,6 @@
 import { NotificationType } from '@library/entity/enum/notification.type';
 import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 
 /**
  * DTO for notification definition item responses
@@ -9,6 +10,7 @@ export class NotificationDefinitionItemResponseDto {
    * Unique identifier of the notification definition item
    * @example '123e4567-e89b-12d3-a456-426614174000'
    */
+  @Expose()
   @ApiProperty({
     description: 'Unique identifier of the notification definition item',
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -19,6 +21,7 @@ export class NotificationDefinitionItemResponseDto {
    * Reference to the parent notification definition
    * @example '123e4567-e89b-12d3-a456-426614174000'
    */
+  @Expose()
   @ApiProperty({
     description: 'Reference to the parent notification definition',
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -29,6 +32,7 @@ export class NotificationDefinitionItemResponseDto {
    * Order index for sorting notification items within a definition
    * @example 1
    */
+  @Expose()
   @ApiProperty({
     description: 'Order index for sorting notification items within a definition',
     example: 1,
@@ -39,6 +43,7 @@ export class NotificationDefinitionItemResponseDto {
    * Type of notification (Email, SMS, Amplitude)
    * @example 'Email'
    */
+  @Expose()
   @ApiProperty({
     description: 'Type of notification',
     enum: NotificationType,
@@ -50,6 +55,7 @@ export class NotificationDefinitionItemResponseDto {
    * Template string for the notification content
    * @example 'Hello {{name}}, your payment is due on {{dueDate}}'
    */
+  @Expose()
   @ApiProperty({
     description: 'Template string for the notification content',
     example: 'Hello {{name}}, your payment is due on {{dueDate}}',
@@ -61,6 +67,7 @@ export class NotificationDefinitionItemResponseDto {
    * Header text for the notification
    * @example 'Payment Reminder'
    */
+  @Expose()
   @ApiProperty({
     description: 'Header text for the notification',
     example: 'Payment Reminder',
@@ -72,6 +79,7 @@ export class NotificationDefinitionItemResponseDto {
    * Body text for the notification
    * @example 'Your payment of $100 is due on 2025-01-15'
    */
+  @Expose()
   @ApiProperty({
     description: 'Body text for the notification',
     example: 'Your payment of $100 is due on 2025-01-15',
@@ -83,6 +91,7 @@ export class NotificationDefinitionItemResponseDto {
    * Target destination for the notification
    * @example 'user@example.com'
    */
+  @Expose()
   @ApiProperty({
     description: 'Target destination for the notification',
     example: 'user@example.com',
@@ -94,6 +103,7 @@ export class NotificationDefinitionItemResponseDto {
    * Additional metadata for the notification item
    * @example '{"priority": "high", "category": "payment"}'
    */
+  @Expose()
   @ApiProperty({
     description: 'Additional metadata for the notification item',
     example: '{"priority": "high", "category": "payment"}',
@@ -105,6 +115,7 @@ export class NotificationDefinitionItemResponseDto {
    * Timestamp when the notification definition item was created
    * @example '2025-04-11T14:30:00Z'
    */
+  @Expose()
   @ApiProperty({
     description: 'Timestamp when the notification definition item was created',
     example: '2025-04-11T14:30:00Z',
@@ -115,6 +126,7 @@ export class NotificationDefinitionItemResponseDto {
    * Timestamp when the notification definition item was last updated
    * @example '2025-04-11T15:45:00Z'
    */
+  @Expose()
   @ApiProperty({
     description: 'Timestamp when the notification definition item was last updated',
     example: '2025-04-11T15:45:00Z',
