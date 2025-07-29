@@ -14,6 +14,7 @@ export class MailChimpNotificationProvider implements INotificationProvider {
 
     return {
       transport: 'mailchimp',
+      status: 'success',
       target: message.user.email,
       userId: message.user.id,
       ...message,

@@ -21,6 +21,12 @@ export class NotificationLog implements INotificationLog {
   target: string;
 
   /**
+   * Status of the notification
+   */
+  @Column('text', { nullable: false })
+  status: string;
+
+  /**
    * ID of the user who received the notification
    */
   @Column('uuid', { nullable: false })
