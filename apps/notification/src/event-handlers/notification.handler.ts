@@ -46,11 +46,6 @@ export class NotificationHandler {
         this.logger.error(`Failed to send notification via ${item.notificationType}: ${error.message}`);
       }
     }
-
-    this.logger.debug(definition);
-    // Get templates by event.name
-    // render templates
-    // send notification
   }
 
   private payloadHasAllData(definition: NotificationDefinition, payload: NotificationEventPayload): boolean {
