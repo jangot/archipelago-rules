@@ -4,6 +4,7 @@ export const PaymentAccountStateCodes = {
   Verified: 'verified',
   Suspected: 'suspected',
   Inactive: 'inactive',
+  VerificationFailed: 'verification_failed',
   // TODO: Add invalid / expired e.g. Plaid token
 } as const;
 

@@ -1,9 +1,9 @@
 import { JwtAuthGuard } from '@core/modules/auth/guards';
-import { PaymentMethodCreateRequestDto } from '@core/modules/payment-accounts/dto/request/payment-method.create.request.dto';
-import { PaymentAccountResponseDto } from '@core/modules/payment-accounts/dto/response/payment-account.response.dto';
+import { DebitCardCreateRequestDto, IavAccountCreateRequestDto, MicrodepositsAccountCreateRequestDto, PaymentMethodCreateRequestDto } from '@core/modules/payment-accounts/dto/request/payment-method.create.request.dto';
+import { BankAccountResponseDto, DebitCardResponseDto, PaymentAccountResponseDto } from '@core/modules/payment-accounts/dto/response/payment-account.response.dto';
 import { IRequest } from '@library/shared/type';
 import { Body, Controller, Logger, Post, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiExtraModels, ApiOperation, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { BankingService } from './payment-accounts.service';
 
 @Controller('payment-accounts')
@@ -17,7 +17,33 @@ export class BankingController {
 
   @Post()
   @ApiOperation({ summary: 'Add a payment method', description: 'Add a payment method' })
-  @ApiCreatedResponse({ description: 'Payment method added successfully', type: PaymentAccountResponseDto })
+  @ApiCreatedResponse({ 
+    description: 'Payment method added successfully', 
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(DebitCardResponseDto) },
+        { $ref: getSchemaPath(BankAccountResponseDto) },
+        { type: 'null' },
+      ],
+    },
+  })
+  @ApiExtraModels(
+    DebitCardCreateRequestDto, 
+    MicrodepositsAccountCreateRequestDto, 
+    IavAccountCreateRequestDto, 
+    DebitCardResponseDto, 
+    BankAccountResponseDto
+  )
+  @ApiBody({
+    description: 'Payment method details to be added',
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(DebitCardCreateRequestDto) },
+        { $ref: getSchemaPath(MicrodepositsAccountCreateRequestDto) },
+        { $ref: getSchemaPath(IavAccountCreateRequestDto) },
+      ],
+    },
+  })
   public async addPaymentMethod(@Req() request: IRequest, @Body() input: PaymentMethodCreateRequestDto): Promise<PaymentAccountResponseDto | null> {
     const userId = request.user!.id;
 

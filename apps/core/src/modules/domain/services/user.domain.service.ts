@@ -6,7 +6,7 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { ContactType } from '@library/entity/enum';
+import { ContactType, PaymentAccountState } from '@library/entity/enum';
 import { ApplicationUser, Login, PaymentAccount, UserRegistration } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
@@ -228,6 +228,11 @@ export class UserDomainService extends BaseDomainServices {
   public async getPaymentAccountById(paymentAccountId: string, relations?: PaymentAccountRelation[]): Promise<PaymentAccount | null> {
     this.logger.debug(`Fetching payment account by ID ${paymentAccountId}`, relations);
     return this.data.paymentAccounts.getPaymentAccountById(paymentAccountId, relations);
+  }
+
+  public async updatePaymentAccountVerificationState(paymentAccountId: string, state: PaymentAccountState): Promise<boolean | null> {
+    this.logger.debug(`Updating payment account verification state for ID ${paymentAccountId} to ${state}`);
+    return this.data.paymentAccounts.setPaymentAccountVerificationState(paymentAccountId, state);
   }
   // #endregion
 }
