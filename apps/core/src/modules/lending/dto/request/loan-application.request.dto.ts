@@ -38,6 +38,12 @@ export class LoanApplicationRequestDto {
   @IsOptional()
   billerPostalCode: string | null;
 
+  @ApiProperty({ description: 'Class of the biller', type: 'string', example: 'Utilities', required: false })
+  @IsString()
+  @IsOptional()
+  billerClass: string | null;
+
+
   // Bill
   @ApiProperty({ description: 'Account number with the biller', type: 'string', example: '123456789', required: false })
   @IsString()
