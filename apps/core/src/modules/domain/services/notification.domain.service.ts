@@ -26,7 +26,7 @@ export class NotificationDomainService extends BaseDomainServices {
    * @param name - The name of the notification definition to find
    * @returns Promise<NotificationDataItems[] | null>
    */
-  async findByName(name: string): Promise<NotificationDataItems[] | null> {
+  async findDataItemsByName(name: string): Promise<NotificationDataItems[] | null> {
     this.logger.debug(`Finding notification definition data items by name: ${name}`);
     const notificationDefinition = await this.data.notificationDefinitions.findByName(name);
     return notificationDefinition?.dataItems || null;

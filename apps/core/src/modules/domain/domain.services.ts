@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { IDomainServices } from './idomain.services';
-import { LoanDomainService } from './services/loan.domain.service';
-import { NotificationDomainService } from './services/notification.domain.service';
-import { UserDomainService } from './services/user.domain.service';
+import { LoanDomainService, NotificationDomainService, UserDomainService } from '@core/modules/domain/services';
 
 /*
  * File Name   : domain.service.ts
