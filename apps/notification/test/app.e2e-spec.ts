@@ -3,9 +3,20 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
 
+// Mock nestjs-graceful-shutdown before importing NotificationModule
+jest.mock('nestjs-graceful-shutdown', () => ({
+  GracefulShutdownModule: {
+    forRoot: jest.fn(() => ({
+      module: class MockGracefulShutdownModule {},
+      providers: [],
+      exports: [],
+    })),
+  },
+  setupGracefulShutdown: jest.fn(),
+}));
+
 import { NotificationModule } from '../src/notification.module';
 
-// Initialize transactional context before any imports
 initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
 
 describe('NotificationController (e2e)', () => {
