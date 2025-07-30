@@ -3,9 +3,10 @@ import { BillerAddress } from '@library/shared/domain/entity/biller-address.enti
 import { BillerMask } from '@library/shared/domain/entity/biller-mask.entity';
 import { BillerName } from '@library/shared/domain/entity/biller-name.entity';
 import { Biller } from '@library/shared/domain/entity/biller.entity';
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RppsFileProcessor } from '@payment/modules/billers/processors';
+import { DomainModule } from '@payment/modules/domain/domain.module';
 import { BillersController } from './billers.controler';
 import { BillerProviderFactory } from './billers.factory';
 import { BillersService } from './billers.service';
@@ -22,6 +23,7 @@ import { BillerRepository } from './repositories/biller.repository';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Biller, BillerName, BillerMask, BillerAddress]),
+    forwardRef(() => DomainModule),
   ],
   controllers: [BillersController],
   providers: [
@@ -36,5 +38,6 @@ import { BillerRepository } from './repositories/biller.repository';
     BillerAddressRepository,
     LocalFileStorageProvider,
   ],
+  exports: [BillerProviderFactory, BillerRepository],
 })
 export class BillersModule {} 
