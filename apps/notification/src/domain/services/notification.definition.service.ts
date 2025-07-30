@@ -87,4 +87,16 @@ export class NotificationDomainService extends BaseDomainServices {
       relations: ['items'],
     });
   }
+
+  /**
+   * Find notification definition by name
+   * @param name - The name of the notification definition
+   * @returns Promise<NotificationDefinition | null>
+   */
+  async findByName(name: string): Promise<NotificationDefinition | null> {
+    this.logger.debug(`Finding notification definition by name: ${name}`);
+    return this.data.notificationDefinitions.findOne({
+      where: { name },
+    });
+  }
 }
