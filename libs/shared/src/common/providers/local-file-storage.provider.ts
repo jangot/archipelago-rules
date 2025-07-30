@@ -43,6 +43,18 @@ export class LocalFileStorageProvider implements IFileStorageProvider {
   }
 
   /**
+   * Reads a local file as a string.
+   */
+  public async read(path: string): Promise<string> {
+    try {
+      return await fsPromises.readFile(path, 'utf8');
+    } catch (err: any) {
+      this.logger.error(`Failed to read file ${path}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  /**
    * Checks if a file or directory exists.
    */
   public async exists(path: string): Promise<boolean> {
@@ -61,9 +73,13 @@ export class LocalFileStorageProvider implements IFileStorageProvider {
   /**
    * Lists files in a directory.
    */
-  public async listFiles(path: string): Promise<string[]> {
+  public async listFiles(path: string, extension?: string): Promise<string[]> {
     try {
-      return await fsPromises.readdir(path);
+      const files = await fsPromises.readdir(path);
+      if (extension) {
+        return files.filter(file => file.endsWith(extension));
+      }
+      return files;
     } catch (err: any) {
       this.logger.error(`Failed to list files in ${path}: ${err.message}`, err);
       throw err;

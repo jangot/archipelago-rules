@@ -79,6 +79,31 @@ export class S3FileStorageProvider implements IFileStorageProvider {
   }
 
   /**
+   * Reads a file from S3 as a string.
+   */
+  public async read(path: string): Promise<string> {
+    try {
+      const result = await this.s3.send(new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: path,
+      }));
+      const body = result.Body;
+      if (body && typeof (body as any).pipe === 'function') {
+        const chunks: Buffer[] = [];
+        for await (const chunk of body as Readable) {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        }
+        return Buffer.concat(chunks).toString('utf8');
+      }
+      this.logger.error(`S3 Body is not a Readable stream for path ${path}`);
+      throw new Error('S3 Body is not a Readable stream');
+    } catch (err: any) {
+      this.logger.error(`Failed to read file from S3 path ${path}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  /**
    * Checks if a file exists in S3.
    */
   public async exists(path: string): Promise<boolean> {
@@ -100,13 +125,19 @@ export class S3FileStorageProvider implements IFileStorageProvider {
   /**
    * Lists files in a prefix in S3.
    */
-  public async listFiles(path: string): Promise<string[]> {
+  public async listFiles(path: string, extension?: string): Promise<string[]> {
     try {
       const result = await this.s3.send(new ListObjectsV2Command({
         Bucket: this.bucket,
         Prefix: path,
       }));
-      return (result.Contents || []).map(obj => obj.Key || '').filter(Boolean);
+      let files = (result.Contents || []).map(obj => obj.Key || '').filter(Boolean);
+      
+      if (extension) {
+        files = files.filter(file => file.endsWith(extension));
+      }
+      
+      return files;
     } catch (err: any) {
       this.logger.error(`Failed to list files in S3 prefix ${path}: ${err.message}`, err);
       throw err;

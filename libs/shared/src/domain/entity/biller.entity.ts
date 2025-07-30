@@ -61,25 +61,25 @@ export class Biller {
   @Column({ type: 'text', nullable: true })
   territoryCode: string | null;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'bigint' })
   crc32: number;
 
   /**
    * List of alternative names for the biller.
    */
-  @OneToMany(() => BillerName, (billerName) => billerName.billerId)
+  @OneToMany(() => BillerName, (billerName) => billerName.billerId, { cascade: true })
   names: BillerName[];
 
   /**
    * List of account number masks for the biller.
    */
-  @OneToMany(() => BillerMask, (billerMask) => billerMask.billerId)
+  @OneToMany(() => BillerMask, (billerMask) => billerMask.billerId, { cascade: true })
   masks: BillerMask[];
 
   /**
    * List of addresses for the biller.
    */
-  @OneToMany(() => BillerAddress, (billerAddress) => billerAddress.billerId)
+  @OneToMany(() => BillerAddress, (billerAddress) => billerAddress.billerId, { cascade: true })
   addresses: BillerAddress[];
 
 }

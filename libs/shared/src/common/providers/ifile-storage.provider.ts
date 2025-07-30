@@ -20,6 +20,13 @@ export interface IFileStorageProvider {
   readStream(path: string): Promise<Readable>;
 
   /**
+   * Reads a file as a string from the specified path.
+   * @param path The source path (relative or bucket key).
+   * @returns Promise resolving to the file content as string.
+   */
+  read(path: string): Promise<string>;
+
+  /**
    * Checks if a file or folder exists at the given path.
    * @param path The path to check.
    * @returns Promise resolving to true if exists, false otherwise.
@@ -29,9 +36,10 @@ export interface IFileStorageProvider {
   /**
    * Lists files in a directory or prefix.
    * @param path The directory or prefix to list.
+   * @param extension Optional file extension filter (e.g., '.json').
    * @returns Array of file names/keys.
    */
-  listFiles(path: string): Promise<string[]>;
+  listFiles(path: string, extension?: string): Promise<string[]>;
 
   /**
    * Creates a directory or prefix if needed (noop for S3).
