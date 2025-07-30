@@ -23,7 +23,7 @@ import { NotificationHealthController } from '@notification/controllers/notifica
  */
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    ConfigModule.forRoot({ isGlobal: true }),
     HttpModule,
     EventModule.forRootAsync({
       isGlobal: true,
