@@ -43,7 +43,7 @@ export class TwilioNotificationProvider extends BaseNotificationProvider impleme
 
     if (this.isTestPhoneNumber(target)) {
       this.logger.debug(`Skipping SMS send for test phone number: ${target}`);
-      return this.buildResult(message, target, 'not sent');
+      return this.buildResult(message, target, 'skipped:test_number');
     }
     const twilioMessage = {
       from: this.from,

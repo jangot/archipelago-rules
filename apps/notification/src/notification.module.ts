@@ -14,6 +14,7 @@ import { NotificationDefinitionItemService } from '@notification/services/notifi
 import { NotificationController } from '@notification/controllers/notification.controller';
 import { NotificationService } from '@notification/services/notification.service';
 import { NotificationProviderFactory } from '@notification/providers/notification-provider-factory';
+import { EmailMapperService } from '@notification/services/email-mapper.service';
 
 /**
  * Main notification module that provides endpoints for notification management
@@ -38,6 +39,7 @@ import { NotificationProviderFactory } from '@notification/providers/notificatio
     NotificationService,
     NotificationDefinitionItemService,
     Logger,
+    EmailMapperService,
     ...NOTIFICATION_PROVIDERS,
     NotificationProviderFactory,
     ...NOTIFICATION_EVENT_HANDLERS,

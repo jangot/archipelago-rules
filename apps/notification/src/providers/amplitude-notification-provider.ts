@@ -51,7 +51,7 @@ export class AmplitudeNotificationProvider extends BaseNotificationProvider impl
 
     if (!amplitudeMessage) {
       this.logger.debug('No message content for Amplitude, skipping');
-      return this.buildResult(message, target, 'no message');
+      return this.buildResult(message, target, 'skipped:no_message');
     }
 
     this.logger.debug(`Sending Amplitude message to ${target}`, {
@@ -62,7 +62,7 @@ export class AmplitudeNotificationProvider extends BaseNotificationProvider impl
     const events = this.parseEvents(amplitudeMessage);
     if (events.length === 0) {
       this.logger.debug('No valid events found in message, skipping');
-      return this.buildResult(message, target, 'no events');
+      return this.buildResult(message, target, 'skipped:no_events');
     }
 
     try {
