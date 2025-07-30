@@ -1,20 +1,20 @@
 import { SharedModule } from '@library/shared';
 import { HealthModule } from '@library/shared/common/health/health.module';
+import { HttpModule } from '@nestjs/axios';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { HttpModule } from '@nestjs/axios';
 import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
 
-import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
-import { NOTIFICATION_EVENT_HANDLERS } from '@notification/event-handlers';
-import { NOTIFICATION_PROVIDERS } from '@notification/providers';
-import { NotificationModules } from '@notification/index.modules';
+import { EventModule, getEventModuleConfiguration } from '@library/shared/modules/event';
 import { NotificationDefinitionItemController } from '@notification/controllers/notification-definition-item.controller';
-import { NotificationDefinitionItemService } from '@notification/services/notification-definition-item.service';
 import { NotificationController } from '@notification/controllers/notification.controller';
-import { NotificationService } from '@notification/services/notification.service';
+import { NOTIFICATION_EVENT_HANDLERS } from '@notification/event-handlers';
+import { NotificationModules } from '@notification/index.modules';
+import { NOTIFICATION_PROVIDERS } from '@notification/providers';
 import { NotificationProviderFactory } from '@notification/providers/notification-provider-factory';
 import { EmailMapperService } from '@notification/services/email-mapper.service';
+import { NotificationDefinitionItemService } from '@notification/services/notification-definition-item.service';
+import { NotificationService } from '@notification/services/notification.service';
 
 /**
  * Main notification module that provides endpoints for notification management

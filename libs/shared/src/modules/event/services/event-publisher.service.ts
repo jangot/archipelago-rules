@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 
-import { ZirtueDistributedEvent } from 'libs/shared/src/modules/event';
+import { ZirtueDistributedEvent } from '@library/shared/modules/event';
 import { IZirtueEvent } from '../interface';
 import { EventSnsPublisherService } from './event-sns-publisher.service';
 
