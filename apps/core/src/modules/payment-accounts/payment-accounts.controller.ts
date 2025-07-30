@@ -1,9 +1,9 @@
 import { JwtAuthGuard } from '@core/modules/auth/guards';
-import { DebitCardCreateRequestDto, IavAccountCreateRequestDto, MicrodepositsAccountCreateRequestDto, PaymentMethodCreateRequestDto } from '@core/modules/payment-accounts/dto/request/payment-method.create.request.dto';
 import { BankAccountResponseDto, DebitCardResponseDto, PaymentAccountResponseDto } from '@core/modules/payment-accounts/dto/response/payment-account.response.dto';
 import { IRequest } from '@library/shared/type';
-import { Body, Controller, Logger, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Logger, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiExtraModels, ApiOperation, ApiTags, getSchemaPath } from '@nestjs/swagger';
+import { DebitCardCreateRequestDto, IavAccountCreateRequestDto, MicrodepositsAccountCreateRequestDto, MicrodepositsValuesRequestDto, PaymentMethodCreateRequestDto, PaymentMethodProceedVerificationRequestDto, PaymentMethodVerifyRequestDto } from './dto/request';
 import { BankingService } from './payment-accounts.service';
 
 @Controller('payment-accounts')
@@ -49,5 +49,63 @@ export class BankingController {
 
     this.logger.debug('Adding payment method', { input });
     return this.bankingService.addPaymentAccount(userId, input);
+  }
+
+  @Post('verify')
+  @ApiOperation({ summary: 'Verify a payment account', description: 'Initiate verification process for a payment account' })
+  @ApiCreatedResponse({ 
+    description: 'Payment account verification initiated successfully', 
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(DebitCardResponseDto) },
+        { $ref: getSchemaPath(BankAccountResponseDto) },
+        { type: 'null' },
+      ],
+    },
+  })
+  @ApiExtraModels(PaymentMethodVerifyRequestDto, DebitCardResponseDto, BankAccountResponseDto)
+  @ApiBody({
+    description: 'Payment account verification details',
+    schema: { $ref: getSchemaPath(PaymentMethodVerifyRequestDto) },
+  })
+  public async verifyPaymentAccount(
+    @Req() request: IRequest,
+    @Body() input: PaymentMethodVerifyRequestDto
+  ): Promise<PaymentAccountResponseDto | null> {
+    const userId = request.user!.id;
+
+    this.logger.debug('Verifying payment account', { userId });
+    // Implementation for verifying payment account goes here
+    return this.bankingService.verifyPaymentAccount(userId, input);
+  }
+
+  @Patch('verify')
+  @ApiOperation({ summary: 'Proceed with account verification', description: 'Proceed with microdeposits verification for a bank account' })
+  @ApiCreatedResponse({ 
+    description: 'Account verification completed successfully', 
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(DebitCardResponseDto) },
+        { $ref: getSchemaPath(BankAccountResponseDto) },
+        { type: 'null' },
+      ],
+    },
+  })
+  @ApiExtraModels(MicrodepositsValuesRequestDto, PaymentMethodProceedVerificationRequestDto, DebitCardResponseDto, BankAccountResponseDto)
+  @ApiBody({
+    description: 'Account verification details including microdeposit values',
+    schema: { $ref: getSchemaPath(PaymentMethodProceedVerificationRequestDto) },
+  })
+  public async proceedAccountVerification(
+    @Req() request: IRequest,
+    @Body() input: PaymentMethodProceedVerificationRequestDto
+  ): Promise<PaymentAccountResponseDto | null> {
+    const userId = request.user!.id;
+
+    this.logger.debug('Proceeding with account verification', { userId });
+    // Implementation for proceeding with account verification goes here
+    const { accountId, data: { firstValue, secondValue } } = input;
+    return this.bankingService.microdepositsVerification(userId, accountId, firstValue, secondValue);
+
   }
 }

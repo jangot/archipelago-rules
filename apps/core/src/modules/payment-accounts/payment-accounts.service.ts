@@ -1,12 +1,13 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
-import { PaymentAccountBankVerificationFlowCodes, PaymentAccountDetailsTypeCodes, PaymentAccountOwnershipTypeCodes, PaymentAccountProviderCodes, PaymentAccountState, PaymentAccountStateCodes, PersonalPaymentAccountTypeCodes } from '@library/entity/enum';
+import { PaymentAccountBankVerificationFlow, PaymentAccountBankVerificationFlowCodes, PaymentAccountDetailsTypeCodes, PaymentAccountOwnershipTypeCodes, PaymentAccountProviderCodes, PaymentAccountState, PaymentAccountStateCodes, PersonalPaymentAccountTypeCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
+import { EntityNotFoundException } from '@library/shared/common/exception/domain';
 import { PaymentAccount } from '@library/shared/domain/entity';
 import { FiservAchAccountDetails, FiservDebitAccountDetails } from '@library/shared/type/lending';
 import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v4 } from 'uuid';
-import { DebitCardCreateRequestDto, IavAccountCreateRequestDto, MicrodepositsAccountCreateRequestDto, PaymentMethodCreateRequestDto } from './dto/request';
+import { DebitCardCreateRequestDto, IavAccountCreateRequestDto, MicrodepositsAccountCreateRequestDto, PaymentMethodCreateRequestDto, PaymentMethodVerifyRequestDto } from './dto/request';
 import { BankAccountResponseDto, DebitCardResponseDto, PaymentAccountResponseDto } from './dto/response';
 
 interface DebitAccountCreateData {
@@ -38,14 +39,6 @@ export class BankingService {
 
     // DtoMapper can not handle nested plymorphic types, so we need to handle them manually
     switch (type) {
-      case PersonalPaymentAccountTypeCodes.DebitCard:
-        const debitDetails = result.details as FiservDebitAccountDetails;
-        const debitResult = {
-          ...result,
-          redactedAccountNumber: result.details!.redactedAccountNumber,
-          cardExpiration: debitDetails.cardExpiration,
-        };
-        return DtoMapper.toDto(debitResult, DebitCardResponseDto);
       case PersonalPaymentAccountTypeCodes.BankAccount:
         if (!this.isDebitCardRequest(input)) { 
           const { verificationFlow } = input;
@@ -54,36 +47,75 @@ export class BankingService {
             await this.disburseMicrodeposits(paymentAccountId);
           } 
         }
-        const achDetails = result.details as FiservAchAccountDetails;
-        const achResult = {
-          ...result,
-          redactedAccountNumber: result.details!.redactedAccountNumber,
-          verificationFlow: achDetails.verificationFlow,
-        };
-        return DtoMapper.toDto(achResult, BankAccountResponseDto);
-      default:
-        this.logger.error(`Unsupported payment method type: ${type}`);
-        throw new NotImplementedException(`Payment method type ${type} is not supported`);
+        break;
     }
+
+    return this.mapToDto(result);
+  }
+
+  public async getPaymentAccountById(userId: string, paymentAccountId: string): Promise<PaymentAccountResponseDto | null> {
+    this.logger.debug('Fetching payment account by ID', { paymentAccountId });
+    const paymentAccount = await this.getPaymentAccount(paymentAccountId, userId);    
+    return this.mapToDto(paymentAccount);
   }
 
 
 
   // #region TODO: Temporary methods for PaymentAccounts Management support until Fiserv not integrated
 
+  public async verifyPaymentAccount(userId: string, input: PaymentMethodVerifyRequestDto): Promise<PaymentAccountResponseDto | null> {
+    this.logger.debug('Start payment account verification', { userId, input });
+    const { accountId, verificationFlow } = input;
+    const account = await this.getPaymentAccount(accountId, userId);
+    const { state } = account;
+
+    switch (state) {
+      case PaymentAccountStateCodes.Verified:
+        this.logger.warn('Payment account is already verified', { accountId });
+        return this.mapToDto(account);
+      case PaymentAccountStateCodes.Verifying:
+        this.logger.warn('Payment account is already in verification process', { accountId });
+        return this.mapToDto(account);
+      case PaymentAccountStateCodes.VerificationFailed:
+      case PaymentAccountStateCodes.Created:
+        const isInitiated = await this.initiateAccountVerification(account, verificationFlow);
+        if (!isInitiated) {
+          this.logger.error('Failed to initiate account verification', { accountId });
+          return null;
+        }
+        this.logger.debug('Account verification initiated successfully', { accountId });
+        // Take refreshed account
+        const updatedAccount = await this.getPaymentAccount(accountId, userId);
+        return this.mapToDto(updatedAccount);
+      case PaymentAccountStateCodes.Suspected:
+      case PaymentAccountStateCodes.Inactive:
+      default:
+        this.logger.error('Payment account is in an unsupported state for verification', { accountId, state });
+        throw new EntityNotFoundException('Payment account is in an unsupported state for verification');
+    }
+  }
+
   // microdepositsVerification
-  public async microdepositsVerification(paymentAccountId: string, firstValue: number, secondValue: number): Promise<boolean | null> {
+  public async microdepositsVerification(
+    userId: string,
+    paymentAccountId: string,
+    firstValue: number,
+    secondValue: number
+  ): Promise<PaymentAccountResponseDto | null> {
     if (!this.canApplyCheats()) {
-      throw new NotImplementedException('Microdeposits verification is implemented');
+      throw new NotImplementedException('Microdeposits verification is not implemented');
     }
     this.logger.debug('Verifying microdeposits', { paymentAccountId, firstValue, secondValue });
+    await this.getPaymentAccount(paymentAccountId, userId);
     // Simulate verification logic
     // CHEAT: Allow verification with specific values for testing purposes
-    if (firstValue === 0.05 || firstValue === 0.55 && secondValue === 0.05 || secondValue === 0.55) {
-      return this.domainServices.userServices.updatePaymentAccountVerificationState(paymentAccountId, PaymentAccountStateCodes.Verified);
+    if ((firstValue === 0.05 && secondValue === 0.55) || (firstValue === 0.55 && secondValue === 0.05)) {
+      await this.domainServices.userServices.updatePaymentAccountVerificationState(paymentAccountId, PaymentAccountStateCodes.Verified);
     } else {
-      return this.domainServices.userServices.updatePaymentAccountVerificationState(paymentAccountId, PaymentAccountStateCodes.VerificationFailed);
+      await this.domainServices.userServices.updatePaymentAccountVerificationState(paymentAccountId, PaymentAccountStateCodes.VerificationFailed);
     }
+    const updatedAccount = await this.getPaymentAccount(paymentAccountId, userId);
+    return this.mapToDto(updatedAccount);
   }
 
   // addPaymentMethod // orchestrator
@@ -159,7 +191,34 @@ export class BankingService {
     };
   }
 
+  private async initiateAccountVerification(
+    paymentAccount: PaymentAccount,
+    verificationFlow: PaymentAccountBankVerificationFlow | null
+  ): Promise<boolean> {
+    this.logger.debug('Initiating account verification', { paymentAccountId: paymentAccount.id });
+    const { id, type } = paymentAccount;
+    const canUseCheats = this.canApplyCheats();
 
+    if (type === PersonalPaymentAccountTypeCodes.DebitCard && canUseCheats) {
+      // CHEAT: Allow immediate verification for debit cards in testing
+      await this.domainServices.userServices.updatePaymentAccountVerificationState(id, PaymentAccountStateCodes.Verified);
+      return true;
+    }
+
+    if (type === PersonalPaymentAccountTypeCodes.BankAccount && verificationFlow) {
+      if (verificationFlow === PaymentAccountBankVerificationFlowCodes.IAV) {
+        // CHEAT: Allow immediate verification for IAV in testing
+        await this.domainServices.userServices.updatePaymentAccountVerificationState(id, PaymentAccountStateCodes.Verified);
+        return true;
+      } else if (verificationFlow === PaymentAccountBankVerificationFlowCodes.Microdeposits) {
+        // For bank accounts, we can disburse microdeposits
+        await this.disburseMicrodeposits(id);
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   // disburseMicrodeposits
   private async disburseMicrodeposits(paymentAccountId: string): Promise<void> {
@@ -171,9 +230,30 @@ export class BankingService {
 
   }
 
-  // list
-  // getbyid
-  // delete
+  private async mapToDto(paymentAccount: PaymentAccount): Promise<PaymentAccountResponseDto | null> {
+    const { type, details } = paymentAccount;
+    switch (type) {
+      case PersonalPaymentAccountTypeCodes.DebitCard:
+        const debitDetails = details as FiservDebitAccountDetails;
+        const debitResult = {
+          ...paymentAccount,
+          redactedAccountNumber: details!.redactedAccountNumber,
+          cardExpiration: debitDetails.cardExpiration,
+        };
+        return DtoMapper.toDto(debitResult, DebitCardResponseDto);
+      case PersonalPaymentAccountTypeCodes.BankAccount:
+        const achDetails = details as FiservAchAccountDetails;
+        const achResult = {
+          ...paymentAccount,
+          redactedAccountNumber: details!.redactedAccountNumber,
+          verificationFlow: achDetails.verificationFlow,
+        };
+        return DtoMapper.toDto(achResult, BankAccountResponseDto);
+      default:
+        this.logger.error(`Unsupported payment method type: ${type}`);
+        throw new NotImplementedException(`Payment method type ${type} is not supported`);
+    }
+  }
 
   /**
    * Type guard to check if the input is a DebitCardCreateRequestDto
@@ -186,6 +266,14 @@ export class BankingService {
 
   private canApplyCheats(): boolean {
     return this.config.get<string>('NODE_ENV') !== 'production';
+  }
+
+  private async getPaymentAccount(accountId: string, ownerId?: string): Promise<PaymentAccount> {
+    const paymentAccount = await this.domainServices.userServices.getPaymentAccountById(accountId);
+    if (!paymentAccount || (ownerId && paymentAccount.userId !== ownerId)) {
+      throw new EntityNotFoundException('Payment account not found');
+    }
+    return paymentAccount;
   }
 
   // #endregion
