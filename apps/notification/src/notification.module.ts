@@ -15,6 +15,7 @@ import { NotificationProviderFactory } from '@notification/providers/notificatio
 import { EmailMapperService } from '@notification/services/email-mapper.service';
 import { NotificationDefinitionItemService } from '@notification/services/notification-definition-item.service';
 import { NotificationService } from '@notification/services/notification.service';
+import { NotificationHealthController } from '@notification/controllers/notification-health.controller';
 
 /**
  * Main notification module that provides endpoints for notification management
@@ -22,7 +23,7 @@ import { NotificationService } from '@notification/services/notification.service
  */
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     HttpModule,
     EventModule.forRootAsync({
       isGlobal: true,
@@ -34,7 +35,7 @@ import { NotificationService } from '@notification/services/notification.service
     HealthModule,
     ...NotificationModules,
   ],
-  controllers: [NotificationController, NotificationDefinitionItemController],
+  controllers: [NotificationHealthController, NotificationController, NotificationDefinitionItemController],
   providers: [
     NotificationService,
     NotificationDefinitionItemService,
