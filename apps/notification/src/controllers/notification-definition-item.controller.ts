@@ -11,11 +11,11 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiCreatedResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CreateNotificationDefinitionItemRequestDto, NotificationDefinitionItemResponseDto, UpdateNotificationDefinitionItemRequestDto } from '@notification/dto';
+import { ApiBadRequestResponse, ApiCreatedResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CreateNotificationDefinitionItemRequestDto, GetNotificationDefinitionItemsRequestDto, NotificationDefinitionItemResponseDto, UpdateNotificationDefinitionItemRequestDto } from '@notification/dto';
 import { NotificationDefinitionItemService } from '@notification/services/notification-definition-item.service';
-import { NotificationDefinitionExistsPipe } from '../pipes/notification-definition-exists.pipe';
 import { NotificationDefinitionItemExistsPipe } from '../pipes/notification-definition-item-exists.pipe';
 
 @ApiTags('notification-definition-items')
@@ -26,16 +26,18 @@ export class NotificationDefinitionItemController {
   ) {}
 
   /**
-   * Retrieve all notification definition items
+   * Retrieve all notification definition items with optional filtering
    *
+   * @param filter - Optional query parameters for filtering
    * @returns Array of NotificationDefinitionItemResponseDto DTOs
    */
   @Get('notification-definition-items')
-  @ApiOperation({ summary: 'Get all notification definition items' })
+  @ApiOperation({ summary: 'Get all notification definition items with optional filtering' })
+  @ApiQuery({ name: 'notificationDefinitionId', description: 'Filter by notification definition ID', required: false, type: String })
   @ApiOkResponse({ description: 'The notification definition items have been successfully retrieved', type: [NotificationDefinitionItemResponseDto], isArray: true })
   @ApiNoContentResponse({ description: 'No notification definition items found', isArray: false })
-  async getAllItems(): Promise<NotificationDefinitionItemResponseDto[]> {
-    const result = await this.notificationDefinitionItemService.getAllItems();
+  async getAllItems(@Query() filter: GetNotificationDefinitionItemsRequestDto): Promise<NotificationDefinitionItemResponseDto[]> {
+    const result = await this.notificationDefinitionItemService.getAllItemsWithFilter(filter);
 
     return result;
   }
@@ -123,27 +125,6 @@ export class NotificationDefinitionItemController {
     if (!result) {
       throw new HttpException('Notification Definition Item not found', HttpStatus.NOT_FOUND);
     }
-    return result;
-  }
-
-  /**
-   * Retrieve all notification definition items by notification definition ID
-   *
-   * @param notificationDefinitionId - The ID of the parent notification definition
-   * @returns Array of NotificationDefinitionItemResponseDto DTOs
-   */
-  @Get('notification-definitions/:notificationDefinitionId/items')
-  @ApiOperation({ summary: 'Get all notification definition items by notification definition ID' })
-  @ApiParam({ name: 'notificationDefinitionId', description: 'The notification definition ID', type: String })
-  @ApiOkResponse({ description: 'The notification definition items have been successfully retrieved', type: [NotificationDefinitionItemResponseDto], isArray: true })
-  @ApiNoContentResponse({ description: 'No notification definition items found', isArray: false })
-  async getItemsByNotificationDefinitionId(@Param('notificationDefinitionId', new ParamIsUuidPipe('Notification definition ID must be UUID'), NotificationDefinitionExistsPipe) notificationDefinitionId: string): Promise<NotificationDefinitionItemResponseDto[]> {
-    const result = await this.notificationDefinitionItemService.findByNotificationDefinitionId(notificationDefinitionId);
-
-    if (result?.length === 0) {
-      throw new HttpException('No Notification Definition Items found for this definition', HttpStatus.NO_CONTENT);
-    }
-
     return result;
   }
 }

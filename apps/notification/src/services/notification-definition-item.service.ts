@@ -3,7 +3,7 @@ import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { NotificationDefinitionItem } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { IDomainServices } from '@notification/domain/domain.iservices';
-import { CreateNotificationDefinitionItemRequestDto, NotificationDefinitionItemResponseDto, UpdateNotificationDefinitionItemRequestDto } from '@notification/dto';
+import { CreateNotificationDefinitionItemRequestDto, GetNotificationDefinitionItemsRequestDto, NotificationDefinitionItemResponseDto, UpdateNotificationDefinitionItemRequestDto } from '@notification/dto';
 
 @Injectable()
 export class NotificationDefinitionItemService {
@@ -21,6 +21,16 @@ export class NotificationDefinitionItemService {
     const dtoResult = result.map((item) => DtoMapper.toDto(item, NotificationDefinitionItemResponseDto)).filter((item) => item !== null);
 
     return dtoResult;
+  }
+
+  public async getAllItemsWithFilter(filter: GetNotificationDefinitionItemsRequestDto): Promise<NotificationDefinitionItemResponseDto[]> {
+    this.logger.debug(`getAllItemsWithFilter: Getting notification definition items with filter: ${JSON.stringify(filter)}`);
+
+    if (filter.notificationDefinitionId) {
+      return this.findByNotificationDefinitionId(filter.notificationDefinitionId);
+    }
+
+    return this.getAllItems();
   }
 
   public async getItemById(id: string): Promise<NotificationDefinitionItemResponseDto | null> {

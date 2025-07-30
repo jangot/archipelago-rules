@@ -1,5 +1,5 @@
 import { NotificationType } from '@library/entity/enum/notification.type';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
 
 /**
@@ -45,67 +45,67 @@ export class CreateNotificationDefinitionItemRequestDto {
 
   /**
    * Template string for the notification content
-   * @example 'Hello {{name}}, your payment is due on {{dueDate}}'
+   * @example 'Hello <%= name %>, your payment is due on <%= dueDate %>'
    */
-  @ApiProperty({
-    description: 'Template string for the notification content',
-    example: 'Hello {{name}}, your payment is due on {{dueDate}}',
-    required: false,
-  })
   @IsOptional()
   @IsString({ message: 'Template must be a string' })
+  @ApiPropertyOptional({
+    description: 'Template string for the notification content (supports EJS syntax)',
+    example: 'Hello <%= name %>, your payment is due on <%= dueDate %>',
+    required: false,
+  })
   template?: string;
 
   /**
-   * Header text for the notification
-   * @example 'Payment Reminder'
+   * Header text for the notification (supports EJS templates)
+   * @example 'Payment Reminder for <%= userName %>'
    */
-  @ApiProperty({
-    description: 'Header text for the notification',
-    example: 'Payment Reminder',
-    required: false,
-  })
   @IsOptional()
   @IsString({ message: 'Header must be a string' })
+  @ApiPropertyOptional({
+    description: 'Header text for the notification (supports EJS syntax)',
+    example: 'Payment Reminder for <%= userName %>',
+    required: false,
+  })
   header?: string;
 
   /**
-   * Body text for the notification
-   * @example 'Your payment of $100 is due on 2025-01-15'
+   * Body text for the notification (supports EJS templates)
+   * @example 'Dear <%= userName %>, your payment of $<%= amount %> is due on <%= dueDate %>'
    */
-  @ApiProperty({
-    description: 'Body text for the notification',
-    example: 'Your payment of $100 is due on 2025-01-15',
-    required: false,
-  })
   @IsOptional()
   @IsString({ message: 'Body must be a string' })
+  @ApiPropertyOptional({
+    description: 'Body text for the notification (supports EJS syntax)',
+    example: 'Dear <%= userName %>, your payment of $<%= amount %> is due on <%= dueDate %>',
+    required: false,
+  })
   body?: string;
 
   /**
-   * Target destination for the notification
-   * @example 'user@example.com'
+   * Target destination for the notification (supports EJS templates)
+   * @example '<%= userEmail %>'
    */
-  @ApiProperty({
-    description: 'Target destination for the notification',
-    example: 'user@example.com',
-    required: false,
-  })
   @IsOptional()
   @IsString({ message: 'Target must be a string' })
+  @ApiPropertyOptional({
+    description: 'Target destination for the notification (supports EJS syntax)',
+    example: '<%= userEmail %>',
+    required: false,
+  })
   target?: string;
 
   /**
-   * Additional metadata for the notification item
-   * @example '{"priority": "high", "category": "payment"}'
+   * Additional metadata for the notification item (supports EJS templates in JSON string)
+   * @example '{"userId": "<%= userId %>", "loanId": "<%= loanId %>", "amount": "<%= amount %>"}'
    */
-  @ApiProperty({
-    description: 'Additional metadata for the notification item',
-    example: '{"priority": "high", "category": "payment"}',
-    required: false,
-  })
   @IsOptional()
   @IsString({ message: 'Metadata must be a string' })
+  @ApiPropertyOptional({
+    description: 'Additional metadata for the notification item (supports EJS syntax in JSON string)',
+    example: '{"userId": "<%= userId %>", "loanId": "<%= loanId %>", "amount": "<%= amount %>"}',
+    required: false,
+  })
   metadata?: string;
 
   /**

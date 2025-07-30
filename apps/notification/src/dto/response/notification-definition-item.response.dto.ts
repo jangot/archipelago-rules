@@ -53,60 +53,60 @@ export class NotificationDefinitionItemResponseDto {
 
   /**
    * Template string for the notification content
-   * @example 'Hello {{name}}, your payment is due on {{dueDate}}'
+   * @example 'Hello <%= name %>, your payment is due on <%= dueDate %>'
    */
   @Expose()
   @ApiProperty({
-    description: 'Template string for the notification content',
-    example: 'Hello {{name}}, your payment is due on {{dueDate}}',
+    description: 'Template string for the notification content (supports EJS syntax)',
+    example: 'Hello <%= name %>, your payment is due on <%= dueDate %>',
     required: false,
   })
   template?: string;
 
   /**
-   * Header text for the notification
-   * @example 'Payment Reminder'
+   * Header text for the notification (supports EJS templates)
+   * @example 'Payment Reminder for <%= userName %>'
    */
   @Expose()
   @ApiProperty({
-    description: 'Header text for the notification',
-    example: 'Payment Reminder',
+    description: 'Header text for the notification (supports EJS syntax)',
+    example: 'Payment Reminder for <%= userName %>',
     required: false,
   })
   header?: string;
 
   /**
-   * Body text for the notification
-   * @example 'Your payment of $100 is due on 2025-01-15'
+   * Body text for the notification (supports EJS templates)
+   * @example 'Dear <%= userName %>, your payment of $<%= amount %> is due on <%= dueDate %>'
    */
   @Expose()
   @ApiProperty({
-    description: 'Body text for the notification',
-    example: 'Your payment of $100 is due on 2025-01-15',
+    description: 'Body text for the notification (supports EJS syntax)',
+    example: 'Dear <%= userName %>, your payment of $<%= amount %> is due on <%= dueDate %>',
     required: false,
   })
   body?: string;
 
   /**
-   * Target destination for the notification
-   * @example 'user@example.com'
+   * Target destination for the notification (supports EJS templates)
+   * @example '<%= userEmail %>'
    */
   @Expose()
   @ApiProperty({
-    description: 'Target destination for the notification',
-    example: 'user@example.com',
+    description: 'Target destination for the notification (supports EJS syntax)',
+    example: '<%= userEmail %>',
     required: false,
   })
   target?: string;
 
   /**
-   * Additional metadata for the notification item
-   * @example '{"priority": "high", "category": "payment"}'
+   * Additional metadata for the notification item (supports EJS templates in JSON string)
+   * @example '{"userId": "<%= userId %>", "loanId": "<%= loanId %>", "amount": "<%= amount %>"}'
    */
   @Expose()
   @ApiProperty({
-    description: 'Additional metadata for the notification item',
-    example: '{"priority": "high", "category": "payment"}',
+    description: 'Additional metadata for the notification item (supports EJS syntax in JSON string)',
+    example: '{"userId": "<%= userId %>", "loanId": "<%= loanId %>", "amount": "<%= amount %>"}',
     required: false,
   })
   metadata?: string;
