@@ -54,17 +54,12 @@ export class NotificationHandler implements IEventHandler<NotificationEvent> {
   }
 
   private createMessageByDefinitionItem(definition: NotificationDefinitionItem, payload: NotificationEventPayload): INotificationMessageRequest {
-    const message = definition.template ? template(definition.template)(payload) : '';
-    const metadata = definition.metadata ? template(definition.metadata)(payload) : '';
-    const header = definition.header ? template(definition.header)(payload) : '';
-    const body = definition.body ? template(definition.body)(payload) : '';
-
     return {
       user: payload.user,
-      metadata,
-      header,
-      body,
-      message,
+      metadata: definition.metadata ? template(definition.metadata)(payload) : '',
+      header: definition.header ? template(definition.header)(payload) : '',
+      body: definition.body ? template(definition.body)(payload) : '',
+      message: definition.template ? template(definition.template)(payload) : '',
       attributes: definition.attributes,
       definitionItemId: definition.id,
     };
