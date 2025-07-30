@@ -35,6 +35,7 @@ export class RepaidLoanStateManager extends BaseLoanStateManager {
       {
         condition: () => !this.shouldBeHeldInRepaid(),
         nextState: LoanStateCodes.Closed,
+        sameStateProgress: false,
         priority: 1,
       }];
   }

@@ -1,4 +1,5 @@
-import { TransferErrorDetails, TransferErrorPayload } from '@library/shared/type/lending';
+import { PaymentAccountProviderCodes } from '@library/entity/enum';
+import { TransferErrorDetails, TransferErrorPayload, TransferUpdateDetails, TransferUpdatePayload } from '@library/shared/type/lending';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseTransferExecutionProvider } from './base-transfer-execution-provider';
@@ -6,7 +7,7 @@ import { BaseTransferExecutionProvider } from './base-transfer-execution-provide
 @Injectable()
 export class MockTransferExecutionProvider extends BaseTransferExecutionProvider {
   constructor(protected readonly paymentDomainService: PaymentDomainService) {
-    super(paymentDomainService);
+    super(paymentDomainService, PaymentAccountProviderCodes.Fiserv);
   }
 
   public async executeTransfer(transferId: string): Promise<boolean | null> {
@@ -14,6 +15,11 @@ export class MockTransferExecutionProvider extends BaseTransferExecutionProvider
     this.logger.debug(`Mock transfer executed for ID: ${transferId}`);
     return true; // Indicating success
   }
+
+  public parseTransferUpdate(update: TransferUpdatePayload): TransferUpdateDetails | null {
+    throw new Error('Method not implemented.');
+  }
+
 
   protected parseTransferError(error: TransferErrorPayload): TransferErrorDetails {
     throw new Error('Method not implemented.');

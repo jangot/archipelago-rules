@@ -1,5 +1,6 @@
 import { PaymentAccountProvider } from '@library/entity/enum';
-import { TransferErrorPayload } from '@library/shared/type/lending';
+import { EventPublisherService } from '@library/shared/modules/event';
+import { TransferErrorPayload, TransferUpdatePayload } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ManagementDomainService } from '../domain/services';
 
@@ -10,27 +11,27 @@ import { ManagementDomainService } from '../domain/services';
 export class TransferExecutionService {
   private readonly logger: Logger = new Logger(TransferExecutionService.name);
 
-  constructor(private readonly managementDomainService: ManagementDomainService) {}
+  constructor(private readonly managementDomainService: ManagementDomainService, private readonly eventManager: EventPublisherService) {}
 
   /**
    * Executes a transfer by its ID, optionally specifying the provider type.
    * If no provider type is specified, the method will determine the appropriate provider based on the transfer's details.
-   * 
+   *
    * @param transferId - The unique identifier of the transfer to execute
    * @param providerType - Optional provider type to use for the transfer execution
    * @returns A boolean indicating success (true) or null if the operation failed (e.g., transfer not found, invalid state)
    */
-  public async executeTransfer(transferId: string): Promise<boolean | null>;
-  public async executeTransfer(transferId: string, providerType: PaymentAccountProvider): Promise<boolean | null>;
-  public async executeTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
+  public async initiateTransfer(transferId: string): Promise<boolean | null>;
+  public async initiateTransfer(transferId: string, providerType: PaymentAccountProvider): Promise<boolean | null>;
+  public async initiateTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
     this.logger.debug(`Executing transfer ${transferId} ${providerType ? `with provider ${providerType}` : ''}`);
-    return this.managementDomainService.executeTransfer(transferId, providerType);
+    return this.managementDomainService.initiateTransfer(transferId, providerType);
   }
 
   /**
    * Completes a transfer by its ID, marking it as successfully processed.
    * This method updates the transfer status to completed and performs any necessary post-processing operations.
-   * 
+   *
    * @param transferId - The unique identifier of the transfer to complete
    * @param providerType - Optional provider type to use for the transfer completion
    * @returns A boolean indicating success (true) or null if the operation failed (e.g., transfer not found, invalid state)
@@ -45,7 +46,7 @@ export class TransferExecutionService {
   /**
    * Marks a transfer as failed with the provided error details.
    * This method updates the transfer status to failed and records the error information for troubleshooting and audit purposes.
-   * 
+   *
    * @param transferId - The unique identifier of the transfer to mark as failed
    * @param error - The error payload containing details about the failure
    * @param providerType - Optional provider type to use for the transfer failure handling
@@ -58,4 +59,44 @@ export class TransferExecutionService {
     return this.managementDomainService.failTransfer(transferId, error, providerType);
   }
 
+  public async processTransferUpdates(transferId: string, update: TransferUpdatePayload): Promise<boolean | null>;
+  public async processTransferUpdates(
+    transferId: string,
+    update: TransferUpdatePayload,
+    providerType: PaymentAccountProvider
+  ): Promise<boolean | null>;
+
+  public async processTransferUpdates(
+    transferId: string,
+    update: TransferUpdatePayload,
+    providerType?: PaymentAccountProvider
+  ): Promise<boolean | null> {
+    this.logger.debug(`Processing transfer update for ${transferId}`, { update });
+    const parsedUpdate = await this.managementDomainService.parseTransferUpdate(transferId, update, providerType);
+    if (parsedUpdate === null) {
+      this.logger.error(`Transfer update parsing failed for transferId: ${transferId} with provider: ${providerType}`, { update });
+      return null; // If parsing fails, we cannot proceed with processing
+    }
+
+    // If parsedUpdate contains an error, we should handle it accordingly
+    const { error } = parsedUpdate;
+    if (error) {
+      return providerType ? this.failTransfer(transferId, error, providerType) : this.failTransfer(transferId, error);
+    }
+
+    const applyResult = await this.managementDomainService.applyTransferUpdate(transferId, parsedUpdate, providerType);
+
+    // If applyResult is null, it indicates that the transfer was not found or could not be processed
+    if (applyResult === null) {
+      this.logger.error(`Transfer update processing failed for transferId: ${transferId} with provider: ${providerType}`, { update });
+    } else if (applyResult === false) {
+      // If applyResult is false, it indicates that the transfer update was processed but resulted in a negative outcome
+      this.logger.debug(`Transfer update processed but with negative result for transferId: ${transferId}`, { update });
+    } else {
+      // If processResult is true, it indicates that the transfer update was successfully processed
+      this.logger.debug(`Transfer update processed successfully for transferId: ${transferId}`, { update });
+    }
+
+    return applyResult;
+  }
 }

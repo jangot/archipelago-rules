@@ -1,5 +1,6 @@
 import { DataModule } from '@core/modules/data';
 import { DomainModule } from '@core/modules/domain/domain.module';
+import { LoanApplicationsUnauthController } from '@core/modules/lending/loan-applications-unauth.controller';
 import { LoanApplicationsController } from '@core/modules/lending/loan-applications.controller';
 import { LoanApplicationsService } from '@core/modules/lending/loan-applications.service';
 import { ScheduleService } from '@library/shared/service';
@@ -7,6 +8,9 @@ import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
+import { BillersController } from './billers.controller';
+import { BillersService } from './billers.service';
+import { LENDING_EVENT_HANDLERS } from './event-handlers';
 import { ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
 import { LoanStateManagersFactory } from './loan-state-manager-factory';
 import { LOAN_STATE_MANAGERS, LoanStateManagers } from './loan-state-managers';
@@ -17,12 +21,13 @@ import { ScheduleController } from './schedule.controller';
 
 @Module({
   imports: [JwtModule, ConfigModule, DomainModule, CqrsModule, DataModule],
-  controllers: [LoansController, LoanApplicationsController, ScheduleController],
+  controllers: [LoansController, LoanApplicationsController, ScheduleController, BillersController, LoanApplicationsUnauthController ],
   providers: [
     Logger,
     LoansService, 
     LoanApplicationsService,
     ScheduleService,
+    BillersService,
     // Individual state managers (spread from array)
     ...LOAN_STATE_MANAGERS,
     // Loan state strategies
@@ -30,6 +35,7 @@ import { ScheduleController } from './schedule.controller';
     // State managers container and factory
     { provide: ILoanStateManagers, useClass: LoanStateManagers },
     { provide: ILoanStateManagersFactory, useClass: LoanStateManagersFactory },
+    ...LENDING_EVENT_HANDLERS, // Spread event handlers if any
   ],
 })
 export class LendingModule {}

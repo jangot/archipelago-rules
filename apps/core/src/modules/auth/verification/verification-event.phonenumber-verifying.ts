@@ -1,8 +1,9 @@
 import { ApplicationUser } from '@library/shared/domain/entity';
-import { VerificationEventBase } from './verification-event.base';
+import { ZirtueDistributedEvent } from '@library/shared/modules/event';
+import { VerificationEventPayload } from './verification-event-payload';
 
-export class VerificationPhoneNumberVerifyingEvent extends VerificationEventBase {
-  constructor(user: ApplicationUser, name: string) {
-    super(user, name);
+export class VerificationPhoneNumberVerifyingEvent extends ZirtueDistributedEvent<VerificationEventPayload> {
+  public static create(user: ApplicationUser): VerificationPhoneNumberVerifyingEvent {
+    return new VerificationPhoneNumberVerifyingEvent(new VerificationEventPayload(user));
   }
 }

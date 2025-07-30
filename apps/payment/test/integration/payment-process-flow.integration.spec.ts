@@ -352,7 +352,7 @@ describe('Payment Process Flow Integration', () => {
 
     it('should execute transfer successfully', async () => {
       // Act
-      const result = await transferExecutionService.executeTransfer(testTransferId);
+      const result = await transferExecutionService.initiateTransfer(testTransferId);
       
       // Assert
       expect(result).toBeDefined();
@@ -360,7 +360,7 @@ describe('Payment Process Flow Integration', () => {
 
     it('should execute transfer with specific provider', async () => {
       // Act
-      const result = await transferExecutionService.executeTransfer(testTransferId, PaymentAccountProviderCodes.Checkbook);
+      const result = await transferExecutionService.initiateTransfer(testTransferId, PaymentAccountProviderCodes.Checkbook);
       
       // Assert
       expect(result).toBeDefined();
@@ -369,7 +369,7 @@ describe('Payment Process Flow Integration', () => {
     it('should throw EntityNotFoundException when executing non-existent transfer', async () => {
       // Act & Assert
       await expect(
-        transferExecutionService.executeTransfer(nonExistentTransferId)
+        transferExecutionService.initiateTransfer(nonExistentTransferId)
       ).rejects.toThrow(EntityNotFoundException);
     });
 
@@ -409,7 +409,7 @@ describe('Payment Process Flow Integration', () => {
       }
 
       // Act - Execute with different providers
-      const fiservResult = await transferExecutionService.executeTransfer(transfer.id, PaymentAccountProviderCodes.Fiserv);
+      const fiservResult = await transferExecutionService.initiateTransfer(transfer.id, PaymentAccountProviderCodes.Fiserv);
       
       // Assert
       expect(fiservResult).toBeDefined();
@@ -544,7 +544,7 @@ describe('Payment Process Flow Integration', () => {
       expect(transfer).toBeDefined();
 
       // Act - Execute the transfer
-      const transferResult = await transferExecutionService.executeTransfer(transfer!.id);
+      const transferResult = await transferExecutionService.initiateTransfer(transfer!.id);
       
       // Assert
       expect(transferResult).toBeDefined();
@@ -677,7 +677,7 @@ describe('Payment Process Flow Integration', () => {
       ).rejects.toThrow(EntityNotFoundException);
 
       await expect(
-        managementDomainService.executeTransfer(nonExistentTransferId)
+        managementDomainService.initiateTransfer(nonExistentTransferId)
       ).rejects.toThrow(EntityNotFoundException);
     });
 
@@ -741,7 +741,7 @@ describe('Payment Process Flow Integration', () => {
       }
 
       // Act - Test execute transfer with existing transfer
-      const transferResult = await managementDomainService.executeTransfer(transfer.id);
+      const transferResult = await managementDomainService.initiateTransfer(transfer.id);
       
       // Assert
       expect(transferResult).toBeDefined();

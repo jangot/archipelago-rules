@@ -74,10 +74,13 @@ export const PaymentEntities = [
   PaymentsRouteStep,
   PaymentsRoute,
   TransferError,
+];
+
+export const BillerEntities = [
   Biller,
   BillerName,
   BillerAddress,
   BillerMask,
 ];
 
-export const AllEntities = [...CoreEntities, ...PaymentEntities];
+export const AllEntities = [...CoreEntities, ...PaymentEntities, ...BillerEntities];

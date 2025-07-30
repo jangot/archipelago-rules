@@ -1,5 +1,6 @@
 import { LoanApplicationStates, LoanApplicationStateType, LoanType } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
+import { Loan } from '@library/shared/domain/entity';
 import { Biller } from '@library/shared/domain/entity/biller.entity';
 import { PaymentAccount } from '@library/shared/domain/entity/payment.account.entity';
 import {
@@ -21,7 +22,16 @@ export class LoanApplication {
   @Column({ type: 'text', nullable: true, default: LoanApplicationStates.Pending }) //TODO: Should this be an enum for status
   status: LoanApplicationStateType | null;
 
-  
+  //TODO: Need to add the Loan side of this relationship
+  // Loan Reference
+  @Column({ type: 'uuid', nullable: true, unique: true })
+  loanId: string | null;
+
+  //@OneToOne(() => Loan, (loan) => loan.application, { nullable: true })
+  @JoinColumn({ name: 'loan_id' }) // owner side holds the FK
+  loan: Loan | null;
+
+
   // Biller
   @Column({ type: 'uuid', nullable: true })
   billerId: string | null;
@@ -36,11 +46,12 @@ export class LoanApplication {
   @Column({ type: 'text', nullable: true })
   billerPostalCode: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  billerClass: string | null;
 
   // Bill
   @Column({ type: 'text', nullable: true })
   billAccountNumber: string | null;
-
 
   // Lender
   @Column({ type: 'uuid', nullable: true })
@@ -75,10 +86,15 @@ export class LoanApplication {
   @Column({ type: 'timestamptz', nullable: true })
   lenderRespondedAt: Date | null;
 
-
   // Borrower
   @Column({ type: 'uuid', nullable: true })
   borrowerId: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  borrowerFirstName: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  borrowerLastName: string | null;
 
   @ManyToOne(() => ApplicationUser, { nullable: true })
   @JoinColumn({ name: 'borrower_id' })
@@ -93,7 +109,6 @@ export class LoanApplication {
 
   @Column({ name: 'borrower_submitted_at', type: 'timestamptz', nullable: true })
   borrowerSubmittedAt: Date | null;
-
 
   // Loan Info
   @Column({ type: 'text', nullable: true })
@@ -110,6 +125,9 @@ export class LoanApplication {
 
   @Column({ type: 'decimal', precision: 12, scale: 4, nullable: true, default: 0 })
   loanServiceFee: number | null;
+
+  @Column({ name: 'loan_first_payment_date', type: 'timestamptz', nullable: true })
+  loanFirstPaymentDate: Date | null;
 
   // Metadata
   @CreateDateColumn({ type: 'timestamp with time zone' })

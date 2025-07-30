@@ -1,58 +1,53 @@
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
-import { Loan, LoanPayment, PaymentsRouteStep } from '@library/shared/domain/entity';
+import { Loan, PaymentsRouteStep } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
 
 /**
- * Handles loan disbursement payments
+ * DisbursementPaymentManager handles the final phase of loan funding where
+ * Zirtue transfers loan principal from their holding account to the merchant
+ * or biller's payment account. This implements the Zirtue → Biller payment
+ * flow and completes the loan funding process.
+ * 
+ * Key responsibilities:
+ * - Process Zirtue-to-biller fund transfers
+ * - Handle remaining steps of multi-step payment routes
+ * - Transfer only the loan principal (excluding fees retained by Zirtue)
+ * - Complete the loan funding cycle after FundingPaymentManager
  */
 @Injectable()
 export class DisbursementPaymentManager extends BaseLoanPaymentManager {
+
   constructor(protected readonly paymentDomainService: PaymentDomainService) {
     super(paymentDomainService, LoanPaymentTypeCodes.Disbursement);
   }
 
   /**
-   * Initiates a new disbursement payment for a loan
-   * @param loanId The ID of the loan for which to initiate a disbursement payment
-   * @returns The created loan payment or null if creation failed
+   * Resolves account pair for the Zirtue → Biller disbursement payment flow.
+   * The source should be Zirtue's holding account (currently using lender
+   * account as temporary implementation) and target is the biller's payment
+   * account where loan funds are ultimately delivered.
+   * 
+   * @param loan - Loan entity containing account information
+   * @returns Payment account pair with Zirtue as source and biller as target
    */
-  public async initiate(loanId: string): Promise<LoanPayment | null> {
-    return this.initiatePayment(loanId);
-  }
-
-  /**
-   * Gets the source and target payment account IDs for disbursement payment
-   * @param loan The loan for which to get payment accounts
-   * @returns Object containing fromAccountId and toAccountId
-   */
-  protected async getPaymentAccounts(loan: Loan): Promise<PaymentAccountPair> {
-    const { lenderAccountId, biller } = loan;
-    
-    if (!lenderAccountId) {
-      this.logger.warn(`Lender account ID is missing for loan ${loan.id}`);
-      return { fromAccountId: null, toAccountId: null };
-    }
-
-    if (!biller || !biller.paymentAccountId) {
-      this.logger.warn(`Biller or Biller's payment Account is missing for loan ${loan.id}`);
-      return { fromAccountId: null, toAccountId: null };
-    }
-
+  protected getAccountPairForPaymentType(loan: Loan): PaymentAccountPair {
     return { 
-      fromAccountId: lenderAccountId,
-      toAccountId: biller.paymentAccountId,
+      fromAccountId: loan.lenderAccountId,
+      toAccountId: loan.biller?.paymentAccountId || null,
     };
   }
   
   /**
-   * Gets the route steps to apply for disbursement payment
-   * For Funding + Disbursement route:
-   * - If route has a single step, then Disbursement uses all steps
-   * - If route has N steps, then Disbursement uses N-1 steps, starting from second
-   * @param routeSteps Steps from the payment route
-   * @returns The steps to apply for this payment type
+   * Filters route steps to exclude the funding phase for multi-step routes.
+   * In combined Funding + Disbursement routes, disbursement handles all steps
+   * after the first one (Zirtue → Biller and any intermediate steps), while
+   * funding handles the initial step (Lender → Zirtue). For single-step routes,
+   * disbursement processes all steps directly.
+   * 
+   * @param routeSteps - Complete array of route steps from payment route
+   * @returns Array containing steps 2 through N, or all steps if single-step route
    */
   protected getStepsToApply(routeSteps: PaymentsRouteStep[]): PaymentsRouteStep[] {
     if (routeSteps.length > 1) {

@@ -40,6 +40,7 @@ export class AcceptedLoanStateManager extends BaseLoanStateManager {
       {
         condition: (loan) => this.hasValidAccountsConnected(loan),
         nextState: LoanStateCodes.Funding,
+        sameStateProgress: false,
         priority: 1,
       },
     ];

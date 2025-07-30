@@ -1,13 +1,14 @@
-import { LoanPaymentStateCodes, LoanPaymentType, LoanPaymentTypeCodes, LoanType, PaymentStepState, TransferStateCodes } from '@library/entity/enum';
+import { LoanPaymentState, LoanPaymentStateCodes, LoanPaymentType, LoanType, PaymentAccountProvider, PaymentStepState, PaymentStepStateCodes, TransferState, TransferStateCodes } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { Loan, LoanPayment, LoanPaymentStep, PaymentAccount, PaymentsRoute, Transfer } from '@library/shared/domain/entity';
-import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PAYMENTS_ROUTE_RELATIONS, PaymentAccountRelation, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
-import { PlanPreviewOutputItem, TransferErrorDetails } from '@library/shared/type/lending';
+import { LOAN_PAYMENT_STEP_RELATIONS, LoanPaymentRelation, LoanPaymentStepRelation, LoanRelation, PaymentAccountRelation, PAYMENTS_ROUTE_RELATIONS, TRANSFER_RELATIONS, TransferRelation } from '@library/shared/domain/entity/relation';
+import { PaymentCompletedEvent, PaymentFailedEvent, PaymentStepCompletedEvent, PaymentStepFailedEvent, PaymentSteppedEvent, PaymentStepPendingEvent, TransferCompletedEvent, TransferExecutedEvent, TransferFailedEvent } from '@library/shared/events';
+import { TransferErrorDetails } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentDataService } from '@payment/modules/data';
-import { v4 } from 'uuid';
+import { EventPublisherService } from 'libs/shared/src/modules/event';
 
 @Injectable()
 export class PaymentDomainService extends BaseDomainServices {
@@ -15,7 +16,8 @@ export class PaymentDomainService extends BaseDomainServices {
 
   constructor(
     protected readonly data: PaymentDataService,
-    protected readonly config: ConfigService
+    protected readonly config: ConfigService,
+    private readonly eventManager: EventPublisherService
   ) {
     super(data);
   }
@@ -55,13 +57,13 @@ export class PaymentDomainService extends BaseDomainServices {
   }
 
   public async findRouteForPayment(
-    fromAccountId: string, 
-    toAccountId: string, 
-    state: LoanPaymentType, 
+    fromAccountId: string,
+    toAccountId: string,
+    state: LoanPaymentType,
     loanType: LoanType
   ): Promise<PaymentsRoute  | null> {
     const [fromAccountResult, toAccountResult] = await Promise.all([
-      this.data.paymentAccounts.getPaymentAccountById(fromAccountId), 
+      this.data.paymentAccounts.getPaymentAccountById(fromAccountId),
       this.data.paymentAccounts.getPaymentAccountById(toAccountId),
     ]);
     if (!fromAccountResult || !toAccountResult) {
@@ -73,10 +75,10 @@ export class PaymentDomainService extends BaseDomainServices {
     const { type: toAccount, ownership: toOwnership, provider: toProvider } = toAccountResult;
 
     const route = await this.data.paymentsRoute.findRoute(
-      { 
-        fromAccount, fromOwnership, fromProvider, toAccount, toOwnership, toProvider, 
-        loanStage: state, loanType, 
-      }, 
+      {
+        fromAccount, fromOwnership, fromProvider, toAccount, toOwnership, toProvider,
+        loanStage: state, loanType,
+      },
       [PAYMENTS_ROUTE_RELATIONS.Steps]);
 
     return route;
@@ -88,42 +90,146 @@ export class PaymentDomainService extends BaseDomainServices {
     return this.data.loanPayments.createPayment(input);
   }
 
-  public async createRepaymentByPreview(preview: PlanPreviewOutputItem, loanId: string): Promise<LoanPayment | null> {
-    this.logger.debug(`Creating repayment payment for loan ${loanId}`, { preview });
+  /**
+   * Updates the state of a loan payment and publishes the corresponding event.
+   *
+   * This method handles the state transition logic for loan payments, including:
+   * - Pending: Only updates if the old state is different
+   * - Failed: Always updates to failed state
+   * - Completed: Updates to completed state with timestamp
+   * - Created: Logs an error for unhandled states
+   *
+   * @param paymentId - The ID of the payment to update
+   * @param oldState - The current state of the payment before update
+   * @param newState - The new state to set for the payment
+   * @param paymentStepped - Indicates if this is a stepped payment (default: false)
+   * @returns True if update was successful, false if no change was made, null if update failed
+   */
+  public async updatePaymentState(
+    loanId: string,
+    paymentId: string,
+    oldState: LoanPaymentState,
+    newState: LoanPaymentState,
+    paymentStepped: boolean = false
+  ): Promise<boolean | null> {
+    let updateResult: boolean | null = null;
+    this.logger.debug(`Updating payment ${paymentId} to state ${newState}`, { oldState, paymentStepped });
+    switch (newState) {
+      case LoanPaymentStateCodes.Pending:
+        if (oldState !== newState) {
+          updateResult = await this.data.loanPayments.updatePayment(paymentId, { state: newState });
+        } else if (paymentStepped) {
+          // If payment is stepped, we still want to publish the event
+          updateResult =  true; // Indicate that we handled the stepped payment
+        }
+        break;
 
-    if (!preview || !preview.amount || !preview.paymentDate) {
-      this.logger.warn(`Invalid repayment preview for loan ${loanId}`);
-      return null;
+      case LoanPaymentStateCodes.Failed:
+        updateResult = await this.data.loanPayments.updatePayment(paymentId, { state: newState });
+        break;
+      case LoanPaymentStateCodes.Completed:
+        updateResult = await this.data.loanPayments.updatePayment(paymentId, {
+          state: newState,
+          completedAt: new Date(),
+        });
+        break;
+      case LoanPaymentStateCodes.Created:
+      default:
+        this.logger.error(`Unhandled payment state: ${newState} for paymentId: ${paymentId}`);
+        break;
     }
 
-    return this.data.loanPayments.createPayment({
-      id: v4(),
-      amount: preview.amount,
-      loanId,
-      paymentNumber: preview.index,
-      type: LoanPaymentTypeCodes.Repayment,
-      state: LoanPaymentStateCodes.Created,
-      scheduledAt: preview.paymentDate,
-    });
+    if (updateResult === null) {
+      this.logger.error(`Failed to update payment ${paymentId} state to ${newState}. It may not exist or the update operation failed.`);
+      return null;
+    } else if (updateResult === false) {
+      this.logger.warn(`Payment ${paymentId} state change to ${newState} was not applied. It may already be in this state or the update operation was not successful.`);
+      return false;
+    } else {
+      this.logger.debug(`Payment ${paymentId} state successfully changed to ${newState}`);
+      await this.publishPaymentStateChangeEvent(loanId, paymentId, oldState, newState, paymentStepped);
+    }
+
+    return updateResult;
   }
 
-  public async completePayment(paymentId: string): Promise<boolean | null> {
-    this.logger.debug(`Completing payment ${paymentId}`);
-    return this.data.loanPayments.updatePayment(
-      paymentId, 
-      { 
-        state: LoanPaymentStateCodes.Completed, 
-        completedAt: new Date(), 
-      });
+  /**
+   * Publishes an event for the payment state change.
+   *
+   * This method handles the logic for publishing events based on the new state of the payment:
+   * - **Pending**: Only publishes if payment is stepped
+   * - **Completed**: Publishes PaymentCompletedEvent
+   * - **Failed**: Publishes PaymentFailedEvent
+   * - **Created**: Logs an error for unhandled states
+   *
+   * @param paymentId - The ID of the payment whose state has changed
+   * @param oldState - The previous state of the payment
+   * @param newState - The new state of the payment
+   * @param paymentStepped - Indicates if this is a stepped payment (default: false)
+   * @returns True if event was published, false if skipped, null if unhandled state
+   */
+  private async publishPaymentStateChangeEvent(
+    loanId: string,
+    paymentId: string,
+    oldState: LoanPaymentState,
+    newState: LoanPaymentState,
+    paymentStepped: boolean = false
+  ): Promise<boolean | null> {
+    this.logger.debug(`Publishing payment state change event for payment ${paymentId} from ${oldState} to ${newState}`, { paymentStepped });
+    switch (newState) {
+      case LoanPaymentStateCodes.Pending:
+        if (!paymentStepped) {
+          this.logger.debug(`Payment ${paymentId} is pending but not stepped, skipping event publication.`);
+          return false; // Skip event if payment is pending but not stepped
+        }
+        return this.eventManager.publish(PaymentSteppedEvent.create(paymentId, oldState));
+      case LoanPaymentStateCodes.Completed:
+        return this.eventManager.publish(PaymentCompletedEvent.create(paymentId, oldState));
+      case LoanPaymentStateCodes.Failed:
+        return this.eventManager.publish(PaymentFailedEvent.create(paymentId, oldState));
+      case LoanPaymentStateCodes.Created:
+      default:
+        this.logger.error(`Unhandled payment state: ${newState} for paymentId: ${paymentId}`);
+        return null;
+    }
   }
 
-  public async failPayment(paymentId: string, stepId: string): Promise<boolean | null> {
-    this.logger.debug(`Failing payment ${paymentId} because of step ${stepId}`);
-    return this.data.loanPayments.updatePayment(
-      paymentId, 
-      { 
-        state: LoanPaymentStateCodes.Failed, 
-      });
+  /**
+   * Identifies the next payment step that can be initiated.
+   *
+   * This method implements the step sequencing logic for payment execution:
+   * 1. **First Step**: If no steps are completed, returns the first step (order 0) if it's in 'created' state
+   * 2. **Sequential Steps**: Finds the step that immediately follows the highest completed step
+   * 3. **State Validation**: Only returns steps in 'created' state that are ready for initiation
+   *
+   * The sequential execution ensures that payment steps are processed in the correct
+   * order and that each step completes before the next one begins.
+   *
+   * @param steps - All payment steps for analysis
+   * @returns The ID of the next step ready for initiation, or null if no step can be started
+   */
+  public couldStartNextPaymentStep(steps: LoanPaymentStep[] | null): string | null {
+    if (!steps || !steps.length) return null;
+
+    // 1. Find the highest order completed step
+    const completedSteps = steps.filter(step => step.state === PaymentStepStateCodes.Completed);
+    if (!completedSteps.length) {
+      // If no steps are completed, check if we can start the first step
+      const firstStep = steps.find(step => step.order === 0);
+      return firstStep?.state === PaymentStepStateCodes.Created ? firstStep.id : null;
+    }
+
+    // Get max order of completed steps
+    const maxCompletedOrder = Math.max(...completedSteps.map(step => step.order));
+
+    // 2. Find the next step after the highest completed one
+    const nextStep = steps.find(step =>
+      step.order === maxCompletedOrder + 1 &&
+      step.state === PaymentStepStateCodes.Created
+    );
+
+    // TODO: Should result PaymentStepped to advance next step to Pending state
+    return nextStep?.id || null;
   }
 
   // #endregion
@@ -148,9 +254,37 @@ export class PaymentDomainService extends BaseDomainServices {
     return this.data.transfers.getLatestTransferForStep(stepId);
   }
 
-  public async updatePaymentStepState(stepId: string, state: PaymentStepState): Promise<boolean | null> {
-    this.logger.debug(`Updating payment step ${stepId} to state ${state}`);
-    return this.data.loanPaymentSteps.updateStepState(stepId, state);
+  public async updatePaymentStepState(stepId: string, oldState: PaymentStepState, newState: PaymentStepState): Promise<boolean | null> {
+    this.logger.debug(`Updating payment step ${stepId} to state ${newState}`);
+    const updateResult = await this.data.loanPaymentSteps.updateStepState(stepId, newState);
+    if (updateResult === null) {
+      this.logger.error(`Failed to update step ${stepId} state to ${newState}. It may not exist or the update operation failed.`);
+      return null;
+    } else if (updateResult === false) {
+      this.logger.warn(`Step ${stepId} state change to ${newState} was not applied. It may already be in this state or the update operation was not successful.`);
+      return false;
+    } else {
+      this.logger.debug(`Step ${stepId} state successfully changed to ${newState}`);
+      await this.publishStepStateChangeEvent(stepId, oldState, newState);
+    }
+
+    return updateResult;
+  }
+
+  private async publishStepStateChangeEvent(stepId: string, oldState: PaymentStepState, newState: PaymentStepState): Promise<boolean | null> {
+    this.logger.debug(`Publishing step state change event for step ${stepId} from ${oldState} to ${newState}`);
+    switch (newState) {
+      case PaymentStepStateCodes.Pending:
+        return this.eventManager.publish(PaymentStepPendingEvent.create(stepId, oldState));
+      case PaymentStepStateCodes.Completed:
+        return this.eventManager.publish(PaymentStepCompletedEvent.create(stepId, oldState));
+      case PaymentStepStateCodes.Failed:
+        return this.eventManager.publish(PaymentStepFailedEvent.create(stepId, oldState));
+      case PaymentStepStateCodes.Created:
+      default:
+        this.logger.error(`Unhandled step state: ${newState} for stepId: ${stepId}`);
+        return null;
+    }
   }
 
   // #endregion
@@ -187,12 +321,17 @@ export class PaymentDomainService extends BaseDomainServices {
     return transfer;
   }
 
-  public async completeTransfer(transferId: string): Promise<boolean | null> {
+  public async completeTransfer(transferId: string, provider: PaymentAccountProvider): Promise<boolean | null> {
     this.logger.debug(`Completing transfer ${transferId}`);
-    return this.data.transfers.completeTransfer(transferId);
+    const transfer = await this.data.transfers.getTransferById(transferId);
+    if (!transfer) {
+      throw new EntityNotFoundException('Transfer not found');
+    }
+    const { state } = transfer;
+    return this.updateTransferState(transferId, state, TransferStateCodes.Completed, provider);
   }
 
-  public async failTransfer(transferId: string, error: TransferErrorDetails): Promise<boolean | null> {
+  public async failTransfer(transferId: string, error: TransferErrorDetails, provider: PaymentAccountProvider): Promise<boolean | null> {
     this.logger.debug(`Failing transfer ${transferId}`, { error });
     // Check transfer existence and state (prevent double-fail)
     // Get Loan Id attached to Transfer if any
@@ -206,11 +345,69 @@ export class PaymentDomainService extends BaseDomainServices {
       return null; // Transfer already failed, no action needed
     }
 
-    const loanId = transfer.loanPaymentStep?.loanPayment.loanId;
+    const { loanPaymentStep, state } = transfer;
+
+    const loanId = loanPaymentStep?.loanPayment.loanId;
     // Save TransferError
     await this.data.transferErrors.createTransferError(transferId, error, loanId || null);
     // Save Transfer
-    return this.data.transfers.failTransfer(transferId);
+    return this.updateTransferState(transferId, state, TransferStateCodes.Failed, provider);
+  }
+
+  public async processTransferUpdate(transferId: string, updates: Partial<Transfer> | null): Promise<boolean | null> {
+    this.logger.debug(`Processing transfer update for ${transferId}`, { updates });
+    if (!updates || Object.keys(updates).length === 0) {
+      this.logger.warn(`No updates provided for transfer ${transferId}`);
+      return false; // No updates to apply
+    }
+    this.logger.debug(`Updating transfer ${transferId} with details`, { updates });    
+    return this.data.transfers.updateTransfer(transferId, updates);
+  }
+
+  public async updateTransferState(
+    transferId: string,
+    oldState: TransferState,
+    newState: TransferState,
+    provider: PaymentAccountProvider
+  ): Promise<boolean | null> {
+    if (oldState === newState) {
+      this.logger.warn(`Transfer ${transferId} state is already ${newState}, no update needed.`);
+      return false; // No state change needed
+    }
+    this.logger.debug(`Updating transfer ${transferId} from ${oldState} to ${newState}`, { provider });
+    const updateResult = await this.data.transfers.updateTransfer(transferId, { state: newState });
+    if (updateResult === null) {
+      this.logger.error(`Failed to update transfer ${transferId} state to ${newState}. It may not exist or the update operation failed.`);
+      return null;
+    } else if (updateResult === false) {
+      this.logger.warn(`Transfer ${transferId} state change to ${newState} was not applied. It may already be in this state or the update operation was not successful.`);
+      return false;
+    } else {
+      this.logger.debug(`Transfer ${transferId} state successfully changed to ${newState}`);
+      await this.publishTransferStateChangeEvent(transferId, oldState, newState, provider);
+    }
+    return updateResult;
+  }
+
+  private async publishTransferStateChangeEvent(
+    transferId: string,
+    oldState: TransferState,
+    newState: TransferState,
+    provider: PaymentAccountProvider
+  ): Promise<boolean | null> {
+    this.logger.debug(`Publishing transfer state change event for transfer ${transferId} from ${oldState} to ${newState}`, { provider });
+    switch (newState) {
+      case TransferStateCodes.Pending:
+        return this.eventManager.publish(TransferExecutedEvent.create(transferId, provider));
+      case TransferStateCodes.Completed:
+        return this.eventManager.publish(TransferCompletedEvent.create(transferId, provider));
+      case TransferStateCodes.Failed:
+        return this.eventManager.publish(TransferFailedEvent.create(transferId, provider));
+      case TransferStateCodes.Created:
+      default:
+        this.logger.warn(`Unhandled transfer state: ${newState} for transferId: ${transferId}`);
+        return null;
+    }
   }
 
   // #endregion

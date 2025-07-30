@@ -27,16 +27,19 @@ export class DisbursingPausedLoanStateManager extends BaseLoanStateManager {
       {
         condition: (loan) => this.paymentStrategy.shouldTransitionToResumed(loan, EVALUATION_CONTEXT_CODES.DISBURSEMENT.RESUME),
         nextState: LoanStateCodes.Disbursing,
+        sameStateProgress: false,
         priority: 1,
       },
       {
         condition: (loan) => this.paymentStrategy.shouldTransitionToCompleted(loan, EVALUATION_CONTEXT_CODES.DISBURSEMENT.COMPLETION),
         nextState: LoanStateCodes.Disbursed,
+        sameStateProgress: false,
         priority: 2,
       },
       {
         condition: (loan) => this.paymentStrategy.shouldTransitionToFallback(loan, EVALUATION_CONTEXT_CODES.DISBURSEMENT.FALLBACK),
         nextState: LoanStateCodes.Funded,
+        sameStateProgress: false,
         priority: 3,
       },
     ];

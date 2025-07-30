@@ -1,7 +1,8 @@
 import { LoanType } from '@library/entity/enum';
+import { IsValidDateString } from '@library/shared/common/validator/date-string.validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDate, IsEmail, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 
 @ApiSchema({ name: 'loanApplicationRequest' })
 export class LoanApplicationRequestDto {
@@ -15,6 +16,11 @@ export class LoanApplicationRequestDto {
   @IsString()
   @IsOptional()
   status: string | null;
+
+  @ApiProperty({ description: 'Unique identifier for the loan associated with the application', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000', required: false })
+  @IsString()
+  @IsOptional()
+  loanId: string | null;
 
   // Biller
   @ApiProperty({ description: 'Unique identifier for the biller', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
@@ -31,6 +37,12 @@ export class LoanApplicationRequestDto {
   @IsString()
   @IsOptional()
   billerPostalCode: string | null;
+
+  @ApiProperty({ description: 'Class of the biller', type: 'string', example: 'Utilities', required: false })
+  @IsString()
+  @IsOptional()
+  billerClass: string | null;
+
 
   // Bill
   @ApiProperty({ description: 'Account number with the biller', type: 'string', example: '123456789', required: false })
@@ -80,15 +92,20 @@ export class LoanApplicationRequestDto {
   @IsOptional()
   borrowerId: string | null;
 
+  @ApiProperty({ description: 'First name of the borrower', type: 'string', example: 'John', required: false })
+  @IsString()
+  @IsOptional()
+  borrowerFirstName: string | null;
+
+  @ApiProperty({ description: 'Last name of the borrower', type: 'string', example: 'Doe', required: false })
+  @IsString()
+  @IsOptional()
+  borrowerLastName: string | null;
+
   @ApiProperty({ description: 'Unique identifier for the borrower payment account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
   @IsString()
   @IsOptional()
   borrowerPaymentAccountId: string | null;
-
-  @ApiProperty({ description: 'Date when the borrower submitted the application', type: 'string', format: 'date-time', example: '2023-10-01T12:00:00Z', required: false })
-  @IsDate()
-  @IsOptional()
-  borrowerSubmittedAt: Date | null;
 
   // Loan fields
   @ApiProperty({ description: 'Type of the loan', type: 'string', example: 'DirectBillPay', required: false })
@@ -116,4 +133,9 @@ export class LoanApplicationRequestDto {
   @IsNumber()
   @IsOptional()
   loanServiceFee: number | null;
+
+  @ApiProperty({ description: 'Date of the first payment for the loan', type: 'string', example: '10/15/2025', required: false })
+  @IsValidDateString()
+  @IsOptional()
+  loanFirstPaymentDate: Date | null;
 }

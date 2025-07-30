@@ -1,7 +1,8 @@
+import { LoanApplicationPaymentItemDto } from '@core/modules/lending/dto/response/';
 import { LoanType, LoanTypeCodes } from '@library/entity/enum';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
-import { IsDate, IsEmail, IsInt, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsDate, IsEmail, IsInt, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 @ApiSchema({ name: 'loanApplicationResponse' })
 export class LoanApplicationResponseDto {
@@ -18,6 +19,11 @@ export class LoanApplicationResponseDto {
   @Expose()
   status: string | null;
 
+  @ApiProperty({ description: 'Unique identifier for the loan associated with the application', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000', required: false })
+  @IsUUID()
+  @IsOptional()
+  @Expose()
+  loanId: string | null;
   
   // Biller
   @ApiProperty({ description: 'Unique identifier for the biller', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001' })
@@ -38,6 +44,11 @@ export class LoanApplicationResponseDto {
   @Expose()
   billerPostalCode: string | null;
 
+  @ApiProperty({ description: 'Class of the biller', type: 'string', example: 'Utilities' })
+  @IsString()
+  @IsOptional()
+  @Expose()
+  billerClass: string | null;
 
   // Bill
   @ApiProperty({ description: 'Account number with the biller', type: 'string', example: '123456789' })
@@ -104,11 +115,23 @@ export class LoanApplicationResponseDto {
   @Expose()
   borrowerId: string | null;
 
+  @ApiProperty({ description: 'First name of the borrower', type: 'string', example: 'John' })
+  @IsString()
+  @IsOptional()
+  @Expose()
+  borrowerFirstName: string | null;
+
+  @ApiProperty({ description: 'Last name of the borrower', type: 'string', example: 'Doe' })
+  @IsString()
+  @IsOptional()
+  @Expose()
+  borrowerLastName: string | null;
+
   @ApiProperty({ description: 'Unique identifier for the borrower payment account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
   @IsUUID()
   @IsOptional()
   @Expose()
-  borrowerAccountId: string | null;
+  borrowerPaymentAccountId: string | null;
 
   @ApiProperty({ description: 'The date when the borrower submitted the application', type: 'string', format: 'date-time', example: '2023-01-01T00:00:00Z', required: false })
   @IsDate()
@@ -147,4 +170,19 @@ export class LoanApplicationResponseDto {
   @IsOptional()
   @Expose()
   loanServiceFee: number | null;
+
+  @ApiProperty({ description: 'Date of the first payment for the loan', type: 'string', format: 'date-time', example: '2023-01-15T00:00:00Z', required: false })
+  @IsDate()
+  @IsOptional()
+  @Expose()
+  loanFirstPaymentDate: Date | null;
+
+  //loanPaymentSchedule
+  @ApiProperty({ description: 'Payment schedule for the loan application', type: [LoanApplicationPaymentItemDto], isArray: true, required: false })
+  @IsArray()
+  @Type(() => LoanApplicationPaymentItemDto)
+  @IsOptional()
+  @Expose()
+  loanPaymentSchedule: LoanApplicationPaymentItemDto[] | null;
 }
+  

@@ -1,13 +1,62 @@
-#!/bin/sh
-echo "Initializing localstack sqs"
+#!/bin/bash
+set -e
 
-awslocal sqs create-queue --queue-name zng-events-queue
-awslocal sqs create-queue --queue-name zng-events-queue.fifo --attributes FifoQueue=true
+# Set AWS environment variables for LocalStack
+export AWS_DEFAULT_REGION=us-east-1
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_ENDPOINT_URL=http://localhost:4566
 
-awslocal lambda create-function --function-name localstack-lambda-test --runtime nodejs22.x --zip-file fileb:///tmp/function.zip --handler test-lamda-handler.handler --role arn:aws:iam::000000000000:role/lambda-role
+QUEUE_NAME="zng-events-queue"
+TOPIC_NAME="zng-events-topic"
+QUEUE_URL=${AWS_EVENTS_QUEUE_URL:-"http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/$QUEUE_NAME"}
+TOPIC_ARN=${AWS_EVENTS_TOPIC:-"arn:aws:sns:us-east-1:000000000000:$TOPIC_NAME"}
 
-# Get queue ARN
-QUEUE_ARN=$(awslocal sqs get-queue-attributes --queue-url http://localhost:4566/000000000000/zng-events-queue --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
+echo "Creating SQS queue: $QUEUE_NAME"
+awslocal sqs create-queue --queue-name "$QUEUE_NAME"
 
-# Create Event Source Mapping
-awslocal lambda create-event-source-mapping --function-name localstack-lambda-test --event-source-arn "$QUEUE_ARN" --batch-size 1
+echo "Creating SNS topic: $TOPIC_NAME"
+awslocal sns create-topic --name "$TOPIC_NAME"
+
+echo "Queue URL: $QUEUE_URL"
+echo "Topic ARN: $TOPIC_ARN"
+
+QUEUE_ARN=$(awslocal sqs get-queue-attributes \
+  --queue-url "$QUEUE_URL" \
+  --attribute-name QueueArn \
+  --query "Attributes.QueueArn" \
+  --output text)
+
+echo "Queue ARN: $QUEUE_ARN"
+
+POLICY=$(cat <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "Allow-SNS-SendMessage",
+    "Effect": "Allow",
+    "Principal": { "Service": "sns.amazonaws.com" },
+    "Action": "sqs:SendMessage",
+    "Resource": "$QUEUE_ARN",
+    "Condition": {
+      "ArnEquals": { "aws:SourceArn": "$TOPIC_ARN" }
+    }
+  }]
+}
+EOF
+)
+
+POLICY_ESCAPED=$(echo "$POLICY" | tr -d '\n' | sed 's/"/\\"/g')
+
+awslocal sqs set-queue-attributes \
+  --queue-url "$QUEUE_URL" \
+  --attributes "Policy=\"$POLICY_ESCAPED\""
+
+echo "Policy set on queue"
+
+awslocal sns subscribe \
+  --topic-arn "$TOPIC_ARN" \
+  --protocol sqs \
+  --notification-endpoint "$QUEUE_ARN"
+
+echo "Subscription complete"

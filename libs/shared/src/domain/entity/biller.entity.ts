@@ -8,7 +8,7 @@ import { BillerName } from './biller-name.entity';
 import { PaymentAccount } from './payment.account.entity';
 
 /**
- * Biller entity implements IBiller for the core domain.
+ * Biller entity
  *
  */
 @Entity({ schema: DbSchemaCodes.Core })

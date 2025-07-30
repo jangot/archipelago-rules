@@ -126,4 +126,19 @@ export class LoanApplicationsController {
     this.logger.debug(`Rejecting loan application ${id} by user ${userId}`);
     await this.loanApplicationService.rejectLoanApplication(userId, id);
   }
+
+  @Post(':id/cancel')
+  @ApiOperation({ summary: 'Cancel a loan application', description: 'Cancel a loan application' })
+  @ApiParam({ name: 'id', required: true, description: 'Loan application id' })
+  @ApiOkResponse({ description: 'Loan application cancelled', type: undefined, isArray: false })
+  @ApiNotFoundResponse({ description: 'No Loan application found', isArray: false })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error', isArray: false })
+  public async cancelLoanApplication(
+    @UUIDParam('id') id: string,
+    @Req() request: IRequest,
+  ): Promise<void> {
+    const userId = request.user!.id;
+    this.logger.debug(`Cancelling loan application ${id} by user ${userId}`);
+    await this.loanApplicationService.cancelLoanApplication(userId, id);
+  }
 }

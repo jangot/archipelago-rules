@@ -1,50 +1,58 @@
 import { LoanPaymentTypeCodes } from '@library/entity/enum';
-import { Loan, LoanPayment } from '@library/shared/domain/entity';
+import { Loan } from '@library/shared/domain/entity';
 import { Injectable } from '@nestjs/common';
 import { PaymentDomainService } from '@payment/modules/domain/services';
-import { BaseLoanPaymentManager } from './base-loan-payment-manager';
+import { BaseLoanPaymentManager, PaymentAccountPair } from './base-loan-payment-manager';
 
 /**
- * Handles loan refund payments
+ * RefundPaymentManager handles loan refund payments where funds are returned
+ * to borrowers or billers due to loan cancellations, overpayments, or fee
+ * reversals. This implements flexible refund flows that can originate from
+ * lenders and target various recipients based on refund scenarios.
+ * 
+ * Key responsibilities:
+ * - Process refund transfers for loan cancellations and overpayments
+ * - Handle fee reversals and partial refund scenarios
+ * - Support multiple refund recipients (borrowers, billers, etc.)
+ * - Calculate appropriate refund amounts based on loan history
+ * - Integrate with payment history for accurate refund calculations
  */
 @Injectable()
 export class RefundPaymentManager extends BaseLoanPaymentManager {
+
   constructor(protected readonly paymentDomainService: PaymentDomainService) {
     super(paymentDomainService, LoanPaymentTypeCodes.Refund);
   }
 
   /**
-   * Initiates a new refund payment for a loan
-   * TODO: Refund requires more sophisticated logic and should be revisited
-   * This is a placeholder implementation that may not cover all edge cases.
-   * @param loanId The ID of the loan for which to initiate a refund payment
-   * @returns The created loan payment or null if creation failed
+   * Resolves account pair for refund payment flows. Currently implements
+   * Lender → Biller refund flow as the primary scenario, but refund logic
+   * should be enhanced to support multiple recipient types based on the
+   * specific refund scenario (loan cancellation, overpayment, fee reversal).
+   * 
+   * @param loan - Loan entity containing account information
+   * @returns Payment account pair with lender as source and biller as target
    */
-  public async initiate(loanId: string): Promise<LoanPayment | null> {
-    return this.initiatePayment(loanId);
+  protected getAccountPairForPaymentType(loan: Loan): PaymentAccountPair {
+    return { 
+      fromAccountId: loan.lenderAccountId,
+      toAccountId: loan.biller?.paymentAccountId || null,
+    };
   }
 
   /**
-   * Gets the source and target payment account IDs for refund payment
-   * @param loan The loan for which to get payment accounts
-   * @returns Object containing fromAccountId and toAccountId
+   * Calculates refund amount using loan principal as base amount. This is
+   * a simplified implementation that needs enhancement to handle complex
+   * refund scenarios including partial refunds based on payment history,
+   * fee reversals, interest adjustments, and time-based refund calculations.
+   * 
+   * @param loan - Loan entity containing amount information
+   * @returns The refund amount to be processed, defaults to 0 if not specified
+   * @todo Requires more sophisticated logic for refund amount calculation
+   *       including partial refunds, fee reversals, interest adjustments,
+   *       and payment history analysis for accurate refund determination
    */
-  protected async getPaymentAccounts(loan: Loan): Promise<{ fromAccountId: string | null; toAccountId: string | null }> {
-    const { lenderAccountId, biller } = loan;
-    
-    if (!lenderAccountId) {
-      this.logger.warn(`Lender account ID is missing for loan ${loan.id}`);
-      return { fromAccountId: null, toAccountId: null };
-    }
-
-    if (!biller || !biller.paymentAccountId) {
-      this.logger.warn(`Biller or Biller's payment Account is missing for loan ${loan.id}`);
-      return { fromAccountId: null, toAccountId: null };
-    }
-
-    return { 
-      fromAccountId: lenderAccountId,
-      toAccountId: biller.paymentAccountId,
-    };
+  protected getPaymentAmount(loan: Loan): number {
+    return loan.amount || 0;
   }
 }

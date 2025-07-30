@@ -1,5 +1,6 @@
 export interface PlanPreviewOutputItem {
   amount: number;
+  feeAmount: number;
   index: number;
   paymentsLeft: number;
   paymentDate: Date;
