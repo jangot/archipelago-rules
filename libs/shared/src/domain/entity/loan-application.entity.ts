@@ -46,6 +46,9 @@ export class LoanApplication {
   @Column({ type: 'text', nullable: true })
   billerPostalCode: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  billerClass: string | null;
+
   // Bill
   @Column({ type: 'text', nullable: true })
   billAccountNumber: string | null;
