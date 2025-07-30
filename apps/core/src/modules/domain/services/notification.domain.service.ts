@@ -1,6 +1,6 @@
 import { CoreDataService } from '@core/modules/data';
+import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
 import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
-import { NotificationDefinition } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -21,13 +21,14 @@ export class NotificationDomainService extends BaseDomainServices {
   }
 
   /**
-   * Find notification definition by name
+   * Find notification definition data items by name
    *
    * @param name - The name of the notification definition to find
-   * @returns Promise<NotificationDefinition | null>
+   * @returns Promise<NotificationDataItems[] | null>
    */
-  async findByName(name: string): Promise<NotificationDefinition | null> {
-    this.logger.debug(`Finding notification definition by name: ${name}`);
-    return this.data.notificationDefinitions.findByName(name);
+  async findByName(name: string): Promise<NotificationDataItems[] | null> {
+    this.logger.debug(`Finding notification definition data items by name: ${name}`);
+    const notificationDefinition = await this.data.notificationDefinitions.findByName(name);
+    return notificationDefinition?.dataItems || null;
   }
 }

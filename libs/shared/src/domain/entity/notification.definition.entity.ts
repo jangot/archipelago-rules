@@ -25,7 +25,7 @@ export class NotificationDefinition {
    * Array of notification types that this definition supports
    * Stored as JSON array in the database
    */
-  @Column('jsonb', { nullable: false, default: '[]' })
+  @Column('jsonb', { nullable: false, default: '["user"]' })
   dataItems: NotificationDataItems[];
 
   /**
