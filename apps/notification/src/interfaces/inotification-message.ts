@@ -5,6 +5,7 @@ export interface INotificationMessage {
   header: string;
   body: string;
   message: string;
+  definitionItemId: string;
 }
 
 export interface INotificationMessageRequest extends INotificationMessage {

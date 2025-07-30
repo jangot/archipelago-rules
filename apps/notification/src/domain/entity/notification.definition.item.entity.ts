@@ -1,9 +1,19 @@
 import { NotificationType } from '@library/entity/enum/notification.type';
 import { INotificationDefinitionItem } from '@library/entity/interface/notification-definition-item.interface';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm';
 
 import { NotificationDefinition } from '@notification/domain/entity/notification.definition.entity';
 import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
+import { NotificationLog } from '@notification/domain/entity/notification.log.entity';
 
 /**
  * Entity representing a notification definition item
@@ -28,7 +38,7 @@ export class NotificationDefinitionItem implements INotificationDefinitionItem {
    * Parent notification definition
    */
   @ManyToOne(() => NotificationDefinition, (definition) => definition.items)
-  @JoinColumn({ name: 'notificationDefinitionId' })
+  @JoinColumn({ name: 'notification_definition_id' })
   notificationDefinition: NotificationDefinition;
 
   /**
@@ -78,6 +88,12 @@ export class NotificationDefinitionItem implements INotificationDefinitionItem {
    */
   @Column('jsonb', { nullable: false, default: '{}' })
   attributes: object;
+
+  /**
+   * Notification logs associated with this definition items
+   */
+  @OneToMany(() => NotificationLog, (item) => item.notificationDefinitionItem)
+  logs: NotificationLog[];
 
   /**
    * Timestamp when this notification definition item was created

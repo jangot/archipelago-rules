@@ -1,5 +1,15 @@
 import { INotificationLog } from '@library/entity';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm';
+import { NotificationDefinition } from '@notification/domain/entity/notification.definition.entity';
+import { NotificationDefinitionItem } from '@notification/domain/entity/notification.definition.item.entity';
 
 /**
  * Entity representing a notification log entry
@@ -61,6 +71,19 @@ export class NotificationLog implements INotificationLog {
    */
   @Column('text', { nullable: false, default: '' })
   message: string;
+
+  /**
+   * Reference to the notification definition item
+   */
+  @Column('uuid', { nullable: false })
+  definitionItemId: string;
+
+  /**
+   * Parent notification definition item
+   */
+  @ManyToOne(() => NotificationDefinitionItem, (definition) => definition.logs)
+  @JoinColumn({ name: 'definition_item_id' })
+  notificationDefinitionItem: NotificationDefinitionItem;
 
   /**
    * Timestamp when this notification log entry was created

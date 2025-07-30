@@ -20,6 +20,7 @@ export class BaseNotificationProvider implements INotificationProvider {
       header: message.header,
       body: message.body,
       message: message.message,
+      definitionItemId: message.definitionItemId,
     };
   }
 }

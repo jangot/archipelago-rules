@@ -66,6 +66,7 @@ export class NotificationHandler implements IEventHandler<NotificationEvent> {
       body,
       message,
       attributes: definition.attributes,
+      definitionItemId: definition.id,
     };
   }
 }
