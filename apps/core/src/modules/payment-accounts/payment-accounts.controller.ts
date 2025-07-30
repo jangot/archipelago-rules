@@ -1,7 +1,7 @@
 import { JwtAuthGuard } from '@core/modules/auth/guards';
 import { BankAccountResponseDto, DebitCardResponseDto, PaymentAccountResponseDto } from '@core/modules/payment-accounts/dto/response/payment-account.response.dto';
 import { IRequest } from '@library/shared/type';
-import { Body, Controller, Logger, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiExtraModels, ApiOperation, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { DebitCardCreateRequestDto, IavAccountCreateRequestDto, MicrodepositsAccountCreateRequestDto, MicrodepositsValuesRequestDto, PaymentMethodCreateRequestDto, PaymentMethodProceedVerificationRequestDto, PaymentMethodVerifyRequestDto } from './dto/request';
 import { BankingService } from './payment-accounts.service';
@@ -107,5 +107,45 @@ export class BankingController {
     const { accountId, data: { firstValue, secondValue } } = input;
     return this.bankingService.microdepositsVerification(userId, accountId, firstValue, secondValue);
 
+  }
+
+  @Get('list')
+  @ApiOperation({ summary: 'Get all payment accounts', description: 'Retrieve all payment accounts for the authenticated user' })
+  @ApiCreatedResponse({ 
+    description: 'Payment accounts retrieved successfully', 
+    schema: {
+      type: 'array',
+      items: {
+        oneOf: [
+          { $ref: getSchemaPath(DebitCardResponseDto) },
+          { $ref: getSchemaPath(BankAccountResponseDto) },
+        ],
+      },
+    },
+  })
+  public async getAllPaymentAccounts(@Req() request: IRequest): Promise<PaymentAccountResponseDto[]> {
+    const userId = request.user!.id;
+
+    this.logger.debug('Fetching all payment accounts for user', { userId });
+    return this.bankingService.listPaymentAccounts(userId);
+  }
+
+  @Get(':paymentAccountId')
+  @ApiOperation({ summary: 'Get payment account by ID', description: 'Retrieve a specific payment account by its ID for the authenticated user' })
+  @ApiCreatedResponse({ 
+    description: 'Payment account retrieved successfully', 
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(DebitCardResponseDto) },
+        { $ref: getSchemaPath(BankAccountResponseDto) },
+        { type: 'null' },
+      ],
+    },
+  })
+  public async getPaymentAccountById(@Req() request: IRequest, @Param('paymentAccountId') paymentAccountId: string): Promise<PaymentAccountResponseDto | null> {
+    const userId = request.user!.id;
+
+    this.logger.debug('Fetching payment account by ID', { userId, paymentAccountId });
+    return this.bankingService.getPaymentAccountById(userId, paymentAccountId);
   }
 }

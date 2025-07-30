@@ -25,6 +25,10 @@ export class PaymentAccountRepository extends RepositoryBase<PaymentAccount> {
     return this.repository.findOne({ where: { id: paymentAccountId }, relations });
   }
 
+  public async getPaymentAccountsByUserId(userId: string, relations?: PaymentAccountRelation[]): Promise<PaymentAccount[]> {
+    return this.repository.find({ where: { userId }, relations });
+  }
+
   public async setPaymentAccountVerificationState(paymentAccountId: string, state: PaymentAccountState): Promise<boolean | null> {
     const result = await this.repository.update({ id: paymentAccountId }, { state });
     return this.actionResult(result);

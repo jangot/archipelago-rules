@@ -59,6 +59,17 @@ export class BankingService {
     return this.mapToDto(paymentAccount);
   }
 
+  public async listPaymentAccounts(userId: string): Promise<PaymentAccountResponseDto[]> {
+    this.logger.debug('Listing payment accounts for user', { userId });
+    const paymentAccounts = await this.domainServices.userServices.getPaymentAccountsByUserId(userId);
+    if (!paymentAccounts || paymentAccounts.length === 0) {
+      this.logger.warn('No payment accounts found for user', { userId });
+      return [];
+    }
+    this.logger.debug('Payment accounts found', { count: paymentAccounts.length });
+    return paymentAccounts.map(account => this.mapToDto(account)).filter(acc => acc !== null);
+  }
+
 
 
   // #region TODO: Temporary methods for PaymentAccounts Management support until Fiserv not integrated
@@ -230,7 +241,7 @@ export class BankingService {
 
   }
 
-  private async mapToDto(paymentAccount: PaymentAccount): Promise<PaymentAccountResponseDto | null> {
+  private mapToDto(paymentAccount: PaymentAccount): PaymentAccountResponseDto | null {
     const { type, details } = paymentAccount;
     switch (type) {
       case PersonalPaymentAccountTypeCodes.DebitCard:
