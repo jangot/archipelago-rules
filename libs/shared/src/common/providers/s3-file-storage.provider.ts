@@ -1,5 +1,7 @@
 import { GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getS3ClientConfiguration } from '@library/shared/infrastructure/configuration/get-aws-clients-configuration';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Readable } from 'stream';
 import { IFileStorageProvider } from './ifile-storage.provider';
 
@@ -11,29 +13,11 @@ export class S3FileStorageProvider implements IFileStorageProvider {
   private readonly bucket: string;
   private readonly logger: Logger = new Logger(S3FileStorageProvider.name);
 
-  constructor() {
-    // TODO: Confirm way in which we're going to connect to AWS
-    // Configuration values from environment
-    const region = process.env.AWS_REGION;
-    const endpoint = process.env.AWS_ENDPOINT_URL ;
-    const bucket = process.env.AWS_S3_BUCKET ;
-    const isLocal = process.env.IS_LOCAL === '1';
-    const accessKeyId = process.env.AWS_ACCESS_KEY_ID || 'test';
-    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || 'test';
+  constructor(private readonly configService: ConfigService) {
+    this.bucket = this.configService.getOrThrow<string>('AWS_S3_BUCKET');
     
-    this.bucket = bucket!;
-    
-    const credentials = isLocal ? {
-      accessKeyId,
-      secretAccessKey,
-    } : undefined;
-
-    this.s3 = new S3Client({
-      region,
-      endpoint,
-      forcePathStyle: true,
-      credentials,
-    });
+    const s3Config = getS3ClientConfiguration(this.configService);
+    this.s3 = new S3Client(s3Config);
   }
 
   /**

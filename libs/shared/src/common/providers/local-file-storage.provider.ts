@@ -76,10 +76,12 @@ export class LocalFileStorageProvider implements IFileStorageProvider {
   public async listFiles(path: string, extension?: string): Promise<string[]> {
     try {
       const files = await fsPromises.readdir(path);
+      let filteredFiles = files;
       if (extension) {
-        return files.filter(file => file.endsWith(extension));
+        filteredFiles = files.filter(file => file.endsWith(extension));
       }
-      return files;
+      // Return full paths to be consistent with S3 provider
+      return filteredFiles.map(file => `${path}/${file}`);
     } catch (err: any) {
       this.logger.error(`Failed to list files in ${path}: ${err.message}`, err);
       throw err;

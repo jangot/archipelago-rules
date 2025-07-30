@@ -37,7 +37,7 @@ export interface IFileStorageProvider {
    * Lists files in a directory or prefix.
    * @param path The directory or prefix to list.
    * @param extension Optional file extension filter (e.g., '.json').
-   * @returns Array of file names/keys.
+   * @returns Array of full file paths/keys.
    */
   listFiles(path: string, extension?: string): Promise<string[]>;
 

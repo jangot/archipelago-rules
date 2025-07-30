@@ -198,9 +198,10 @@ export class RppsBillerProvider extends BaseBillerProvider {
         const batch = files.slice(i, i + batchSize);
         
         // Process files with batch size
-        const batchPromises = batch.map(async (fileName) => {
+        const batchPromises = batch.map(async (filePath) => {
           try {
-            const fullPath = `${billerFilesFolder}/${fileName}`;
+            // filePath is already the full S3 key, no need to join with billerFilesFolder
+            const fileName = filePath.split('/').pop() || '';
             const externalId = this.extractExternalIdFromFileName(fileName);
             if (!externalId) {
               this.logger.warn(`Could not extract external ID from filename: ${fileName}`);
@@ -208,7 +209,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
             }
 
             // Read file as stream for memory-efficient processing
-            const fileStream = await this.fileStorage.readStream(fullPath);
+            const fileStream = await this.fileStorage.readStream(filePath);
             
             // Calculate CRC32 from stream
             const calculatedCrc32 = await generateCRC32FromStream(fileStream);
@@ -222,7 +223,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
             }
 
             // Read file content for JSON parsing (needed for biller data)
-            const fileContent = await this.fileStorage.read(fullPath);
+            const fileContent = await this.fileStorage.read(filePath);
             const billerData: BillerJsonData = JSON.parse(fileContent);
 
             // Create or update biller entity
@@ -240,7 +241,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
 
             return { processed: 1, updated: existingBiller ? 1 : 0, skipped: 0, errors: [], billerWithRelatedEntities };
           } catch (error) {
-            const errorMessage = `Failed to process file ${fileName}: ${error instanceof Error ? error.message : String(error)}`;
+            const errorMessage = `Failed to process file ${filePath}: ${error instanceof Error ? error.message : String(error)}`;
             this.logger.error(errorMessage, { error });
             return { processed: 0, updated: 0, skipped: 0, errors: [errorMessage] };
           }
