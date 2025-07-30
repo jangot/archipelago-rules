@@ -5,17 +5,18 @@ import { JwtModule } from '@nestjs/jwt';
 import { DataModule } from '../data';
 import { DomainServices } from './domain.services';
 import { IDomainServices } from './idomain.services';
-import { PaymentDomainService } from './services';
+import { NotificationDomainService, PaymentDomainService } from './services';
 
 @Module({
   imports: [
-    CqrsModule, 
-    ConfigModule, 
-    DataModule, 
+    CqrsModule,
+    ConfigModule,
+    DataModule,
     JwtModule,
   ],
   providers: [
     PaymentDomainService,
+    NotificationDomainService,
     { provide: IDomainServices, useClass: DomainServices },
   ],
   exports: [IDomainServices, PaymentDomainService],
