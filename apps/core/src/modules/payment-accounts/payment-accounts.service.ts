@@ -36,9 +36,16 @@ export class BankingService {
 
     const { id: paymentAccountId } = result;
 
+    // DtoMapper can not handle nested plymorphic types, so we need to handle them manually
     switch (type) {
       case PersonalPaymentAccountTypeCodes.DebitCard:
-        return DtoMapper.toDto(result, DebitCardResponseDto);
+        const debitDetails = result.details as FiservDebitAccountDetails;
+        const debitResult = {
+          ...result,
+          redactedAccountNumber: result.details!.redactedAccountNumber,
+          cardExpiration: debitDetails.cardExpiration,
+        };
+        return DtoMapper.toDto(debitResult, DebitCardResponseDto);
       case PersonalPaymentAccountTypeCodes.BankAccount:
         if (!this.isDebitCardRequest(input)) { 
           const { verificationFlow } = input;
@@ -47,7 +54,13 @@ export class BankingService {
             await this.disburseMicrodeposits(paymentAccountId);
           } 
         }
-        return DtoMapper.toDto(result, BankAccountResponseDto);
+        const achDetails = result.details as FiservAchAccountDetails;
+        const achResult = {
+          ...result,
+          redactedAccountNumber: result.details!.redactedAccountNumber,
+          verificationFlow: achDetails.verificationFlow,
+        };
+        return DtoMapper.toDto(achResult, BankAccountResponseDto);
       default:
         this.logger.error(`Unsupported payment method type: ${type}`);
         throw new NotImplementedException(`Payment method type ${type} is not supported`);
@@ -120,6 +133,7 @@ export class BankingService {
         cardExpiration,
         cardHolderName,
         fullCardNumber: cardNumber,
+        cvv,
       },
     };
   };

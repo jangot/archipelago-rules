@@ -16,7 +16,7 @@ class PaymentAccountResponseBase {
   @IsUUID()
   @IsNotEmpty()
   @Expose()
-  ownerId: string;
+  userId: string;
 
   @ApiProperty({ description: 'Redacted account number for security purposes', example: '1234' })
   @IsNotEmpty()
@@ -39,11 +39,6 @@ export class DebitCardResponseDto extends PaymentAccountResponseBase implements 
   @IsNotEmpty()
   @Expose()
   provider: PaymentAccountProvider = PaymentAccountProviderCodes.Fiserv;
-
-  @ApiProperty({ description: 'Secure token representing the debit card', example: 'fake-token-1234567890abcdef' })
-  @IsNotEmpty()
-  @Expose()
-  cardToken: string;
 
   @ApiProperty({ description: 'Card expiration date in MMYY format', example: '1225' })
   @IsNotEmpty()
