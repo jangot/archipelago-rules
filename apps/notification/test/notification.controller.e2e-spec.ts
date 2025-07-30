@@ -100,7 +100,7 @@ describe('NotificationController (e2e)', () => {
         });
     });
 
-    it('should return 500 for non-existent notification definition', async () => {
+    it('should return 404 for non-existent notification definition', async () => {
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
       const updateDto = {
         name: 'updated_name',
@@ -110,7 +110,7 @@ describe('NotificationController (e2e)', () => {
       return request(app.getHttpServer())
         .put(`/notification-definitions/${nonExistentId}`)
         .send(updateDto)
-        .expect(500);
+        .expect(404);
     });
   });
 

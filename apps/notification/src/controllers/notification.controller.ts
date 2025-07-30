@@ -1,4 +1,5 @@
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
+import { ParamIsUuidPipe } from '@library/shared/pipes/param-is-uuid.pipe';
 import {
   Body,
   Controller,
@@ -14,6 +15,7 @@ import {
 import { ApiBadRequestResponse, ApiCreatedResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateNotificationDefinitionRequestDto, NotificationDefinitionResponseDto, UpdateNotificationDefinitionRequestDto } from '@notification/dto';
 import { NotificationService } from '@notification/services/notification.service';
+import { NotificationDefinitionExistsPipe } from '../pipes/notification-definition-exists.pipe';
 
 @ApiTags('notifications')
 @Controller()
@@ -52,7 +54,7 @@ export class NotificationController {
     status: HttpStatus.NOT_FOUND,
     description: 'The notification definition was not found',
   })
-  async getDefinitionById(@Param('id') id: string): Promise<NotificationDefinitionResponseDto> {
+  async getDefinitionById(@Param('id', new ParamIsUuidPipe('Id must be UUID'), NotificationDefinitionExistsPipe) id: string): Promise<NotificationDefinitionResponseDto> {
     const result = await this.notificationService.getDefinitionById(id);
 
     if (!result) {
@@ -92,7 +94,7 @@ export class NotificationController {
   @ApiBadRequestResponse({ description: 'Invalid request data', isArray: false })
   @ApiNotFoundResponse({ description: 'The notification definition was not found', isArray: false })
   async updateDefinition(
-    @Param('id') id: string,
+    @Param('id', new ParamIsUuidPipe('Id must be UUID'), NotificationDefinitionExistsPipe) id: string,
     @Body() updateDto: UpdateNotificationDefinitionRequestDto,
   ): Promise<boolean> {
     const result = await this.notificationService.updateDefinition(id, updateDto);
@@ -114,7 +116,7 @@ export class NotificationController {
   @ApiParam({ name: 'id', description: 'The notification definition ID', type: String })
   @ApiNoContentResponse({ description: 'The notification definition has been successfully deleted', isArray: false })
   @ApiNotFoundResponse({ description: 'The notification definition was not found', isArray: false })
-  async deleteDefinition(@Param('id') id: string): Promise<boolean> {
+  async deleteDefinition(@Param('id', new ParamIsUuidPipe('Id must be UUID'), NotificationDefinitionExistsPipe) id: string): Promise<boolean> {
     const result = await this.notificationService.deleteDefinition(id);
 
     if (!result) {
