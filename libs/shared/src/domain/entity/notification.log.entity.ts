@@ -1,15 +1,14 @@
 import { INotificationLog } from '@library/entity';
 import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn
+    Column,
+    CreateDateColumn,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn
 } from 'typeorm';
-import { NotificationDefinition } from '@notification/domain/entity/notification.definition.entity';
-import { NotificationDefinitionItem } from '@notification/domain/entity/notification.definition.item.entity';
+import { NotificationDefinitionItem } from './notification.definition.item.entity';
 
 /**
  * Entity representing a notification log entry

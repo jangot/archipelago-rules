@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { NotificationLog } from '@notification/domain/entity';
+import { NotificationLog } from '@library/shared/domain/entity';
 
 /**
  * Implementation of the NotificationLog repository

@@ -20,6 +20,9 @@ import { LoanPayment } from './loan.payment.entity';
 import { LoanPaymentHistory } from './loan.payment.history.entity';
 import { LoanPaymentStep } from './loan.payment.step.entity';
 import { Login } from './login.entity';
+import { NotificationDefinition } from './notification.definition.entity';
+import { NotificationDefinitionItem } from './notification.definition.item.entity';
+import { NotificationLog } from './notification.log.entity';
 import { PaymentAccount } from './payment.account.entity';
 import { PaymentsRoute } from './payments.route.entity';
 import { PaymentsRouteStep } from './payments.route.step.entity';
@@ -41,6 +44,9 @@ export * from './loan.payment.entity';
 export * from './loan.payment.history.entity';
 export * from './loan.payment.step.entity';
 export * from './login.entity';
+export * from './notification.definition.entity';
+export * from './notification.definition.item.entity';
+export * from './notification.log.entity';
 export * from './payment.account.entity';
 export * from './payments.route.entity';
 export * from './payments.route.step.entity';
@@ -59,16 +65,16 @@ export const EventEntities = [
 export const CoreEntities = [
   Loan,
   LoanApplication,
-  ApplicationUser, 
-  Login, 
-  UserRegistration, 
+  ApplicationUser,
+  Login,
+  UserRegistration,
   PaymentAccount,
 ];
 
 // Add all Payment Entities here
 export const PaymentEntities = [
-  Transfer, 
-  LoanPayment, 
+  Transfer,
+  LoanPayment,
   LoanPaymentStep,
   LoanPaymentHistory,
   PaymentsRouteStep,
@@ -80,4 +86,11 @@ export const PaymentEntities = [
   BillerMask,
 ];
 
-export const AllEntities = [...CoreEntities, ...PaymentEntities];
+// Add all Notification Entities here
+export const NotificationEntities = [
+  NotificationDefinition,
+  NotificationDefinitionItem,
+  NotificationLog,
+];
+
+export const AllEntities = [...CoreEntities, ...PaymentEntities, ...NotificationEntities];

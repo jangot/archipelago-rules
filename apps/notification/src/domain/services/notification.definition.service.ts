@@ -2,8 +2,8 @@ import { BaseDomainServices } from '@library/shared/common/domainservice/domain.
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { NotificationDefinition } from '@library/shared/domain/entity';
 import { NotificationDataService } from '@notification/data';
-import { NotificationDefinition } from '@notification/domain/entity';
 
 /**
  * Service for managing notification definitions

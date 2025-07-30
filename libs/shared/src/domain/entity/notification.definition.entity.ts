@@ -1,7 +1,7 @@
-import { INotificationDefinition, NotificationType } from '@library/entity';
-import { NotificationDefinitionItem } from '@notification/domain/entity/notification.definition.item.entity';
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { INotificationDefinition } from '@library/entity';
 import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { NotificationDefinitionItem } from './notification.definition.item.entity';
 
 /**
  * Entity representing a notification definition

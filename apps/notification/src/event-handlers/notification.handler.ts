@@ -3,8 +3,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { template } from 'lodash';
 
+import { NotificationDefinition, NotificationDefinitionItem } from '@library/shared/domain/entity';
 import { IDomainServices } from '@notification/domain/domain.iservices';
-import { NotificationDefinition, NotificationDefinitionItem } from '@notification/domain/entity';
 import { INotificationMessageRequest } from '@notification/interfaces/inotification-message';
 import { NotificationProviderFactory } from '@notification/providers/notification-provider-factory';
 import { NotificationService } from '@notification/services/notification.service';

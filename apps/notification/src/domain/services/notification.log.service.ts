@@ -3,8 +3,8 @@ import { IPaging } from '@library/shared/common/paging';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { NotificationLog } from '@library/shared/domain/entity';
 import { NotificationDataService } from '@notification/data';
-import { NotificationLog } from '@notification/domain/entity';
 import { INotificationMessageResult } from '@notification/interfaces/inotification-message';
 
 /**

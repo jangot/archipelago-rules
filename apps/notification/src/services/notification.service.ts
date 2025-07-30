@@ -1,10 +1,10 @@
 
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
+import { NotificationDefinition } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { IDomainServices } from '@notification/domain/domain.iservices';
-import { NotificationDefinition } from '@notification/domain/entity';
-import { CreateNotificationDefinitionRequestDto, UpdateNotificationDefinitionRequestDto, NotificationDefinitionResponseDto } from '@notification/dto';
+import { CreateNotificationDefinitionRequestDto, NotificationDefinitionResponseDto, UpdateNotificationDefinitionRequestDto } from '@notification/dto';
 
 @Injectable()
 export class NotificationService {
