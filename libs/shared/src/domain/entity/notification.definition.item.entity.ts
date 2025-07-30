@@ -1,5 +1,4 @@
 import { NotificationType } from '@library/entity/enum/notification.type';
-import { INotificationDefinitionItem } from '@library/entity/interface/notification-definition-item.interface';
 import {
     Column,
     CreateDateColumn,
@@ -20,7 +19,7 @@ import { NotificationLog } from './notification.log.entity';
  * @description This entity stores individual notification items that belong to a notification definition
  */
 @Entity('notification_definition_items', { schema: 'notifications' })
-export class NotificationDefinitionItem implements INotificationDefinitionItem {
+export class NotificationDefinitionItem {
   /**
    * Unique identifier for the notification definition item
    */

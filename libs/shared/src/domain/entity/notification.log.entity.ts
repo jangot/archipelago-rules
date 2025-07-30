@@ -1,4 +1,4 @@
-import { INotificationLog } from '@library/entity';
+
 import {
     Column,
     CreateDateColumn,
@@ -16,7 +16,7 @@ import { NotificationDefinitionItem } from './notification.definition.item.entit
  * @description This entity stores notification message results for audit and tracking purposes
  */
 @Entity('notification_logs', { schema: 'notifications' })
-export class NotificationLog implements INotificationLog {
+export class NotificationLog {
   /**
    * Unique identifier for the notification log entry
    */

@@ -1,4 +1,4 @@
-import { INotificationDefinitionItem } from '@library/entity/interface/notification-definition-item.interface';
+
 import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -25,9 +25,9 @@ export class NotificationDefinitionItemDomainService extends BaseDomainServices 
   /**
    * Get all notification definition items
    *
-   * @returns Array of INotificationDefinitionItem
+   * @returns Array of NotificationDefinitionItem
    */
-  async getAllItems(): Promise<INotificationDefinitionItem[]> {
+  async getAllItems(): Promise<NotificationDefinitionItem[]> {
     return this.data.notificationDefinitionItems.getAll();
   }
 
@@ -35,9 +35,9 @@ export class NotificationDefinitionItemDomainService extends BaseDomainServices 
    * Get a notification definition item by ID
    *
    * @param id - The ID of the notification definition item to retrieve
-   * @returns A INotificationDefinitionItem
+   * @returns A NotificationDefinitionItem
    */
-  async getItemById(id: string): Promise<INotificationDefinitionItem | null> {
+  async getItemById(id: string): Promise<NotificationDefinitionItem | null> {
     return this.data.notificationDefinitionItems.getById(id);
   }
 
@@ -45,9 +45,9 @@ export class NotificationDefinitionItemDomainService extends BaseDomainServices 
    * Create a new notification definition item
    *
    * @param notificationDefinitionItem - The notification definition item to create
-   * @returns A INotificationDefinitionItem for the created item
+   * @returns A NotificationDefinitionItem for the created item
    */
-  async createItem(notificationDefinitionItem: NotificationDefinitionItem): Promise<INotificationDefinitionItem | null> {
+  async createItem(notificationDefinitionItem: NotificationDefinitionItem): Promise<NotificationDefinitionItem | null> {
     return this.data.notificationDefinitionItems.insert(notificationDefinitionItem, true);
   }
 
@@ -76,9 +76,9 @@ export class NotificationDefinitionItemDomainService extends BaseDomainServices 
    * Find notification definition items by notification definition ID
    *
    * @param notificationDefinitionId - The ID of the parent notification definition
-   * @returns Promise<INotificationDefinitionItem[]>
+   * @returns Promise<NotificationDefinitionItem[]>
    */
-  async findByNotificationDefinitionId(notificationDefinitionId: string): Promise<INotificationDefinitionItem[]> {
+  async findByNotificationDefinitionId(notificationDefinitionId: string): Promise<NotificationDefinitionItem[]> {
     this.logger.debug(`Finding notification definition items by notification definition ID: ${notificationDefinitionId}`);
     const result = await this.data.notificationDefinitionItems.findBy({
       notificationDefinitionId,
