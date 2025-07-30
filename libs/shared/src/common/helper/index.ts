@@ -5,3 +5,4 @@ export * from './explungables';
 export * from './monetary.helpers';
 export * from './contacts.helper';
 export * from './flatten-object';
+export * from './generate-unique-value';

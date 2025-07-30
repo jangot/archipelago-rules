@@ -2,15 +2,8 @@ import { NotificationDataItems } from '@library/entity/enum/notification-data-it
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { closeTestApp, createTestApp } from './test-utils';
+import { generateUniqueValue } from '@library/shared/common/helper';
 
-/**
- * Generates a unique name for notification definitions in tests
- * @param baseName - Base name for the notification definition
- * @returns Unique name with timestamp
- */
-function generateUniqueName(baseName: string): string {
-  return `${baseName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
 
 describe('NotificationController (e2e)', () => {
   let app: INestApplication;
@@ -47,7 +40,7 @@ describe('NotificationController (e2e)', () => {
   describe('POST /notification-definitions', () => {
     it('should create a new notification definition', async () => {
       const createDto = {
-        name: generateUniqueName('test_notification'),
+        name: generateUniqueValue('test_notification'),
         dataItems: [NotificationDataItems.User, NotificationDataItems.Loan],
       };
 
@@ -77,7 +70,7 @@ describe('NotificationController (e2e)', () => {
     });
 
     it('should return 400 for duplicate name', async () => {
-      const duplicateName = generateUniqueName('duplicate_test');
+      const duplicateName = generateUniqueValue('duplicate_test');
       const createDto = {
         name: duplicateName,
         dataItems: [NotificationDataItems.User],
@@ -103,7 +96,7 @@ describe('NotificationController (e2e)', () => {
     beforeAll(async () => {
       // Create a notification definition for testing updates
       const createDto = {
-        name: generateUniqueName('update_test_notification'),
+        name: generateUniqueValue('update_test_notification'),
         dataItems: [NotificationDataItems.User],
       };
 
@@ -116,7 +109,7 @@ describe('NotificationController (e2e)', () => {
 
     it('should update an existing notification definition', async () => {
       const updateDto = {
-        name: generateUniqueName('updated_notification_name'),
+        name: generateUniqueValue('updated_notification_name'),
         dataItems: [NotificationDataItems.User, NotificationDataItems.Loan],
       };
 
@@ -132,7 +125,7 @@ describe('NotificationController (e2e)', () => {
     it('should return 404 for non-existent notification definition', async () => {
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
       const updateDto = {
-        name: generateUniqueName('updated_name'),
+        name: generateUniqueValue('updated_name'),
         dataItems: [NotificationDataItems.User],
       };
 
@@ -149,7 +142,7 @@ describe('NotificationController (e2e)', () => {
     beforeAll(async () => {
       // Create a notification definition for testing deletion
       const createDto = {
-        name: generateUniqueName('delete_test_notification'),
+        name: generateUniqueValue('delete_test_notification'),
         dataItems: [NotificationDataItems.User],
       };
 
