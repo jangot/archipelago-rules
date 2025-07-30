@@ -10,18 +10,20 @@ import {
   HttpStatus,
   Param,
   Post,
-  Put,
+  Put
 } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiCreatedResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateNotificationDefinitionRequestDto, NotificationDefinitionResponseDto, UpdateNotificationDefinitionRequestDto } from '@notification/dto';
 import { NotificationService } from '@notification/services/notification.service';
 import { NotificationDefinitionExistsPipe } from '../pipes/notification-definition-exists.pipe';
+import { UniqueNotificationDefinitionNamePipe } from '../pipes/unique-notification-definition-name.pipe';
 
 @ApiTags('notifications')
 @Controller()
 export class NotificationController {
   constructor(
     private readonly notificationService: NotificationService,
+    private readonly uniqueNamePipe: UniqueNotificationDefinitionNamePipe,
   ) {}
 
   /**
@@ -73,10 +75,12 @@ export class NotificationController {
   @Post('notification-definitions')
   @ApiOperation({ summary: 'Create a new notification definition' })
   @ApiCreatedResponse({ description: 'The notification definition has been successfully created', type: NotificationDefinitionResponseDto, isArray: false })
-  @ApiBadRequestResponse({ description: 'Invalid request data', isArray: false })
+  @ApiBadRequestResponse({ description: 'Invalid request data or duplicate name', isArray: false })
   async createDefinition(
     @Body() createDto: CreateNotificationDefinitionRequestDto,
   ): Promise<NotificationDefinitionResponseDto | null> {
+    // Apply unique name validation
+    await this.uniqueNamePipe.transform(createDto);
     return this.notificationService.createDefinition(createDto);
   }
 

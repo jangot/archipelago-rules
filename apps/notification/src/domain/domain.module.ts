@@ -16,6 +16,6 @@ import { NotificationLogDomainService } from '@notification/domain/services/noti
     NotificationLogDomainService,
     { provide: IDomainServices, useClass: DomainServices },
   ],
-  exports: [IDomainServices],
+  exports: [IDomainServices, NotificationDomainService],
 })
 export class DomainModule {}

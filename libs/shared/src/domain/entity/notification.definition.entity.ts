@@ -1,5 +1,6 @@
 import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { INotificationDefinition } from '@library/entity/interface/inotification-definition.interface';
+import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { NotificationDefinitionItem } from './notification.definition.item.entity';
 
 /**
@@ -8,7 +9,8 @@ import { NotificationDefinitionItem } from './notification.definition.item.entit
  * @description This entity stores notification definitions used by the notification system
  */
 @Entity('notification_definitions', { schema: 'notifications' })
-export class NotificationDefinition {
+@Index(['name'], { unique: true })
+export class NotificationDefinition implements INotificationDefinition {
   /**
    * Unique identifier for the notification definition
    */
@@ -16,7 +18,7 @@ export class NotificationDefinition {
   id: string;
 
   /**
-   * Name of the notification definition
+   * Name of the notification definition (must be unique)
    */
   @Column('text', { nullable: false })
   name: string;

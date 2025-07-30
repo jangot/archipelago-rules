@@ -4,6 +4,15 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { closeTestApp, createTestApp } from './test-utils';
 
+/**
+ * Generates a unique name for notification definitions in tests
+ * @param baseName - Base name for the notification definition
+ * @returns Unique name with timestamp
+ */
+function generateUniqueName(baseName: string): string {
+  return `${baseName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
 describe('NotificationDefinitionItemController (e2e)', () => {
   let app: INestApplication;
   let createdDefinitionId: string;
@@ -14,7 +23,7 @@ describe('NotificationDefinitionItemController (e2e)', () => {
 
     // Create a notification definition for testing
     const createDefinitionDto = {
-      name: 'test_notification_definition',
+      name: generateUniqueName('test_notification_definition'),
       dataItems: [NotificationDataItems.User],
     };
 
