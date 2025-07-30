@@ -1,5 +1,5 @@
 import { IDataService } from '@library/shared/common/data/idata.service';
-import { BillersRepository } from '@library/shared/modules/billers/billers.repository';
+import { BillersRepository } from '@library/shared/infrastructure/repository/billers.repository';
 import { Injectable } from '@nestjs/common';
 
 

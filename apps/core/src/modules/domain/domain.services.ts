@@ -1,4 +1,4 @@
-import { BillersDomainService } from '@library/shared/modules/billers/billers.domain.service';
+import { BillersDomainService } from '@library/shared/domain/service/billers.domain.service';
 import { Injectable } from '@nestjs/common';
 import { IDomainServices } from './idomain.services';
 import { LoanDomainService } from './services/loan.domain.service';
