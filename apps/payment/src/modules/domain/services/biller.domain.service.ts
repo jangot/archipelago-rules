@@ -19,6 +19,12 @@ export interface BillerProcessingResult {
   error?: string;
 }
 
+export interface ExistingBillerInfo {
+  externalId: string;
+  id: string;
+  crc32: number;
+}
+
 /**
  * BillerDomainService handles all database operations for biller processing.
  * Separates database concerns from file processing logic and provides
@@ -29,8 +35,7 @@ export class BillerDomainService {
   protected readonly logger = new Logger(BillerDomainService.name);
 
   // Performance constants
-  private static readonly BULK_CHUNK_SIZE = 50; // Process 50 billers per transaction
-  private static readonly MAX_TRANSACTION_RETRIES = 3;
+  private static readonly STREAMING_PAGE_SIZE = 1000; // Load billers in pages of 1000
 
   constructor(
     @Inject(forwardRef(() => BillerRepository))
@@ -41,6 +46,43 @@ export class BillerDomainService {
   // #region Biller Data Retrieval
 
   /**
+   * Fetches existing billers with streaming/pagination for memory efficiency.
+   * This method loads billers in pages to avoid memory issues with large datasets.
+   * 
+   * @returns AsyncGenerator yielding existing biller info for efficient processing
+   */
+  public async *getExistingBillersStream(): AsyncGenerator<ExistingBillerInfo> {
+    let offset = 0;
+    let totalLoaded = 0;
+    
+    while (true) {
+      const billers = await this.billerRepository.getBillersWithPagination(
+        offset, 
+        BillerDomainService.STREAMING_PAGE_SIZE
+      );
+      
+      if (billers.length === 0) {
+        break;
+      }
+      
+      for (const biller of billers) {
+        if (biller.externalBillerId) {
+          yield {
+            externalId: biller.externalBillerId,
+            id: biller.id,
+            crc32: biller.crc32,
+          };
+        }
+      }
+      
+      totalLoaded += billers.length;
+      offset += BillerDomainService.STREAMING_PAGE_SIZE;
+    }
+    
+    this.logger.log(`Completed streaming load of ${totalLoaded} existing billers`);
+  }
+
+  /**
    * Fetches all existing billers with their CRC32 values for efficient comparison.
    * This method loads all billers into memory for fast CRC32 comparison during processing.
    * 
@@ -49,14 +91,15 @@ export class BillerDomainService {
   public async getExistingBillersMap(): Promise<Map<string, { id: string; crc32: number }>> {
     this.logger.debug('Loading existing billers for CRC32 comparison');
     
-    const existingBillers = await this.billerRepository.getAll();
     const existingBillerMap = new Map<string, { id: string; crc32: number }>();
     
-    existingBillers.forEach(biller => {
-      if (biller.externalBillerId) {
-        existingBillerMap.set(biller.externalBillerId, { id: biller.id, crc32: biller.crc32 });
-      }
-    });
+    // Use streaming approach for memory efficiency
+    for await (const billerInfo of this.getExistingBillersStream()) {
+      existingBillerMap.set(billerInfo.externalId, { 
+        id: billerInfo.id, 
+        crc32: billerInfo.crc32, 
+      });
+    }
 
     this.logger.log(`Loaded ${existingBillerMap.size} existing billers from database`);
     return existingBillerMap;
@@ -80,93 +123,107 @@ export class BillerDomainService {
   ): Promise<BillerProcessingResult[]> {
     const results: BillerProcessingResult[] = [];
     
-    // Process billers in smaller chunks to avoid transaction timeouts
-    const chunkSize = BillerDomainService.BULK_CHUNK_SIZE;
-    
-    for (let i = 0; i < billersData.length; i += chunkSize) {
-      const chunk = billersData.slice(i, i + chunkSize);
-      
+    // Process each biller in its own transaction to prevent one failure from aborting others
+    for (const billerData of billersData) {
       try {
         await this.dataSource.transaction(async (entityManager) => {
-          for (const billerData of chunk) {
-            try {
-              const existingBiller = existingBillerMap.get(billerData.biller.externalBillerId || '');
-              
-              let savedBiller: Biller;
-              
-              if (existingBiller) {
-                // Update existing biller
-                const updatedBiller = await entityManager.save(Biller, {
-                  id: existingBiller.id,
-                  name: billerData.biller.name,
-                  type: billerData.biller.type,
-                  externalBillerKey: billerData.biller.externalBillerKey,
-                  liveDate: billerData.biller.liveDate,
-                  billerClass: billerData.biller.billerClass,
-                  billerType: billerData.biller.billerType,
-                  lineOfBusiness: billerData.biller.lineOfBusiness,
-                  territoryCode: billerData.biller.territoryCode,
-                  crc32: billerData.biller.crc32,
-                });
-                
-                savedBiller = updatedBiller;
-              } else {
-                // Create new biller
-                savedBiller = await entityManager.save(Biller, billerData.biller);
-              }
-              
-              // Bulk save related entities with the correct biller_id
-              if (billerData.names && billerData.names.length > 0) {
-                billerData.names.forEach(name => {
-                  name.billerId = savedBiller.id;
-                });
-                await entityManager.save(BillerName, billerData.names);
-              }
-              
-              if (billerData.masks && billerData.masks.length > 0) {
-                billerData.masks.forEach(mask => {
-                  mask.billerId = savedBiller.id;
-                });
-                await entityManager.save(BillerMask, billerData.masks);
-              }
-              
-              if (billerData.addresses && billerData.addresses.length > 0) {
-                billerData.addresses.forEach(address => {
-                  address.billerId = savedBiller.id;
-                });
-                await entityManager.save(BillerAddress, billerData.addresses);
-              }
-              
-              results.push({
-                success: true,
-                billerId: billerData.biller.externalBillerId || undefined,
-              });
-            } catch (error) {
-              const errorMessage = `Failed to process biller ${billerData.biller.externalBillerId}: ${error instanceof Error ? error.message : String(error)}`;
-              this.logger.error(errorMessage, { 
-                error, 
-                billerId: billerData.biller.externalBillerId,
+          const existingBiller = existingBillerMap.get(billerData.biller.externalBillerId || '');
+          
+          let savedBiller: Biller;
+          
+          if (existingBiller) {
+            // Update existing biller
+            const updatedBiller = await entityManager.save(Biller, {
+              id: existingBiller.id,
+              name: billerData.biller.name,
+              type: billerData.biller.type,
+              externalBillerKey: billerData.biller.externalBillerKey,
+              liveDate: billerData.biller.liveDate,
+              billerClass: billerData.biller.billerClass,
+              billerType: billerData.biller.billerType,
+              lineOfBusiness: billerData.biller.lineOfBusiness,
+              territoryCode: billerData.biller.territoryCode,
+              crc32: billerData.biller.crc32,
+            });
+            
+            savedBiller = updatedBiller;
+          } else {
+            // Create new biller
+            savedBiller = await entityManager.save(Biller, billerData.biller);
+          }
+          
+          // Bulk save related entities with the correct biller_id
+          if (billerData.names && billerData.names.length > 0) {
+            const validNames = billerData.names.filter(name => 
+              name.name && name.externalKey && name.liveDate
+            );
+            
+            if (validNames.length > 0) {
+              validNames.forEach(name => {
+                name.billerId = savedBiller.id;
               });
               
-              results.push({
-                success: false,
-                billerId: billerData.biller.externalBillerId || undefined,
-                error: errorMessage,
+              await entityManager.save(BillerName, validNames);
+            }
+          }
+          
+          if (billerData.masks && billerData.masks.length > 0) {
+            const validMasks = billerData.masks.filter(mask => 
+              mask.mask && mask.maskLength && mask.externalKey && mask.liveDate
+            );
+            
+            if (validMasks.length > 0) {
+              validMasks.forEach(mask => {
+                mask.billerId = savedBiller.id;
               });
+              
+              await entityManager.save(BillerMask, validMasks);
+            }
+          }
+          
+          if (billerData.addresses && billerData.addresses.length > 0) {
+            const validAddresses = billerData.addresses.filter(address => 
+              address.addressLine1 && address.city && address.stateProvinceCode && 
+              address.countryCode && address.postalCode && address.externalKey && address.liveDate
+            );
+            
+            if (validAddresses.length > 0) {
+              validAddresses.forEach(address => {
+                address.billerId = savedBiller.id;
+              });
+              
+              await entityManager.save(BillerAddress, validAddresses);
             }
           }
         });
-      } catch (error) {
-        // If the entire chunk transaction fails, mark all as failed
-        const errorMessage = `Bulk transaction failed for chunk ${i}-${i + chunkSize}: ${error instanceof Error ? error.message : String(error)}`;
-        this.logger.error(errorMessage, { error });
         
-        chunk.forEach(billerData => {
-          results.push({
-            success: false,
-            billerId: billerData.biller.externalBillerId || undefined,
-            error: errorMessage,
-          });
+        results.push({
+          success: true,
+          billerId: billerData.biller.externalBillerId || undefined,
+        });
+      } catch (error) {
+        const errorMessage = `Failed to process biller ${billerData.biller.externalBillerId}: ${error instanceof Error ? error.message : String(error)}`;
+        this.logger.error(errorMessage, { 
+          error, 
+          billerId: billerData.biller.externalBillerId,
+          billerData: {
+            hasNames: billerData.names?.length || 0,
+            hasMasks: billerData.masks?.length || 0,
+            hasAddresses: billerData.addresses?.length || 0,
+            billerFields: {
+              name: !!billerData.biller.name,
+              type: !!billerData.biller.type,
+              externalBillerKey: !!billerData.biller.externalBillerKey,
+              liveDate: !!billerData.biller.liveDate,
+              crc32: !!billerData.biller.crc32,
+            },
+          },
+        });
+        
+        results.push({
+          success: false,
+          billerId: billerData.biller.externalBillerId || undefined,
+          error: errorMessage,
         });
       }
     }

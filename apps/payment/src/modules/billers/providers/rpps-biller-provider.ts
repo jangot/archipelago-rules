@@ -1,5 +1,5 @@
 import { BillerTypeCodes } from '@library/entity/enum';
-import { generateCRC32 } from '@library/shared/common/helper/crc32.helpers';
+import { generateCRC32FromStream } from '@library/shared/common/helper/crc32.helpers';
 import { IFileStorageProvider } from '@library/shared/common/providers/ifile-storage.provider';
 import { BillerAddress } from '@library/shared/domain/entity/biller-address.entity';
 import { BillerMask } from '@library/shared/domain/entity/biller-mask.entity';
@@ -207,12 +207,11 @@ export class RppsBillerProvider extends BaseBillerProvider {
               return { processed: 0, updated: 0, skipped: 1, errors: [] };
             }
 
-            // Read and parse the JSON file
-            const fileContent = await this.fileStorage.read(fullPath);
-            const billerData: BillerJsonData = JSON.parse(fileContent);
+            // Read file as stream for memory-efficient processing
+            const fileStream = await this.fileStorage.readStream(fullPath);
             
-            // Calculate CRC32 of the JSON content
-            const calculatedCrc32 = generateCRC32(fileContent);
+            // Calculate CRC32 from stream
+            const calculatedCrc32 = await generateCRC32FromStream(fileStream);
             
             // Check if biller exists and if CRC32 is different
             const existingBiller = existingBillerMap.get(externalId);
@@ -221,6 +220,10 @@ export class RppsBillerProvider extends BaseBillerProvider {
               // CRC32 matches, skip this biller
               return { processed: 0, updated: 0, skipped: 1, errors: [] };
             }
+
+            // Read file content for JSON parsing (needed for biller data)
+            const fileContent = await this.fileStorage.read(fullPath);
+            const billerData: BillerJsonData = JSON.parse(fileContent);
 
             // Create or update biller entity
             const billerWithRelatedEntities = this.createBillerWithRelatedEntities(billerData, externalId, calculatedCrc32);
