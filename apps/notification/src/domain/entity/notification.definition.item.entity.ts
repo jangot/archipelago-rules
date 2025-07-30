@@ -73,6 +73,9 @@ export class NotificationDefinitionItem implements INotificationDefinitionItem {
   @Column('text', { nullable: true })
   metadata?: string;
 
+  /**
+   * Any additional params for specific provider
+   */
   @Column('jsonb', { nullable: false, default: '{}' })
   attributes: object;
 

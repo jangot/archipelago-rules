@@ -112,6 +112,18 @@ export class NotificationDefinitionItemResponseDto {
   metadata?: string;
 
   /**
+   * Any additional params for specific provider
+   * @example '{"template": true}'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Any additional params for specific provider',
+    example: '{"template": true}',
+    required: true,
+  })
+  attributes?: object;
+
+  /**
    * Timestamp when the notification definition item was created
    * @example '2025-04-11T14:30:00Z'
    */

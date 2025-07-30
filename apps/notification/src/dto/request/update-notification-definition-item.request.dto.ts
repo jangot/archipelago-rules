@@ -1,6 +1,6 @@
 import { NotificationType } from '@library/entity/enum/notification.type';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsNumber, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
 
 /**
  * DTO for updating an existing notification definition item
@@ -110,4 +110,17 @@ export class UpdateNotificationDefinitionItemRequestDto {
   @IsOptional()
   @IsString({ message: 'Metadata must be a string' })
   metadata?: string;
+
+  /**
+   * Any additional params for specific provider
+   * @example '{"template": true}'
+   */
+  @ApiProperty({
+    description: 'Any additional params for specific provider',
+    example: '{"template": true}',
+    required: false,
+  })
+  @IsOptional()
+  @IsObject({ message: 'Metadata must be a object' })
+  attributes?: object;
 }
