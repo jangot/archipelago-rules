@@ -40,6 +40,7 @@ export class NotificationLogDomainService extends BaseDomainServices {
     notificationLog.header = messageResult.header;
     notificationLog.body = messageResult.body;
     notificationLog.message = messageResult.message;
+    notificationLog.definitionItemId = messageResult.definitionItemId;
 
     return this.data.notificationLogs.insert(notificationLog, true);
   }
