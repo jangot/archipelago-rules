@@ -45,7 +45,7 @@ export class AmplitudeNotificationProvider extends BaseNotificationProvider impl
     });
   }
 
-  async sendMessage(message: INotificationMessageRequest): Promise<INotificationMessageResult> {
+  async send(message: INotificationMessageRequest): Promise<INotificationMessageResult> {
     const target = message.user.email;
     const amplitudeMessage = message.message;
 

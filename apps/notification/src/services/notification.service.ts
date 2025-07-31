@@ -54,11 +54,4 @@ export class NotificationService {
 
     return result;
   }
-
-  async findByNameWithItems(name: string): Promise<NotificationDefinition | null> {
-    this.logger.debug(`Finding notification definition by name: ${name}`);
-    const result = await  this.domainServices.notificationServices.findByNameWithItems(name);
-
-    return result;
-  }
 }

@@ -6,6 +6,7 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { Param, ParseUUIDPipe } from '@nestjs/common';
+import { Param, ParseUUIDPipe, PipeTransform } from '@nestjs/common';
+import { Type } from '@nestjs/common/interfaces';
 
-export const UUIDParam = (name: string) => Param(name, new ParseUUIDPipe());
+export const UUIDParam = (name: string,  ...pipes: (Type<PipeTransform> | PipeTransform)[]) => Param(name, new ParseUUIDPipe(), ...pipes);

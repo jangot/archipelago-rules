@@ -7,7 +7,6 @@ import { NotificationDefinition, NotificationDefinitionItem } from '@library/sha
 import { IDomainServices } from '@notification/domain/domain.iservices';
 import { INotificationMessageRequest } from '@notification/interfaces/inotification-message';
 import { NotificationProviderFactory } from '@notification/providers/notification-provider-factory';
-import { NotificationService } from '@notification/services/notification.service';
 
 @Injectable()
 @EventsHandler(NotificationEvent)
@@ -15,13 +14,12 @@ export class NotificationHandler implements IEventHandler<NotificationEvent> {
   private readonly logger: Logger = new Logger(NotificationHandler.name);
 
   constructor(
-    private readonly notificationService: NotificationService,
     private readonly providersFactory: NotificationProviderFactory,
     private readonly domainServices: IDomainServices,
   ) {}
 
   async handle(event: NotificationEvent): Promise<void> {
-    const definition = await this.notificationService.findByNameWithItems(event.payload.name);
+    const definition = await this.domainServices.notificationServices.findByNameWithItems(event.payload.name);
     if (!definition) {
       this.logger.warn(`Definition was not found: ${event.payload.name}`);
       return;
@@ -37,7 +35,7 @@ export class NotificationHandler implements IEventHandler<NotificationEvent> {
         const provider = this.providersFactory.getProvider(item.notificationType);
         const message = this.createMessageByDefinitionItem(item, event.payload);
 
-        const result = await provider.sendMessage(message);
+        const result = await provider.send(message);
 
         await this.domainServices.notificationLogServices.logNotificationResult(result);
 

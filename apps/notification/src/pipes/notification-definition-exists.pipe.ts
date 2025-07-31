@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, PipeTransform } from '@nestjs/common';
 import { NotificationService } from '../services/notification.service';
 
 @Injectable()
-export class NotificationDefinitionExistsPipe implements PipeTransform {
+export class NotificationDefinitionExistsPipe implements PipeTransform<string, Promise<string>> {
   constructor(private readonly notificationService: NotificationService) {}
 
   public async transform(value: string): Promise<string> {

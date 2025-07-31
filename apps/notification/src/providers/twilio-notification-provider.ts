@@ -32,7 +32,7 @@ export class TwilioNotificationProvider extends BaseNotificationProvider impleme
     }
   }
 
-  async sendMessage(message: INotificationMessageRequest): Promise<INotificationMessageResult> {
+  async send(message: INotificationMessageRequest): Promise<INotificationMessageResult> {
     const target = message.user.phone;
     const body = message.header ? message.header + '\n' + decode(message.body) : decode(message.body);
 
@@ -52,7 +52,7 @@ export class TwilioNotificationProvider extends BaseNotificationProvider impleme
     };
 
     try {
-      await this.send(twilioMessage);
+      await this.sendMessage(twilioMessage);
       this.logger.debug(`SMS message sent successfully to ${target}`);
       return this.buildResult(message, target, 'success');
     } catch (error) {
@@ -68,7 +68,7 @@ export class TwilioNotificationProvider extends BaseNotificationProvider impleme
     return digits.reverse().join('').slice(4, 7) === '555';
   }
 
-  private async send(twilioMessage: MessageListInstanceCreateOptions) {
+  private async sendMessage(twilioMessage: MessageListInstanceCreateOptions) {
     if (!this.twilioClient) {
       throw new Error('Twilio client was not setup, possible env were not passed');
     }

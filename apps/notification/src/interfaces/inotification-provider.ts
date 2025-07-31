@@ -4,5 +4,5 @@ import {
 } from '@notification/interfaces/inotification-message';
 
 export interface INotificationProvider {
-  sendMessage(message: INotificationMessageRequest): Promise<INotificationMessageResult>;
+  send(message: INotificationMessageRequest): Promise<INotificationMessageResult>;
 }

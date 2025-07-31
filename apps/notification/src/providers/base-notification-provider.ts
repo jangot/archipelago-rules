@@ -6,7 +6,7 @@ import {
 
 export class BaseNotificationProvider implements INotificationProvider {
 
-  async sendMessage(message: INotificationMessageRequest): Promise<INotificationMessageResult> {
+  async send(message: INotificationMessageRequest): Promise<INotificationMessageResult> {
     throw new Error('No implemented');
   }
 

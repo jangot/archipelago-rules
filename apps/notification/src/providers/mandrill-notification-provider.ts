@@ -28,7 +28,7 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
     this.mailchimpClient = mailchimp(apiKey);
   }
 
-  async sendMessage(message: INotificationMessageRequest): Promise<INotificationMessageResult> {
+  async send(message: INotificationMessageRequest): Promise<INotificationMessageResult> {
     const target = message.user.email;
     const title = message.header;
     const messageBody = message.body;

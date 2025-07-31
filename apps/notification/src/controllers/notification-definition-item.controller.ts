@@ -1,5 +1,4 @@
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
-import { ParamIsUuidPipe } from '@library/shared/pipes/param-is-uuid.pipe';
 import {
   Body,
   Controller,
@@ -8,7 +7,6 @@ import {
   HttpCode,
   HttpException,
   HttpStatus,
-  Param,
   Post,
   Put,
   Query,
@@ -17,6 +15,7 @@ import { ApiBadRequestResponse, ApiCreatedResponse, ApiNoContentResponse, ApiNot
 import { CreateNotificationDefinitionItemRequestDto, GetNotificationDefinitionItemsRequestDto, NotificationDefinitionItemResponseDto, UpdateNotificationDefinitionItemRequestDto } from '@notification/dto';
 import { NotificationDefinitionItemService } from '@notification/services/notification-definition-item.service';
 import { NotificationDefinitionItemExistsPipe } from '../pipes/notification-definition-item-exists.pipe';
+import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
 
 @ApiTags('notification-definition-items')
 @Controller()
@@ -57,7 +56,7 @@ export class NotificationDefinitionItemController {
     status: HttpStatus.NOT_FOUND,
     description: 'The notification definition item was not found',
   })
-  async getItemById(@Param('id', new ParamIsUuidPipe('Id must be UUID'), NotificationDefinitionItemExistsPipe) id: string): Promise<NotificationDefinitionItemResponseDto> {
+  async getItemById(@UUIDParam('id', NotificationDefinitionItemExistsPipe) id: string): Promise<NotificationDefinitionItemResponseDto> {
     const result = await this.notificationDefinitionItemService.getItemById(id);
 
     if (!result) {
@@ -97,7 +96,7 @@ export class NotificationDefinitionItemController {
   @ApiBadRequestResponse({ description: 'Invalid request data', isArray: false })
   @ApiNotFoundResponse({ description: 'The notification definition item was not found', isArray: false })
   async updateItem(
-    @Param('id', new ParamIsUuidPipe('Id must be UUID'), NotificationDefinitionItemExistsPipe) id: string,
+    @UUIDParam('id', NotificationDefinitionItemExistsPipe) id: string,
     @Body() updateDto: UpdateNotificationDefinitionItemRequestDto,
   ): Promise<boolean> {
     const result = await this.notificationDefinitionItemService.updateItem(id, updateDto);
@@ -119,7 +118,7 @@ export class NotificationDefinitionItemController {
   @ApiParam({ name: 'id', description: 'The notification definition item ID', type: String })
   @ApiNoContentResponse({ description: 'The notification definition item has been successfully deleted', isArray: false })
   @ApiNotFoundResponse({ description: 'The notification definition item was not found', isArray: false })
-  async deleteItem(@Param('id', new ParamIsUuidPipe('Id must be UUID'), NotificationDefinitionItemExistsPipe) id: string): Promise<boolean> {
+  async deleteItem(@UUIDParam('id', NotificationDefinitionItemExistsPipe) id: string): Promise<boolean> {
     const result = await this.notificationDefinitionItemService.deleteItem(id);
 
     if (!result) {
