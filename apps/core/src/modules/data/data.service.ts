@@ -17,7 +17,7 @@ export class CoreDataService extends IDataService {
     public readonly userRegistrations: UserRegistrationRepository,
     public readonly paymentAccounts: PaymentAccountRepository,
     public readonly loanApplications: LoanApplicationRepository,
-    public readonly notificationDefinitions: NotificationDefinitionRepository
+    public readonly notificationDefinitions: NotificationDefinitionRepository,
   ) {
     super();
   }

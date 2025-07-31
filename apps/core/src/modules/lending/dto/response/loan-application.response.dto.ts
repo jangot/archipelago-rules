@@ -44,6 +44,11 @@ export class LoanApplicationResponseDto {
   @Expose()
   billerPostalCode: string | null;
 
+  @ApiProperty({ description: 'Class of the biller', type: 'string', example: 'Utilities' })
+  @IsString()
+  @IsOptional()
+  @Expose()
+  billerClass: string | null;
 
   // Bill
   @ApiProperty({ description: 'Account number with the biller', type: 'string', example: '123456789' })

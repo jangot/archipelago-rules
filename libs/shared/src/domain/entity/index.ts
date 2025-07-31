@@ -68,11 +68,15 @@ export const PaymentEntities = [
   PaymentsRouteStep,
   PaymentsRoute,
   TransferError,
+];
+
+export const BillerEntities = [
   Biller,
   BillerName,
   BillerAddress,
   BillerMask,
 ];
+
 
 // Add all Notification Entities here
 export const NotificationEntities = [
@@ -81,4 +85,4 @@ export const NotificationEntities = [
   NotificationLog,
 ];
 
-export const AllEntities = [...CoreEntities, ...PaymentEntities, ...NotificationEntities];
+export const AllEntities = [...CoreEntities, ...PaymentEntities, ...NotificationEntities, ...BillerEntities];

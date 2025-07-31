@@ -1,5 +1,5 @@
 import { LoanPaymentType, PaymentAccountProvider, PaymentStepState } from '@library/entity/enum';
-import { TransferErrorPayload } from '@library/shared/type/lending';
+import { TransferErrorPayload, TransferUpdateDetails, TransferUpdatePayload } from '@library/shared/type/lending';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ILoanPaymentStepFactory } from '@payment/modules/loan-payment-steps/interfaces';
 import { ILoanPaymentFactory } from '@payment/modules/loan-payments';
@@ -122,11 +122,11 @@ export class ManagementDomainService {
    * @param providerType - Type of payment account provider to use for executing the transfer
    * @returns Promise resolving to boolean indicating success, or null if execution fails
    */
-  public async executeTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
+  public async initiateTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
     this.logger.debug(`Executing transfer ${transferId} with provider ${providerType}`);
     
     const transferExecutionProvider = await this.transferExecutionFactory.getProvider(transferId, providerType);
-    return transferExecutionProvider.executeTransfer(transferId);
+    return transferExecutionProvider.initiateTransfer(transferId);
   }
 
   public async completeTransfer(transferId: string, providerType?: PaymentAccountProvider): Promise<boolean | null> {
@@ -139,5 +139,25 @@ export class ManagementDomainService {
     this.logger.debug(`Failing transfer ${transferId}`);
     const transferExecutionProvider = await this.transferExecutionFactory.getProvider(transferId, providerType);
     return transferExecutionProvider.failTransfer(transferId, error);
+  }
+
+  public async parseTransferUpdate(
+    transferId: string,
+    update: TransferUpdatePayload,
+    providerType?: PaymentAccountProvider
+  ): Promise<TransferUpdateDetails | null> {
+    this.logger.debug(`Parsing transfer update for ${transferId}`);
+    const transferExecutionProvider = await this.transferExecutionFactory.getProvider(transferId, providerType);
+    return transferExecutionProvider.parseTransferUpdate(update);
+  }
+
+  public async applyTransferUpdate(
+    transferId: string,
+    update: TransferUpdateDetails,
+    providerType?: PaymentAccountProvider
+  ): Promise<boolean | null> {
+    this.logger.debug(`Processing transfer update for ${transferId}`);
+    const transferExecutionProvider = await this.transferExecutionFactory.getProvider(transferId, providerType);
+    return transferExecutionProvider.applyTransferUpdate(transferId, update);
   }
 }
