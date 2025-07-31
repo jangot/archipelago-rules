@@ -85,7 +85,7 @@ export class NotificationDefinitionItem {
    * Any additional params for specific provider
    */
   @Column('jsonb', { nullable: false, default: '{}' })
-  attributes: object;
+  attributes: Record<string, any>;
 
   /**
    * Notification logs associated with this definition items

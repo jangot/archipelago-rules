@@ -5,8 +5,27 @@ import { template } from 'lodash';
 
 import { NotificationDefinition, NotificationDefinitionItem } from '@library/shared/domain/entity';
 import { IDomainServices } from '@notification/domain/domain.iservices';
-import { INotificationMessageRequest } from '@notification/interfaces/inotification-message';
+import {
+  INotificationMessageRequest,
+  INotificationMessageResult,
+} from '@notification/interfaces/inotification-message';
 import { NotificationProviderFactory } from '@notification/providers/notification-provider-factory';
+import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
+
+class NotificationUnexpectedFailResult implements INotificationMessageResult {
+  target = 'unknown';
+  transport = 'unknown';
+  status = 'unexpected_error';
+  metadata = '';
+  header = '';
+  body = '';
+  message = '';
+
+  constructor(
+    public userId: string,
+    public definitionItemId: string,
+  ) {}
+}
 
 @Injectable()
 @EventsHandler(NotificationEvent)
@@ -34,13 +53,15 @@ export class NotificationHandler implements IEventHandler<NotificationEvent> {
       try {
         const provider = this.providersFactory.getProvider(item.notificationType);
         const message = this.createMessageByDefinitionItem(item, event.payload);
-
         const result = await provider.send(message);
 
         await this.domainServices.notificationLogServices.logNotificationResult(result);
 
         this.logger.debug(`Notification sent successfully to ${result.target} via ${result.transport}`);
       } catch (error) {
+        await this.domainServices.notificationLogServices.logNotificationResult(
+          new NotificationUnexpectedFailResult(event.payload[NotificationDataItems.User].id, item.id)
+        );
         this.logger.error(`Failed to send notification via ${item.notificationType}: ${error.message}`);
       }
     }

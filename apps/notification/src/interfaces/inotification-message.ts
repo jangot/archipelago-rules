@@ -14,8 +14,8 @@ export interface INotificationMessageRequest extends INotificationMessage {
 }
 
 export interface INotificationMessageResult extends INotificationMessage {
-  target: string;
   userId: string;
+  target: string;
   transport: string;
   status: string;
 }
