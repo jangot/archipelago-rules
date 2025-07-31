@@ -3,8 +3,8 @@ import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsDate, IsOptional, IsString, IsUUID } from 'class-validator';
 
-@ApiSchema({ name: 'loanApplicationUnauthResponse' })
-export class LoanApplicationUnauthResponseDto {
+@ApiSchema({ name: 'publicLoanApplicationResponse' })
+export class PublicLoanApplicationResponseDto {
   // Loan Application
   @ApiProperty({ description: 'Unique identifier for the loan application', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()

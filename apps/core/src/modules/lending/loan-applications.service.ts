@@ -1,6 +1,6 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
-import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto, LoanApplicationUnauthResponseDto } from '@core/modules/lending/dto/response';
+import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto, PublicLoanApplicationResponseDto } from '@core/modules/lending/dto/response';
 import { ContactType, LoanApplicationStates, LoanPaymentFrequencyCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
@@ -43,10 +43,12 @@ export class LoanApplicationsService {
     return resultDto;
   }
 
-  public async getLoanApplicationUnauthById(id: string): Promise<LoanApplicationUnauthResponseDto | null> {
+  public async getPublicLoanApplicationById(id: string): Promise<PublicLoanApplicationResponseDto | null> {
     const result = await this.domainServices.loanServices.getLoanApplicationById(id);
 
-    return DtoMapper.toDto(result, LoanApplicationUnauthResponseDto);
+    if (!result) throw new EntityNotFoundException(`Loan application: ${id} not found`);
+    
+    return DtoMapper.toDto(result, PublicLoanApplicationResponseDto);
   }
 
   public async getAllLoanApplicationsByUserId(userId: string): Promise<LoanApplicationResponseDto[]> {
