@@ -1,5 +1,5 @@
 import { IDataService } from '@library/shared/common/data/idata.service';
-import { LoanRepository, NotificationDefinitionRepository, PaymentAccountRepository } from '@library/shared/infrastructure/repository';
+import { LoanRepository, PaymentAccountRepository } from '@library/shared/infrastructure/repository';
 import { Injectable } from '@nestjs/common';
 import { LoginRepository } from '../auth/repositories/login.repository';
 import { UserRegistrationRepository } from '../auth/repositories/user.registration.repository';
@@ -17,7 +17,6 @@ export class CoreDataService extends IDataService {
     public readonly userRegistrations: UserRegistrationRepository,
     public readonly paymentAccounts: PaymentAccountRepository,
     public readonly loanApplications: LoanApplicationRepository,
-    public readonly notificationDefinitions: NotificationDefinitionRepository,
   ) {
     super();
   }

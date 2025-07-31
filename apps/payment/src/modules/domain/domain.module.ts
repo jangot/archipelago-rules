@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
+import { SharedNotificationDomainService } from '@library/shared/domain/service';
 import { DataModule } from '../data';
 import { DomainServices } from './domain.services';
 import { IDomainServices } from './idomain.services';
-import { NotificationDomainService, PaymentDomainService } from './services';
+import { PaymentDomainService } from './services';
 
 @Module({
   imports: [
@@ -15,8 +16,8 @@ import { NotificationDomainService, PaymentDomainService } from './services';
     JwtModule,
   ],
   providers: [
+    SharedNotificationDomainService,
     PaymentDomainService,
-    NotificationDomainService,
     { provide: IDomainServices, useClass: DomainServices },
   ],
   exports: [IDomainServices, PaymentDomainService],

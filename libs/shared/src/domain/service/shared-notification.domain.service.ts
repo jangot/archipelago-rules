@@ -1,8 +1,9 @@
-import { CoreDataService } from '@core/modules/data';
+import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
+
 import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
 import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { SharedDataService } from '@library/shared/common/domainservice/shared.service';
 
 /**
  * Service for managing notification definitions in core application
@@ -10,11 +11,11 @@ import { ConfigService } from '@nestjs/config';
  * @description Handles business logic for notification definitions
  */
 @Injectable()
-export class NotificationDomainService extends BaseDomainServices {
-  private readonly logger = new Logger(NotificationDomainService.name);
+export class SharedNotificationDomainService extends BaseDomainServices {
+  private readonly logger = new Logger(SharedNotificationDomainService.name);
 
   constructor(
-    protected readonly data: CoreDataService,
+    protected readonly data: SharedDataService,
     protected readonly config: ConfigService
   ) {
     super(data);

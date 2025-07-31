@@ -360,7 +360,7 @@ export class PaymentDomainService extends BaseDomainServices {
       this.logger.warn(`No updates provided for transfer ${transferId}`);
       return false; // No updates to apply
     }
-    this.logger.debug(`Updating transfer ${transferId} with details`, { updates });    
+    this.logger.debug(`Updating transfer ${transferId} with details`, { updates });
     return this.data.transfers.updateTransfer(transferId, updates);
   }
 

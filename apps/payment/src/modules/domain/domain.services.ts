@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { IDomainServices } from './idomain.services';
-import { NotificationDomainService, PaymentDomainService } from './services';
+import { PaymentDomainService } from './services';
+import { SharedNotificationDomainService } from '@library/shared/domain/service';
 
 @Injectable()
 export class DomainServices implements IDomainServices {
   constructor(
     public readonly paymentServices: PaymentDomainService,
-    public readonly notificationServices: NotificationDomainService,
+    public readonly notificationServices: SharedNotificationDomainService,
   ) {}
 }
