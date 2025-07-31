@@ -4,13 +4,13 @@ import { v4 } from 'uuid';
 
 import { DataModule } from '@core/modules/data';
 import { CoreDataService } from '@core/modules/data/data.service';
+import { UserRepository } from '@core/modules/users/repositories/user.repository';
 import { LoanClosureCodes, LoanPaymentFrequencyCodes, LoanStateCodes, LoanTypeCodes, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 import { withTransactionHandler } from '@library/shared/common/data/withtransaction.handler';
 import { AllEntities, ApplicationUser, Loan } from '@library/shared/domain/entity';
+import { LoanRepository } from '@library/shared/infrastructure/repository';
 import { memoryDataSourceSimple } from '@library/shared/tests/postgress-memory-datasource';
 import { Test, TestingModule } from '@nestjs/testing';
-import { LoanRepository } from '@library/shared/infrastructure/repository';
-import { UserRepository } from '@core/modules/users/repositories/user.repository';
 
 describe('DataModule Integration Tests', () => {
   let module: TestingModule;
@@ -137,7 +137,7 @@ describe('DataModule Integration Tests', () => {
         id: expectedLoanId,
         amount: 1000,
         type: LoanTypeCodes.Personal,
-        state: LoanStateCodes.Created,
+        state: LoanStateCodes.Accepted,
         borrowerId: borrowerUserId,
         lenderId: lenderUserId,
         lender: lenderUser,
@@ -247,7 +247,7 @@ describe('DataModule Integration Tests', () => {
         paymentFrequency: LoanPaymentFrequencyCodes.Monthly,
         closureType: LoanClosureCodes.Open,
         type: LoanTypeCodes.Personal,
-        state: LoanStateCodes.Created,
+        state: LoanStateCodes.Accepted,
       };
 
       // Do not await this transaction, as we want to test the rejection with async expect

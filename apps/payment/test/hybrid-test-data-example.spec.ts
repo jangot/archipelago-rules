@@ -1,17 +1,17 @@
+import { RegistrationStatus, VerificationStatus } from '@library/entity/enum';
+import { Test, TestingModule } from '@nestjs/testing';
 import { IBackup } from 'pg-mem';
 import { DataSource } from 'typeorm';
-import { Test, TestingModule } from '@nestjs/testing';
 import { v4 as uuidv4 } from 'uuid';
-import { RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 
-import { 
-  memoryDataSourceSingle, 
-  TestDataSeeder, 
-  FOUNDATION_TEST_IDS, 
-  ITestDataRegistry,
-  TestPaymentAccountFactory, 
-} from '@library/shared/tests';
 import { AllEntities } from '@library/shared/domain/entity';
+import {
+  FOUNDATION_TEST_IDS,
+  ITestDataRegistry,
+  memoryDataSourceSingle,
+  TestDataSeeder,
+  TestPaymentAccountFactory,
+} from '@library/shared/tests';
 
 // Follow ZNG testing guidelines from .github/copilot/test-instructions.md
 // Use foundation data for common entities (users, loans) and service calls for domain-specific entities
@@ -83,19 +83,17 @@ describe('Hybrid Test Data Approach Example', () => {
     it('should have pre-seeded loans available', async () => {
       // Arrange - Foundation data is already available with actual loan states
       const disbursedLoanId = foundationData.loans.disbursedLoan; // 'disbursed' state
-      const requestedLoanId = foundationData.loans.requestedLoan; // 'requested' state  
       const repaidLoanId = foundationData.loans.repaidLoan; // 'repaid' state
 
       // Act - Query the database to verify loans exist
       const loans = await dataSource.query(
         'SELECT id, state, amount FROM core.loans WHERE id IN ($1, $2, $3)',
-        [disbursedLoanId, requestedLoanId, repaidLoanId]
+        [disbursedLoanId, repaidLoanId]
       );
 
       // Assert - All foundation loans should exist
       expect(loans).toHaveLength(3);
       expect(loans.find((l: any) => l.id === disbursedLoanId)?.state).toBe('disbursed');
-      expect(loans.find((l: any) => l.id === requestedLoanId)?.state).toBe('requested');
       expect(loans.find((l: any) => l.id === repaidLoanId)?.state).toBe('repaid');
     });
   });

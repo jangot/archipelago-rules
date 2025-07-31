@@ -1,8 +1,8 @@
+import { LoanClosureCodes, LoanPaymentFrequencyCodes, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
 import { Injectable, Logger } from '@nestjs/common';
-import { v4 } from 'uuid';
-import { Transactional } from 'typeorm-transactional';
 import { random } from 'lodash';
-import { LoanTypeCodes, LoanStateCodes, LoanPaymentFrequencyCodes, LoanClosureCodes } from '@library/entity/enum';
+import { Transactional } from 'typeorm-transactional';
+import { v4 } from 'uuid';
 import { CoreDataService } from './modules/data/data.service';
 @Injectable()
 export class CoreService {
@@ -42,7 +42,7 @@ export class CoreService {
         lender: lender!,
         borrower: borrower!,
         type: LoanTypeCodes.Personal,
-        state: LoanStateCodes.Created,
+        state: LoanStateCodes.Accepted,
         paymentsCount: 12,
         paymentFrequency: LoanPaymentFrequencyCodes.Monthly,
         closureType: LoanClosureCodes.Open,
