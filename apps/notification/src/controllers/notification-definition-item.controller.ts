@@ -14,7 +14,7 @@ import {
 import { ApiBadRequestResponse, ApiCreatedResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateNotificationDefinitionItemRequestDto, GetNotificationDefinitionItemsRequestDto, NotificationDefinitionItemResponseDto, UpdateNotificationDefinitionItemRequestDto } from '@notification/dto';
 import { NotificationDefinitionItemService } from '@notification/services/notification-definition-item.service';
-import { NotificationDefinitionItemExistsPipe } from '../pipes/notification-definition-item-exists.pipe';
+import { NotificationDefinitionItemExistsPipe } from '@notification/pipes/notification-definition-item-exists.pipe';
 import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
 
 @ApiTags('notification-definition-items')

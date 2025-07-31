@@ -7,7 +7,6 @@ import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
 
 import { EventModule, getEventModuleConfiguration } from '@library/shared/modules/event';
 import { NotificationDefinitionItemController } from '@notification/controllers/notification-definition-item.controller';
-import { NotificationHealthController } from '@notification/controllers/notification-health.controller';
 import { NotificationController } from '@notification/controllers/notification.controller';
 import { NOTIFICATION_EVENT_HANDLERS } from '@notification/event-handlers';
 import { NotificationModules } from '@notification/index.modules';
@@ -35,7 +34,7 @@ import { NotificationService } from '@notification/services/notification.service
     HealthModule,
     ...NotificationModules,
   ],
-  controllers: [NotificationHealthController, NotificationController, NotificationDefinitionItemController],
+  controllers: [NotificationController, NotificationDefinitionItemController],
   providers: [
     NotificationService,
     NotificationDefinitionItemService,
