@@ -31,7 +31,7 @@ import { NotificationService } from '@notification/services/notification.service
       inject: [ConfigService],
     }),
     GracefulShutdownModule.forRoot(),
-    SharedModule.forRoot([NotificationController, NotificationDefinitionItemController]),
+    SharedModule.forRoot(),
     HealthModule,
     ...NotificationModules,
   ],
