@@ -18,7 +18,7 @@ export class RppsBillerSplitter {
   private readonly logger: Logger = new Logger(RppsBillerSplitter.name);
   private readonly maxConcurrency = 5; // Reduced concurrency to prevent file system overload
   private readonly batchSize = 100; // Process billers in batches
-
+  private readonly maxBillerSize = 7 * 1024 * 1024; // 7MB limit per biller since there are some large billers.
   /**
    * Splits the JSON file by biller, writes each as a JSON file.
    * This method is optimized for large datasets and doesn't track file info in memory.
@@ -160,7 +160,7 @@ export class RppsBillerSplitter {
           lockAcquired = true;
           
           // Create stream from JSON string
-          const jsonString = JSON.stringify(billerData, null, 2); // Pretty print for readability
+          const jsonString = JSON.stringify(billerData, null, 2);
           const jsonStream = Readable.from([jsonString]);
           
           await fileStorage.writeStream(filePath, jsonStream);
@@ -203,9 +203,8 @@ export class RppsBillerSplitter {
 
     // Essential size validation - prevent memory attacks
     const billerSize = JSON.stringify(biller).length;
-    const maxBillerSize = 7 * 1024 * 1024; // 7MB limit per biller since there are some large billers.
-    if (billerSize > maxBillerSize) {
-      this.logger.warn(`Invalid biller: size ${billerSize} exceeds limit ${maxBillerSize}`);
+    if (billerSize > this.maxBillerSize) {
+      this.logger.warn(`Invalid biller: size ${billerSize} exceeds limit ${this.maxBillerSize}`);
       return false;
     }
 
