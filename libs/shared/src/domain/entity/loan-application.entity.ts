@@ -1,4 +1,4 @@
-import { LoanApplicationStates, LoanApplicationStateType, LoanType } from '@library/entity/enum';
+import { LoanApplicationStates, LoanApplicationStateType, LoanType, LoanTypeCodes } from '@library/entity/enum';
 import { DbSchemaCodes } from '@library/shared/common/data';
 import { Loan } from '@library/shared/domain/entity';
 import { Biller } from '@library/shared/domain/entity/biller.entity';
@@ -19,7 +19,7 @@ export class LoanApplication {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'text', nullable: true, default: LoanApplicationStates.Pending }) //TODO: Should this be an enum for status
+  @Column({ type: 'text', nullable: true, default: LoanApplicationStates.Pending })
   status: LoanApplicationStateType | null;
 
   //TODO: Need to add the Loan side of this relationship
@@ -111,16 +111,16 @@ export class LoanApplication {
   borrowerSubmittedAt: Date | null;
 
   // Loan Info
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, default: LoanTypeCodes.DirectBillPay })
   loanType: LoanType | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, default: 'monthly' })
   loanPaymentFrequency: string | null;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   loanAmount: number | null;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'int', nullable: true, default: 3 })
   loanPayments: number | null;
 
   @Column({ type: 'decimal', precision: 12, scale: 4, nullable: true, default: 0 })
