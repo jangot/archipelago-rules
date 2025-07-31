@@ -23,7 +23,6 @@ import { UniqueNotificationDefinitionNamePipe } from '../pipes/unique-notificati
 export class NotificationController {
   constructor(
     private readonly notificationService: NotificationService,
-    private readonly uniqueNamePipe: UniqueNotificationDefinitionNamePipe,
   ) {}
 
   /**
@@ -77,10 +76,8 @@ export class NotificationController {
   @ApiCreatedResponse({ description: 'The notification definition has been successfully created', type: NotificationDefinitionResponseDto, isArray: false })
   @ApiBadRequestResponse({ description: 'Invalid request data or duplicate name', isArray: false })
   async createDefinition(
-    @Body() createDto: CreateNotificationDefinitionRequestDto,
+    @Body(UniqueNotificationDefinitionNamePipe) createDto: CreateNotificationDefinitionRequestDto,
   ): Promise<NotificationDefinitionResponseDto | null> {
-    // Apply unique name validation
-    await this.uniqueNamePipe.transform(createDto);
     return this.notificationService.createDefinition(createDto);
   }
 
@@ -99,7 +96,7 @@ export class NotificationController {
   @ApiNotFoundResponse({ description: 'The notification definition was not found', isArray: false })
   async updateDefinition(
     @Param('id', new ParamIsUuidPipe('Id must be UUID'), NotificationDefinitionExistsPipe) id: string,
-    @Body() updateDto: UpdateNotificationDefinitionRequestDto,
+    @Body(UniqueNotificationDefinitionNamePipe) updateDto: UpdateNotificationDefinitionRequestDto,
   ): Promise<boolean> {
     const result = await this.notificationService.updateDefinition(id, updateDto);
     if (!result) {

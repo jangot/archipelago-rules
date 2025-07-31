@@ -11,7 +11,6 @@ import { NotificationHealthController } from '@notification/controllers/notifica
 import { NotificationController } from '@notification/controllers/notification.controller';
 import { NOTIFICATION_EVENT_HANDLERS } from '@notification/event-handlers';
 import { NotificationModules } from '@notification/index.modules';
-import { UniqueNotificationDefinitionNamePipe } from '@notification/pipes/unique-notification-definition-name.pipe';
 import { NOTIFICATION_PROVIDERS } from '@notification/providers';
 import { NotificationProviderFactory } from '@notification/providers/notification-provider-factory';
 import { EmailMapperService } from '@notification/services/email-mapper.service';
@@ -42,7 +41,6 @@ import { NotificationService } from '@notification/services/notification.service
     NotificationDefinitionItemService,
     Logger,
     EmailMapperService,
-    UniqueNotificationDefinitionNamePipe,
     ...NOTIFICATION_PROVIDERS,
     NotificationProviderFactory,
     ...NOTIFICATION_EVENT_HANDLERS,

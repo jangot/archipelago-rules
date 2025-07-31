@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { NotificationDefinition } from '@library/shared/domain/entity';
 import { NotificationDataService } from '@notification/data';
+import { Not } from 'typeorm';
 
 /**
  * Service for managing notification definitions
@@ -97,6 +98,19 @@ export class NotificationDomainService extends BaseDomainServices {
     this.logger.debug(`Finding notification definition by name: ${name}`);
     return this.data.notificationDefinitions.findOne({
       where: { name },
+    });
+  }
+
+  /**
+   * Find notification definition by name exclude specific id
+   * @param name - The name of the notification definition
+   * @param id - The id to exclude
+   * @returns Promise<NotificationDefinition | null>
+   */
+  async findByNameExcludeId(name: string, id: string): Promise<NotificationDefinition | null> {
+    this.logger.debug(`Finding notification definition by name: ${name}`);
+    return this.data.notificationDefinitions.findOne({
+      where: { name, id: Not(id) },
     });
   }
 }
