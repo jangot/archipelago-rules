@@ -3,8 +3,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { NotificationDefinition } from '@library/shared/domain/entity';
-import { NotificationDataService } from '@notification/data';
 import { Not } from 'typeorm';
+import { NotificationDataService } from '@notification/data';
 
 /**
  * Service for managing notification definitions
