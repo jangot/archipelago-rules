@@ -1,5 +1,4 @@
 import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
-import { INotificationDefinition } from '@library/entity/interface/inotification-definition.interface';
 import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { NotificationDefinitionItem } from './notification.definition.item.entity';
 
@@ -10,7 +9,7 @@ import { NotificationDefinitionItem } from './notification.definition.item.entit
  */
 @Entity('notification_definitions', { schema: 'notifications' })
 @Index(['name'], { unique: true })
-export class NotificationDefinition implements INotificationDefinition {
+export class NotificationDefinition {
   /**
    * Unique identifier for the notification definition
    */
