@@ -1,7 +1,7 @@
 import { PaymentAccountProvider, TransferStateCodes } from '@library/entity/enum';
 import { TransferErrorDetails, TransferErrorPayload, TransferUpdateDetails, TransferUpdatePayload } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
-import { PaymentDomainService } from '@payment/modules/domain/services';
+import { IDomainServices } from '@payment/modules/domain';
 import { ITransferExecutionProvider } from '../interface';
 
 @Injectable()
@@ -9,7 +9,7 @@ export abstract class BaseTransferExecutionProvider implements ITransferExecutio
   protected readonly logger: Logger;
   protected readonly paymentProvider: PaymentAccountProvider;
 
-  constructor(protected readonly paymentDomainService: PaymentDomainService, protected readonly provider: PaymentAccountProvider) {
+  constructor(protected readonly domainServices: IDomainServices, protected readonly provider: PaymentAccountProvider) {
     this.logger = new Logger(this.constructor.name);
     this.paymentProvider = provider;
   }
@@ -25,18 +25,23 @@ export abstract class BaseTransferExecutionProvider implements ITransferExecutio
       return false; // Transfer failed
     }
     this.logger.debug(`Transfer execution for ${transferId} succeeded.`);
-    return this.paymentDomainService.updateTransferState(transferId, TransferStateCodes.Created, TransferStateCodes.Pending, this.paymentProvider); // Transfer succeeded
+    return this.domainServices.paymentServices.updateTransferState(
+      transferId,
+      TransferStateCodes.Created,
+      TransferStateCodes.Pending,
+      this.paymentProvider
+    ); // Transfer succeeded
   }
 
   public async completeTransfer(transferId: string): Promise<boolean | null> {
     this.logger.debug(`Completing transfer ${transferId}`);
-    return this.paymentDomainService.completeTransfer(transferId, this.paymentProvider);
+    return this.domainServices.paymentServices.completeTransfer(transferId, this.paymentProvider);
   }
 
   public async failTransfer(transferId: string, error: TransferErrorPayload): Promise<boolean | null> {
     this.logger.debug(`Failing transfer ${transferId} with error`, error);
     const parsedError = this.parseTransferError(error);
-    return this.paymentDomainService.failTransfer(transferId, parsedError, this.paymentProvider);
+    return this.domainServices.paymentServices.failTransfer(transferId, parsedError, this.paymentProvider);
   }
 
   public async applyTransferUpdate(transferId: string, update: TransferUpdateDetails): Promise<boolean | null> {
@@ -50,7 +55,7 @@ export abstract class BaseTransferExecutionProvider implements ITransferExecutio
       return this.failTransfer(transferId, error);
     }
 
-    return this.paymentDomainService.processTransferUpdate(transferId, updates);
+    return this.domainServices.paymentServices.processTransferUpdate(transferId, updates);
   }
 
   /**

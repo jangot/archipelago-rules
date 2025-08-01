@@ -3,14 +3,14 @@ import { PaymentSteppedEvent } from '@library/shared/events';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { IDomainServices } from '@payment/modules/domain';
-import { ManagementDomainService } from '@payment/modules/domain/services';
+import { LoanPaymentStepService } from '@payment/modules/loan-payment-steps';
 
 @Injectable()
 @EventsHandler(PaymentSteppedEvent)
 export class PaymentSteppedEventHandler implements IEventHandler<PaymentSteppedEvent> {
   private readonly logger: Logger = new Logger(PaymentSteppedEventHandler.name);
 
-  constructor(private readonly domainServices: IDomainServices, private readonly managementServices: ManagementDomainService) { }
+  constructor(private readonly domainServices: IDomainServices, private readonly paymentStepService: LoanPaymentStepService) { }
 
   async handle(event: PaymentSteppedEvent): Promise<boolean | null> {
     const { paymentId, originalPaymentState } = event.payload;
@@ -31,7 +31,7 @@ export class PaymentSteppedEventHandler implements IEventHandler<PaymentSteppedE
     }
     this.logger.debug(`Advancing payment for paymentId: ${paymentId} to next step with ID: ${nextStep}`);
 
-    return this.managementServices.advancePaymentStep(nextStep);
+    return this.paymentStepService.advanceStep(nextStep);
 
   }
 }

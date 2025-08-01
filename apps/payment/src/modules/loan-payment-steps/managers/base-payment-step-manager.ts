@@ -1,7 +1,7 @@
 import { PaymentStepState, TransferState, TransferStateCodes } from '@library/entity/enum';
 import { Transfer } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
-import { PaymentDomainService } from '@payment/modules/domain/services';
+import { IDomainServices } from '@payment/modules/domain';
 import { ILoanPaymentStepManager } from '../interfaces';
 
 @Injectable()
@@ -9,7 +9,7 @@ export abstract class BasePaymentStepManager implements ILoanPaymentStepManager 
   protected readonly logger: Logger;
   protected readonly stepState: PaymentStepState;
   
-  constructor(protected readonly paymentDomainService: PaymentDomainService, protected readonly state: PaymentStepState) {
+  constructor(protected readonly domainServices: IDomainServices, protected readonly state: PaymentStepState) {
     this.logger = new Logger(this.constructor.name);
     this.stepState = state;
   }
@@ -20,7 +20,7 @@ export abstract class BasePaymentStepManager implements ILoanPaymentStepManager 
   }
 
   protected async getLatestTransfer(stepId: string): Promise<Transfer | null> {
-    return this.paymentDomainService.getLatestTransferForStep(stepId);
+    return this.domainServices.paymentServices.getLatestTransferForStep(stepId);
   }
 
   protected async getLatestTransferState(stepId: string): Promise<TransferState | null> {
@@ -69,7 +69,7 @@ export abstract class BasePaymentStepManager implements ILoanPaymentStepManager 
       newState,
     });
 
-    return this.paymentDomainService.updatePaymentStepState(stepId, previousState, newState);
+    return this.domainServices.paymentServices.updatePaymentStepState(stepId, previousState, newState);
   }
 
 
