@@ -20,4 +20,8 @@ export class NotificationDefinitionRepository extends RepositoryBase<Notificatio
   ) {
     super(repository, NotificationDefinition);
   }
+
+  public findByName(name: string) {
+    return this.repository.findOne({ where: { name } });
+  }
 }

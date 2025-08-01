@@ -1,4 +1,3 @@
-import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -12,15 +11,13 @@ import { NotificationDataService } from '@notification/data';
  * @description Handles business logic for notification definitions
  */
 @Injectable()
-export class NotificationDomainService extends BaseDomainServices {
+export class NotificationDomainService {
   private readonly logger = new Logger(NotificationDomainService.name);
 
   constructor(
     protected readonly data: NotificationDataService,
     protected readonly config: ConfigService
-  ) {
-    super(data);
-  }
+  ) {}
 
   /**
    * Get all notification definitions

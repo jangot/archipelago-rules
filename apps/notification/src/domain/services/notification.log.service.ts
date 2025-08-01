@@ -1,4 +1,3 @@
-import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
 import { IPaging } from '@library/shared/common/paging';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -13,15 +12,13 @@ import { INotificationMessageResult } from '@notification/interfaces/inotificati
  * @description Handles business logic for notification logging and audit trails
  */
 @Injectable()
-export class NotificationLogDomainService extends BaseDomainServices {
+export class NotificationLogDomainService {
   private readonly logger = new Logger(NotificationLogDomainService.name);
 
   constructor(
     protected readonly data: NotificationDataService,
     protected readonly config: ConfigService
-  ) {
-    super(data);
-  }
+  ) {}
 
   /**
    * Log a notification message result
