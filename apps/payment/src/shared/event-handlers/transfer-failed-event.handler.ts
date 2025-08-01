@@ -3,14 +3,14 @@ import { TransferFailedEvent } from '@library/shared/events';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { IDomainServices } from '@payment/modules/domain';
-import { ManagementDomainService } from '@payment/modules/domain/services';
+import { LoanPaymentStepService } from '@payment/modules/loan-payment-steps';
 
 @Injectable()
 @EventsHandler(TransferFailedEvent)
 export class TransferFailedEventHandler implements IEventHandler<TransferFailedEvent> {
   private readonly logger: Logger = new Logger(TransferFailedEventHandler.name);
 
-  constructor(private readonly domainServices: IDomainServices, private readonly managementServices: ManagementDomainService) {}
+  constructor(private readonly domainServices: IDomainServices, private readonly paymentStepService: LoanPaymentStepService) {}
 
   async handle(event: TransferFailedEvent): Promise<boolean | null> {
     const { transferId, providerType } = event.payload;
@@ -31,6 +31,6 @@ export class TransferFailedEventHandler implements IEventHandler<TransferFailedE
     // Failing Payment Step
     this.logger.debug(`Failing payment step for loanPaymentStepId: ${loanPaymentStepId} with error`, error);
     // TODO: Here we can decide is `error` a business or technical before calling step advance (to keep step `pending` if technical error)
-    return this.managementServices.advancePaymentStep(loanPaymentStepId);
+    return this.paymentStepService.advanceStep(loanPaymentStepId);
   }
 }
