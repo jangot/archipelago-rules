@@ -1,16 +1,16 @@
 import { PaymentStepStateCodes } from '@library/entity/enum';
 import { LOAN_PAYMENT_STEP_RELATIONS } from '@library/shared/domain/entity/relation';
 import { Injectable } from '@nestjs/common';
+import { IDomainServices } from '@payment/modules/domain';
 import { PaymentStepStateIsOutOfSyncException } from '@payment/modules/domain/exceptions';
-import { PaymentDomainService } from '@payment/modules/domain/services';
 import { BasePaymentStepManager } from './base-payment-step-manager';
 
 @Injectable()
 export class PendingStepManager extends BasePaymentStepManager {
 
 
-  constructor(protected readonly paymentDomainService: PaymentDomainService) {
-    super(paymentDomainService, PaymentStepStateCodes.Pending);
+  constructor(protected readonly domainServices: IDomainServices) {
+    super(domainServices, PaymentStepStateCodes.Pending);
   }
 
   /**
@@ -23,7 +23,7 @@ export class PendingStepManager extends BasePaymentStepManager {
    */
   protected async onTransferCreated(stepId: string, transferId: string): Promise<boolean | null> {
     this.logger.debug(`Step: ${stepId} is in Pending state, Transfer: ${transferId} is Created. Validating Step state.`);
-    const step = await this.paymentDomainService.getLoanPaymentStepById(stepId, [LOAN_PAYMENT_STEP_RELATIONS.Transfers]);
+    const step = await this.domainServices.paymentServices.getLoanPaymentStepById(stepId, [LOAN_PAYMENT_STEP_RELATIONS.Transfers]);
     const { transfers } = step;
     if (!transfers || !transfers.length) {
       throw new PaymentStepStateIsOutOfSyncException(`Step: ${stepId} is in Pending state, but no Transfers found.`);
