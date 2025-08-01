@@ -1,7 +1,7 @@
-import { IGetUserDetailByIdResult, getUserDetailById } from '@core/modules/data/sql_generated/get-user-detail.queries';
 import { ContactType } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { ApplicationUser } from '@library/shared/domain/entity';
+import { IGetUserDetailByIdResult, getUserDetailById } from '@library/shared/infrastructure/data/generated/get-user-detail.queries';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';

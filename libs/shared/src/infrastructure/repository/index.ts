@@ -1,6 +1,6 @@
 
-import { LoanApplicationRepository } from '@core/modules/lending/repositories/loan-application.repository';
 import { BillersRepository } from './billers.repository';
+import { LoanApplicationRepository } from './loan-application.repository';
 import { LoanRepository } from './loan.repository';
 import { NotificationDefinitionRepository } from './notification.definition.repository';
 import { PaymentAccountRepository } from './payment.account.repository';

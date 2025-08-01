@@ -1,6 +1,5 @@
 import { DataModule } from '@core/modules/data';
 import { DomainModule } from '@core/modules/domain/domain.module';
-import { LoanApplicationsUnauthController } from '@core/modules/lending/loan-applications-unauth.controller';
 import { LoanApplicationsController } from '@core/modules/lending/loan-applications.controller';
 import { LoanApplicationsService } from '@core/modules/lending/loan-applications.service';
 import { ScheduleService } from '@library/shared/service';
@@ -21,7 +20,7 @@ import { ScheduleController } from './schedule.controller';
 
 @Module({
   imports: [JwtModule, ConfigModule, DomainModule, CqrsModule, DataModule],
-  controllers: [LoansController, LoanApplicationsController, ScheduleController, BillersController, LoanApplicationsUnauthController ],
+  controllers: [LoansController, LoanApplicationsController, ScheduleController, BillersController ],
   providers: [
     Logger,
     LoansService, 
