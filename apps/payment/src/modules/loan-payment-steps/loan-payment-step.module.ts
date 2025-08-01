@@ -4,6 +4,7 @@ import { DataModule } from '../data/data.module';
 import { DomainModule } from '../domain';
 import { ILoanPaymentStepFactory } from './interfaces';
 import { LoanPaymentStepFactory } from './loan-payment-step.factory';
+import { LoanPaymentStepService } from './loan-payment-step.service';
 import {
   CompletedStepManager,
   CreatedStepManager,
@@ -23,10 +24,8 @@ import {
     PendingStepManager,
     FailedStepManager,
     CompletedStepManager,
+    LoanPaymentStepService,
   ],
-  exports: [
-    LoanPaymentStepFactory,
-    ILoanPaymentStepFactory,
-  ],
+  exports: [LoanPaymentStepService],
 })
 export class LoanPaymentStepModule {}

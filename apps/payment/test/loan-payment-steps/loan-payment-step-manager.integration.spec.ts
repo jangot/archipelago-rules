@@ -140,7 +140,7 @@ describe('Loan Payment Step Manager Integration', () => {
         displayName: 'Zirtue Platform',
         cardToken: `dest_token_${Date.now()}`,
         cardExpiration: '12/29',
-        last4Digits: '9876',
+        redactedAccountNumber: '9876',
       },
     });
 
@@ -263,7 +263,7 @@ describe('Loan Payment Step Manager Integration', () => {
         displayName: `Target Account (${targetAccountType})`,
         cardToken: `tgt_token_${Date.now()}`,
         cardExpiration: '12/29',
-        last4Digits: '5678',
+        redactedAccountNumber: '5678',
       },
     });
 
