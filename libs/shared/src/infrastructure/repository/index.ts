@@ -4,6 +4,9 @@ import { LoanApplicationRepository } from './loan-application.repository';
 import { LoanRepository } from './loan.repository';
 import { NotificationDefinitionRepository } from './notification.definition.repository';
 import { PaymentAccountRepository } from './payment.account.repository';
+import {
+  NotificationDataViewRepository
+} from '@library/shared/infrastructure/repository/notification-data.view.repository';
 
 
 export * from './billers.repository';
@@ -17,4 +20,5 @@ export const SharedRepositories = [
   LoanApplicationRepository,
   BillersRepository,
   NotificationDefinitionRepository,
+  NotificationDataViewRepository,
 ];

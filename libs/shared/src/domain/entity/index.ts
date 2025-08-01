@@ -26,6 +26,7 @@ import { PaymentsRouteStep } from './payments.route.step.entity';
 import { Transfer } from './transfer.entity';
 import { TransferError } from './transfer.error.entity';
 import { UserRegistration } from './user.registration.entity';
+import { NotificationDataView } from '@library/shared/domain/entity/notification-data.vew';
 
 export * from './application.user.entity';
 export * from './biller.address.entity';
@@ -83,6 +84,7 @@ export const NotificationEntities = [
   NotificationDefinition,
   NotificationDefinitionItem,
   NotificationLog,
+  NotificationDataView,
 ];
 
 export const AllEntities = [...CoreEntities, ...PaymentEntities, ...NotificationEntities, ...BillerEntities];
