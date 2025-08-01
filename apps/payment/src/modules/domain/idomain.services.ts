@@ -1,7 +1,7 @@
 import { PaymentDomainService } from './services';
-import { SharedNotificationDomainService } from '@library/shared/domain/service';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export abstract class IDomainServices {
   readonly paymentServices: PaymentDomainService;
-  readonly notificationServices: SharedNotificationDomainService;
 }
