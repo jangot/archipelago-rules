@@ -1,12 +1,15 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto, PublicLoanApplicationResponseDto } from '@core/modules/lending/dto/response';
-import { LoanApplicationAllowanceValidation as AllowanceValidation, ContactType, LoanApplicationAllowanceValidationType, LoanApplicationStates, LoanApplicationValidationRejectType, LoanPaymentFrequencyCodes, LoanApplicationValidationRejectTypes as RejectionMessage } from '@library/entity/enum';
+import { LoanApplicationAllowanceValidation as AllowanceValidation, ContactType, LoanApplicationAllowanceValidationType, LoanApplicationStates, LoanApplicationValidationRejectType, LoanFeeModeCodes, LoanPaymentFrequency, LoanPaymentFrequencyCodes, LoanApplicationValidationRejectTypes as RejectionMessage } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { LoanApplication } from '@library/shared/domain/entity';
+import { ScheduleService } from '@library/shared/service';
+import { PlanPreviewOutputItem } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
+import { addDays } from 'date-fns';
 import { InvalidUserForLoanApplicationException } from './exceptions';
 import { LendingLogic } from './lending.logic';
 
@@ -36,7 +39,7 @@ export class LoanApplicationsService {
       return null;
     }
 
-    resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
+    resultDto.loanPaymentSchedule = this.previewLoanApplicationPayments(resultDto);
 
     return resultDto;
   }
@@ -67,14 +70,12 @@ export class LoanApplicationsService {
           return null;
         }
 
-        dto.loanPaymentSchedule = this.generatePaymentSchedule(dto);
+        dto.loanPaymentSchedule = this.previewLoanApplicationPayments(dto);
 
         return dto;
       })
       .filter((dto): dto is LoanApplicationResponseDto => dto !== null);
   }
-
-  //TODO: Mike, can you review this to confirm the work is done at the right level?
 
   /**
    * Creates a new loan application for the specified user.
@@ -97,8 +98,7 @@ export class LoanApplicationsService {
     loanApplicationInput.borrowerFirstName = user.firstName;
     loanApplicationInput.borrowerLastName = user.lastName;
 
-    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    loanApplicationInput.loanFirstPaymentDate = loanApplicationInput.loanFirstPaymentDate || thirtyDaysFromNow;
+    loanApplicationInput.loanFirstPaymentDate = this.getFirstPaymentDate(loanApplicationInput.loanFirstPaymentDate);
 
     const result = await this.domainServices.loanServices.createLoanApplication(loanApplicationInput);
     if (!result) throw new EntityFailedToUpdateException('Failed to create Loan application');
@@ -106,7 +106,7 @@ export class LoanApplicationsService {
     const resultDto = DtoMapper.toDto(result, LoanApplicationResponseDto);
     if (!resultDto) throw new EntityFailedToUpdateException('Failed to create Loan application');
     
-    resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
+    resultDto.loanPaymentSchedule = this.previewLoanApplicationPayments(resultDto);
 
     return resultDto;
   }
@@ -127,7 +127,8 @@ export class LoanApplicationsService {
     // Validate that the loan application belongs to the user (as a borrower or lender)
     await this.getLoanApplication(id, userId, AllowanceValidation.Any, RejectionMessage.Update);
 
-    const loanFee = this.calculateLoanFee(data);
+    const { loanAmount } = data;
+    const loanFee = loanAmount ? ScheduleService.previewFeeAmount(loanAmount) : 0;
     data.loanServiceFee = loanFee;
 
     const loanApplicationInput = EntityMapper.toEntity(data, LoanApplication);
@@ -140,7 +141,7 @@ export class LoanApplicationsService {
       return null;
     }
 
-    resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
+    resultDto.loanPaymentSchedule = this.previewLoanApplicationPayments(resultDto);
 
     return resultDto;
   }
@@ -264,62 +265,38 @@ export class LoanApplicationsService {
 
   // #region Loan Application Payments (temporary implementation until the backend team revisits)
 
-  // TODO: This is a placeholder for the actual loan fee calculation
-  private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {
-    // Round to 2 decimal places
-    const loanFee = (data.loanAmount || 0) * 0.05;
-    const loanFeeRounded = Math.round(loanFee * 100) / 100;
-
-    return loanFeeRounded;
+  private previewLoanApplicationPayments(input: LoanApplicationResponseDto): LoanApplicationPaymentItemDto[] {
+    const repaymentStartFallback = addDays(new Date(), 30);
+    const preview = ScheduleService.previewApplicationPlan({
+      amount: input.loanAmount || 0,
+      paymentsCount: input.loanPayments || 0,
+      paymentFrequency: (input.loanPaymentFrequency as LoanPaymentFrequency) || LoanPaymentFrequencyCodes.Monthly,
+      feeAmount: input.loanServiceFee,
+      feeMode: LoanFeeModeCodes.Standard,
+      repaymentStartDate: input.loanFirstPaymentDate || repaymentStartFallback,
+    });
+    return this.mapPaymentsPreviewToDto(preview);
   }
 
-
-  //TODO: This is a placeholder for future actual implementation of payment schedule generation
-  private generatePaymentSchedule(loanApplication: LoanApplicationResponseDto): LoanApplicationPaymentItemDto[] {
-    const { loanPaymentFrequency, loanAmount, loanServiceFee, loanPayments, loanFirstPaymentDate } = loanApplication;
-    if (!loanPaymentFrequency || !loanAmount || !loanServiceFee || !loanPayments || !loanFirstPaymentDate || loanPayments <= 0) {
-      return [];
-    }
-
-    if (loanPaymentFrequency === LoanPaymentFrequencyCodes.OneTime) {
-      return [{
-        paymentDate: loanFirstPaymentDate,
-        paymentAmount: loanAmount + loanServiceFee,
-        loanBalance: loanAmount + loanServiceFee,
-      }];
-    }
-
-    if (loanPaymentFrequency !== LoanPaymentFrequencyCodes.Monthly) {
-      this.logger.warn(`Unsupported loan payment frequency: ${loanPaymentFrequency}`);
-      return [];
-    }
-
-    const total = Number(loanAmount) + Number(loanServiceFee);
-    const round = (n: number) => Number(n.toFixed(2));
-    const basePayment = round(total / Number(loanPayments));
-
-    const paymentSchedule: LoanApplicationPaymentItemDto[] = [];
-    let balance = total;
-
-    for (let i = 0; i < loanPayments; i++) {
-      const payment = i === loanPayments - 1 ? round(balance) : basePayment;
-
-      paymentSchedule.push({
-        paymentDate: this.addMonths(loanFirstPaymentDate, i),
-        paymentAmount: payment,
-        loanBalance: balance,
-      });
-      balance = round(balance - payment);
-    }
-
-    return paymentSchedule;
+  private mapPaymentsPreviewToDto(payments: PlanPreviewOutputItem[]): LoanApplicationPaymentItemDto[] { 
+    return payments
+      .map((p) => ({
+        paymentDate: p.paymentDate,
+        paymentAmount: p.amount + p.feeAmount,
+        loanBalance: p.endingBalance,
+      }))
+      .sort((a, b) => a.paymentDate.getTime() - b.paymentDate.getTime());
   }
 
-  // helper
-  public addMonths(d: Date, months: number): Date {
-    const res = new Date(d);
-    res.setMonth(res.getMonth() + months);
-    return res;
+  /**
+   * Gets the first payment date for the loan application.
+   * If no date is provided, defaults to 30 days from now.
+   */
+  private getFirstPaymentDate(date: Date | null): Date {
+    if (date) return date;
+
+    // Default to 30 days from now 
+    return addDays(new Date(), 30); 
   }
 
   // #endregion  
