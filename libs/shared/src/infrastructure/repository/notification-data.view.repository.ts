@@ -7,6 +7,10 @@ import { NotificationDataView } from '@library/shared/domain/entity/notification
 export class NotificationDataViewRepository {
   constructor(
     @InjectRepository(NotificationDataView)
-    repository: Repository<NotificationDataView>,
+    private readonly repository: Repository<NotificationDataView>,
   ) {}
+
+  async findByUserId(userId: string): Promise<NotificationDataView | null> {
+    return this.repository.findOne({ where: { userId } });
+  }
 }

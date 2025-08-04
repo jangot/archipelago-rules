@@ -1,4 +1,8 @@
-import { BillersDomainService, SharedNotificationDomainService } from '@library/shared/domain/service';
+import {
+  BillersDomainService,
+  SharedNotificationDataViewDomainService,
+  SharedNotificationDomainService,
+} from '@library/shared/domain/service';
 import { Injectable } from '@nestjs/common';
 import { IDomainServices } from './idomain.services';
 import { LoanDomainService, UserDomainService } from '@core/modules/domain/services';
@@ -18,5 +22,6 @@ export class DomainServices implements IDomainServices {
     public readonly loanServices: LoanDomainService,
     public readonly billersServices: BillersDomainService,
     public readonly notificationServices: SharedNotificationDomainService,
+    public readonly notificationDataServices: SharedNotificationDataViewDomainService,
   ) {}
 }

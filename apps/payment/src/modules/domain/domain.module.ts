@@ -6,7 +6,10 @@ import { DataModule } from '../data';
 import { DomainServices } from './domain.services';
 import { IDomainServices } from './idomain.services';
 import { PaymentDomainService } from './services';
-import { SharedNotificationDomainService } from '@library/shared/domain/service';
+import {
+  SharedNotificationDataViewDomainService,
+  SharedNotificationDomainService,
+} from '@library/shared/domain/service';
 
 @Module({
   imports: [
@@ -18,6 +21,7 @@ import { SharedNotificationDomainService } from '@library/shared/domain/service'
   providers: [
     PaymentDomainService,
     SharedNotificationDomainService,
+    SharedNotificationDataViewDomainService,
     { provide: IDomainServices, useClass: DomainServices },
   ],
   exports: [IDomainServices],

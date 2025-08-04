@@ -2,7 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
-import { SharedNotificationDomainService, BillersDomainService } from '@library/shared/domain/service';
+import {
+  SharedNotificationDomainService,
+  BillersDomainService,
+  SharedNotificationDataViewDomainService,
+} from '@library/shared/domain/service';
 
 import { DataModule } from '../data';
 import { DomainServices } from './domain.services';
@@ -15,6 +19,7 @@ import { LoanDomainService, UserDomainService } from './services';
     LoanDomainService,
     BillersDomainService,
     SharedNotificationDomainService,
+    SharedNotificationDataViewDomainService,
     { provide: IDomainServices, useClass: DomainServices }],
   exports: [IDomainServices],
 })
