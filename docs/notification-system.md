@@ -262,6 +262,3 @@ The notification system uses the `notifications` schema with the following table
 - `notification_definition_items`
 - `notification_logs`
 - `v_notification_data` (view)
-
-### Manual Testing
-Use the setup script to create test notifications and verify delivery through each channel.
