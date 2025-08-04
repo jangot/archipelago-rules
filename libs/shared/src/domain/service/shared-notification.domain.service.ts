@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
 import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
 import { SharedDataService } from '@library/shared/common/domainservice/shared.service';
+import { NotificationEventPayload } from '@library/shared/events/notification.event';
 
 /**
  * Service for managing notification definitions in core application
@@ -21,15 +22,27 @@ export class SharedNotificationDomainService extends BaseDomainServices {
     super(data);
   }
 
-  /**
-   * Find notification definition data items by name
-   *
-   * @param name - The name of the notification definition to find
-   * @returns Promise<NotificationDataItems[] | null>
-   */
-  async findDataItemsByName(name: string): Promise<NotificationDataItems[] | null> {
-    this.logger.debug(`Finding notification definition data items by name: ${name}`);
-    const notificationDefinition = await this.data.notificationDefinitions.findByName(name);
-    return notificationDefinition?.dataItems || null;
+  public async getNotificationPayload(notificationName: string, userId: string): Promise<NotificationEventPayload | null> {
+    const notificationDefinition = await this.data.notificationDefinitions.findByName(notificationName);
+    if (!notificationDefinition) {
+      this.logger.debug(`Notification definition was not gotten: ${notificationName}`);
+      return null;
+    }
+    const row = await this.data.notificatioDataView.findByUserId(userId, notificationDefinition.dataItems);
+    if (!row) {
+      this.logger.debug(`Notification data was not gotten ${notificationName} : ${userId}`);
+      return null;
+    }
+
+    const result: NotificationEventPayload = {
+      name: notificationName,
+      user: row.user,
+    };
+
+    if (row[NotificationDataItems.Loan]) {
+      result[NotificationDataItems.Loan] = row[NotificationDataItems.Loan];
+    }
+
+    return result;
   }
 }

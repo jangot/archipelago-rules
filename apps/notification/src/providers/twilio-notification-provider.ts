@@ -33,7 +33,7 @@ export class TwilioNotificationProvider extends BaseNotificationProvider impleme
   }
 
   async send(message: INotificationMessageRequest): Promise<INotificationMessageResult> {
-    const target = message.user.phone;
+    const target = message.user.phoneNumber;
     const body = message.header ? message.header + '\n' + decode(message.body) : decode(message.body);
 
     this.logger.debug(`Sending SMS message to ${target} ...`, {

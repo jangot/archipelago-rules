@@ -70,7 +70,7 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
       USER: {
         ID: user.id,
         EMAIL: user.email,
-        PHONE: user.phone,
+        PHONE: user.phoneNumber,
         FIRSTNAME: user.firstName,
         LASTNAME: user.lastName,
         FULLNAME: `${user.firstName} ${user.lastName}`,

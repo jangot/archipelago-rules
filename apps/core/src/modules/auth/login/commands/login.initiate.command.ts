@@ -5,6 +5,8 @@ import { UserLoginResponseDTO } from '@core/modules/auth/dto/response/user-login
 import { LoginLogic } from '../login.logic';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { LoginTemporaryLockedException, UserNotRegisteredException } from '../../exceptions/auth-domain.exceptions';
+import { NotificationEvent } from '@library/shared/events/notification.event';
+import { ApplicationUser } from '@library/shared/domain/entity';
 
 @CommandHandler(LoginInitiateCommand)
 export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginInitiateCommand> implements ICommandHandler<LoginInitiateCommand> {
@@ -47,9 +49,19 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
 
     await this.domainServices.userServices.updateUser(user);
 
-    // TODO: Send the code to the user
-    //this.sendEvent()
+    await this.sendCode(user);
 
     return { userId: user.id, verificationCode: code };
+  }
+
+  private async sendCode(user: ApplicationUser): Promise<void> {
+    const notificationName = user.phoneNumber ? 'login_get_code_sms' : 'login_get_code_email';
+
+    const payload = await this.domainServices.notificationServices.getNotificationPayload(notificationName, user.id);
+    if (!payload) {
+      return;
+    }
+
+    await this.publisherService.publish(new NotificationEvent(payload));
   }
 }

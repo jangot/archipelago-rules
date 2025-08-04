@@ -3,8 +3,10 @@ import { ViewEntity, ViewColumn } from 'typeorm';
 export interface UserJson {
   id: string;
   email: string;
+  phoneNumber: string;
   firstName: string;
   lastName: string;
+  secret: string;
 }
 
 export interface LoanJson {
@@ -28,7 +30,9 @@ export interface LoanJson {
         'id', u.id,
         'email', u.email,
         'first_name', u.first_name,
-        'last_name', u.last_name
+        'last_name', u.last_name,
+        'phone_number', u.phone_number,
+        'secret', u.secret
       ) AS user,
       CASE WHEN l_lend.id IS NOT NULL THEN jsonb_build_object(
         'id', l_lend.id,
