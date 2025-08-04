@@ -1,10 +1,10 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto, LoanApplicationUnauthResponseDto } from '@core/modules/lending/dto/response';
-import { ContactType, LoanApplicationStates, LoanPaymentFrequencyCodes } from '@library/entity/enum';
+import { LoanApplicationAllowanceValidation as AllowanceValidation, ContactType, LoanApplicationAllowanceValidationType, LoanApplicationStates, LoanApplicationValidationRejectType, LoanPaymentFrequencyCodes, LoanApplicationValidationRejectTypes as RejectionMessage } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
-import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { EntityFailedToUpdateException, MissingInputException } from '@library/shared/common/exception/domain';
 import { LoanApplication } from '@library/shared/domain/entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InvalidUserForLoanApplicationException } from './exceptions';
@@ -26,10 +26,8 @@ export class LoanApplicationsService {
    * @param id - The ID of the loan application
    * @returns Promise<LoanApplicationResponseDto | null> - The loan application DTO or null
    */
-  public async getLoanApplicationById(id: string): Promise<LoanApplicationResponseDto | null> {
-    const result = await this.domainServices.loanServices.getLoanApplicationById(id);
-
-    if (!result) throw new EntityNotFoundException(`Loan application: ${id} not found`);
+  public async getLoanApplicationById(id: string, userId: string): Promise<LoanApplicationResponseDto | null> {
+    const result = await this.getLoanApplication(id, userId);
 
     const resultDto = DtoMapper.toDto(result, LoanApplicationResponseDto);
     if (!resultDto) {
@@ -112,7 +110,7 @@ export class LoanApplicationsService {
     this.logger.debug(`update: Updating loan application ${id}:`, data);
 
     // Validate that the loan application belongs to the user (as a borrower or lender)
-    await this.validateApplicationLoanUser(id, userId);
+    await this.getLoanApplication(id, userId, AllowanceValidation.Any, RejectionMessage.Update);
 
     const loanFee = this.calculateLoanFee(data);
     data.loanServiceFee = loanFee;
@@ -142,34 +140,31 @@ export class LoanApplicationsService {
    * @param userId - The user performing the action (borrower)
    * @param id - The loan application ID
    * @returns Promise<void>
+   * 
+   * @remarks
+   * This method is called when the borrower completes the application and should send to the Lender. No lender is assigned yet.
    */
-  //TODO: submitLoanApplication is called when the borrower completes the application and should send to the Lender. No lender is assigned yet.
   public async submitLoanApplication(userId: string, id: string): Promise<void> {
     this.logger.debug(`submitLoanApplication: Submitting loan application ${id}`);
 
-    //TODO: validateApplicationLoanUser performs a getLoanApplicationById and then we perform the same request again ??
-    await this.validateApplicationLoanUser(id, userId);
+    const loanApplication = await this.getLoanApplication(id, userId, AllowanceValidation.Borrower, RejectionMessage.Submit);
 
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(id);
-    //TODO: Should we throw an error if the loan application is not found?
-
-    if (!loanApplication!.lenderEmail && !loanApplication!.lenderFirstName) {
+    const { lenderEmail, lenderFirstName } = loanApplication;
+    
+    if (!lenderEmail || !lenderFirstName) {
       throw new MissingInputException('Lender information is required to submit loan application');
     }
 
-    //TODO: The lender may or may not have a Zirtue account yet... regardless, we just need to send a notification to the lender
-    const lenderUser = await this.domainServices.userServices.getUserByContact(
-      loanApplication!.lenderEmail!,
-      ContactType.EMAIL
-    );
+    // The lender may or may not have a Zirtue account yet... regardless, we just need to send a notification to the lender
+    const lenderUser = await this.domainServices.userServices.getUserByContact(lenderEmail, ContactType.EMAIL);
     const status = LoanApplicationStates.Submitted;
     const borrowerSubmittedAt = new Date();
     if (lenderUser && lenderUser.id) {
-      this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} was found. Will assign lenderId now.`);
+      this.logger.debug(`Lender with email ${lenderEmail} was found. Will assign lenderId now.`);
       await this.domainServices.loanServices.updateLoanApplication(id, { lenderId: lenderUser.id, status, borrowerSubmittedAt });
     } else {
-      // TODO: Assign lenderId once the lender creates/authenticates a Zirtue account
-      this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} not found. Will assign lenderId after registration.`);
+      // Assign lenderId once the lender creates/authenticates a Zirtue account
+      this.logger.debug(`Lender with email ${lenderEmail} not found. Will assign lenderId after registration.`);
       await this.domainServices.loanServices.updateLoanApplication(id, { status, borrowerSubmittedAt });
     }
 
@@ -187,19 +182,15 @@ export class LoanApplicationsService {
   public async acceptLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`acceptLoanApplication: Accepting loan application ${loanApplicationId} by user ${userId}`);
 
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
-    if (!loanApplication) {
-      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
-    }
+    const loanApplication = await this.getLoanApplication(loanApplicationId, userId, AllowanceValidation.Lender, RejectionMessage.Accept);
 
     // Validate status to avoid creating double loans
     if (loanApplication.status === LoanApplicationStates.Approved) {
       this.logger.warn(`Loan application ${loanApplicationId} is already approved`);
+      // TODO: New Exception class here. It is not User error
       throw new InvalidUserForLoanApplicationException('This loan application has already been accepted');
     }
 
-    // Validate that the user is the lender for v1
-    this.validateApplicationLenderUser(loanApplication, userId);
     LendingLogic.validateLoanApplicationForAcceptance(loanApplication);
     const createdLoan = await this.domainServices.loanServices.acceptLoanApplication(loanApplicationId, userId);
     if (!createdLoan) {
@@ -223,12 +214,9 @@ export class LoanApplicationsService {
    */
   public async rejectLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`rejectLoanApplication: Rejecting loan application ${loanApplicationId}`);
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
-    if (!loanApplication) {
-      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
-    }
-    // Validate that the user is the lender for v1
-    this.validateApplicationLenderUser(loanApplication, userId);
+
+    await this.getLoanApplication(loanApplicationId, userId, AllowanceValidation.Lender, RejectionMessage.Reject);
+    
     const status = LoanApplicationStates.Rejected;
     const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
     if (!result) {
@@ -247,12 +235,8 @@ export class LoanApplicationsService {
    */
   public async cancelLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`cancelLoanApplication: Cancelling loan application ${loanApplicationId}`);
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
-    if (!loanApplication) {
-      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
-    }
-    // Validate that the user is the borrower for v1
-    await this.validateApplicationLoanUser(loanApplicationId, userId);
+    await this.getLoanApplication(loanApplicationId, userId, AllowanceValidation.Borrower, RejectionMessage.Cancel);
+
     const status = LoanApplicationStates.Cancelled;
     const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
     if (!result) {
@@ -260,21 +244,6 @@ export class LoanApplicationsService {
     }
     this.logger.debug(`Successfully cancelled loan application ${loanApplicationId}`);
   } 
-
-  private async validateApplicationLoanUser(id: string, userId: string) {
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(id);
-    if (!loanApplication) throw new EntityNotFoundException(`Loan application: ${id} not found`);
-
-    if (loanApplication.borrowerId !== userId && loanApplication.lenderId !== userId)
-      throw new InvalidUserForLoanApplicationException('You are not authorized to update this loan application');
-  }
-
-  private validateApplicationLenderUser(loanApplication: LoanApplication, userId: string): void {
-    if (loanApplication.lenderId !== userId) {
-      this.logger.warn(`${userId} is not authorized to accept or reject loan application ${loanApplication.id}`);
-      throw new InvalidUserForLoanApplicationException('You are not authorized to accept or reject this loan application');
-    }
-  }
 
   // #region Loan Application Payments (temporary implementation until the backend team revisits)
 
@@ -337,4 +306,33 @@ export class LoanApplicationsService {
   }
 
   // #endregion  
+
+  /**
+   * Retrieves a loan application by its ID and validates the user's allowance.
+   * Throws exceptions if the application is not found or if the user is not allowed to access it.
+   *
+   * @param applicationId - The ID of the loan application
+   * @param userId - The ID of the user (borrower or lender)
+   * @param allowance - The type of allowance validation to perform
+   * @param intent - The intent for which the validation is being performed
+   * @returns Promise<LoanApplication> - The loan application entity
+   */
+  private async getLoanApplication(
+    applicationId: string,
+    userId: string | null,
+    allowance: LoanApplicationAllowanceValidationType = AllowanceValidation.Any,
+    intent: LoanApplicationValidationRejectType = RejectionMessage.View
+  ): Promise<LoanApplication> {
+    
+    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(applicationId);
+
+    this.domainServices.loanServices.validateLoanApplicationAllowance(
+      loanApplication,
+      userId,
+      allowance,
+      intent
+    );
+
+    return loanApplication;
+  }
 }
