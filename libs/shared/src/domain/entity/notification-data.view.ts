@@ -19,7 +19,7 @@ export interface LoanJson {
 
 @ViewEntity({
   schema: 'notifications',
-  name: 'notification_data',
+  name: 'v_notification_data',
   synchronize: false,
 })
 export class NotificationDataView {

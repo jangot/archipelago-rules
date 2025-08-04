@@ -26,9 +26,9 @@ export class NotificationDataViewRepository {
   }
 
   async initView(): Promise<void> {
-    await this.repository.query(`DROP VIEW IF EXISTS notifications.notification_data CASCADE`);
+    await this.repository.query(`DROP VIEW IF EXISTS notifications.v_notification_data CASCADE`);
     await this.repository.query(`
-      CREATE VIEW notifications.notification_data AS
+      CREATE VIEW notifications.v_notification_data AS
       SELECT
         u.id AS user_id,
         l_lend.id as lend_id,
