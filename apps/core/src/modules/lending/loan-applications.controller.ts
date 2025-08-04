@@ -1,3 +1,4 @@
+import { Public } from '@library/shared/common/decorators/public.decorator';
 import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
 import { IRequest } from '@library/shared/type';
 import { Body, Controller, Get, Logger, Patch, Post, Req, UseGuards } from '@nestjs/common';
@@ -12,7 +13,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards';
 import { LoanApplicationRequestDto, LoanApplicationUpdateDto } from './dto/request';
-import { LoanApplicationResponseDto } from './dto/response';
+import { LoanApplicationResponseDto, PublicLoanApplicationResponseDto } from './dto/response';
 import { LoanApplicationsService } from './loan-applications.service';
 
 @Controller('loan-applications')
@@ -54,6 +55,18 @@ export class LoanApplicationsController {
     return this.loanApplicationService.getLoanApplicationById(id, userId);
   }
   
+  @Public()
+  @Get(':id/public')
+  @ApiOperation({ summary: 'Get the public details of a loan application by ID ', description: 'Get the public details of a loan application by ID' })
+  @ApiOkResponse({ description: 'Loan application', type: PublicLoanApplicationResponseDto, isArray: false })
+  @ApiNotFoundResponse({ description: 'No Loan application found', isArray: false })
+  @ApiParam({ name: 'id', required: true, description: 'Loan application id' })
+  public async getPublicLoanApplicationById(@UUIDParam('id') id: string): Promise<PublicLoanApplicationResponseDto | null> {
+    this.logger.debug(`Getting loan application details with ID: ${id}`);
+
+    return this.loanApplicationService.getPublicLoanApplicationById(id);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new loan application', description: 'Create a new loan application' })
   @ApiCreatedResponse({ description: 'Loan application created', type: LoanApplicationResponseDto })

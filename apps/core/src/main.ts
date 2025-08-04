@@ -66,7 +66,7 @@ async function bootstrap() {
 
 function configureSwagger(app: INestApplication<any>) {
   const config = new DocumentBuilder()
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
+    //.addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
     .setTitle('ZNG Core API')
     .setDescription('Zirtue Next Generation Platform Core API')
     .setVersion('1.0')
@@ -76,6 +76,17 @@ function configureSwagger(app: INestApplication<any>) {
   const options: SwaggerDocumentOptions = { operationIdFactory: (controllerKey: string, methodKey: string) => methodKey };
 
   const document = SwaggerModule.createDocument(app, config, options);
+
+  // Remove security from all paths that are marked with the @Public() decorator
+  // This is the key that SwaggerModule looks at to determine if the endpoint is public
+  // This is a workaround to remove the security from the public endpoints
+  for (const path of Object.values(document.paths)) {
+    for (const op of Object.values(path) as any[]) {
+      if (op['x-zng-public']) {
+        delete op.security;
+      }
+    }
+  }
 
   SwaggerModule.setup('api/core/docs', app, document);
 }
