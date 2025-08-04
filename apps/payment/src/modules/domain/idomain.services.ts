@@ -2,7 +2,7 @@ import { PaymentDomainService } from './services';
 import { Injectable } from '@nestjs/common';
 import {
   SharedNotificationDataViewDomainService,
-  SharedNotificationDomainService
+  SharedNotificationDomainService,
 } from '@library/shared/domain/service';
 
 @Injectable()

@@ -16,7 +16,6 @@ import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
 import { CoreController } from './core.controller';
 import { CoreService } from './core.service';
 import { CoreModules } from './index.modules';
-import { TestEventController } from '@core/local-dev/test-event.controller';
 
 @Module({
   imports: [
@@ -32,7 +31,7 @@ import { TestEventController } from '@core/local-dev/test-event.controller';
     HealthModule,
     ...CoreModules, // Add Core specific Modules here, and they will automatically get imported
   ],
-  controllers: [CoreController, TestEventController],
+  controllers: [CoreController],
   providers: [CoreService, Logger],
   exports: [CoreService],
 })

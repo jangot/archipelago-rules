@@ -31,6 +31,7 @@ export class NotificationLogDomainService {
 
     const notificationLog = new NotificationLog();
     notificationLog.target = messageResult.target;
+    notificationLog.status = messageResult.status;
     notificationLog.userId = messageResult.userId;
     notificationLog.transport = messageResult.transport;
     notificationLog.metadata = messageResult.metadata;

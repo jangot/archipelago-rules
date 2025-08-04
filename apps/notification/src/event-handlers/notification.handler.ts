@@ -15,7 +15,6 @@ import { NotificationDataItems } from '@library/entity/enum/notification-data-it
 class NotificationUnexpectedFailResult implements INotificationMessageResult {
   target = 'unknown';
   transport = 'unknown';
-  status = 'unexpected_error';
   metadata = '';
   header = '';
   body = '';
@@ -24,8 +23,11 @@ class NotificationUnexpectedFailResult implements INotificationMessageResult {
   constructor(
     public userId: string,
     public definitionItemId: string,
+    public status: string,
   ) {}
 }
+
+class TemplateRenderError extends Error {}
 
 @Injectable()
 @EventsHandler(NotificationEvent)
@@ -59,28 +61,36 @@ export class NotificationHandler implements IEventHandler<NotificationEvent> {
 
         this.logger.debug(`Notification sent successfully to ${result.target} via ${result.transport}`);
       } catch (error) {
+        const status = error instanceof TemplateRenderError ? 'render_error' : 'unexpected_error';
+
         await this.domainServices.notificationLogServices.logNotificationResult(
-          new NotificationUnexpectedFailResult(event.payload[NotificationDataItems.User].id, item.id)
+          new NotificationUnexpectedFailResult(event.payload[NotificationDataItems.User].id, item.id, status)
         );
-        this.logger.error(`Failed to send notification via ${item.notificationType}: ${error.message}`);
+        this.logger.error(`Failed to send notification via ${item.notificationType}: ${error.message}`, error);
       }
     }
   }
 
   private payloadHasAllData(definition: NotificationDefinition, payload: NotificationEventPayload): boolean {
     const payloadKeys = Object.keys(payload);
+
     return definition.dataItems.every((val) => payloadKeys.includes(val));
   }
 
   private createMessageByDefinitionItem(definition: NotificationDefinitionItem, payload: NotificationEventPayload): INotificationMessageRequest {
-    return {
-      user: payload.user,
-      metadata: definition.metadata ? template(definition.metadata)(payload) : '',
-      header: definition.header ? template(definition.header)(payload) : '',
-      body: definition.body ? template(definition.body)(payload) : '',
-      message: definition.template ? template(definition.template)(payload) : '',
-      attributes: definition.attributes,
-      definitionItemId: definition.id,
-    };
+    try {
+      return {
+        user: payload.user,
+        metadata: definition.metadata ? template(definition.metadata)(payload) : '',
+        header: definition.header ? template(definition.header)(payload) : '',
+        body: definition.body ? template(definition.body)(payload) : '',
+        message: definition.template ? template(definition.template)(payload) : '',
+        attributes: definition.attributes,
+        definitionItemId: definition.id,
+      };
+    } catch (error) {
+      this.logger.error({ info: `Notification render error for user: ${payload.user.id}`, error });
+      throw new TemplateRenderError(error.message);
+    }
   }
 }

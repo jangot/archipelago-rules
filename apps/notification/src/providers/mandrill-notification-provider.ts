@@ -39,7 +39,7 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
     }
 
     if (this.isTestEmail(target)) {
-      this.logger.debug(`Skipping send for test email: ${target}`);
+      this.logger.debug({ info: `Skipping send for test email: ${target}`, message });
       return this.buildResult(message, target, 'skipped:test_email');
     }
     try {

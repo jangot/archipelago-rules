@@ -3,7 +3,7 @@ import { IDomainServices } from './idomain.services';
 import { PaymentDomainService } from './services';
 import {
   SharedNotificationDataViewDomainService,
-  SharedNotificationDomainService
+  SharedNotificationDomainService,
 } from '@library/shared/domain/service';
 
 @Injectable()
