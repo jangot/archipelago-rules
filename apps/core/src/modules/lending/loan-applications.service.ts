@@ -42,7 +42,7 @@ export class LoanApplicationsService {
   }
 
   public async getPublicLoanApplicationById(id: string): Promise<PublicLoanApplicationResponseDto | null> {
-    const result = await this.domainServices.loanServices.getLoanApplicationById(id);
+    const result = await this.getLoanApplication(id, null, AllowanceValidation.Skip, RejectionMessage.View);
 
     return DtoMapper.toDto(result, PublicLoanApplicationResponseDto);
   }

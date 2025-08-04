@@ -231,31 +231,31 @@ export class LoanDomainService extends BaseDomainServices {
     // If allowance validation is explicitly skipped, return true
     if (allowance === LoanAllowanceValidation.Skip) {
       this.logger.debug(`Allowance validation skipped for application ${id}`);
-      result = true;
+      return;
     }
 
     // If userId is not provided, we cannot validate allowance
     if (!userId) {
       this.logger.warn(`User ID is required for allowance validation but was not provided for application ${id}`);
       result =  false;
-    }
-
+    } else {
     // Validate based on the type of allowance requested
-    switch (allowance) {
-      case LoanAllowanceValidation.Any:
-        result = [lenderId, borrowerId, billerId].includes(userId); // Any assigned user can access
-        break;
+      switch (allowance) {
+        case LoanAllowanceValidation.Any:
+          result = [lenderId, borrowerId, billerId].includes(userId); // Any assigned user can access
+          break;
 
-      case LoanAllowanceValidation.Borrower:
-        result = borrowerId === userId;
-        break;
-      case LoanAllowanceValidation.Lender:
-        result = lenderId === userId;
-        break;
+        case LoanAllowanceValidation.Borrower:
+          result = borrowerId === userId;
+          break;
+        case LoanAllowanceValidation.Lender:
+          result = lenderId === userId;
+          break;
 
-      default:
-        this.logger.error(`Unknown allowance validation type: ${allowance}`);
-        result =  false;
+        default:
+          this.logger.error(`Unknown allowance validation type: ${allowance}`);
+          result =  false;
+      }    
     }
 
     if (!result) {
