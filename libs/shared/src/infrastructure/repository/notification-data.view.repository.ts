@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NotificationDataView } from '@library/shared/domain/entity/notification-data.vew';
+import { NotificationDataView } from '@library/shared/domain/entity/notification-data.view';
 import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
 import { FindOptionsSelect } from 'typeorm/find-options/FindOptionsSelect';
 
@@ -37,23 +37,23 @@ export class NotificationDataViewRepository {
         jsonb_build_object(
           'id', u.id,
           'email', u.email,
-          'first_name', u.first_name,
-          'last_name', u.last_name,
-          'phone_number', u.phone_number
+          'firstName', u.first_name,
+          'lastName', u.last_name,
+          'phoneNumber', u.phone_number
         ) AS user,
         CASE WHEN l_lend.id IS NOT NULL THEN jsonb_build_object(
           'id', l_lend.id,
           'amount', l_lend.amount,
-          'loan_type', l_lend.type,
-          'borrower_id', l_lend.borrower_id,
-          'created_at', l_lend.created_at
+          'loanType', l_lend.type,
+          'borrowerId', l_lend.borrower_id,
+          'createdAt', l_lend.created_at
         ) END AS lender_loan,
         CASE WHEN l_borrow.id IS NOT NULL THEN jsonb_build_object(
           'id', l_borrow.id,
           'amount', l_borrow.amount,
-          'loan_type', l_borrow.type,
-          'lender_id', l_borrow.lender_id,
-          'created_at', l_borrow.created_at
+          'loanType', l_borrow.type,
+          'lenderId', l_borrow.lender_id,
+          'createdAt', l_borrow.created_at
         ) END AS borrower_loan
       FROM core.users u 
       LEFT JOIN core.loans l_lend ON l_lend.lender_id = u.id

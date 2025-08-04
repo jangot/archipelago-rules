@@ -26,7 +26,7 @@ import { PaymentsRouteStep } from './payments.route.step.entity';
 import { Transfer } from './transfer.entity';
 import { TransferError } from './transfer.error.entity';
 import { UserRegistration } from './user.registration.entity';
-import { NotificationDataView } from '@library/shared/domain/entity/notification-data.vew';
+import { NotificationDataView } from './notification-data.view';
 
 export * from './application.user.entity';
 export * from './biller.address.entity';
@@ -42,6 +42,7 @@ export * from './login.entity';
 export * from './notification.definition.entity';
 export * from './notification.definition.item.entity';
 export * from './notification.log.entity';
+export * from './notification-data.view';
 export * from './payment.account.entity';
 export * from './payments.route.entity';
 export * from './payments.route.step.entity';

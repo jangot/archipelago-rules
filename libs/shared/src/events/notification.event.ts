@@ -1,7 +1,7 @@
 import { ZirtueDistributedEvent } from '@library/shared/modules/event';
 import { INotificationUser } from '@notification/interfaces/inotification-user';
 import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
-import { LoanJson } from '@library/shared/domain/entity/notification-data.vew';
+import { LoanJson } from '@library/shared/domain/entity/notification-data.view';
 
 export class NotificationEventPayload {
   name: string;
