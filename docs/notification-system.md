@@ -87,47 +87,75 @@ const dataItems = ['user', 'lenderLoan', 'borrowerLoan'];
 
 ### Step 2: Create the Notification Definition
 
-Use the setup script or API to create a new notification definition:
+Use HTTP API to create a new notification definition:
 
-```javascript
-// Using the setup script
-await createNotificationDefinition('loan_approval_notification', [
-  'user',
-  'lenderLoan',
-  'borrowerLoan'
-]);
+```bash
+curl -X POST http://localhost:3001/api/notification/notification-definitions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "loan_approval_notification",
+    "dataItems": ["user", "lenderLoan", "borrowerLoan"]
+  }'
 ```
+
+#### Using Postman or similar tools:
+**POST** `http://localhost:3001/api/notification/notification-definitions`
+
+**Body:**
+```json
+{
+  "name": "loan_approval_notification",
+  "dataItems": ["user", "lenderLoan", "borrowerLoan"]
+}
+```
+
+**Response:**
+```json
+{
+  "id": "generated-uuid",
+  "name": "loan_approval_notification",
+  "dataItems": ["user", "lenderLoan", "borrowerLoan"],
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**Note:** Save the returned `id` - you'll need it for creating notification items in the next step.
 
 ### Step 3: Add Notification Items
 
-For each delivery channel, create a notification definition item:
+For each delivery channel, create a notification definition item using HTTP API calls:
 
 #### Email Notification Item
-```javascript
-await createNotificationItem(
-  notificationId,
-  1, // orderIndex
-  'email',
-  '', // template (optional)
-  'Loan Approval Notification', // header
-  'Your loan of $<%= lenderLoan.amount %> has been approved!', // body
-  '<%= user.email %>', // target
-  '{"subject": "Loan Approved"}' // metadata
-);
+```bash
+curl -X POST http://localhost:3001/api/notification/notification-definition-items \
+  -H "Content-Type: application/json" \
+  -d '{
+    "notificationDefinitionId": "your-notification-id",
+    "orderIndex": 1,
+    "notificationType": "email",
+    "template": "",
+    "header": "Loan Approval Notification",
+    "body": "Your loan of $<%= lenderLoan.amount %> has been approved!",
+    "target": "<%= user.email %>",
+    "metadata": "{\"subject\": \"Loan Approved\"}"
+  }'
 ```
 
 #### SMS Notification Item
-```javascript
-await createNotificationItem(
-  notificationId,
-  2, // orderIndex
-  'sms',
-  '', // template
-  'SMS Loan Approval', // header
-  'Your loan of $<%= lenderLoan.amount %> has been approved!', // body
-  '<%= user.phoneNumber %>', // target
-  '{}' // metadata
-);
+```bash
+curl -X POST http://localhost:3001/api/notification/notification-definition-items \
+  -H "Content-Type: application/json" \
+  -d '{
+    "notificationDefinitionId": "your-notification-id",
+    "orderIndex": 2,
+    "notificationType": "sms",
+    "template": "",
+    "header": "SMS Loan Approval",
+    "body": "Your loan of $<%= lenderLoan.amount %> has been approved!",
+    "target": "<%= user.phoneNumber %>",
+    "metadata": "{}"
+  }'
 ```
 
 ### Step 4: Update the Notification Data View (if needed)
