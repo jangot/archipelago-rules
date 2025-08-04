@@ -26,7 +26,7 @@ export class UpdateNotificationDefinitionRequestDto {
    */
   @ApiProperty({
     description: 'Array of notification types that this definition supports. Must always contain user.',
-    example: [NotificationDataItems.User, NotificationDataItems.Loan],
+    example: [NotificationDataItems.User, NotificationDataItems.LenderLoan],
     required: false,
     isArray: true,
     enum: NotificationDataItems,

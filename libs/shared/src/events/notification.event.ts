@@ -6,7 +6,7 @@ import { NotificationDataItems } from '@library/entity/enum/notification-data-it
 export class NotificationEventPayload {
   name: string;
   [NotificationDataItems.User]: INotificationUser;
-  [NotificationDataItems.Loan]?: { amount: number };
+  [NotificationDataItems.LenderLoan]?: { amount: number };
 }
 
 export class NotificationEvent extends ZirtueDistributedEvent<NotificationEventPayload> {}

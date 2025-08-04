@@ -39,8 +39,10 @@ export class SharedNotificationDomainService extends BaseDomainServices {
       user: row.user,
     };
 
-    if (row[NotificationDataItems.Loan]) {
-      result[NotificationDataItems.Loan] = row[NotificationDataItems.Loan];
+    for (const key of Object.values(NotificationDataItems)) {
+      if (NotificationDataItems[key]) {
+        result[key] = row[key];
+      }
     }
 
     return result;

@@ -55,7 +55,7 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
   }
 
   private async sendCode(user: ApplicationUser): Promise<void> {
-    const notificationName = user.phoneNumber ? 'login_get_code_sms' : 'login_get_code_email';
+    const notificationName = user.phoneNumber ? 'login_verification_sms' : 'login_verification_email';
 
     const payload = await this.domainServices.notificationServices.getNotificationPayload(notificationName, user.id);
     if (!payload) {

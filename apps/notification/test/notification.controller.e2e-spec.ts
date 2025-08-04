@@ -41,7 +41,7 @@ describe('NotificationController (e2e)', () => {
     it('should create a new notification definition', async () => {
       const createDto = {
         name: generateUniqueValue('test_notification'),
-        dataItems: [NotificationDataItems.User, NotificationDataItems.Loan],
+        dataItems: [NotificationDataItems.User, NotificationDataItems.LenderLoan],
       };
 
       return request(app.getHttpServer())
@@ -110,7 +110,7 @@ describe('NotificationController (e2e)', () => {
     it('should update an existing notification definition', async () => {
       const updateDto = {
         name: generateUniqueValue('updated_notification_name'),
-        dataItems: [NotificationDataItems.User, NotificationDataItems.Loan],
+        dataItems: [NotificationDataItems.User, NotificationDataItems.LenderLoan],
       };
 
       return request(app.getHttpServer())

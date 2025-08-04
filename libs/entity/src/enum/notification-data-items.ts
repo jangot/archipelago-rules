@@ -1,4 +1,6 @@
 export enum NotificationDataItems {
   User = 'user',
-  Loan = 'loan',
+  Code = 'code',
+  LenderLoan = 'lenderLoan',
+  BorrowerLoan = 'borrowerLoan',
 }
