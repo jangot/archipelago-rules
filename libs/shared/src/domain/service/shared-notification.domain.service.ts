@@ -37,13 +37,10 @@ export class SharedNotificationDomainService extends BaseDomainServices {
     const result: NotificationEventPayload = {
       name: notificationName,
       user: row.user,
+      code: row[NotificationDataItems.Code],
+      lenderLoan: row[NotificationDataItems.LenderLoan] || undefined,
+      borrowerLoan: row[NotificationDataItems.BorrowerLoan] || undefined,
     };
-
-    for (const key of Object.values(NotificationDataItems)) {
-      if (NotificationDataItems[key]) {
-        result[key] = row[key];
-      }
-    }
 
     return result;
   }

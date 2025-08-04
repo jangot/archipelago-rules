@@ -6,7 +6,6 @@ export interface UserJson {
   phoneNumber: string;
   firstName: string;
   lastName: string;
-  secret: string;
 }
 
 export interface LoanJson {
