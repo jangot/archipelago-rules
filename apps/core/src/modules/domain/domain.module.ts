@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { SharedNotificationDomainService, BillersDomainService } from '@library/shared/domain/service';
+
 import { DataModule } from '../data';
 import { DomainServices } from './domain.services';
 import { IDomainServices } from './idomain.services';
