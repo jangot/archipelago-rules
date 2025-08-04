@@ -1,5 +1,6 @@
 import { SingleDataSourceConfiguration } from '@library/shared/common/data';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
+import { SharedDataService } from '@library/shared/common/domainservice/shared.service';
 import { AllEntities } from '@library/shared/domain/entity';
 import { SharedRepositories } from '@library/shared/infrastructure/repository';
 import { Module } from '@nestjs/common';
@@ -14,10 +15,11 @@ import { CustomPaymentRepositories } from './repositories';
   ],
   providers: [
     PaymentDataService, 
+    SharedDataService,
     ...registerCustomRepositoryProviders(AllEntities), 
     ...CustomPaymentRepositories,
     ...SharedRepositories,
   ],
-  exports: [PaymentDataService],
+  exports: [PaymentDataService, SharedDataService],
 })
 export class DataModule {}

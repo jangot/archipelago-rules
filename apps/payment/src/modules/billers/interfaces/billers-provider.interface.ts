@@ -1,5 +1,3 @@
-import { BillerNetworkType } from '@library/entity/enum/biller-network.type';
-
 export interface ProcessBillersResult {
   processedCount: number;
   errors?: string[];
@@ -8,9 +6,12 @@ export interface ProcessBillersResult {
 export interface IBillerProvider {
   /**
    * Processes billers for a specific network type
-   * @param billerNetworkType The type of biller network
-   * @param path The path to the file or resource for the billers
+   * @param resource The resource identifier (file path, S3 key, etc)
+   * @param outputBasePath The base path for output files
    * @returns Promise<ProcessBillersResult>
    */
-  processBillers(billerNetworkType: BillerNetworkType, path: string): Promise<ProcessBillersResult>;
+  processBillers(
+    resource: string,
+    outputBasePath: string
+  ): Promise<ProcessBillersResult>;
 }

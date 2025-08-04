@@ -17,4 +17,22 @@ export class BillersRepository extends RepositoryBase<Biller> {
   ) {
     super(repository, Biller);
   }
+
+  // TODO: Kill this method after getting the Biller Domain fixed
+  /**
+   * Fetches billers with pagination for memory-efficient processing of large datasets.
+   * 
+   * @param offset The number of records to skip
+   * @param limit The maximum number of records to return
+   * @returns Array of Biller entities with externalBillerId and crc32
+   */
+  public async getBillersWithPagination(offset: number, limit: number): Promise<Biller[]> {
+    return this.repository
+      .createQueryBuilder('biller')
+      .select(['biller.id', 'biller.externalBillerId', 'biller.crc32'])
+      .orderBy('biller.id', 'ASC')
+      .offset(offset)
+      .limit(limit)
+      .getMany();
+  }
 } 

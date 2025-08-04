@@ -1,11 +1,9 @@
 import { SharedModule } from '@library/shared';
 import { HealthModule } from '@library/shared/common/health/health.module';
-import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { CqrsModule } from '@nestjs/cqrs';
+import { EventModule, getEventModuleConfiguration } from 'libs/shared/src/modules/event';
 import { GracefulShutdownModule } from 'nestjs-graceful-shutdown';
-import { BillersModule } from './modules/billers';
 import { DomainModule, ManagementModule } from './modules/domain';
 import { LoanPaymentStepModule } from './modules/loan-payment-steps';
 import { LoanPaymentModule } from './modules/loan-payments';
@@ -17,7 +15,6 @@ import { PAYMENT_EVENT_HANDLERS } from './shared/event-handlers';
 
 @Module({
   imports: [
-    CqrsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     GracefulShutdownModule.forRoot(),
     // Bring in Shared stuff like pino Logger properly configured, more to follow
@@ -34,7 +31,6 @@ import { PAYMENT_EVENT_HANDLERS } from './shared/event-handlers';
     LoanPaymentModule,
     LoanPaymentStepModule,
     TransferExecutionModule,
-    BillersModule,
   ],
   controllers: [PaymentController],
   providers: [
