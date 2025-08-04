@@ -1,27 +1,24 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { BillersDomainService } from '@library/shared/domain/service/billers.domain.service';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
-import { JwtModule } from '@nestjs/jwt';
-import { BillersModule } from '../billers/billers.module';
 import { DataModule } from '../data';
 import { DomainServices } from './domain.services';
 import { IDomainServices } from './idomain.services';
 import { PaymentDomainService } from './services';
-import { BillerDomainService } from './services/biller.domain.service';
+
 
 @Module({
   imports: [
     CqrsModule, 
     ConfigModule, 
     DataModule, 
-    JwtModule,
-    forwardRef(() => BillersModule),
   ],
   providers: [
     PaymentDomainService,
-    BillerDomainService,
+    BillersDomainService,
     { provide: IDomainServices, useClass: DomainServices },
   ],
-  exports: [IDomainServices, PaymentDomainService, BillerDomainService],
+  exports: [IDomainServices, PaymentDomainService],
 })
 export class DomainModule {}

@@ -1,6 +1,6 @@
 // Sample Entity returned by the pgtyped wrapper
 
-import { IGetUserDetailByIdResult } from '@core/modules/data/sql_generated/get-user-detail.queries';
+import { IGetUserDetailByIdResult } from '@library/shared/infrastructure/data/generated/get-user-detail.queries';
 
 
 // Can't put TypeORM decorators on this class lest it create DB tables and columns

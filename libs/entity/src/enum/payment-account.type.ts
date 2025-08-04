@@ -5,3 +5,6 @@ export const PaymentAccountTypeCodes = {
 } as const;
 
 export type PaymentAccountType = typeof PaymentAccountTypeCodes[keyof typeof PaymentAccountTypeCodes];
+
+export const PersonalPaymentAccountTypeCodes = (({ BillerNetwork, ...rest }) => rest)(PaymentAccountTypeCodes);
+export type PersonalPaymentAccountType = typeof PersonalPaymentAccountTypeCodes[keyof typeof PersonalPaymentAccountTypeCodes];

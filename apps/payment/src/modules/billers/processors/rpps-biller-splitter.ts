@@ -44,7 +44,7 @@ export class RppsBillerSplitter {
     this.logger.log(`Starting to split JSON file into biller files in folder: ${outputFolder}`);
 
     // Stream the JSON file and split by biller
-    const readStream = await fileStorage.readStream(jsonFilePath);
+    const readStream = await fileStorage.getReadStream(jsonFilePath);
     const pipeline = readStream.pipe(jsonParser()).pipe(streamArray());
 
     // Add error handling for the pipeline

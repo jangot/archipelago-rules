@@ -3,14 +3,21 @@ import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsDate, IsOptional, IsString, IsUUID } from 'class-validator';
 
-@ApiSchema({ name: 'loanApplicationUnauthResponse' })
-export class LoanApplicationUnauthResponseDto {
+@ApiSchema({ name: 'publicLoanApplicationResponse' })
+export class PublicLoanApplicationResponseDto {
   // Loan Application
   @ApiProperty({ description: 'Unique identifier for the loan application', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
   @IsOptional()
   @Expose()
   id: string | null;
+
+  // Lender
+  @ApiProperty({ description: 'Unique identifier for the lender user account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
+  @IsUUID()
+  @IsOptional()
+  @Expose()
+  lenderId: string | null;
 
   @ApiProperty({ description: 'First name of the lender', type: 'string', example: 'Jane' })
   @IsString()
@@ -31,6 +38,12 @@ export class LoanApplicationUnauthResponseDto {
   lenderNote: string | null;
 
   // Borrower
+  @ApiProperty({ description: 'Unique identifier for the borrower user account', type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440001', required: false })
+  @IsUUID()
+  @IsOptional()
+  @Expose()
+  borrowerId: string | null;
+
   @ApiProperty({ description: 'First name of the borrower', type: 'string', example: 'John' })
   @IsString()
   @IsOptional()

@@ -17,7 +17,7 @@ export interface IFileStorageProvider {
    * @param path The source path (relative or bucket key).
    * @returns Readable stream of the file contents.
    */
-  readStream(path: string): Promise<Readable>;
+  getReadStream(path: string): Promise<Readable>;
 
   /**
    * Reads a file as a string from the specified path.

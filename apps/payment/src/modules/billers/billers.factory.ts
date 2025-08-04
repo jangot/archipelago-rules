@@ -1,8 +1,8 @@
 import { BillerNetworkType, BillerNetworkTypeCodes } from '@library/entity/enum/biller-network.type';
+import { BillersDomainService } from '@library/shared/domain/service/billers.domain.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { FileStorageFactory } from '@payment/modules/billers/factories/file-storage.factory';
 import { RppsFileProcessor } from '@payment/modules/billers/processors';
-import { BillerDomainService } from '@payment/modules/domain/services/biller.domain.service';
 import { IBillerProvider } from './interfaces/billers-provider.interface';
 import { FileOriginType } from './interfaces/file-origin-type.enum';
 import { RppsBillerSplitter } from './processors/rpps-biller-splitter';
@@ -19,7 +19,7 @@ export class BillerProviderFactory {
     private readonly fileStorageFactory: FileStorageFactory,
     private readonly rppsFileProcessor: RppsFileProcessor,
     private readonly rppsBillerSplitter: RppsBillerSplitter,
-    private readonly billerDatabaseService: BillerDomainService,
+    private readonly billerDatabaseService: BillersDomainService,
   ) {}
 
   /**

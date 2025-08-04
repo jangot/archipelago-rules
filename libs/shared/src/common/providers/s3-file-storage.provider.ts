@@ -44,7 +44,7 @@ export class S3FileStorageProvider implements IFileStorageProvider {
   /**
    * Reads a file from S3 as a stream.
    */
-  public async readStream(path: string): Promise<Readable> {
+  public async getReadStream(path: string): Promise<Readable> {
     try {
       const result = await this.s3.send(new GetObjectCommand({
         Bucket: this.bucket,
@@ -131,6 +131,7 @@ export class S3FileStorageProvider implements IFileStorageProvider {
   /**
    * No-op for S3, as prefixes are virtual.
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async ensureDir(path: string): Promise<void> {
     // No-op for S3
     return;

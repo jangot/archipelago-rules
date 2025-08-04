@@ -5,9 +5,9 @@ import { BillerAddress } from '@library/shared/domain/entity/biller-address.enti
 import { BillerMask } from '@library/shared/domain/entity/biller-mask.entity';
 import { BillerName } from '@library/shared/domain/entity/biller-name.entity';
 import { Biller } from '@library/shared/domain/entity/biller.entity';
+import { BillersDomainService } from '@library/shared/domain/service/billers.domain.service';
 import { Logger } from '@nestjs/common';
 import { RppsFileProcessor } from '@payment/modules/billers/processors';
-import { BillerDomainService, BillerWithRelatedEntities } from '@payment/modules/domain/services/biller.domain.service';
 import { Readable } from 'stream';
 import { ProcessBillersResult } from '../interfaces/billers-provider.interface';
 import { RppsBillerSplitter } from '../processors/rpps-biller-splitter';
@@ -66,7 +66,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
     private readonly fileStorage: IFileStorageProvider,
     private readonly rppsFileProcessor: RppsFileProcessor,
     private readonly rppsBillerSplitter: RppsBillerSplitter,
-    private readonly billerDatabaseService: BillerDomainService,
+    private readonly billersDatabaseService: BillersDomainService,
   ) {
     super();
   }
@@ -109,7 +109,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
       this.logger.log(`Starting biller processing for resource: ${resource}`);
       
       // Step 1: Read the input file stream
-      fileStream = await this.fileStorage.readStream(resource);
+      fileStream = await this.fileStorage.getReadStream(resource);
       
       // Step 2: Parse TXT to JSON
       jsonFilePath = await this.rppsFileProcessor.parseBillersFile(fileStream, outputBasePath, this.fileStorage);
@@ -186,7 +186,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
       }
 
       // Fetch all existing billers with their CRC32 for efficient comparison
-      const existingBillerMap = await this.billerDatabaseService.getExistingBillersMap();
+      const existingBillerMap = new Map<string, { id: string; crc32: number }>();  //await this.billersDatabaseService.getExistingBillersMap();
 
       // Process files in batches for better performance
       const batchSize = RppsBillerProvider.DEFAULT_BATCH_SIZE;
@@ -209,7 +209,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
             }
 
             // Read file as stream for memory-efficient processing
-            const fileStream = await this.fileStorage.readStream(filePath);
+            const fileStream = await this.fileStorage.getReadStream(filePath);
             
             // Calculate CRC32 from stream
             const calculatedCrc32 = await generateCRC32FromStream(fileStream);
@@ -250,7 +250,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
         const batchResults = await Promise.all(batchPromises);
         
         // Collect billers to upsert for this batch
-        const billersToUpsert: BillerWithRelatedEntities[] = [];
+        const billersToUpsert: any[] = []; //BillerWithRelatedEntities[] = [];
         let batchProcessed = 0;
         let batchUpdated = 0;
         let batchSkipped = 0;
@@ -268,17 +268,17 @@ export class RppsBillerProvider extends BaseBillerProvider {
         // Process billers for this batch
         if (billersToUpsert.length > 0) {
           // Use bulk processing for better performance
-          const bulkResults = await this.billerDatabaseService.processBillersInBulk(
-            billersToUpsert,
-            existingBillerMap
-          );
+          // const bulkResults = await this.billersDatabaseService.processBillersInBulk(
+          //   billersToUpsert,
+          //   existingBillerMap
+          // );
           
-          // Process results
-          bulkResults.forEach(result => {
-            if (!result.success) {
-              errors.push(result.error || 'Unknown error in bulk processing');
-            }
-          });
+          // // Process results
+          // bulkResults.forEach(result => {
+          //   if (!result.success) {
+          //     errors.push(result.error || 'Unknown error in bulk processing');
+          //   }
+          // });
         }
 
         // Update totals
@@ -319,7 +319,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
    * @param crc32 The calculated CRC32 value
    * @returns A populated Biller entity with related entities or null if validation fails
    */
-  private createBillerWithRelatedEntities(billerData: BillerJsonData, externalId: string, crc32: number): BillerWithRelatedEntities | null {
+  private createBillerWithRelatedEntities(billerData: BillerJsonData, externalId: string, crc32: number): any | null {
     const errors: string[] = [];
 
     // Validate required Biller fields
@@ -383,7 +383,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
     biller.crc32 = crc32;
 
     // Create related entities (only if they exist and are valid)
-    const billerWithRelatedEntities: BillerWithRelatedEntities = {
+    const billerWithRelatedEntities: any = {
       biller,
       names: (billerData.akas || []).map((akaData: any) => {
         const billerName = new BillerName();

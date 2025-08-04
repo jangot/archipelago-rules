@@ -1,6 +1,6 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
-import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto, LoanApplicationUnauthResponseDto } from '@core/modules/lending/dto/response';
+import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto, PublicLoanApplicationResponseDto } from '@core/modules/lending/dto/response';
 import { ContactType, LoanApplicationStates, LoanPaymentFrequencyCodes } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
@@ -10,6 +10,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InvalidUserForLoanApplicationException } from './exceptions';
 import { LendingLogic } from './lending.logic';
 
+
+//TODO: Security check missing attributes to protect against unauthorized access
 @Injectable()
 export class LoanApplicationsService {
   private readonly logger: Logger = new Logger(LoanApplicationsService.name);
@@ -36,16 +38,17 @@ export class LoanApplicationsService {
       return null;
     }
 
-    resultDto.loanFirstPaymentDate = resultDto.loanFirstPaymentDate || this.addMonths(new Date(), 1);
     resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
 
     return resultDto;
   }
 
-  public async getLoanApplicationUnauthById(id: string): Promise<LoanApplicationUnauthResponseDto | null> {
+  public async getPublicLoanApplicationById(id: string): Promise<PublicLoanApplicationResponseDto | null> {
     const result = await this.domainServices.loanServices.getLoanApplicationById(id);
 
-    return DtoMapper.toDto(result, LoanApplicationUnauthResponseDto);
+    if (!result) throw new EntityNotFoundException(`Loan application: ${id} not found`);
+    
+    return DtoMapper.toDto(result, PublicLoanApplicationResponseDto);
   }
 
   public async getAllLoanApplicationsByUserId(userId: string): Promise<LoanApplicationResponseDto[]> {
@@ -68,7 +71,6 @@ export class LoanApplicationsService {
           return null;
         }
 
-        dto.loanFirstPaymentDate = dto.loanFirstPaymentDate || this.addMonths(new Date(), 1);
         dto.loanPaymentSchedule = this.generatePaymentSchedule(dto);
 
         return dto;
@@ -89,13 +91,28 @@ export class LoanApplicationsService {
   public async createLoanApplication(userId: string, data: Partial<LoanApplicationRequestDto>): Promise<LoanApplicationResponseDto | null> {
     this.logger.debug('create: Creating loan application:', data);
 
+    const user = await this.domainServices.userServices.getUserById(userId);
+    if (!user) {
+      throw new EntityNotFoundException(`User with ID ${userId} not found`);
+    }
+
     const loanApplicationInput = EntityMapper.toEntity(data, LoanApplication);
     loanApplicationInput.borrowerId = userId;
-    const result = await this.domainServices.loanServices.createLoanApplication(loanApplicationInput);
+    loanApplicationInput.borrowerFirstName = user.firstName;
+    loanApplicationInput.borrowerLastName = user.lastName;
 
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    loanApplicationInput.loanFirstPaymentDate = loanApplicationInput.loanFirstPaymentDate || thirtyDaysFromNow;
+
+    const result = await this.domainServices.loanServices.createLoanApplication(loanApplicationInput);
     if (!result) throw new EntityFailedToUpdateException('Failed to create Loan application');
 
-    return DtoMapper.toDto(result, LoanApplicationResponseDto);
+    const resultDto = DtoMapper.toDto(result, LoanApplicationResponseDto);
+    if (!resultDto) throw new EntityFailedToUpdateException('Failed to create Loan application');
+    
+    resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
+
+    return resultDto;
   }
 
   /**
@@ -127,7 +144,6 @@ export class LoanApplicationsService {
       return null;
     }
 
-    resultDto.loanFirstPaymentDate = resultDto.loanFirstPaymentDate || this.addMonths(new Date(), 1);
     resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
 
     return resultDto;
@@ -208,7 +224,7 @@ export class LoanApplicationsService {
     }
 
     const status = LoanApplicationStates.Approved;
-    await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
+    await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId });
 
     this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
   }
@@ -230,10 +246,12 @@ export class LoanApplicationsService {
     // Validate that the user is the lender for v1
     this.validateApplicationLenderUser(loanApplication, userId);
     const status = LoanApplicationStates.Rejected;
-    const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
+
+    const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId });
     if (!result) {
       throw new EntityFailedToUpdateException('Failed to reject Loan application');
     }
+
     this.logger.debug(`Successfully rejected loan application ${loanApplicationId}`);
   }
 
@@ -253,7 +271,9 @@ export class LoanApplicationsService {
     }
     // Validate that the user is the borrower for v1
     await this.validateApplicationLoanUser(loanApplicationId, userId);
+
     const status = LoanApplicationStates.Cancelled;
+
     const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
     if (!result) {
       throw new EntityFailedToUpdateException('Failed to cancel Loan application');

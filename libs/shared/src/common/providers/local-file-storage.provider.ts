@@ -33,7 +33,7 @@ export class LocalFileStorageProvider implements IFileStorageProvider {
   /**
    * Reads a local file as a stream.
    */
-  public async readStream(path: string): Promise<Readable> {
+  public async getReadStream(path: string): Promise<Readable> {
     try {
       return createReadStream(path);
     } catch (err: any) {
