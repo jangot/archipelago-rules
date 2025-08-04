@@ -6,6 +6,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentDataService } from './data.service';
 import { CustomPaymentRepositories } from './repositories';
+import { SharedDataService } from '@library/shared/common/domainservice/shared.service';
 
 @Module({
   imports: [
@@ -13,11 +14,12 @@ import { CustomPaymentRepositories } from './repositories';
     TypeOrmModule.forRootAsync(SingleDataSourceConfiguration(AllEntities)),
   ],
   providers: [
-    PaymentDataService, 
-    ...registerCustomRepositoryProviders(AllEntities), 
+    PaymentDataService,
+    SharedDataService,
+    ...registerCustomRepositoryProviders(AllEntities),
     ...CustomPaymentRepositories,
     ...SharedRepositories,
   ],
-  exports: [PaymentDataService],
+  exports: [PaymentDataService, SharedDataService],
 })
 export class DataModule {}
