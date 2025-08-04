@@ -15,6 +15,6 @@ export class SharedNotificationDataViewDomainService extends BaseDomainServices 
   }
 
   async onModuleInit(): Promise<void> {
-    // await this.data.notificatioDataView.initView();
+    await this.data.notificatioDataView.initView();
   }
 }

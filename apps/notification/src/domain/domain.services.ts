@@ -10,12 +10,14 @@ import { IDomainServices } from '@notification/domain/domain.iservices';
 import { NotificationDefinitionItemDomainService } from '@notification/domain/services/notification.definition.item.service';
 import { NotificationDomainService } from '@notification/domain/services/notification.definition.service';
 import { NotificationLogDomainService } from '@notification/domain/services/notification.log.service';
+import { SharedNotificationDataViewDomainService } from '@library/shared/domain/service';
 
 @Injectable()
 export class DomainServices implements IDomainServices {
   constructor(
     public readonly notificationServices: NotificationDomainService,
     public readonly notificationDefinitionItemServices: NotificationDefinitionItemDomainService,
-    public readonly notificationLogServices: NotificationLogDomainService
+    public readonly notificationLogServices: NotificationLogDomainService,
+    public readonly notificationDataViewDomainService: SharedNotificationDataViewDomainService
   ) {}
 }

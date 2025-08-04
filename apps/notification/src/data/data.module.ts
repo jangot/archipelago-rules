@@ -5,6 +5,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationDataService } from '@notification/data/data.service';
 import { CustomNotificationRepositories } from '@notification/infrastructure/repositories';
+import { SharedDataService } from '@library/shared/common/domainservice/shared.service';
+import { SharedRepositories } from '@library/shared/infrastructure/repository';
 
 /**
  * Data module for the Notification service
@@ -17,12 +19,12 @@ import { CustomNotificationRepositories } from '@notification/infrastructure/rep
       entities: [...AllEntities],
       schema: DbSchemaCodes.Notification,
     })),
-
   ],
   providers: [
+    SharedDataService,
     NotificationDataService,
-    ...registerCustomRepositoryProviders(AllEntities), ...CustomNotificationRepositories,
+    ...registerCustomRepositoryProviders(AllEntities), ...CustomNotificationRepositories, ...SharedRepositories,
   ],
-  exports: [NotificationDataService],
+  exports: [NotificationDataService, SharedDataService],
 })
 export class DataModule {}

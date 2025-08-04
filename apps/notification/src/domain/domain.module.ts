@@ -7,6 +7,7 @@ import { DomainServices } from '@notification/domain/domain.services';
 import { NotificationDefinitionItemDomainService } from '@notification/domain/services/notification.definition.item.service';
 import { NotificationDomainService } from '@notification/domain/services/notification.definition.service';
 import { NotificationLogDomainService } from '@notification/domain/services/notification.log.service';
+import { SharedNotificationDataViewDomainService } from '@library/shared/domain/service';
 
 @Module({
   imports: [ConfigModule, DataModule],
@@ -14,6 +15,7 @@ import { NotificationLogDomainService } from '@notification/domain/services/noti
     NotificationDomainService,
     NotificationDefinitionItemDomainService,
     NotificationLogDomainService,
+    SharedNotificationDataViewDomainService,
     { provide: IDomainServices, useClass: DomainServices },
   ],
   exports: [IDomainServices, NotificationDomainService],
