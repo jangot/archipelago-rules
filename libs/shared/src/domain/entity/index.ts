@@ -7,10 +7,10 @@
  */
 
 import { ApplicationUser } from './application.user.entity';
-import { BillerAddress } from './biller.address.entity';
+import { BillerAddress } from './biller-address.entity';
 import { Biller } from './biller.entity';
-import { BillerMask } from './biller.mask.entity';
-import { BillerName } from './biller.name.entity';
+import { BillerMask } from './biller-mask.entity';
+import { BillerName } from './biller-name.entity';
 import { EventPublished } from './event.published.entity';
 import { EventStore } from './event.store.entity';
 import { EventSubscriber } from './event.subscriber.entity';
@@ -28,10 +28,10 @@ import { TransferError } from './transfer.error.entity';
 import { UserRegistration } from './user.registration.entity';
 
 export * from './application.user.entity';
-export * from './biller.address.entity';
+export * from './biller-address.entity';
 export * from './biller.entity';
-export * from './biller.mask.entity';
-export * from './biller.name.entity';
+export * from './biller-mask.entity';
+export * from './biller-name.entity';
 export * from './event.published.entity';
 export * from './event.store.entity';
 export * from './event.subscriber.entity';
