@@ -42,7 +42,7 @@ export class EventSqsConsumerService {
   private async executePullIteration(client: SQSClient, options: EventModuleSQSQueueOptions, cb: (e: Message) => Promise<void>) {
     const newSqsMessages = await this.extractEvents(client, options);
     if (!newSqsMessages) {
-      // this.logger.debug(`No messages from queueUrl: ${options.url}`);
+      this.logger.debug(`No messages from queueUrl: ${options.url}`);
       return;
     }
 

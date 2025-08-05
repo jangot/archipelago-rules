@@ -31,7 +31,6 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
   async send(message: INotificationMessageRequest): Promise<INotificationMessageResult> {
     const target = message.user.email;
     const title = message.header;
-    const messageBody = message.body;
 
     if (!target) {
       this.logger.debug('Skipping send because no target');
@@ -44,11 +43,11 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
     }
     try {
       if (message.attributes['template'] === true) {
-        const globalVars = this.formatTemplateVars(message, JSON.parse(message.body));
+        const globalVars = this.formatTemplateVars(message, JSON.parse(message.message));
         await this.sendEmailWithTemplate(target, title, globalVars);
       } else {
         const globalVars = this.formatTemplateVars(message);
-        await this.sendEmail(messageBody, target, title, globalVars);
+        await this.sendEmail(message.body, target, title, globalVars);
       }
 
       this.logger.debug(`Email sent successfully to ${target}`);

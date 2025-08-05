@@ -128,12 +128,36 @@ async function setupNotifications() {
         emailId,
         1,
         'email',
-        '',
-        'new_user_login_email_verification',
         '{ "code": "<%= code %>" }',
+        'new_user_login_email_verification',
+        '',
         '<%= user.email %>',
         '{ "code": "<%= code %>" }',
           { template: true }
+      );
+    }
+  }
+
+  // Check Amplitude notification
+  log.info('Checking if loan_accepted exists...');
+  let amplitudeId = await checkNotificationExists('loan_accepted');
+
+  if (amplitudeId) {
+    log.warning(`login_verification_amplitude already exists with ID: ${amplitudeId}`);
+  } else {
+    log.info('Creating login_verification_amplitude...');
+    amplitudeId = await createNotificationDefinition('loan_accepted', ['user']);
+
+    if (amplitudeId) {
+      await createNotificationItem(
+        amplitudeId,
+        1,
+        'amplitude',
+        '{"event_type": "grace-period-missed", "user_id": "{{loan.createdBy}}", "event_properties": { <% if (partner.fullUrl) { %>"partner": "{{partner.fullUrl}}"{% } %} }}',
+        'Loan Accepted',
+        '',
+        '<%= user.email %>',
+        '{"event_type":"loan_accepted"}'
       );
     }
   }
