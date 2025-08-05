@@ -33,6 +33,7 @@ export type BaseDatabaseConfigOptions = Omit<DatabaseConfigOptions, 'configServi
 
 // Common Configuration settings across Services
 export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOptions {
+  const nodeEnv = options.configService.get<string>('NODE_ENV');
   return {
     type: 'postgres',
     host: options.configService.get<string>('DB_HOST'),
@@ -40,7 +41,7 @@ export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOp
     username: options.configService.get<string>('DB_USERNAME'),
     password: options.configService.get<string>('DB_PASSWORD'),
     database: options.configService.get<string>('DB_NAME'),
-    synchronize: options.configService.get<string>('NODE_ENV') === 'development', // Don't synchronize in Prod!!!
+    synchronize: nodeEnv === 'development' || nodeEnv === 'local', // Don't synchronize in Prod!!!
     // New Naming strategy that combines the SnakeNamingStrategy with custom code that does the following:
     // 1. Pluralizes the Table name if using the Entity Class name and not providing a specific name
     // 2. Generates the various constraint (pkey, fkey, key, unique, indexes, default, and exclusion) names that conform to Postgres naming conventions
