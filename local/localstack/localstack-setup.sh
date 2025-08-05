@@ -60,3 +60,6 @@ awslocal sns subscribe \
   --notification-endpoint "$QUEUE_ARN"
 
 echo "Subscription complete"
+
+echo "Creating s3 endpoint"
+aws --endpoint-url=http://localhost:4566 s3 mb s3://zng-dev-transfer

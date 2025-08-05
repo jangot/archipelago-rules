@@ -1,9 +1,19 @@
 import { BillerNetworkType, BillerNetworkTypeCodes } from '@library/entity/enum/biller-network.type';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { FileOriginType } from '../../interfaces/file-origin-type.enum';
 
 /**
  * DTO for upserting billers by processing a biller file or resource.
+ * This DTO might be used temporarily to test the biller file processing functionality.
+ *
+ * POST BODY EXAMPLE:
+ * {
+ *     "billerNetworkType": "rpps",
+ *     "fileOrigin": "s3",
+ *     "resource":"uploads/tabapay/billers.txt",
+ *     "outputBasePath": "test/"
+ * }
  */
 export class UpsertBillersRequestDto {
   /**
@@ -18,13 +28,35 @@ export class UpsertBillersRequestDto {
   billerNetworkType!: BillerNetworkType;
 
   /**
-   * The path to the biller file or resource to be processed.
+   * The origin of the file (local, s3, etc).
    */
   @ApiProperty({
-    description: 'The path to the biller file or resource to be processed',
-    example: 'path/to/biller/file.txt',
+    description: 'The origin of the file (local, s3, etc)',
+    enum: FileOriginType,
+    example: FileOriginType.Local,
+  })
+  @IsEnum(FileOriginType)
+  fileOrigin!: FileOriginType;
+
+  /**
+   * The resource identifier (file path, S3 key, etc).
+   */
+  @ApiProperty({
+    description: 'The resource identifier (file path, S3 key, etc)',
+    example: 'path/uploads',
   })
   @IsString()
   @IsNotEmpty()
-  path!: string;
+  resource!: string;
+
+  /**
+   * The resource identifier (file path, S3 key, etc).
+   */
+  @ApiProperty({
+    description: 'The path where the output files will be saved',
+    example: 'path/billers',
+  })
+  @IsString()
+  @IsNotEmpty()
+  outputBasePath!: string;
 } 

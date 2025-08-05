@@ -7,10 +7,10 @@
  */
 
 import { ApplicationUser } from './application.user.entity';
-import { BillerAddress } from './biller.address.entity';
+import { BillerAddress } from './biller-address.entity';
 import { Biller } from './biller.entity';
-import { BillerMask } from './biller.mask.entity';
-import { BillerName } from './biller.name.entity';
+import { BillerMask } from './biller-mask.entity';
+import { BillerName } from './biller-name.entity';
 import { LoanApplication } from './loan-application.entity';
 import { Loan } from './loan.entity';
 import { LoanPayment } from './loan.payment.entity';
@@ -29,10 +29,10 @@ import { UserRegistration } from './user.registration.entity';
 import { NotificationDataView } from './notification-data.view';
 
 export * from './application.user.entity';
-export * from './biller.address.entity';
+export * from './biller-address.entity';
 export * from './biller.entity';
-export * from './biller.mask.entity';
-export * from './biller.name.entity';
+export * from './biller-mask.entity';
+export * from './biller-name.entity';
 export * from './loan-application.entity';
 export * from './loan.entity';
 export * from './loan.payment.entity';

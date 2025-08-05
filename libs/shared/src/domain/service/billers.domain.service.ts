@@ -21,7 +21,7 @@ export class BillersDomainService extends BaseDomainServices {
     const term = (billerName ?? '').trim().toLowerCase();
     const zip  = (postalCode ?? '').trim();
 
-    const page = await this.dataService.billers.find({
+    const billers = await this.dataService.billers.find({
       where: {
         territoryCode: Like(`${zip}%`),
         name: ILike(`%${term}%`),
@@ -30,8 +30,6 @@ export class BillersDomainService extends BaseDomainServices {
       take: limit > 0 ? limit : undefined,
     });
 
-    const billers: Biller[] = (page as unknown as { data: Biller[] }).data;
-
-    return billers;
+    return billers.data;
   }
 }
