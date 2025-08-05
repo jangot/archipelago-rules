@@ -8,6 +8,7 @@ import {
   LoanPaymentStateCodes,
   LoanPaymentTypeCodes,
   LoanState,
+  LoanStateCodes,
 } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
@@ -170,6 +171,7 @@ export class LoanDomainService extends BaseDomainServices {
       feeAmount: loanApplication!.loanServiceFee || 0,
       lenderAccountId: loanApplication!.lenderPaymentAccountId,
       borrowerAccountId: loanApplication!.borrowerPaymentAccountId,
+      state: LoanStateCodes.Accepted,
     };
 
     // Create the loan

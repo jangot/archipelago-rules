@@ -12,6 +12,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { addDays } from 'date-fns';
 import { InvalidUserForLoanApplicationException } from './exceptions';
 import { LendingLogic } from './lending.logic';
+import { LoansService } from './loans.service';
 
 
 //TODO: Security check missing attributes to protect against unauthorized access
@@ -21,7 +22,7 @@ export class LoanApplicationsService {
 
   constructor(
     private readonly domainServices: IDomainServices,
-
+    private readonly loanService: LoansService
   ) {}
 
   /**
@@ -213,10 +214,20 @@ export class LoanApplicationsService {
       throw new EntityFailedToUpdateException('Failed to create loan from application');
     }
 
+    const { id: loanId, state: loanState } = createdLoan;
+
     const status = LoanApplicationStates.Approved;
     await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId });
 
-    this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
+    this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${loanId}`);
+
+    // Immediately advance the loan to the next state
+    const advanceResult = await this.loanService.advanceLoan(loanId, loanState);
+    if (!advanceResult) {
+      this.logger.error(`Failed to advance loan ${loanId} to the next state after acceptance`);
+    } else {
+      this.logger.debug(`Successfully advanced loan ${loanId} to the next state after acceptance`);
+    }
   }
 
   /**
