@@ -6,7 +6,6 @@ import { LoginLogic } from '../login.logic';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { LoginTemporaryLockedException, UserNotRegisteredException } from '../../exceptions/auth-domain.exceptions';
 import { NotificationEvent } from '@library/shared/events/notification.event';
-import { ApplicationUser } from '@library/shared/domain/entity';
 
 @CommandHandler(LoginInitiateCommand)
 export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginInitiateCommand> implements ICommandHandler<LoginInitiateCommand> {
@@ -56,7 +55,7 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
   }
 
   private async sendCode(notificationName: string, userId: string, code: string): Promise<void> {
-    const payload = await this.domainServices.notificationServices.getNotificationPayload(notificationName, userId, code);
+    const payload = await this.domainServices.notificationServices.getNotificationPayload(notificationName, userId, { code });
     if (!payload) {
       return;
     }

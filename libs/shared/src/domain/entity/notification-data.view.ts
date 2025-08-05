@@ -35,9 +35,6 @@ export class NotificationDataView {
   @ViewColumn()
   user: UserJson;
 
-  @ViewColumn()
-  code: string;
-
   @ViewColumn({ name: 'lender_loan' })
   lenderLoan: LoanJson | null;
 

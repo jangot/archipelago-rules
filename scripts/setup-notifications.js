@@ -97,7 +97,7 @@ async function setupNotifications() {
     log.warning(`login_verification_sms already exists with ID: ${smsId}`);
   } else {
     log.info('Creating login_verification_sms...');
-    smsId = await createNotificationDefinition('login_verification_sms', ['user', 'code']);
+    smsId = await createNotificationDefinition('login_verification_sms', ['user']);
 
     if (smsId) {
       await createNotificationItem(
@@ -121,7 +121,7 @@ async function setupNotifications() {
     log.warning(`login_verification_email already exists with ID: ${emailId}`);
   } else {
     log.info('Creating login_verification_email...');
-    emailId = await createNotificationDefinition('login_verification_email', ['user', 'code']);
+    emailId = await createNotificationDefinition('login_verification_email', ['user']);
 
     if (emailId) {
       await createNotificationItem(

@@ -37,7 +37,6 @@ export class SharedNotificationDomainService extends BaseDomainServices {
     return {
       name: notificationName,
       user: row.user,
-      code: row[NotificationDataItems.Code] || undefined,
       lenderLoan: row[NotificationDataItems.LenderLoan] || undefined,
       borrowerLoan: row[NotificationDataItems.BorrowerLoan] || undefined,
       params,

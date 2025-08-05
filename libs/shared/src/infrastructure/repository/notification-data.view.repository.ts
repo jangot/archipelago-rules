@@ -16,7 +16,9 @@ export class NotificationDataViewRepository {
     const select: FindOptionsSelect<NotificationDataView> = {};
 
     includeData.forEach((item) => {
-      select[item] = true;
+      if (Object.values(NotificationDataItems).includes(item)) {
+        select[item] = true;
+      }
     });
 
     return this.repository.findOne({
@@ -33,7 +35,6 @@ export class NotificationDataViewRepository {
         u.id AS user_id,
         l_lend.id as lend_id,
         l_borrow.id as borrow_id,
-        u.secret as code,
         jsonb_build_object(
           'id', u.id,
           'email', u.email,

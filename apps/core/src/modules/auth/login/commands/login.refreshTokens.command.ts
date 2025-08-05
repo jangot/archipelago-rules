@@ -1,6 +1,6 @@
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserLoginPayloadDto } from '../../dto/response/user-login-payload.dto';
+import { UserLoginPayloadDto } from '@core/modules/auth/dto/response';
 import { UnableToGenerateLoginPayloadException } from '../../exceptions/auth-domain.exceptions';
 import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { RefreshTokenCommand } from './login.commands';

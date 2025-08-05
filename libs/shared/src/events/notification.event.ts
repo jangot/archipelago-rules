@@ -6,7 +6,6 @@ import { LoanJson } from '@library/shared/domain/entity/notification-data.view';
 export class NotificationEventPayload {
   name: string;
   [NotificationDataItems.User]: INotificationUser;
-  [NotificationDataItems.Code]?: string;
   [NotificationDataItems.LenderLoan]?: LoanJson;
   [NotificationDataItems.BorrowerLoan]?: LoanJson;
   params: Record<string, any>;
