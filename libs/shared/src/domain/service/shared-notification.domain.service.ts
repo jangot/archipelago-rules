@@ -40,7 +40,7 @@ export class SharedNotificationDomainService extends BaseDomainServices {
       code: row[NotificationDataItems.Code] || undefined,
       lenderLoan: row[NotificationDataItems.LenderLoan] || undefined,
       borrowerLoan: row[NotificationDataItems.BorrowerLoan] || undefined,
-      attributes,
+      params: attributes,
     };
   }
 }

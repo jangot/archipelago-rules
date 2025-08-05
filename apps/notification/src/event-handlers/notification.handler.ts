@@ -81,7 +81,7 @@ export class NotificationHandler implements IEventHandler<NotificationEvent> {
     try {
       const templateParams = {
         ...payload,
-        ...payload.attributes,
+        ...payload.params,
       };
       return {
         user: payload.user,

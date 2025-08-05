@@ -9,7 +9,7 @@ export class NotificationEventPayload {
   [NotificationDataItems.Code]?: string;
   [NotificationDataItems.LenderLoan]?: LoanJson;
   [NotificationDataItems.BorrowerLoan]?: LoanJson;
-  attributes: Record<string, any>;
+  params: Record<string, any>;
 }
 
 export class NotificationEvent extends ZirtueDistributedEvent<NotificationEventPayload> {}
