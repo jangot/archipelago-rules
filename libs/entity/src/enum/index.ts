@@ -40,3 +40,7 @@ export * from './transfer-error.code';
 export * from './transfer-error.type';
 export * from './transfer.state';
 // #endregion
+
+// #region Notification
+export * from './notification.type';
+// #endregion

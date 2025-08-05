@@ -1,16 +1,24 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { ContactType, LoginType, VerificationType } from '@library/entity/enum';
+import { EventPublisherService } from '@library/shared/modules/event';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { AuthBaseCommandHandler } from '../../common/auth.base.command-handler';
 import { UserLoginPayloadDto } from '../../dto/response';
 import { LoginCommand } from './login.commands';
 
 @Injectable()
-export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = LoginCommand> {
+export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = LoginCommand> extends AuthBaseCommandHandler {
 
-  constructor(protected readonly domainServices: IDomainServices, protected readonly jwtService: JwtService, protected readonly logger: Logger,
-    protected readonly config: ConfigService) {
+  constructor(
+    protected readonly domainServices: IDomainServices,
+    protected readonly publisherService: EventPublisherService,
+    protected readonly jwtService: JwtService,
+    protected readonly logger: Logger,
+    protected readonly config: ConfigService
+  ) {
+    super(domainServices, publisherService, config);
   }
 
   public abstract execute(command: TCommand): Promise<UserLoginPayloadDto>;
@@ -60,8 +68,5 @@ export abstract class LoginBaseCommandHandler<TCommand extends LoginCommand = Lo
         return null;
     }
   }
-
-  protected isDevelopmentEnvironment(): boolean {
-    return this.config.get<string>('NODE_ENV', 'production') === 'development';
-  }
+  
 }

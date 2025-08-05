@@ -3,7 +3,7 @@ import { EntityNotFoundException, MissingInputException } from '@library/shared/
 import { Loan, LoanPayment, LoanPaymentStep, PaymentsRoute, PaymentsRouteStep } from '@library/shared/domain/entity';
 import { LOAN_PAYMENT_RELATIONS, LOAN_RELATIONS, LoanPaymentRelation, LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
-import { PaymentDomainService } from '@payment/modules/domain/services';
+import { IDomainServices } from '@payment/modules/domain';
 import { Transactional } from 'typeorm-transactional';
 import { v4 } from 'uuid';
 import { ILoanPaymentManager } from '../interfaces';
@@ -57,11 +57,11 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
   /**
    * Initializes a new loan payment manager instance.
    * 
-   * @param paymentDomainService - The domain service for payment operations
+   * @param domainServices - The domain service for payment operations
    * @param type - The specific loan payment type this manager handles
    */
   constructor(
-    protected readonly paymentDomainService: PaymentDomainService,
+    protected readonly domainServices: IDomainServices,
     protected readonly type: LoanPaymentType,
   ) {
     this.logger = new Logger(this.constructor.name);
@@ -118,7 +118,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     if (!calculatedPayment) return null; // Error already logged in calculateNewPayment
 
     // Save calculated Payment to continue with steps generation
-    const newPayment = await this.paymentDomainService.createPayment(calculatedPayment);
+    const newPayment = await this.domainServices.paymentServices.createPayment(calculatedPayment);
     if (!newPayment) {
       this.logger.error(`Failed to create new ${this.paymentType} payment for loan ${loanId}`);
       return null;
@@ -131,10 +131,10 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
       return null;
     }
     // Save the generated steps
-    await this.paymentDomainService.createPaymentSteps(generatedSteps);
+    await this.domainServices.paymentServices.createPaymentSteps(generatedSteps);
 
     // Return the saved payment with its steps
-    return this.paymentDomainService.getLoanPaymentById(newPayment.id, [LOAN_PAYMENT_RELATIONS.Steps]);
+    return this.domainServices.paymentServices.getLoanPaymentById(newPayment.id, [LOAN_PAYMENT_RELATIONS.Steps]);
   }
 
   /**
@@ -177,21 +177,21 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     if (shouldCompletePayment) {
       this.logger.debug(`Loan payment ${loanPaymentId} can be completed`);
       // Set Completed state and completion info (date)
-      return this.paymentDomainService.updatePaymentState(loanId, loanPaymentId, state, LoanPaymentStateCodes.Completed);
+      return this.domainServices.paymentServices.updatePaymentState(loanId, loanPaymentId, state, LoanPaymentStateCodes.Completed);
     }
     // 2. should fail payment?
     const failReasonStepId = this.couldFailPayment(paymentSteps);
     if (failReasonStepId && state !== LoanPaymentStateCodes.Failed) {
       this.logger.debug(`Loan payment ${loanPaymentId} failed by ${failReasonStepId}`);
       // Set Failed state
-      return this.paymentDomainService.updatePaymentState(loanId, loanPaymentId, state, LoanPaymentStateCodes.Failed);
+      return this.domainServices.paymentServices.updatePaymentState(loanId, loanPaymentId, state, LoanPaymentStateCodes.Failed);
     }
     // 3. should start next step?
-    const nextStepId = this.paymentDomainService.couldStartNextPaymentStep(paymentSteps);
+    const nextStepId = this.domainServices.paymentServices.couldStartNextPaymentStep(paymentSteps);
     if (nextStepId && (state === LoanPaymentStateCodes.Created || state === LoanPaymentStateCodes.Pending)) {
       this.logger.debug(`Loan payment ${loanPaymentId} can start next step ${nextStepId}`);
       // Set Pending state if needed - step advancement should be handled by PaymentStepped Event
-      return this.paymentDomainService.updatePaymentState(loanId, loanPaymentId, state, LoanPaymentStateCodes.Pending, !!nextStepId);
+      return this.domainServices.paymentServices.updatePaymentState(loanId, loanPaymentId, state, LoanPaymentStateCodes.Pending, !!nextStepId);
     }
     // 4. TODO: States artifacts
     return false; // No state change needed
@@ -321,7 +321,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
    * @returns The payment route with steps, or null if no route found
    */
   protected async findRouteForPayment(fromAccountId: string, toAccountId: string, loanType: LoanType): Promise<PaymentsRoute | null> {
-    return this.paymentDomainService.findRouteForPayment(
+    return this.domainServices.paymentServices.findRouteForPayment(
       fromAccountId,
       toAccountId,
       this.paymentType,
@@ -555,7 +555,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     if (!loanId) {
       throw new MissingInputException('Missing Loan Id');
     }
-    const loan = await this.paymentDomainService.getLoanById(loanId, relations);
+    const loan = await this.domainServices.paymentServices.getLoanById(loanId, relations);
     if (!loan) {
       throw new EntityNotFoundException('Loan not found');
     }
@@ -578,7 +578,7 @@ export abstract class BaseLoanPaymentManager implements ILoanPaymentManager {
     if (!paymentId) {
       throw new MissingInputException('Missing payment ID');
     }
-    const loanPayment = await this.paymentDomainService.getLoanPaymentById(paymentId, relations);
+    const loanPayment = await this.domainServices.paymentServices.getLoanPaymentById(paymentId, relations);
     if (!loanPayment) {
       throw new EntityNotFoundException('Payment not found');
     }

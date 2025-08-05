@@ -14,7 +14,7 @@ export class EventDiscoveryService {
   public findEventByName(name: string): EventConstructor | undefined {
     if (!this.cache) {
       this.cache = this.getCachedEventHandlers();
-      this.logger.debug(`Initialize cash: ${this.cache.keys()}`);
+      this.logger.debug(`Initialize cache: ${[...this.cache.keys()]}`);
     }
 
     const result = this.cache.get(name);

@@ -1,7 +1,7 @@
 import { PaymentStepStateCodes } from '@library/entity/enum';
 import { Injectable } from '@nestjs/common';
+import { IDomainServices } from '@payment/modules/domain';
 import { PaymentStepStateIsOutOfSyncException } from '@payment/modules/domain/exceptions';
-import { PaymentDomainService } from '@payment/modules/domain/services';
 import { Transactional } from 'typeorm-transactional';
 import { BasePaymentStepManager } from './base-payment-step-manager';
 
@@ -9,8 +9,8 @@ import { BasePaymentStepManager } from './base-payment-step-manager';
 export class CreatedStepManager extends BasePaymentStepManager {
 
 
-  constructor(protected readonly paymentDomainService: PaymentDomainService) {
-    super(paymentDomainService, PaymentStepStateCodes.Created);
+  constructor(protected readonly domainServices: IDomainServices) {
+    super(domainServices, PaymentStepStateCodes.Created);
   }
 
   /**
@@ -70,7 +70,7 @@ export class CreatedStepManager extends BasePaymentStepManager {
   @Transactional()
   protected async onTransferNotFound(stepId: string): Promise<boolean | null> {
     this.logger.debug(`Step: ${stepId} is in Created state, Transfer not found. Creating a new Transfer.`);
-    const transfer = await this.paymentDomainService.createTransferForStep(stepId);
+    const transfer = await this.domainServices.paymentServices.createTransferForStep(stepId);
     if (!transfer) {
       this.logger.error(`Failed to create a transfer for step ${stepId}`);
       return false;

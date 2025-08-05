@@ -1,0 +1,147 @@
+import { NotificationType } from '@library/entity/enum/notification.type';
+import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
+
+/**
+ * DTO for notification definition item responses
+ */
+export class NotificationDefinitionItemResponseDto {
+  /**
+   * Unique identifier of the notification definition item
+   * @example '123e4567-e89b-12d3-a456-426614174000'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Unique identifier of the notification definition item',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  id: string;
+
+  /**
+   * Reference to the parent notification definition
+   * @example '123e4567-e89b-12d3-a456-426614174000'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Reference to the parent notification definition',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  notificationDefinitionId: string;
+
+  /**
+   * Order index for sorting notification items within a definition
+   * @example 1
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Order index for sorting notification items within a definition',
+    example: 1,
+  })
+  orderIndex: number;
+
+  /**
+   * Type of notification (Email, SMS, Amplitude)
+   * @example 'Email'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Type of notification',
+    enum: NotificationType,
+    example: NotificationType.Email,
+  })
+  notificationType: NotificationType;
+
+  /**
+   * Template string for the notification content
+   * @example 'Hello <%= name %>, your payment is due on <%= dueDate %>'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Template string for the notification content (supports EJS syntax)',
+    example: 'Hello <%= name %>, your payment is due on <%= dueDate %>',
+    required: false,
+  })
+  template?: string;
+
+  /**
+   * Header text for the notification (supports EJS templates)
+   * @example 'Payment Reminder for <%= userName %>'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Header text for the notification (supports EJS syntax)',
+    example: 'Payment Reminder for <%= userName %>',
+    required: false,
+  })
+  header?: string;
+
+  /**
+   * Body text for the notification (supports EJS templates)
+   * @example 'Dear <%= userName %>, your payment of $<%= amount %> is due on <%= dueDate %>'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Body text for the notification (supports EJS syntax)',
+    example: 'Dear <%= userName %>, your payment of $<%= amount %> is due on <%= dueDate %>',
+    required: false,
+  })
+  body?: string;
+
+  /**
+   * Target destination for the notification (supports EJS templates)
+   * @example '<%= userEmail %>'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Target destination for the notification (supports EJS syntax)',
+    example: '<%= userEmail %>',
+    required: false,
+  })
+  target?: string;
+
+  /**
+   * Additional metadata for the notification item (supports EJS templates in JSON string)
+   * @example '{"userId": "<%= userId %>", "loanId": "<%= loanId %>", "amount": "<%= amount %>"}'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Additional metadata for the notification item (supports EJS syntax in JSON string)',
+    example: '{"userId": "<%= userId %>", "loanId": "<%= loanId %>", "amount": "<%= amount %>"}',
+    required: false,
+  })
+  metadata?: string;
+
+  /**
+   * Any additional params for specific provider
+   * @example '{"template": true}'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Any additional params for specific provider',
+    example: '{"template": true}',
+    required: true,
+  })
+  attributes?: object;
+
+  /**
+   * Timestamp when the notification definition item was created
+   * @example '2025-04-11T14:30:00Z'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Timestamp when the notification definition item was created',
+    example: '2025-04-11T14:30:00Z',
+  })
+  createdAt: Date;
+
+  /**
+   * Timestamp when the notification definition item was last updated
+   * @example '2025-04-11T15:45:00Z'
+   */
+  @Expose()
+  @ApiProperty({
+    description: 'Timestamp when the notification definition item was last updated',
+    example: '2025-04-11T15:45:00Z',
+  })
+  updatedAt: Date;
+}

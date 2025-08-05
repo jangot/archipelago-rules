@@ -1,19 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { NotificationModule } from '../src/notification.module';
+import { closeTestApp, createTestApp } from './test-utils';
 
 describe('NotificationController (e2e)', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({ imports: [NotificationModule] }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+  beforeAll(async () => {
+    app = await createTestApp();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer()).get('/').expect(200).expect('Hello World!');
+  afterAll(async () => {
+    await closeTestApp(app);
+  });
+
+  it('should return health status', async () => {
+    return request(app.getHttpServer())
+      .get('/health')
+      .expect(200);
   });
 });

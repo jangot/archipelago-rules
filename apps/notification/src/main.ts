@@ -6,7 +6,8 @@ import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/
 import { setupGracefulShutdown } from 'nestjs-graceful-shutdown';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
-import { NotificationModule } from './notification.module';
+
+import { NotificationModule } from '@notification/notification.module';
 
 async function bootstrap() {
   // Initialize TypeORM Transactional Context
@@ -40,7 +41,7 @@ async function bootstrap() {
 
 function configureSwagger(app: any) {
   const config = new DocumentBuilder()
-    
+
     .setTitle('ZNG Notification API')
     .setDescription('Zirtue Next Generation Platform Notification API')
     .setVersion('1.0')

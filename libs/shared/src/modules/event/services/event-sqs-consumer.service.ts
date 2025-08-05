@@ -10,6 +10,11 @@ export class EventSqsConsumerService {
     let isRunning = true;
     const client = new SQSClient(config);
 
+    let shutdownResolver: () => void;
+    const shutdownPromise = new Promise<void>((resolve) => {
+      shutdownResolver = resolve;
+    });
+
     return {
       start: async (cb: (e: Message) => Promise<void>) => {
         this.logger.log(`Pulling from queueUrl: ${options.url} was started`);
@@ -21,11 +26,15 @@ export class EventSqsConsumerService {
             this.logger.error({ info: 'Pulling and execution error', error });
           }
         }
+
         client.destroy();
         this.logger.log(`Pulling from queueUrl: ${options.url} was finished`);
+        shutdownResolver();
       },
-      finish: () => {
+
+      finish: async (): Promise<void> => {
         isRunning = false;
+        await shutdownPromise;
       },
     };
   }

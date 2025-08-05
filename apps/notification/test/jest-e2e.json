@@ -2,16 +2,24 @@
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": ".",
   "testEnvironment": "node",
-  "testRegex": ".e2e-spec.ts$",
+  "testRegex": "-spec.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": "./tsconfig.json"
+      }
+    ]
   },
   "moduleNameMapper": {
-    "^@library/entity(|/.*)$": "<rootDir>/libs/entity/src/$1",
-    "^@library/extensions(|/.*)$": "<rootDir>/libs/extensions/src/$1",
-    "^@library/shared(|/.*)$": "<rootDir>/libs/shared/src/$1",
-    "^@core(|/.*)$": "<rootDir>/apps/core/src/$1",
-    "^@payment(|/.*)$": "<rootDir>/apps/payment/src/$1",
-    "^@notification(|/.*)$": "<rootDir>/apps/notification/src/$1"
-  }
+    "^@library/entity(.*)$": "<rootDir>/../../../libs/entity/src$1",
+    "^@library/extensions(.*)$": "<rootDir>/../../../libs/extensions/src$1",
+    "^@library/shared(.*)$": "<rootDir>/../../../libs/shared/src$1",
+    "^@core(.*)$": "<rootDir>/../../../apps/core/src$1",
+    "^@payment(.*)$": "<rootDir>/../../../apps/payment/src$1",
+    "^@notification(.*)$": "<rootDir>/../../../apps/notification/src$1"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(camelcase-keys|map-obj|camelcase|quick-lru)/)"
+  ]
 }

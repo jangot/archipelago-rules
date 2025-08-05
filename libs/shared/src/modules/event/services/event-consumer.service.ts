@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { Message, SQSClientConfig } from '@aws-sdk/client-sqs';
 
@@ -8,7 +8,7 @@ import { EventSqsConsumerService } from './event-sqs-consumer.service';
 import { EventMapperService } from './event-mapper.service';
 
 @Injectable()
-export class EventConsumerService implements OnModuleInit, OnModuleDestroy {
+export class EventConsumerService implements OnModuleInit, OnApplicationShutdown {
   private logger = new Logger(EventConsumerService.name);
   private sqsInstances: SqsInstance[] = [];
 
@@ -30,8 +30,10 @@ export class EventConsumerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  public onModuleDestroy() {
-    this.sqsInstances.forEach((instance) => instance.finish());
+  public async onApplicationShutdown(signal: string) {
+    this.logger.log(`Shutting down consumers due to signal: ${signal}`);
+    await Promise.all(this.sqsInstances.map((instance) => instance.finish()));
+    this.logger.log('All SQS consumers have been stopped');
   }
 
   private initInstance(config: SQSClientConfig, options: EventModuleSQSQueueOptions) {

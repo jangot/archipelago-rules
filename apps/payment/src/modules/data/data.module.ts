@@ -14,9 +14,9 @@ import { CustomPaymentRepositories } from './repositories';
     TypeOrmModule.forRootAsync(SingleDataSourceConfiguration(AllEntities)),
   ],
   providers: [
-    PaymentDataService, 
+    PaymentDataService,
     SharedDataService,
-    ...registerCustomRepositoryProviders(AllEntities), 
+    ...registerCustomRepositoryProviders(AllEntities),
     ...CustomPaymentRepositories,
     ...SharedRepositories,
   ],

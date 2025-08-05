@@ -6,16 +6,17 @@
  * Copyright (c) 2025 Zirtue, Inc.
  */
 
-import { RegistrationStatus, ContactType } from '@library/entity/enum';
+import { VerificationEvent } from '@core/modules/auth/verification';
+import { ContactType, RegistrationStatus } from '@library/entity/enum';
 import { transformPhoneNumber } from '@library/shared/common/data/transformers/phone-number.transformer';
+import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { logSafeRegistration, logSafeUser } from '@library/shared/common/helper';
+import { AuthNotificationNames } from '@library/shared/notifications/notification.names';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { ContactTakenException, RegistrationNotFoundException } from '../../exceptions/auth-domain.exceptions';
+import { RegistrationTransitionResult } from '../registration-transition-result';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { InitiatePhoneNumberVerificationCommand } from './registration.commands';
-import { RegistrationTransitionResult } from '../registration-transition-result';
-import { logSafeRegistration, logSafeUser } from '@library/shared/common/helper';
-import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { ContactTakenException, RegistrationNotFoundException } from '../../exceptions/auth-domain.exceptions';
-import { VerificationEvent } from '@core/modules/auth/verification';
 
 @CommandHandler(InitiatePhoneNumberVerificationCommand)
 export class InitiatePhoneNumberVerificationCommandHandler
@@ -87,6 +88,7 @@ export class InitiatePhoneNumberVerificationCommandHandler
 
     this.logger.debug(`Updated registration during adding phone number for user ${userId}`);
 
+    await this.sendCode(AuthNotificationNames.RegistrationVerificationSMS, userId, code);
     this.sendEvent(user, VerificationEvent.PhoneNumberVerifying);
 
     return this.createTransitionResult(RegistrationStatus.PhoneNumberVerifying, true, userId, undefined, code);

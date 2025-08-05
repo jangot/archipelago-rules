@@ -1,14 +1,23 @@
 
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { DataModule } from '../data';
-import { NotificationDomainService } from './services/notification.definition.service';
-import { DomainServices } from './domain.services';
-import { IDomainServices } from './domain.iservices';
+import { DataModule } from '@notification/data';
+import { IDomainServices } from '@notification/domain/domain.iservices';
+import { DomainServices } from '@notification/domain/domain.services';
+import { NotificationDefinitionItemDomainService } from '@notification/domain/services/notification.definition.item.service';
+import { NotificationDomainService } from '@notification/domain/services/notification.definition.service';
+import { NotificationLogDomainService } from '@notification/domain/services/notification.log.service';
+import { SharedNotificationDataViewDomainService } from '@library/shared/domain/service';
 
 @Module({
   imports: [ConfigModule, DataModule],
-  providers: [NotificationDomainService, { provide: IDomainServices, useClass: DomainServices }],
-  exports: [IDomainServices],
+  providers: [
+    NotificationDomainService,
+    NotificationDefinitionItemDomainService,
+    NotificationLogDomainService,
+    SharedNotificationDataViewDomainService,
+    { provide: IDomainServices, useClass: DomainServices },
+  ],
+  exports: [IDomainServices, NotificationDomainService],
 })
 export class DomainModule {}

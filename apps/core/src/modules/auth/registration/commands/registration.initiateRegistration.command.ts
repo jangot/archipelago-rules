@@ -11,12 +11,13 @@ import { VerificationEvent } from '@core/modules/auth/verification';
 import { ContactType, RegistrationStatus, VerificationStatus } from '@library/entity/enum';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { logSafeRegistration, logSafeUser, safeTrim } from '@library/shared/common/helper';
+import { ApplicationUser } from '@library/shared/domain/entity';
+import { AuthNotificationNames } from '@library/shared/notifications/notification.names';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ContactTakenException, UnableToCreateUserException } from '../../exceptions/auth-domain.exceptions';
 import { RegistrationTransitionResult } from '../registration-transition-result';
 import { RegistrationBaseCommandHandler } from './registration.base.command-handler';
 import { RegistrationInitiatedCommand } from './registration.commands';
-import { ApplicationUser } from '@library/shared/domain/entity';
 
 @CommandHandler(RegistrationInitiatedCommand)
 export class RegistrationInitiatedCommandHandler
@@ -78,6 +79,7 @@ export class RegistrationInitiatedCommandHandler
       registration: logSafeRegistration(userRegistration),
     });
 
+    await this.sendCode(AuthNotificationNames.RegistrationVerificationEmail, userId, code);
     this.sendEvent(user, VerificationEvent.EmailVerifying);
 
     return this.createTransitionResult(RegistrationStatus.EmailVerifying, true, userId, undefined, code);

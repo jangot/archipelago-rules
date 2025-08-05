@@ -1,14 +1,12 @@
 import { DbSchemaCodes, TypeOrmModuleConfiguration } from '@library/shared/common/data/dbcommon.config';
 import { registerCustomRepositoryProviders } from '@library/shared/common/data/registration.repository';
+import { AllEntities } from '@library/shared/domain/entity';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { NotificationDefinition } from '../domain/entity/notification.definition.entity';
-import { CustomNotificationRepositories } from '../infrastructure/repositories';
-import { NotificationDataService } from './data.service';
-
-export const NotificationEntities = [
-  NotificationDefinition,
-];
+import { NotificationDataService } from '@notification/data/data.service';
+import { CustomNotificationRepositories } from '@notification/infrastructure/repositories';
+import { SharedDataService } from '@library/shared/common/domainservice/shared.service';
+import { SharedRepositories } from '@library/shared/infrastructure/repository';
 
 /**
  * Data module for the Notification service
@@ -18,15 +16,15 @@ export const NotificationEntities = [
   imports: [
     // schema: notifications
     TypeOrmModule.forRootAsync(TypeOrmModuleConfiguration({
-      entities: [...NotificationEntities],
+      entities: [...AllEntities],
       schema: DbSchemaCodes.Notification,
     })),
-
   ],
   providers: [
-    NotificationDataService, 
-    ...registerCustomRepositoryProviders(NotificationEntities), ...CustomNotificationRepositories,
+    SharedDataService,
+    NotificationDataService,
+    ...registerCustomRepositoryProviders(AllEntities), ...CustomNotificationRepositories, ...SharedRepositories,
   ],
-  exports: [NotificationDataService],
+  exports: [NotificationDataService, SharedDataService],
 })
 export class DataModule {}

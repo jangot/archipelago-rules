@@ -1,10 +1,12 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { LoginInitiateCommand } from './login.commands';
-import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { UserLoginResponseDTO } from '@core/modules/auth/dto/response/user-login-response.dto';
-import { LoginLogic } from '../login.logic';
+import { VerificationType } from '@library/entity/enum';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { AuthNotificationNames } from '@library/shared/notifications/notification.names';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LoginTemporaryLockedException, UserNotRegisteredException } from '../../exceptions/auth-domain.exceptions';
+import { LoginLogic } from '../login.logic';
+import { LoginBaseCommandHandler } from './login.base.command-handler';
+import { LoginInitiateCommand } from './login.commands';
 
 @CommandHandler(LoginInitiateCommand)
 export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginInitiateCommand> implements ICommandHandler<LoginInitiateCommand> {
@@ -47,8 +49,10 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
 
     await this.domainServices.userServices.updateUser(user);
 
-    // TODO: Send the code to the user
-    //this.sendEvent()
+    const notificationName = verificationType === VerificationType.PhoneNumber
+      ? AuthNotificationNames.LoginVerificationSMS : AuthNotificationNames.LoginVerificationEmail;
+    
+    await this.sendCode(notificationName, user.id, code);
 
     return { userId: user.id, verificationCode: code };
   }
