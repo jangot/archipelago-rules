@@ -51,7 +51,17 @@ async function createNotificationDefinition(name, dataItems) {
 }
 
 // Function to create notification definition item
-async function createNotificationItem(notificationId, orderIndex, notificationType, template, header, body, target, metadata) {
+async function createNotificationItem(
+    notificationId,
+    orderIndex,
+    notificationType,
+    template,
+    header,
+    body,
+    target,
+    metadata,
+    attributes = {},
+) {
   try {
     await api.post('/api/notification/notification-definition-items', {
       notificationDefinitionId: notificationId,
@@ -61,7 +71,8 @@ async function createNotificationItem(notificationId, orderIndex, notificationTy
       header,
       body,
       target,
-      metadata
+      metadata,
+      attributes,
     }, {
       headers: { 'Content-Type': 'application/json' }
     });
@@ -121,7 +132,8 @@ async function setupNotifications() {
         'new_user_login_email_verification',
         '{ "code": "<%= code %>" }',
         '<%= user.email %>',
-        '{ "code": "<%= code %>" }'
+        '{ "code": "<%= code %>" }',
+          { template: true }
       );
     }
   }

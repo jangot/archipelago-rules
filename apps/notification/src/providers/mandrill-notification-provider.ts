@@ -43,11 +43,11 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
       return this.buildResult(message, target, 'skipped:test_email');
     }
     try {
-      const globalVars = this.formatTemplateVars(message);
-
       if (message.attributes['template'] === true) {
+        const globalVars = this.formatTemplateVars(message, JSON.parse(message.body));
         await this.sendEmailWithTemplate(target, title, globalVars);
       } else {
+        const globalVars = this.formatTemplateVars(message);
         await this.sendEmail(messageBody, target, title, globalVars);
       }
 
@@ -63,27 +63,26 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
     return email.endsWith('.example') || email.endsWith('.test');
   }
 
-  private formatTemplateVars(message: INotificationMessageRequest): mailchimp.MergeVar[] {
+  private formatTemplateVars(message: INotificationMessageRequest, extraData = {}): mailchimp.MergeVar[] {
     const { user, header, body, metadata } = message;
 
-    const flattened = flattenObject({
-      USER: {
-        ID: user.id,
-        EMAIL: user.email,
-        PHONE: user.phoneNumber,
-        FIRSTNAME: user.firstName,
-        LASTNAME: user.lastName,
-        FULLNAME: `${user.firstName} ${user.lastName}`,
+    const params = {
+      user: {
+        ...user,
+        fullName: [user.firstName, user.lastName].join(' '),
       },
-      MESSAGE: {
-        HEADER: header,
-        BODY: body,
-        METADATA: typeof metadata === 'object' ? JSON.stringify(metadata) : metadata,
-      },
-      DATE: new Date().toISOString(),
-    });
+      header,
+      body,
+      metadata: typeof metadata === 'object' ? JSON.stringify(metadata) : metadata,
+      date: new Date().toISOString(),
+      ...extraData,
+    };
 
-    return Object.entries(flattened).map(([name, content]) => ({ name, content }));
+
+    return Object
+      .entries(flattenObject(params))
+      .filter(([name, content]) => !!content)
+      .map(([name, content]) => ({ name, content }));
   }
 
   private async sendEmail(
@@ -92,6 +91,7 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
     title: string,
     globalVars: mailchimp.MergeVar[],
   ): Promise<void> {
+    this.logger.debug('Send email without template');
     const emailTargets = this.getEmailToList(target);
 
     const message = this.templateBuilder.buildHtmlRequest(emailTargets, messageBody, title, globalVars);
@@ -111,6 +111,7 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
     templateId: string,
     globalVars: mailchimp.MergeVar[],
   ): Promise<void> {
+    this.logger.debug(`Send email with template: ${templateId}`);
     const emailTargets = this.getEmailToList(target);
     const message = this.templateBuilder.buildTemplateRequest(emailTargets, templateId, globalVars);
 
