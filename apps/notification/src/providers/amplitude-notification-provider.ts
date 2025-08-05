@@ -66,13 +66,14 @@ export class AmplitudeNotificationProvider extends BaseNotificationProvider impl
     }
 
     try {
-      await this.amplitudeClient.post('/', {
+      await this.amplitudeClient.post('', {
         events,
       });
 
       this.logger.debug(`Amplitude message sent successfully to ${target}`);
     } catch (error) {
-      this.logger.error(`Error when sending Amplitude message to ${target}`, {
+      this.logger.error({
+        info: `Error when sending Amplitude message to ${target}`,
         error,
         events,
       });
@@ -87,7 +88,7 @@ export class AmplitudeNotificationProvider extends BaseNotificationProvider impl
       const parsed = JSON.parse(input);
       return Array.isArray(parsed) ? parsed : [parsed];
     } catch {
-      this.logger.warn('Failed to parse events from message', { input });
+      this.logger.warn({ info: 'Failed to parse events from message', input });
       return [];
     }
   }

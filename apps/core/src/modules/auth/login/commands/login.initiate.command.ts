@@ -49,15 +49,15 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
 
     await this.domainServices.userServices.updateUser(user);
 
-    await this.sendCode(user);
+    await this.sendCode(user, code);
 
     return { userId: user.id, verificationCode: code };
   }
 
-  private async sendCode(user: ApplicationUser): Promise<void> {
+  private async sendCode(user: ApplicationUser, code): Promise<void> {
     const notificationName = user.phoneNumber ? 'login_verification_sms' : 'login_verification_email';
 
-    const payload = await this.domainServices.notificationServices.getNotificationPayload(notificationName, user.id);
+    const payload = await this.domainServices.notificationServices.getNotificationPayload(notificationName, user.id, code);
     if (!payload) {
       return;
     }

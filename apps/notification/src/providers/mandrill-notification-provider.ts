@@ -53,7 +53,7 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
       this.logger.debug(`Email sent successfully to ${target}`);
       return this.buildResult(message, target, 'success');
     } catch (error) {
-      this.logger.error('Send email error', { error });
+      this.logger.error({ info: 'Send email error', error });
       return this.buildResult(message, target, 'error');
     }
   }
@@ -80,7 +80,6 @@ export class MandrillNotificationProvider extends BaseNotificationProvider imple
 
     return Object
       .entries(flattenObject(params))
-      .filter(([name, content]) => !!content)
       .map(([name, content]) => ({ name, content }));
   }
 

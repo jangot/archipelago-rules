@@ -22,7 +22,7 @@ export class SharedNotificationDomainService extends BaseDomainServices {
     super(data);
   }
 
-  public async getNotificationPayload(notificationName: string, userId: string): Promise<NotificationEventPayload | null> {
+  public async getNotificationPayload(notificationName: string, userId: string, attributes = {}): Promise<NotificationEventPayload | null> {
     const notificationDefinition = await this.data.notificationDefinitions.findByName(notificationName);
     if (!notificationDefinition) {
       this.logger.debug(`Notification definition was not gotten: ${notificationName}`);
@@ -40,6 +40,7 @@ export class SharedNotificationDomainService extends BaseDomainServices {
       code: row[NotificationDataItems.Code] || undefined,
       lenderLoan: row[NotificationDataItems.LenderLoan] || undefined,
       borrowerLoan: row[NotificationDataItems.BorrowerLoan] || undefined,
+      attributes,
     };
   }
 }
