@@ -36,7 +36,8 @@ export class TwilioNotificationProvider extends BaseNotificationProvider impleme
     const target = message.user.phoneNumber;
     const body = message.header ? message.header + '\n' + decode(message.body) : decode(message.body);
 
-    this.logger.debug(`Sending SMS message to ${target} ...`, {
+    this.logger.debug({
+      info: `Sending SMS message to ${target} ...`,
       header: message.header,
       body: message.body,
     });
@@ -56,7 +57,7 @@ export class TwilioNotificationProvider extends BaseNotificationProvider impleme
       this.logger.debug(`SMS message sent successfully to ${target}`);
       return this.buildResult(message, target, 'success');
     } catch (error) {
-      this.logger.error('Error when sending SMS message', { twilioMessage, error });
+      this.logger.error({ info: 'Error when sending SMS message', twilioMessage, error });
       return this.buildResult(message, target, 'error');
     }
   }
@@ -77,7 +78,7 @@ export class TwilioNotificationProvider extends BaseNotificationProvider impleme
     const { status, errorCode, errorMessage = 'Unknown error' } = responseMessage;
 
     if (failedStatuses.has(status)) {
-      this.logger.error('SMS message failed to send', { responseMessage, errorCode, errorMessage });
+      this.logger.error({ info: 'SMS message failed to send', responseMessage, errorCode, errorMessage });
       throw new Error(`Twilio message failed: ${errorMessage} (Code: ${errorCode})`);
     }
   }
