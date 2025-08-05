@@ -18,5 +18,5 @@ import {
 export abstract class IDataService {
   public readonly billers: BillersRepository;
   public readonly notificationDefinitions: NotificationDefinitionRepository;
-  public readonly notificatioDataView: NotificationDataViewRepository;
+  public readonly notificationDataView: NotificationDataViewRepository;
 }

@@ -1,11 +1,12 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { LoginInitiateCommand } from './login.commands';
-import { LoginBaseCommandHandler } from './login.base.command-handler';
 import { UserLoginResponseDTO } from '@core/modules/auth/dto/response/user-login-response.dto';
-import { LoginLogic } from '../login.logic';
+import { VerificationType } from '@library/entity/enum';
 import { EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
+import { AuthNotificationNames } from '@library/shared/notifications/notification.names';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LoginTemporaryLockedException, UserNotRegisteredException } from '../../exceptions/auth-domain.exceptions';
-import { NotificationEvent } from '@library/shared/events/notification.event';
+import { LoginLogic } from '../login.logic';
+import { LoginBaseCommandHandler } from './login.base.command-handler';
+import { LoginInitiateCommand } from './login.commands';
 
 @CommandHandler(LoginInitiateCommand)
 export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginInitiateCommand> implements ICommandHandler<LoginInitiateCommand> {
@@ -48,18 +49,11 @@ export class LoginInitiateCommandHandler extends LoginBaseCommandHandler<LoginIn
 
     await this.domainServices.userServices.updateUser(user);
 
-    const notificationName = user.phoneNumber ? 'login_verification_sms' : 'login_verification_email';
+    const notificationName = verificationType === VerificationType.PhoneNumber
+      ? AuthNotificationNames.LoginVerificationSMS : AuthNotificationNames.LoginVerificationEmail;
+    
     await this.sendCode(notificationName, user.id, code);
 
     return { userId: user.id, verificationCode: code };
-  }
-
-  private async sendCode(notificationName: string, userId: string, code: string): Promise<void> {
-    const payload = await this.domainServices.notificationServices.getNotificationPayload(notificationName, userId, { code });
-    if (!payload) {
-      return;
-    }
-
-    await this.publisherService.publish(new NotificationEvent(payload));
   }
 }

@@ -58,6 +58,7 @@ export class EventPublisherService {
   public async publish<T extends IZirtueEvent<any>>(event: T): Promise<boolean> {
     await this.eventBus.publish(event);
     this.logger.debug({ event, info: 'event published locally.' });
+
     if (this.isCoreEvent(event) && event.type === ZirtueDistributedEvent.name) {
       this.logger.debug({ event, info: 'event published globally.' });
       await this.snsPublisher.publish(event);

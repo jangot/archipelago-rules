@@ -8,14 +8,15 @@
 
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { RegistrationStatus } from '@library/entity/enum';
+import { ApplicationUser } from '@library/shared/domain/entity';
+import { EventPublisherService } from '@library/shared/modules/event';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AuthBaseCommandHandler } from '../../common/auth.base.command-handler';
 import { RegistrationDto } from '../../dto/request/registration.request.dto';
 import { VerificationEvent, VerificationEventFactory } from '../../verification';
 import { RegistrationTransitionResult } from '../registration-transition-result';
 import { RegistrationBaseCommand } from './registration.commands';
-import { ApplicationUser } from '@library/shared/domain/entity';
-import { EventPublisherService } from 'libs/shared/src/modules/event';
 
 export interface RegistrationExecuteParams {
   id: string | null;
@@ -23,14 +24,17 @@ export interface RegistrationExecuteParams {
 }
 
 @Injectable()
-export abstract class RegistrationBaseCommandHandler<TCommand extends RegistrationBaseCommand = RegistrationBaseCommand> {
+export abstract class RegistrationBaseCommandHandler<TCommand extends RegistrationBaseCommand = RegistrationBaseCommand>
+  extends AuthBaseCommandHandler {
 
   constructor(
     protected readonly domainServices: IDomainServices,
+    protected readonly publisherService: EventPublisherService,
     protected readonly logger: Logger,
-    protected readonly eventManager: EventPublisherService,
     protected readonly config: ConfigService
-  ) {}
+  ) {
+    super(domainServices, publisherService, config);
+  }
 
   public abstract execute(command: TCommand): Promise<RegistrationTransitionResult>;
 
@@ -63,10 +67,6 @@ export abstract class RegistrationBaseCommandHandler<TCommand extends Registrati
     if (!event || !user) return;
     const eventInstance = VerificationEventFactory.create(user, event);
     if (!eventInstance) return;
-    void this.eventManager.publish(eventInstance);
-  }
-
-  protected isDevelopmentEnvironment(): boolean {
-    return this.config.get<string>('NODE_ENV', 'production') === 'development';
+    void this.publisherService.publish(eventInstance);
   }
 }

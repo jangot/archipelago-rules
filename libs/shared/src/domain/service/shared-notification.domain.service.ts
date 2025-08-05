@@ -1,5 +1,5 @@
-import { ConfigService } from '@nestjs/config';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { NotificationDataItems } from '@library/entity/enum/notification-data-items';
 import { BaseDomainServices } from '@library/shared/common/domainservice/domain.service.base';
@@ -25,12 +25,13 @@ export class SharedNotificationDomainService extends BaseDomainServices {
   public async getNotificationPayload(notificationName: string, userId: string, params = {}): Promise<NotificationEventPayload | null> {
     const notificationDefinition = await this.data.notificationDefinitions.findByName(notificationName);
     if (!notificationDefinition) {
-      this.logger.debug(`Notification definition was not gotten: ${notificationName}`);
+      this.logger.debug(`Notification definition was not found: ${notificationName}`);
       return null;
     }
-    const row = await this.data.notificatioDataView.findByUserId(userId, notificationDefinition.dataItems);
+    
+    const row = await this.data.notificationDataView.findByUserId(userId, notificationDefinition.dataItems);
     if (!row) {
-      this.logger.debug(`Notification data was not gotten ${notificationName} : ${userId}`);
+      this.logger.debug(`Notification data was not found for ${notificationName} : ${userId}`);
       return null;
     }
 

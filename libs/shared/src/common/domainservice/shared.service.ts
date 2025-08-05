@@ -1,10 +1,10 @@
 import { IDataService } from '@library/shared/common/data/idata.service';
-import { Injectable } from '@nestjs/common';
 import {
-  NotificationDefinitionRepository,
   BillersRepository,
   NotificationDataViewRepository,
+  NotificationDefinitionRepository,
 } from '@library/shared/infrastructure/repository';
+import { Injectable } from '@nestjs/common';
 
 
 
@@ -14,7 +14,7 @@ export class SharedDataService extends IDataService {
   constructor(
     public readonly billers: BillersRepository,
     public readonly notificationDefinitions: NotificationDefinitionRepository,
-    public readonly notificatioDataView: NotificationDataViewRepository,
+    public readonly notificationDataView: NotificationDataViewRepository,
   ) {
     super();
   }
