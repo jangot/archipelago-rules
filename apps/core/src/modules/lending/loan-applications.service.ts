@@ -1,7 +1,7 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto, PublicLoanApplicationResponseDto } from '@core/modules/lending/dto/response';
-import { LoanApplicationAllowanceValidation as AllowanceValidation, ContactType, LoanApplicationAllowanceValidationType, LoanApplicationStates, LoanApplicationValidationRejectType, LoanFeeModeCodes, LoanPaymentFrequency, LoanPaymentFrequencyCodes, LoanApplicationValidationRejectTypes as RejectionMessage } from '@library/entity/enum';
+import { LoanApplicationUserAssignmentValidation as AssignmentValidation, ContactType, LoanApplicationStates, LoanApplicationUserAssignmentValidationType, LoanApplicationValidationRejectType, LoanFeeModeCodes, LoanPaymentFrequency, LoanPaymentFrequencyCodes, LoanApplicationValidationRejectTypes as RejectionMessage } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
@@ -46,7 +46,7 @@ export class LoanApplicationsService {
   }
 
   public async getPublicLoanApplicationById(id: string): Promise<PublicLoanApplicationResponseDto | null> {
-    const result = await this.getLoanApplication(id, null, AllowanceValidation.Skip, RejectionMessage.View);
+    const result = await this.getLoanApplication(id, null, AssignmentValidation.Skip, RejectionMessage.View);
 
     return DtoMapper.toDto(result, PublicLoanApplicationResponseDto);
   }
@@ -126,7 +126,7 @@ export class LoanApplicationsService {
     this.logger.debug(`update: Updating loan application ${id}:`, data);
 
     // Validate that the loan application belongs to the user (as a borrower or lender)
-    await this.getLoanApplication(id, userId, AllowanceValidation.Any, RejectionMessage.Update);
+    await this.getLoanApplication(id, userId, AssignmentValidation.Any, RejectionMessage.Update);
 
     const { loanAmount } = data;
     const loanFee = loanAmount ? ScheduleService.previewFeeAmount(loanAmount) : 0;
@@ -163,7 +163,7 @@ export class LoanApplicationsService {
   public async submitLoanApplication(userId: string, id: string): Promise<void> {
     this.logger.debug(`submitLoanApplication: Submitting loan application ${id}`);
 
-    const loanApplication = await this.getLoanApplication(id, userId, AllowanceValidation.Borrower, RejectionMessage.Submit);
+    const loanApplication = await this.getLoanApplication(id, userId, AssignmentValidation.Borrower, RejectionMessage.Submit);
 
     const { lenderEmail, lenderFirstName } = loanApplication;
     
@@ -198,7 +198,7 @@ export class LoanApplicationsService {
   public async acceptLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`acceptLoanApplication: Accepting loan application ${loanApplicationId} by user ${userId}`);
 
-    const loanApplication = await this.getLoanApplication(loanApplicationId, userId, AllowanceValidation.Lender, RejectionMessage.Accept);
+    const loanApplication = await this.getLoanApplication(loanApplicationId, userId, AssignmentValidation.Lender, RejectionMessage.Accept);
 
     // Validate status to avoid creating double loans
     if (loanApplication.status === LoanApplicationStates.Approved) {
@@ -241,7 +241,7 @@ export class LoanApplicationsService {
   public async rejectLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`rejectLoanApplication: Rejecting loan application ${loanApplicationId}`);
 
-    await this.getLoanApplication(loanApplicationId, userId, AllowanceValidation.Lender, RejectionMessage.Reject);
+    await this.getLoanApplication(loanApplicationId, userId, AssignmentValidation.Lender, RejectionMessage.Reject);
     
     const status = LoanApplicationStates.Rejected;
 
@@ -263,7 +263,7 @@ export class LoanApplicationsService {
    */
   public async cancelLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`cancelLoanApplication: Cancelling loan application ${loanApplicationId}`);
-    await this.getLoanApplication(loanApplicationId, userId, AllowanceValidation.Borrower, RejectionMessage.Cancel);
+    await this.getLoanApplication(loanApplicationId, userId, AssignmentValidation.Borrower, RejectionMessage.Cancel);
 
     const status = LoanApplicationStates.Cancelled;
 
@@ -313,28 +313,33 @@ export class LoanApplicationsService {
   // #endregion  
 
   /**
-   * Retrieves a loan application by its ID and validates the user's allowance.
+   * Retrieves a loan application by its ID and validates the user's assignment.
    * Throws exceptions if the application is not found or if the user is not allowed to access it.
    *
    * @param applicationId - The ID of the loan application
    * @param userId - The ID of the user (borrower or lender)
-   * @param allowance - The type of allowance validation to perform
+   * @param assignment - The type of assignment validation to perform
    * @param intent - The intent for which the validation is being performed
    * @returns Promise<LoanApplication> - The loan application entity
    */
   private async getLoanApplication(
     applicationId: string,
     userId: string | null,
-    allowance: LoanApplicationAllowanceValidationType = AllowanceValidation.Any,
+    assignment: LoanApplicationUserAssignmentValidationType = AssignmentValidation.Any,
     intent: LoanApplicationValidationRejectType = RejectionMessage.View
   ): Promise<LoanApplication> {
     
     const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(applicationId);
 
-    this.domainServices.loanServices.validateLoanApplicationAllowance(
+    if (!loanApplication) {
+      this.logger.error(`Loan application with ID ${applicationId} not found`);
+      throw new EntityNotFoundException(`Loan application with ID ${applicationId} not found`);
+    }
+
+    this.domainServices.loanServices.validateLoanApplicationUserAssignment(
       loanApplication,
       userId,
-      allowance,
+      assignment,
       intent
     );
 

@@ -1,8 +1,8 @@
 import { CoreDataService } from '@core/modules/data';
 import { InvalidUserForLoanApplicationException } from '@core/modules/lending/exceptions';
 import {
-  LoanAllowanceValidation,
-  LoanApplicationAllowanceValidationType,
+  LoanApplicationUserAssignmentValidation,
+  LoanApplicationUserAssignmentValidationType,
   LoanApplicationValidationRejectType,
   LoanPaymentFrequency,
   LoanPaymentStateCodes,
@@ -11,7 +11,7 @@ import {
   LoanStateCodes,
 } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
-import { EntityFailedToUpdateException, EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
 import { Loan, LoanApplication } from '@library/shared/domain/entity';
 import { LOAN_RELATIONS, LoanRelation } from '@library/shared/domain/entity/relation';
 import { LoanStateChangedEvent, LoanStateSteppedEvent } from '@library/shared/events';
@@ -187,12 +187,8 @@ export class LoanDomainService extends BaseDomainServices {
   // #endregion
 
   // #region Loan Application
-  public async getLoanApplicationById(id: string): Promise<LoanApplication> {
-    const result = await this.data.loanApplications.getById(id);
-    
-    if (!result) throw new EntityNotFoundException(`Loan application: ${id} not found`);
-
-    return result;
+  public async getLoanApplicationById(id: string): Promise<LoanApplication | null> {
+    return this.data.loanApplications.getById(id);
   }
 
   public async getAllLoanApplicationsByUserId(userId: string): Promise<LoanApplication[]> {
@@ -218,50 +214,50 @@ export class LoanDomainService extends BaseDomainServices {
     return this.data.loanApplications.updateWithResult(id, updateData);
   }
 
-  public validateLoanApplicationAllowance(
+  public validateLoanApplicationUserAssignment(
     application: LoanApplication,
     userId: string | null,
-    allowance: LoanApplicationAllowanceValidationType,
+    assignment: LoanApplicationUserAssignmentValidationType,
     intent: LoanApplicationValidationRejectType
   ): void {
 
     const { id, lenderId, borrowerId, billerId } = application;
     let result = false;
 
-    this.logger.debug(`validateLoanApplicationAllowance: Validating allowance for application ${id} by user ${userId} with validation type ${allowance}`);
+    this.logger.debug(`validateLoanApplicationAssignment: Validating assignment for application ${id} by user ${userId} with validation type ${assignment}`);
 
-    // If allowance validation is explicitly skipped, return true
-    if (allowance === LoanAllowanceValidation.Skip) {
-      this.logger.debug(`Allowance validation skipped for application ${id}`);
+    // If assignment validation is explicitly skipped, return true
+    if (assignment === LoanApplicationUserAssignmentValidation.Skip) {
+      this.logger.debug(`Assignment validation skipped for application ${id}`);
       return;
     }
 
-    // If userId is not provided, we cannot validate allowance
+    // If userId is not provided, we cannot validate assignment
     if (!userId) {
-      this.logger.warn(`User ID is required for allowance validation but was not provided for application ${id}`);
+      this.logger.warn(`User ID is required for assignment validation but was not provided for application ${id}`);
       result =  false;
     } else {
-    // Validate based on the type of allowance requested
-      switch (allowance) {
-        case LoanAllowanceValidation.Any:
+    // Validate based on the type of assignment requested
+      switch (assignment) {
+        case LoanApplicationUserAssignmentValidation.Any:
           result = [lenderId, borrowerId, billerId].includes(userId); // Any assigned user can access
           break;
 
-        case LoanAllowanceValidation.Borrower:
+        case LoanApplicationUserAssignmentValidation.Borrower:
           result = borrowerId === userId;
           break;
-        case LoanAllowanceValidation.Lender:
+        case LoanApplicationUserAssignmentValidation.Lender:
           result = lenderId === userId;
           break;
 
         default:
-          this.logger.error(`Unknown allowance validation type: ${allowance}`);
+          this.logger.error(`Unknown user assignment validation type: ${assignment}`);
           result =  false;
       }    
     }
 
     if (!result) {
-      this.logger.warn(`User ${userId} does not have permission to ${intent} loan application ${id} with allowance type ${allowance}`);
+      this.logger.warn(`User ${userId} does not have permission to ${intent} loan application ${id} with user assignment type ${assignment}`);
       throw new InvalidUserForLoanApplicationException(intent);
     }
   }
