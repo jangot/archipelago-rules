@@ -48,10 +48,11 @@ export class LoanApplicationsController {
   @ApiOkResponse({ description: 'Loan application', type: LoanApplicationResponseDto, isArray: false })
   @ApiNotFoundResponse({ description: 'No Loan application found', isArray: false })
   @ApiParam({ name: 'id', required: true, description: 'Loan application id' })
-  public async getLoanApplicationById(@UUIDParam('id') id: string): Promise<LoanApplicationResponseDto | null> {
+  public async getLoanApplicationById(@Req() request: IRequest, @UUIDParam('id') id: string): Promise<LoanApplicationResponseDto | null> {
     this.logger.debug(`Getting loan application details with ID: ${id}`);
-
-    return this.loanApplicationService.getLoanApplicationById(id);
+    const userId = request.user!.id; 
+    
+    return this.loanApplicationService.getLoanApplicationById(id, userId);
   }
   
   @Public()

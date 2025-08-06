@@ -1,9 +1,14 @@
 import { CoreDataService } from '@core/modules/data';
+import { InvalidUserForLoanApplicationException } from '@core/modules/lending/exceptions';
 import {
+  LoanApplicationUserAssignmentValidation,
+  LoanApplicationUserAssignmentValidationType,
+  LoanApplicationValidationRejectType,
   LoanPaymentFrequency,
   LoanPaymentStateCodes,
   LoanPaymentTypeCodes,
   LoanState,
+  LoanStateCodes,
 } from '@library/entity/enum';
 import { BaseDomainServices } from '@library/shared/common/domainservice';
 import { EntityFailedToUpdateException } from '@library/shared/common/exception/domain';
@@ -166,6 +171,7 @@ export class LoanDomainService extends BaseDomainServices {
       feeAmount: loanApplication!.loanServiceFee || 0,
       lenderAccountId: loanApplication!.lenderPaymentAccountId,
       borrowerAccountId: loanApplication!.borrowerPaymentAccountId,
+      state: LoanStateCodes.Accepted,
     };
 
     // Create the loan
@@ -206,6 +212,54 @@ export class LoanDomainService extends BaseDomainServices {
     }
 
     return this.data.loanApplications.updateWithResult(id, updateData);
+  }
+
+  public validateLoanApplicationUserAssignment(
+    application: LoanApplication,
+    userId: string | null,
+    assignment: LoanApplicationUserAssignmentValidationType,
+    intent: LoanApplicationValidationRejectType
+  ): void {
+
+    const { id, lenderId, borrowerId, billerId } = application;
+    let result = false;
+
+    this.logger.debug(`validateLoanApplicationAssignment: Validating assignment for application ${id} by user ${userId} with validation type ${assignment}`);
+
+    // If assignment validation is explicitly skipped, return true
+    if (assignment === LoanApplicationUserAssignmentValidation.Skip) {
+      this.logger.debug(`Assignment validation skipped for application ${id}`);
+      return;
+    }
+
+    // If userId is not provided, we cannot validate assignment
+    if (!userId) {
+      this.logger.warn(`User ID is required for assignment validation but was not provided for application ${id}`);
+      result =  false;
+    } else {
+    // Validate based on the type of assignment requested
+      switch (assignment) {
+        case LoanApplicationUserAssignmentValidation.Any:
+          result = [lenderId, borrowerId, billerId].includes(userId); // Any assigned user can access
+          break;
+
+        case LoanApplicationUserAssignmentValidation.Borrower:
+          result = borrowerId === userId;
+          break;
+        case LoanApplicationUserAssignmentValidation.Lender:
+          result = lenderId === userId;
+          break;
+
+        default:
+          this.logger.error(`Unknown user assignment validation type: ${assignment}`);
+          result =  false;
+      }    
+    }
+
+    if (!result) {
+      this.logger.warn(`User ${userId} does not have permission to ${intent} loan application ${id} with user assignment type ${assignment}`);
+      throw new InvalidUserForLoanApplicationException(intent);
+    }
   }
   // #endregion
 }

@@ -1,14 +1,18 @@
 import { IDomainServices } from '@core/modules/domain/idomain.services';
 import { LoanApplicationRequestDto } from '@core/modules/lending/dto/request';
 import { LoanApplicationPaymentItemDto, LoanApplicationResponseDto, PublicLoanApplicationResponseDto } from '@core/modules/lending/dto/response';
-import { ContactType, LoanApplicationStates, LoanPaymentFrequencyCodes } from '@library/entity/enum';
+import { LoanApplicationUserAssignmentValidation as AssignmentValidation, ContactType, LoanApplicationStates, LoanApplicationUserAssignmentValidationType, LoanApplicationValidationRejectType, LoanFeeModeCodes, LoanPaymentFrequency, LoanPaymentFrequencyCodes, LoanApplicationValidationRejectTypes as RejectionMessage } from '@library/entity/enum';
 import { DtoMapper } from '@library/entity/mapping/dto.mapper';
 import { EntityMapper } from '@library/entity/mapping/entity.mapper';
 import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
 import { LoanApplication } from '@library/shared/domain/entity';
+import { ScheduleService } from '@library/shared/service';
+import { PlanPreviewOutputItem } from '@library/shared/type/lending';
 import { Injectable, Logger } from '@nestjs/common';
+import { addDays } from 'date-fns';
 import { InvalidUserForLoanApplicationException } from './exceptions';
 import { LendingLogic } from './lending.logic';
+import { LoansService } from './loans.service';
 
 
 //TODO: Security check missing attributes to protect against unauthorized access
@@ -18,7 +22,7 @@ export class LoanApplicationsService {
 
   constructor(
     private readonly domainServices: IDomainServices,
-
+    private readonly loanService: LoansService
   ) {}
 
   /**
@@ -28,26 +32,22 @@ export class LoanApplicationsService {
    * @param id - The ID of the loan application
    * @returns Promise<LoanApplicationResponseDto | null> - The loan application DTO or null
    */
-  public async getLoanApplicationById(id: string): Promise<LoanApplicationResponseDto | null> {
-    const result = await this.domainServices.loanServices.getLoanApplicationById(id);
-
-    if (!result) throw new EntityNotFoundException(`Loan application: ${id} not found`);
+  public async getLoanApplicationById(id: string, userId: string): Promise<LoanApplicationResponseDto | null> {
+    const result = await this.getLoanApplication(id, userId);
 
     const resultDto = DtoMapper.toDto(result, LoanApplicationResponseDto);
     if (!resultDto) {
       return null;
     }
 
-    resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
+    resultDto.loanPaymentSchedule = this.previewLoanApplicationPayments(resultDto);
 
     return resultDto;
   }
 
   public async getPublicLoanApplicationById(id: string): Promise<PublicLoanApplicationResponseDto | null> {
-    const result = await this.domainServices.loanServices.getLoanApplicationById(id);
+    const result = await this.getLoanApplication(id, null, AssignmentValidation.Skip, RejectionMessage.View);
 
-    if (!result) throw new EntityNotFoundException(`Loan application: ${id} not found`);
-    
     return DtoMapper.toDto(result, PublicLoanApplicationResponseDto);
   }
 
@@ -71,14 +71,12 @@ export class LoanApplicationsService {
           return null;
         }
 
-        dto.loanPaymentSchedule = this.generatePaymentSchedule(dto);
+        dto.loanPaymentSchedule = this.previewLoanApplicationPayments(dto);
 
         return dto;
       })
       .filter((dto): dto is LoanApplicationResponseDto => dto !== null);
   }
-
-  //TODO: Mike, can you review this to confirm the work is done at the right level?
 
   /**
    * Creates a new loan application for the specified user.
@@ -101,8 +99,7 @@ export class LoanApplicationsService {
     loanApplicationInput.borrowerFirstName = user.firstName;
     loanApplicationInput.borrowerLastName = user.lastName;
 
-    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    loanApplicationInput.loanFirstPaymentDate = loanApplicationInput.loanFirstPaymentDate || thirtyDaysFromNow;
+    loanApplicationInput.loanFirstPaymentDate = this.getFirstPaymentDate(loanApplicationInput.loanFirstPaymentDate);
 
     const result = await this.domainServices.loanServices.createLoanApplication(loanApplicationInput);
     if (!result) throw new EntityFailedToUpdateException('Failed to create Loan application');
@@ -110,7 +107,7 @@ export class LoanApplicationsService {
     const resultDto = DtoMapper.toDto(result, LoanApplicationResponseDto);
     if (!resultDto) throw new EntityFailedToUpdateException('Failed to create Loan application');
     
-    resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
+    resultDto.loanPaymentSchedule = this.previewLoanApplicationPayments(resultDto);
 
     return resultDto;
   }
@@ -129,9 +126,10 @@ export class LoanApplicationsService {
     this.logger.debug(`update: Updating loan application ${id}:`, data);
 
     // Validate that the loan application belongs to the user (as a borrower or lender)
-    await this.validateApplicationLoanUser(id, userId);
+    await this.getLoanApplication(id, userId, AssignmentValidation.Any, RejectionMessage.Update);
 
-    const loanFee = this.calculateLoanFee(data);
+    const { loanAmount } = data;
+    const loanFee = loanAmount ? ScheduleService.previewFeeAmount(loanAmount) : 0;
     data.loanServiceFee = loanFee;
 
     const loanApplicationInput = EntityMapper.toEntity(data, LoanApplication);
@@ -144,7 +142,7 @@ export class LoanApplicationsService {
       return null;
     }
 
-    resultDto.loanPaymentSchedule = this.generatePaymentSchedule(resultDto);
+    resultDto.loanPaymentSchedule = this.previewLoanApplicationPayments(resultDto);
 
     return resultDto;
   }
@@ -158,34 +156,31 @@ export class LoanApplicationsService {
    * @param userId - The user performing the action (borrower)
    * @param id - The loan application ID
    * @returns Promise<void>
+   * 
+   * @remarks
+   * This method is called when the borrower completes the application and should send to the Lender. No lender is assigned yet.
    */
-  //TODO: submitLoanApplication is called when the borrower completes the application and should send to the Lender. No lender is assigned yet.
   public async submitLoanApplication(userId: string, id: string): Promise<void> {
     this.logger.debug(`submitLoanApplication: Submitting loan application ${id}`);
 
-    //TODO: validateApplicationLoanUser performs a getLoanApplicationById and then we perform the same request again ??
-    await this.validateApplicationLoanUser(id, userId);
+    const loanApplication = await this.getLoanApplication(id, userId, AssignmentValidation.Borrower, RejectionMessage.Submit);
 
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(id);
-    //TODO: Should we throw an error if the loan application is not found?
-
-    if (!loanApplication!.lenderEmail && !loanApplication!.lenderFirstName) {
+    const { lenderEmail, lenderFirstName } = loanApplication;
+    
+    if (!lenderEmail || !lenderFirstName) {
       throw new MissingInputException('Lender information is required to submit loan application');
     }
 
-    //TODO: The lender may or may not have a Zirtue account yet... regardless, we just need to send a notification to the lender
-    const lenderUser = await this.domainServices.userServices.getUserByContact(
-      loanApplication!.lenderEmail!,
-      ContactType.EMAIL
-    );
+    // The lender may or may not have a Zirtue account yet... regardless, we just need to send a notification to the lender
+    const lenderUser = await this.domainServices.userServices.getUserByContact(lenderEmail, ContactType.EMAIL);
     const status = LoanApplicationStates.Submitted;
     const borrowerSubmittedAt = new Date();
     if (lenderUser && lenderUser.id) {
-      this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} was found. Will assign lenderId now.`);
+      this.logger.debug(`Lender with email ${lenderEmail} was found. Will assign lenderId now.`);
       await this.domainServices.loanServices.updateLoanApplication(id, { lenderId: lenderUser.id, status, borrowerSubmittedAt });
     } else {
-      // TODO: Assign lenderId once the lender creates/authenticates a Zirtue account
-      this.logger.debug(`Lender with email ${loanApplication!.lenderEmail} not found. Will assign lenderId after registration.`);
+      // Assign lenderId once the lender creates/authenticates a Zirtue account
+      this.logger.debug(`Lender with email ${lenderEmail} not found. Will assign lenderId after registration.`);
       await this.domainServices.loanServices.updateLoanApplication(id, { status, borrowerSubmittedAt });
     }
 
@@ -203,19 +198,15 @@ export class LoanApplicationsService {
   public async acceptLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`acceptLoanApplication: Accepting loan application ${loanApplicationId} by user ${userId}`);
 
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
-    if (!loanApplication) {
-      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
-    }
+    const loanApplication = await this.getLoanApplication(loanApplicationId, userId, AssignmentValidation.Lender, RejectionMessage.Accept);
 
     // Validate status to avoid creating double loans
     if (loanApplication.status === LoanApplicationStates.Approved) {
       this.logger.warn(`Loan application ${loanApplicationId} is already approved`);
+      // TODO: New Exception class here. It is not User error
       throw new InvalidUserForLoanApplicationException('This loan application has already been accepted');
     }
 
-    // Validate that the user is the lender for v1
-    this.validateApplicationLenderUser(loanApplication, userId);
     LendingLogic.validateLoanApplicationForAcceptance(loanApplication);
     const createdLoan = await this.domainServices.loanServices.acceptLoanApplication(loanApplicationId, userId);
     if (!createdLoan) {
@@ -223,10 +214,20 @@ export class LoanApplicationsService {
       throw new EntityFailedToUpdateException('Failed to create loan from application');
     }
 
+    const { id: loanId, state: loanState } = createdLoan;
+
     const status = LoanApplicationStates.Approved;
     await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId });
 
-    this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
+    this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${loanId}`);
+
+    // Immediately advance the loan to the next state
+    const advanceResult = await this.loanService.advanceLoan(loanId, loanState);
+    if (!advanceResult) {
+      this.logger.error(`Failed to advance loan ${loanId} to the next state after acceptance`);
+    } else {
+      this.logger.debug(`Successfully advanced loan ${loanId} to the next state after acceptance`);
+    }
   }
 
   /**
@@ -239,12 +240,9 @@ export class LoanApplicationsService {
    */
   public async rejectLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`rejectLoanApplication: Rejecting loan application ${loanApplicationId}`);
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
-    if (!loanApplication) {
-      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
-    }
-    // Validate that the user is the lender for v1
-    this.validateApplicationLenderUser(loanApplication, userId);
+
+    await this.getLoanApplication(loanApplicationId, userId, AssignmentValidation.Lender, RejectionMessage.Reject);
+    
     const status = LoanApplicationStates.Rejected;
 
     const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId });
@@ -265,12 +263,7 @@ export class LoanApplicationsService {
    */
   public async cancelLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`cancelLoanApplication: Cancelling loan application ${loanApplicationId}`);
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
-    if (!loanApplication) {
-      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
-    }
-    // Validate that the user is the borrower for v1
-    await this.validateApplicationLoanUser(loanApplicationId, userId);
+    await this.getLoanApplication(loanApplicationId, userId, AssignmentValidation.Borrower, RejectionMessage.Cancel);
 
     const status = LoanApplicationStates.Cancelled;
 
@@ -281,80 +274,75 @@ export class LoanApplicationsService {
     this.logger.debug(`Successfully cancelled loan application ${loanApplicationId}`);
   } 
 
-  private async validateApplicationLoanUser(id: string, userId: string) {
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(id);
-    if (!loanApplication) throw new EntityNotFoundException(`Loan application: ${id} not found`);
-
-    if (loanApplication.borrowerId !== userId && loanApplication.lenderId !== userId)
-      throw new InvalidUserForLoanApplicationException('You are not authorized to update this loan application');
-  }
-
-  private validateApplicationLenderUser(loanApplication: LoanApplication, userId: string): void {
-    if (loanApplication.lenderId !== userId) {
-      this.logger.warn(`${userId} is not authorized to accept or reject loan application ${loanApplication.id}`);
-      throw new InvalidUserForLoanApplicationException('You are not authorized to accept or reject this loan application');
-    }
-  }
-
   // #region Loan Application Payments (temporary implementation until the backend team revisits)
 
-  // TODO: This is a placeholder for the actual loan fee calculation
-  private calculateLoanFee(data: Partial<LoanApplicationRequestDto>): number {
-    // Round to 2 decimal places
-    const loanFee = (data.loanAmount || 0) * 0.05;
-    const loanFeeRounded = Math.round(loanFee * 100) / 100;
-
-    return loanFeeRounded;
+  private previewLoanApplicationPayments(input: LoanApplicationResponseDto): LoanApplicationPaymentItemDto[] {
+    const repaymentStartFallback = addDays(new Date(), 30);
+    const preview = ScheduleService.previewApplicationPlan({
+      amount: input.loanAmount || 0,
+      paymentsCount: input.loanPayments || 0,
+      paymentFrequency: (input.loanPaymentFrequency as LoanPaymentFrequency) || LoanPaymentFrequencyCodes.Monthly,
+      feeAmount: input.loanServiceFee,
+      feeMode: LoanFeeModeCodes.Standard,
+      repaymentStartDate: input.loanFirstPaymentDate || repaymentStartFallback,
+    });
+    return this.mapPaymentsPreviewToDto(preview);
   }
 
-
-  //TODO: This is a placeholder for future actual implementation of payment schedule generation
-  private generatePaymentSchedule(loanApplication: LoanApplicationResponseDto): LoanApplicationPaymentItemDto[] {
-    const { loanPaymentFrequency, loanAmount, loanServiceFee, loanPayments, loanFirstPaymentDate } = loanApplication;
-    if (!loanPaymentFrequency || !loanAmount || !loanServiceFee || !loanPayments || !loanFirstPaymentDate || loanPayments <= 0) {
-      return [];
-    }
-
-    if (loanPaymentFrequency === LoanPaymentFrequencyCodes.OneTime) {
-      return [{
-        paymentDate: loanFirstPaymentDate,
-        paymentAmount: loanAmount + loanServiceFee,
-        loanBalance: loanAmount + loanServiceFee,
-      }];
-    }
-
-    if (loanPaymentFrequency !== LoanPaymentFrequencyCodes.Monthly) {
-      this.logger.warn(`Unsupported loan payment frequency: ${loanPaymentFrequency}`);
-      return [];
-    }
-
-    const total = Number(loanAmount) + Number(loanServiceFee);
-    const round = (n: number) => Number(n.toFixed(2));
-    const basePayment = round(total / Number(loanPayments));
-
-    const paymentSchedule: LoanApplicationPaymentItemDto[] = [];
-    let balance = total;
-
-    for (let i = 0; i < loanPayments; i++) {
-      const payment = i === loanPayments - 1 ? round(balance) : basePayment;
-
-      paymentSchedule.push({
-        paymentDate: this.addMonths(loanFirstPaymentDate, i),
-        paymentAmount: payment,
-        loanBalance: balance,
-      });
-      balance = round(balance - payment);
-    }
-
-    return paymentSchedule;
+  private mapPaymentsPreviewToDto(payments: PlanPreviewOutputItem[]): LoanApplicationPaymentItemDto[] { 
+    return payments
+      .map((p) => ({
+        paymentDate: p.paymentDate,
+        paymentAmount: p.amount + p.feeAmount,
+        loanBalance: p.endingBalance,
+      }))
+      .sort((a, b) => a.paymentDate.getTime() - b.paymentDate.getTime());
   }
 
-  // helper
-  public addMonths(d: Date, months: number): Date {
-    const res = new Date(d);
-    res.setMonth(res.getMonth() + months);
-    return res;
+  /**
+   * Gets the first payment date for the loan application.
+   * If no date is provided, defaults to 30 days from now.
+   */
+  private getFirstPaymentDate(date: Date | null): Date {
+    if (date) return date;
+
+    // Default to 30 days from now 
+    return addDays(new Date(), 30); 
   }
 
   // #endregion  
+
+  /**
+   * Retrieves a loan application by its ID and validates the user's assignment.
+   * Throws exceptions if the application is not found or if the user is not allowed to access it.
+   *
+   * @param applicationId - The ID of the loan application
+   * @param userId - The ID of the user (borrower or lender)
+   * @param assignment - The type of assignment validation to perform
+   * @param intent - The intent for which the validation is being performed
+   * @returns Promise<LoanApplication> - The loan application entity
+   */
+  private async getLoanApplication(
+    applicationId: string,
+    userId: string | null,
+    assignment: LoanApplicationUserAssignmentValidationType = AssignmentValidation.Any,
+    intent: LoanApplicationValidationRejectType = RejectionMessage.View
+  ): Promise<LoanApplication> {
+    
+    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(applicationId);
+
+    if (!loanApplication) {
+      this.logger.error(`Loan application with ID ${applicationId} not found`);
+      throw new EntityNotFoundException(`Loan application with ID ${applicationId} not found`);
+    }
+
+    this.domainServices.loanServices.validateLoanApplicationUserAssignment(
+      loanApplication,
+      userId,
+      assignment,
+      intent
+    );
+
+    return loanApplication;
+  }
 }

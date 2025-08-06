@@ -66,7 +66,7 @@ async function bootstrap() {
 
 function configureSwagger(app: INestApplication<any>) {
   const config = new DocumentBuilder()
-    //.addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
     .setTitle('ZNG Core API')
     .setDescription('Zirtue Next Generation Platform Core API')
     .setVersion('1.0')

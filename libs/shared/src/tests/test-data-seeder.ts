@@ -1,8 +1,8 @@
-import { DataSource } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
+import { LoanClosureCodes, LoanPaymentFrequencyCodes, LoanStateCodes, LoanTypeCodes } from '@library/entity/enum';
 import { RegistrationStatus } from '@library/entity/enum/registration.status';
 import { VerificationStatus } from '@library/entity/enum/verification.status';
-import { LoanStateCodes, LoanTypeCodes, LoanPaymentFrequencyCodes, LoanClosureCodes } from '@library/entity/enum';
+import { DataSource } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Registry of pre-seeded test data IDs for consistent reference across tests
@@ -192,26 +192,6 @@ export class TestDataSeeder {
       timestamp,
     ]);
 
-    // Requested loan - for initiation testing (loan request created)
-    await dataSource.query(`
-      INSERT INTO core.loans (
-        id, borrower_id, lender_id, amount, type, state, closure_type,
-        payments_count, payment_frequency, created_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-      ) ON CONFLICT (id) DO NOTHING
-    `, [
-      FOUNDATION_TEST_IDS.loans.requestedLoan,
-      FOUNDATION_TEST_IDS.users.borrowerUser,
-      FOUNDATION_TEST_IDS.users.lenderUser,
-      2000.00,
-      LoanTypeCodes.Personal,
-      LoanStateCodes.Requested,
-      LoanClosureCodes.Open,
-      24,
-      LoanPaymentFrequencyCodes.Monthly,
-      timestamp,
-    ]);
 
     // Repaid loan - for historical testing (loan fully repaid)
     await dataSource.query(`

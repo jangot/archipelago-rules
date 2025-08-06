@@ -1,10 +1,8 @@
 import { UUIDParam } from '@library/shared/common/pipe/uuidparam';
 import { IRequest } from '@library/shared/type';
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Logger, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards';
-import { LoanCreateRequestDto, LoanProposeRequestDto } from './dto/request';
-import { LoanResponseDto } from './dto/response';
 import { LoansService } from './loans.service';
 
 @Controller('loans')
@@ -44,41 +42,12 @@ export class LoansController {
     return;
   }
 
-  // create new loan
-  // from type selection until KYC
-  @Post()
-  @ApiOperation({ summary: 'Create a new loan (from type selection until KYC)', description: 'Create a new loan (from type selection until KYC)' })
-  @ApiCreatedResponse({ description: 'Loan created successfully', type: LoanResponseDto })
-  public async create(@Req() request: IRequest, @Body() input: LoanCreateRequestDto): Promise<LoanResponseDto | null> {
-    // TODO: make a validation stuff here
-    const userId = request.user!.id;
-
-    this.logger.debug('Creating loan', { input });
-    return this.loansService.createLoan(userId, input);
-  }
-
   // Close loan and provide details required (closure reason, etc.)
   @Patch('close/:id')
   @ApiOperation({ summary: 'Close a loan and provide required details (e.g. closure reason)', description: 'Close a loan and provide required details (e.g. closure reason)' })
   public async closeLoan(@UUIDParam('id') id: string, @Body() input: string): Promise<unknown> {
     this.logger.debug(`Closing loan with ID: ${id}`, { input });
     return;
-  }
-
-  // Connect bank account to loan and send to target for acceptance
-  @Patch(':id')
-  @ApiOperation({ summary: 'Connect a bank account to the loan and send it to the target for acceptance', description: 'Connect a bank account to the loan and send it to the target for acceptance' })
-  public async connectAndSend(@Req() request: IRequest, @UUIDParam('id') id: string, @Body() input: LoanProposeRequestDto): Promise<unknown> {
-    const userId = request.user!.id;
-
-    if (!id) {
-      throw new HttpException('Loan Id is required', HttpStatus.BAD_REQUEST);
-    }
-    if (!input || !input.sourcePaymentAccountId) {
-      throw new HttpException('Missing Payment Account Id', HttpStatus.BAD_REQUEST);
-    }
-    this.logger.debug('Connecting and sending loan', { id, input });
-    return this.loansService.proposeLoan(userId, id, input.sourcePaymentAccountId);
   }
 
   // TODO: is there real need of generic 'update' endpoint?
