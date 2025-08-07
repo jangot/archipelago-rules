@@ -149,40 +149,44 @@ export class LoanApplicationsService {
 
 
   /**
-   * Submits the loan application by updating its status to 'sent_to_lender'.
-   * Creates a loan invitee for the lender and attempts to assign them to the loan application.
-   * Validates that the loan application exists and has required lender information.
+   * Submits the loan application.
+   * This is called when the borrower completes the application and needs it to be sent to the Lender.
+   * Validates the loan application exists and has required lender information.
+   * This method is only called by the borrower when they complete the application and need it to be sent to the Lender.
    *
    * @param userId - The user performing the action (borrower)
    * @param id - The loan application ID
    * @returns Promise<void>
    * 
    * @remarks
-   * This method is called when the borrower completes the application and should send to the Lender. No lender is assigned yet.
+   * This method is only called by the borrower when they complete the application and need it to be sent to the Lender.
    */
   public async submitLoanApplication(userId: string, id: string): Promise<void> {
-    this.logger.debug(`submitLoanApplication: Submitting loan application ${id}`);
+    this.logger.debug(`submitLoanApplication: Submitting loan application ${id} from borrower ${userId}`);
 
     const loanApplication = await this.getLoanApplication(id, userId, AssignmentValidation.Borrower, RejectionMessage.Submit);
 
     const { lenderEmail, lenderFirstName } = loanApplication;
-    
+
     if (!lenderEmail || !lenderFirstName) {
       throw new MissingInputException('Lender information is required to submit loan application');
     }
 
     // The lender may or may not have a Zirtue account yet... regardless, we just need to send a notification to the lender
     const lenderUser = await this.domainServices.userServices.getUserByContact(lenderEmail, ContactType.EMAIL);
+
     const status = LoanApplicationStates.Submitted;
+    const lenderId = lenderUser ? lenderUser.id : null;
     const borrowerSubmittedAt = new Date();
+
     if (lenderUser && lenderUser.id) {
       this.logger.debug(`Lender with email ${lenderEmail} was found. Will assign lenderId now.`);
-      await this.domainServices.loanServices.updateLoanApplication(id, { lenderId: lenderUser.id, status, borrowerSubmittedAt });
     } else {
-      // Assign lenderId once the lender creates/authenticates a Zirtue account
+      // lenderId will be assigned when the lender accepts or rejects the loan application
       this.logger.debug(`Lender with email ${lenderEmail} not found. Will assign lenderId after registration.`);
-      await this.domainServices.loanServices.updateLoanApplication(id, { status, borrowerSubmittedAt });
     }
+
+    await this.domainServices.loanServices.updateLoanApplication(id, { status, borrowerSubmittedAt, lenderId });
 
     // TODO: Queue notification to send email to the lender
   }
@@ -190,6 +194,7 @@ export class LoanApplicationsService {
   /**
    * Accepts a loan application by creating a loan from the application data.
    * Validates all required information is present before creating the loan.
+   * This method is only called by the lender when they choose to accept the application.
    *
    * @param userId - The ID of the user accepting the application (lender)
    * @param loanApplicationId - The ID of the loan application to accept
@@ -200,12 +205,26 @@ export class LoanApplicationsService {
 
     const loanApplication = await this.getLoanApplication(loanApplicationId, userId, AssignmentValidation.Lender, RejectionMessage.Accept);
 
+    // If the lenderId has already been set by the loan application submission because the lender already has a Zirtue account, let's make sure they match.
+    if (loanApplication.lenderId && loanApplication.lenderId !== userId) {
+      this.logger.warn(`User ${userId} is not authorized to accept loan application ${loanApplicationId}`);
+      throw new InvalidUserForLoanApplicationException('You are not authorized to accept this loan application');
+    }
+
+    //TODO: this validation might be too simplistic and could be check through a non-null value of the loanId field instead
     // Validate status to avoid creating double loans
     if (loanApplication.status === LoanApplicationStates.Approved) {
       this.logger.warn(`Loan application ${loanApplicationId} is already approved`);
       // TODO: New Exception class here. It is not User error
       throw new InvalidUserForLoanApplicationException('This loan application has already been accepted');
     }
+
+    //TODO: Need to talk about the expectation of when the lenderId is set
+    loanApplication.lenderId = userId;
+
+    //TODO: Setting a non null value of the following fields to pass the validation. Needs to be removed once we get paymentId's working
+    loanApplication.lenderPaymentAccountId = loanApplication.lenderPaymentAccountId || 'placeholder';
+    loanApplication.borrowerPaymentAccountId = loanApplication.borrowerPaymentAccountId || 'placeholder';
 
     LendingLogic.validateLoanApplicationForAcceptance(loanApplication);
     const createdLoan = await this.domainServices.loanServices.acceptLoanApplication(loanApplicationId, userId);
@@ -217,7 +236,10 @@ export class LoanApplicationsService {
     const { id: loanId, state: loanState } = createdLoan;
 
     const status = LoanApplicationStates.Approved;
-    await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId });
+    const lenderRespondedAt = new Date();
+    const lenderId = userId; // The lender is the user accepting the loan application
+
+    await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId, lenderRespondedAt, loanId });
 
     this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${loanId}`);
 
@@ -233,7 +255,8 @@ export class LoanApplicationsService {
   /**
    * Rejects a loan application by updating its status to 'rejected'.
    * Validates that the user is authorized to perform the action.
-   *
+   * This method is only called by the lender when they choose to reject the application.
+   * 
    * @param userId - The user performing the action
    * @param loanApplicationId - The loan application ID
    * @returns Promise<void>
@@ -241,41 +264,59 @@ export class LoanApplicationsService {
   public async rejectLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`rejectLoanApplication: Rejecting loan application ${loanApplicationId}`);
 
+    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
+    if (!loanApplication) {
+      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
+    }
+
+
     await this.getLoanApplication(loanApplicationId, userId, AssignmentValidation.Lender, RejectionMessage.Reject);
     
     const status = LoanApplicationStates.Rejected;
-
-    const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId });
+    const lenderRespondedAt = new Date();
+    const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId, lenderRespondedAt });
     if (!result) {
       throw new EntityFailedToUpdateException('Failed to reject Loan application');
     }
 
     this.logger.debug(`Successfully rejected loan application ${loanApplicationId}`);
+
+    //TODO: review to see if we need to notify anyone
   }
 
   /**
    * Cancels a loan application by updating its status to 'cancelled'.
    * Validates that the user is authorized to perform the action.
-   *
+   * This method is only called by the borrower when they choose to cancel the application.
+   * 
    * @param userId - The user performing the action
    * @param loanApplicationId - The loan application ID
    * @returns Promise<void>
    */
   public async cancelLoanApplication(userId: string, loanApplicationId: string): Promise<void> {
     this.logger.debug(`cancelLoanApplication: Cancelling loan application ${loanApplicationId}`);
-    await this.getLoanApplication(loanApplicationId, userId, AssignmentValidation.Borrower, RejectionMessage.Cancel);
+    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(loanApplicationId);
+    if (!loanApplication) {
+      throw new EntityNotFoundException(`Loan application ${loanApplicationId} not found`);
+    }
+
+    if (loanApplication.borrowerId !== userId) {
+      throw new InvalidUserForLoanApplicationException('Only the borrower can cancel the loan application');
+    }
 
     const status = LoanApplicationStates.Cancelled;
-
     const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status });
     if (!result) {
       throw new EntityFailedToUpdateException('Failed to cancel Loan application');
     }
+
     this.logger.debug(`Successfully cancelled loan application ${loanApplicationId}`);
+
+    //TODO: generate notification to whoever needs to be told of this.
   } 
 
-  // #region Loan Application Payments (temporary implementation until the backend team revisits)
-
+  // #region Loan Application Payments
+  //TODO: This is a temporary implementation until the backend team revisits the payment schedule logic.
   private previewLoanApplicationPayments(input: LoanApplicationResponseDto): LoanApplicationPaymentItemDto[] {
     const repaymentStartFallback = addDays(new Date(), 30);
     const preview = ScheduleService.previewApplicationPlan({
