@@ -215,7 +215,8 @@ export class LoanApplicationsService {
 
     //TODO: review because the loan application is not updated until the loan is created.
     const status = LoanApplicationStates.Approved;
-    await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId });
+    const lenderRespondedAt = new Date();
+    await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId, lenderRespondedAt });
 
     this.logger.debug(`Successfully accepted loan application ${loanApplicationId} and created loan ${createdLoan.id}`);
   }
@@ -236,7 +237,8 @@ export class LoanApplicationsService {
     }
     
     const status = LoanApplicationStates.Rejected;
-    const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId });
+    const lenderRespondedAt = new Date();
+    const result = await this.domainServices.loanServices.updateLoanApplication(loanApplicationId, { status, lenderId: userId, lenderRespondedAt });
     if (!result) {
       throw new EntityFailedToUpdateException('Failed to reject Loan application');
     }
