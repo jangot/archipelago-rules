@@ -152,6 +152,7 @@ export class LoanApplicationsService {
    * Submits the loan application.
    * This is called when the borrower completes the application and needs it to be sent to the Lender.
    * Validates the loan application exists and has required lender information.
+   * This method is only called by the borrower when they complete the application and need it to be sent to the Lender.
    *
    * @param userId - The user performing the action (borrower)
    * @param id - The loan application ID
@@ -193,6 +194,7 @@ export class LoanApplicationsService {
   /**
    * Accepts a loan application by creating a loan from the application data.
    * Validates all required information is present before creating the loan.
+   * This method is only called by the lender when they choose to accept the application.
    *
    * @param userId - The ID of the user accepting the application (lender)
    * @param loanApplicationId - The ID of the loan application to accept
@@ -253,7 +255,8 @@ export class LoanApplicationsService {
   /**
    * Rejects a loan application by updating its status to 'rejected'.
    * Validates that the user is authorized to perform the action.
-   *
+   * This method is only called by the lender when they choose to reject the application.
+   * 
    * @param userId - The user performing the action
    * @param loanApplicationId - The loan application ID
    * @returns Promise<void>
@@ -284,7 +287,8 @@ export class LoanApplicationsService {
   /**
    * Cancels a loan application by updating its status to 'cancelled'.
    * Validates that the user is authorized to perform the action.
-   *
+   * This method is only called by the borrower when they choose to cancel the application.
+   * 
    * @param userId - The user performing the action
    * @param loanApplicationId - The loan application ID
    * @returns Promise<void>
@@ -310,18 +314,6 @@ export class LoanApplicationsService {
 
     //TODO: generate notification to whoever needs to be told of this.
   } 
-
-  //TODO: This check should be done in the domain service layer (Alex K deleted this method, so I'll look to delete it after I've completed the merge) 
-  private async validateApplicationLoanUser(id: string, userId: string) {
-    const loanApplication = await this.domainServices.loanServices.getLoanApplicationById(id);
-    if (!loanApplication) throw new EntityNotFoundException(`Loan application: ${id} not found`);
-
-    if (loanApplication.borrowerId === userId) return;
-    if (!loanApplication.lenderId) return;
-    if (loanApplication.lenderId === userId) return;
-
-    throw new InvalidUserForLoanApplicationException('You are not authorized to update this loan application');
-  }
 
   // #region Loan Application Payments
   //TODO: This is a temporary implementation until the backend team revisits the payment schedule logic.
