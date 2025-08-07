@@ -160,11 +160,6 @@ export class LoanApplicationsService {
    * @remarks
    * This method is only called by the borrower when they complete the application and need it to be sent to the Lender.
    */
-  /*
-
-    await this.domainServices.loanServices.updateLoanApplication(id, { status, borrowerSubmittedAt });
-
-  */
   public async submitLoanApplication(userId: string, id: string): Promise<void> {
     this.logger.debug(`submitLoanApplication: Submitting loan application ${id} from borrower ${userId}`);
 
