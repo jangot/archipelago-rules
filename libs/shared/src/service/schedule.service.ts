@@ -5,8 +5,12 @@ import { Logger } from '@nestjs/common';
 import { addMonths, addWeeks } from 'date-fns';
 
 export class ScheduleService {
+
   private readonly logger: Logger = new Logger(ScheduleService.name);
   
+  // TODO: Later might be dynamic based on further stages requirements
+  public static SERVICE_FEE_PERCENTAGE: number = 5;
+
   public static previewRepaymentPlan(input: PlanPreviewInput): PlanPreviewOutputItem[] {
     const payments: PlanPreviewOutputItem[] = [];
     const { amount, paymentsCount, paymentFrequency, feeMode, feeAmount, repaymentStartDate } = input;
@@ -15,7 +19,6 @@ export class ScheduleService {
     // Cuurentrly support only 'Standard' fee type
     if (feeAmount && feeAmount > 0 && feeMode && feeMode !== LoanFeeModeCodes.Standard) return payments;
 
-    // TODO: Move control over that higher?
     const firstPaymentDate = repaymentStartDate || addMonths(new Date(), 1);
 
     // Calculate separate amounts per payment for principal and fees
@@ -56,6 +59,21 @@ export class ScheduleService {
     }
     
     return payments;
+  }
+
+  public static previewFeeAmount(principalAmount: number): number {
+    if (principalAmount <= 0) {
+      return 0;
+    }
+    // Calculate the service fee based on the principal amount
+    const feeAmount = round2(principalAmount * (this.SERVICE_FEE_PERCENTAGE / 100));
+    return feeAmount;
+  }
+
+  public static previewApplicationPlan(input: PlanPreviewInput): PlanPreviewOutputItem[] {
+    const { amount } = input;
+    const feeAmount = this.previewFeeAmount(amount);
+    return this.previewRepaymentPlan({ ...input, feeAmount });
   }
 
   /**

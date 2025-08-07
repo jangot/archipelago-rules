@@ -27,8 +27,8 @@ export class BillerAddress {
   addressLine1: string;
 
   /** Address line 2 */
-  @Column({ type: 'text' })
-  addressLine2: string;
+  @Column({ type: 'text', nullable: true })
+  addressLine2: string | null;
 
   /** City */
   @Column({ type: 'text' })

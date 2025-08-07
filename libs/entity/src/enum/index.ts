@@ -8,11 +8,16 @@ export * from './registration.status';
 
 // #endregion
 
-// #region Loan
+// #region LoanApplication
+export * from './loan-application-allownce-reject.type';
 export * from './loan-application-state.type';
+// #endregion
+
+// #region Loan
 export * from './loan-closure.type';
 export * from './loan-fee-mode';
 export * from './loan-payment-frequency.type';
+export * from './loan-user-assignment-validation.type';
 export * from './loan.assign-intent.type';
 export * from './loan.state';
 export * from './loan.type';

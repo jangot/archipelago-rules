@@ -1,35 +1,16 @@
-import { LoanTypeCodes } from '@library/entity/enum';
-import { Loan } from '@library/shared/domain/entity';
-import { LoanApplication } from '@library/shared/domain/entity/loan-application.entity';
-import { LoanCreateRequestDto } from './dto/request/loan.create.request.dto';
-import { ActionNotAllowedException, BillerNotSelectedException } from './exceptions/loan-domain.exceptions';
 import { MissingInputException } from '@library/shared/common/exception/domain';
+import { LoanApplication } from '@library/shared/domain/entity/loan-application.entity';
 
 export class LendingLogic {
 
   // #region Validation
-  public static validateLoanCreateInput(input: LoanCreateRequestDto): void {
-    const { billerId, type } = input;
-    
-    if (type !== LoanTypeCodes.Personal && !billerId) {
-      throw new BillerNotSelectedException('No billerId provided for Bill Pay Loan');
-    }
-  }
-
-  public static validateLoanProposeInput(userId: string, loan: Loan): void {
-    const { lenderId } = loan;
-    const canBeProposedBy = lenderId;
-
-    if (canBeProposedBy !== userId) {
-      throw new ActionNotAllowedException('Only lender can propose the loan offer');
-    }
-  }
 
   /**
    * Validates that a loan application has all required fields for acceptance.
    * Throws MissingInputException if any required field is missing.
    *
    * @param loanApplication - The loan application entity to validate
+   * @todo TODO: What if just use `validate()` from `class-validator` against specific DTO?
    */
   public static validateLoanApplicationForAcceptance(loanApplication: LoanApplication): void {
     const requiredFields: string[] = [

@@ -1,59 +1,13 @@
-import { LoanState, LoanStateCodes } from '@library/entity/enum';
-import { DtoMapper } from '@library/entity/mapping/dto.mapper';
-import { EntityMapper } from '@library/entity/mapping/entity.mapper';
-import { EntityFailedToUpdateException, EntityNotFoundException, MissingInputException } from '@library/shared/common/exception/domain';
-import { Loan, PaymentAccount } from '@library/shared/domain/entity';
-import { LOAN_RELATIONS } from '@library/shared/domain/entity/relation';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { IDomainServices } from '../domain/idomain.services';
-import { LoanCreateRequestDto } from './dto/request/loan.create.request.dto';
-import { LoanResponseDto } from './dto/response/loan.response.dto';
-import { ActionNotAllowedException } from './exceptions/loan-domain.exceptions';
+import { LoanState } from '@library/entity/enum';
+import { Inject, Injectable } from '@nestjs/common';
 import { ILoanStateManagersFactory } from './interfaces';
-import { LendingLogic } from './lending.logic';
 
 @Injectable()
 export class LoansService {
-  private readonly logger: Logger = new Logger(LoansService.name);
 
   constructor(
-    private readonly domainServices: IDomainServices,
-    private readonly config: ConfigService,
     @Inject(ILoanStateManagersFactory)
     private readonly stateManagerFactory: ILoanStateManagersFactory) {}
-
-  public async createLoan(userId: string, input: LoanCreateRequestDto): Promise<LoanResponseDto | null> {
-    LendingLogic.validateLoanCreateInput(input);
-
-    const loanCreateInput: Partial<Loan> = EntityMapper.toEntity(input, Loan);
-
-    // Link user who created a Loan to lender/borrower side
-    loanCreateInput.lenderId = userId; // Will come from the loan application, refactor still pending
-
-    const result = await this.domainServices.loanServices.createLoan(loanCreateInput);
-    return DtoMapper.toDto(result, LoanResponseDto);
-  }
-
-  public async proposeLoan(userId: string, loanId: string, sourcePaymentAccountId: string): Promise<LoanResponseDto | null> {
-
-    const loan = await this.getLoan(loanId);
-    LendingLogic.validateLoanProposeInput(userId, loan);
-
-    const paymentAccount = await this.getPaymentAccount(sourcePaymentAccountId, userId);
-
-    const updates: Partial<Loan> = {};
-    updates.lenderAccountId = paymentAccount.id; // Will come from the loan application, refactor still pending
-    updates.state = LoanStateCodes.Offered;
-
-    const updateResult = await this.domainServices.loanServices.updateLoan(loan.id, updates);
-    if (!updateResult) {
-      throw new EntityFailedToUpdateException('Failed to update loan');
-    }
-
-    const result = await this.getLoan(loanId);
-    return DtoMapper.toDto(result, LoanResponseDto);
-  }
 
   /**
    * Advances a loan through its state machine lifecycle by delegating to the appropriate state manager.
@@ -84,28 +38,5 @@ export class LoansService {
   public async advanceLoan(loanId: string, currentState?: LoanState): Promise<boolean | null> {
     const manager = await this.stateManagerFactory.getManager(loanId, currentState);
     return manager.advance(loanId);
-  }
-
-  private async getLoan(loanId: string | null): Promise<Loan> {
-    if (!loanId) {
-      throw new MissingInputException('Missing Loan Id');
-    }
-    const loan = await this.domainServices.loanServices.getLoanById(loanId, [LOAN_RELATIONS.Invitee]);
-    if (!loan) {
-      throw new EntityNotFoundException('Loan not found');
-    }
-    return loan;
-  }
-
-  private async getPaymentAccount(accountId: string, ownerId?: string): Promise<PaymentAccount> {
-    const paymentAccount = await this.domainServices.userServices.getPaymentAccountById(accountId);
-    if (!paymentAccount) {
-      throw new EntityNotFoundException('Payment account not found');
-    }
-    if (ownerId && paymentAccount.userId !== ownerId) {
-      throw new ActionNotAllowedException('Payment account does not belong to the user');
-    }
-
-    return paymentAccount;
   }
 }

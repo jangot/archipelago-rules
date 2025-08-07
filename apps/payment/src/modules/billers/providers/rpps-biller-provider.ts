@@ -405,7 +405,7 @@ export class RppsBillerProvider extends BaseBillerProvider {
         billerAddress.externalKey = addressData.addressKey;
         billerAddress.liveDate = new Date(addressData.recordEffectiveDate);
         billerAddress.addressLine1 = addressData.addressLine1;
-        billerAddress.addressLine2 = addressData.addressLine2 || '';
+        billerAddress.addressLine2 = addressData.addressLine2;
         billerAddress.city = addressData.city;
         billerAddress.stateProvinceCode = addressData.stateProvinceCode;
         billerAddress.countryCode = addressData.countryCode;

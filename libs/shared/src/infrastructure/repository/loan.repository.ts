@@ -1,10 +1,9 @@
-import { LoanStateCodes } from '@library/entity/enum';
 import { RepositoryBase } from '@library/shared/common/data/base.repository';
 import { Loan } from '@library/shared/domain/entity';
+import { LoanRelation } from '@library/shared/domain/entity/relation';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LoanRelation } from '@library/shared/domain/entity/relation';
 
 @Injectable()
 export class LoanRepository extends RepositoryBase<Loan> {
@@ -32,6 +31,6 @@ export class LoanRepository extends RepositoryBase<Loan> {
   public async createLoan(loan: Partial<Loan>): Promise<Loan | null> {
     this.logger.debug('createLoan:', loan);
 
-    return this.insert({ ...loan, state: LoanStateCodes.Accepted }, true);
+    return this.insert(loan, true);
   }
 }

@@ -30,7 +30,7 @@ export class LoanResponseDto {
   @ApiProperty({ description: 'Type of the loan', enum: LoanTypeCodes, example: LoanTypeCodes.DirectBillPay })
   type: LoanType;
 
-  @ApiProperty({ description: 'Current state of the loan', enum: LoanStateCodes, example: LoanStateCodes.Created })
+  @ApiProperty({ description: 'Current state of the loan', enum: LoanStateCodes, example: LoanStateCodes.Accepted })
   state: LoanState;
 
   @ApiProperty({ description: 'Closure type of the loan', enum: LoanClosureCodes, example: LoanClosureCodes.PaidOut, required: false })

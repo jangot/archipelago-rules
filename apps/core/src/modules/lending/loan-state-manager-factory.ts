@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { ILoanStateManager, ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
-import { LoanState } from '@library/entity/enum';
-import { IDomainServices } from '../domain/idomain.services';
+import { LoanState, LoanStateCodes } from '@library/entity/enum';
 import { EntityNotFoundException } from '@library/shared/common/exception/domain';
+import { Injectable } from '@nestjs/common';
+import { IDomainServices } from '../domain/idomain.services';
+import { ILoanStateManager, ILoanStateManagers, ILoanStateManagersFactory } from './interfaces';
 
 @Injectable()
 export class LoanStateManagersFactory implements ILoanStateManagersFactory {
@@ -18,39 +18,35 @@ export class LoanStateManagersFactory implements ILoanStateManagersFactory {
   }
 
   private getManagerByState(loanState: LoanState): ILoanStateManager {
+    // TODO: I don't like this switch - it makes Factory so DI fat (all managers are injected into it on creation)
     switch (loanState) {
-      case 'accepted':
+      case LoanStateCodes.Accepted:
         return this.managers.accepted;
 
-      case 'funding':
+      case LoanStateCodes.Funding:
         return this.managers.funding;
-      case 'funding_paused':
+      case LoanStateCodes.FundingPaused:
         return this.managers.fundingPaused;
-      case 'funded':
+      case LoanStateCodes.Funded:
         return this.managers.funded;
 
-      case 'disbursing':
+      case LoanStateCodes.Disbursing:
         return this.managers.disbursing;
-      case 'disbursing_paused':
+      case LoanStateCodes.DisbursingPaused:
         return this.managers.disbursingPaused;
-      case 'disbursed':
+      case LoanStateCodes.Disbursed:
         return this.managers.disbursed;
 
-      case 'repaying':
+      case LoanStateCodes.Repaying:
         return this.managers.repaying;
-      case 'repayment_paused':
+      case LoanStateCodes.RepaymentPaused:
         return this.managers.repaymentPaused;
-      case 'repaid':
+      case LoanStateCodes.Repaid:
         return this.managers.repaid;
 
-      case 'closed':
+      case LoanStateCodes.Closed:
         return this.managers.closed;
-
-      case 'created':
-      case 'requested':
-      case 'offered':
-      case 'borrower_assigned':
-      case 'lender_assigned':
+      
       default:
         throw new Error(`Manager for loan state '${loanState}' is not implemented yet`);
     }
