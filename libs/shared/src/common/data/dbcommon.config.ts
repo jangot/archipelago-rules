@@ -53,14 +53,14 @@ export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOp
   };
 }
 
-// 
+//
 /**
  * Generates TypeORM module configuration for async database connections.
- * 
+ *
  * This function creates a TypeORM module configuration that uses the ConfigService
  * to retrieve database connection parameters at runtime. It also sets up
  * transactional data source support using the TypeORM Transactional decorator library.
- * 
+ *
  * @param options - The database configuration options
  * @param options.entities - The entity classes to be included in the connection
  * @param options.schema - The database schema to use (optional for single connection)
@@ -69,7 +69,7 @@ export function DbConfiguration(options: DatabaseConfigOptions): TypeOrmModuleOp
  */
 export function TypeOrmModuleConfiguration(options: BaseDatabaseConfigOptions): TypeOrmModuleAsyncOptions {
   const { entities, schema } = options;
-  
+
   return {
     imports: [ConfigModule],
     inject: [ConfigService],
@@ -79,7 +79,7 @@ export function TypeOrmModuleConfiguration(options: BaseDatabaseConfigOptions): 
       if (!options) {
         throw new Error('No Datasource options for TypeOrmModule provided');
       }
-    
+
       // Build the DataSource and add Transactional support
       const dataSource = addTransactionalDataSource(new DataSource(options));
       // Initialize the DataSource
@@ -88,7 +88,7 @@ export function TypeOrmModuleConfiguration(options: BaseDatabaseConfigOptions): 
       // Run pre-initialization SQL
 
       // Run migrations
-      //await dataSource.runMigrations();
+      await dataSource.runMigrations();
 
       return dataSource;
     },
@@ -98,11 +98,11 @@ export function TypeOrmModuleConfiguration(options: BaseDatabaseConfigOptions): 
 /**
  * Generates TypeORM module configuration for multiple schemas in a single connection.
  * This is the recommended approach for PostgreSQL with multiple schemas.
- * 
+ *
  * @param allEntities - All entity classes from all schemas
  * @returns TypeOrmModuleAsyncOptions configured for dependency injection with transaction support
  */
- 
+
 export function SingleDataSourceConfiguration(allEntities: DatabaseConfigEntities): TypeOrmModuleAsyncOptions {
   return TypeOrmModuleConfiguration({ entities: allEntities });
 }
