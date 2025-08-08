@@ -67,10 +67,10 @@ function buildMigrationsToTypeORM() {
 }
 
 /**
- * Converts a single migration to TypeORM format
+ * Build a single migration to TypeORM format
  */
 function convertMigrationToTypeORM(migrationName, upFile, downFile, sourceDir, outputDir) {
-  console.log(`Converting migration: ${migrationName}`);
+  console.log(`Build migration: ${migrationName}`);
 
   // Read up file content
   const upContent = fs.readFileSync(path.join(sourceDir, upFile), 'utf8');
@@ -162,29 +162,102 @@ module.exports = ${className};
 }
 
 /**
- * Processes SQL content and converts comments to JavaScript format
+ * Processes SQL content and Build comments to JavaScript format
+ *
+ * This function handles multi-line SQL commands by:
+ * 1. Accumulating SQL lines until a semicolon is found (end of command)
+ * 2. Properly handling SQL comments (-- and multi-line comments)
+ * 3. Converting SQL comments to JavaScript comments
+ * 4. Escaping backticks in SQL for template literals
  */
 function processSQLWithComments(sqlContent) {
   const lines = sqlContent.split('\n');
   const result = [];
+  let currentQuery = '';
+  let inComment = false;
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmedLine = line.trim();
 
     if (!trimmedLine) {
-      continue; // Skip empty lines
+      // Empty line - if we have a current query, add it
+      if (currentQuery.trim()) {
+        const escapedQuery = currentQuery.trim().replace(/`/g, '\\`');
+        result.push(`    await queryRunner.query(\`${escapedQuery}\`);`);
+        currentQuery = '';
+      }
+      continue;
     }
 
     // Check if line starts with SQL comment (--)
     if (trimmedLine.startsWith('--')) {
+      // If we have a current query, add it first
+      if (currentQuery.trim()) {
+        const escapedQuery = currentQuery.trim().replace(/`/g, '\\`');
+        result.push(`    await queryRunner.query(\`${escapedQuery}\`);`);
+        currentQuery = '';
+      }
+
       // Convert SQL comment to JavaScript comment
       const comment = trimmedLine.substring(2).trim();
       result.push(`    // ${comment}`);
-    } else {
-      // Regular SQL query
-      const escapedLine = trimmedLine.replace(/`/g, '\\`');
-      result.push(`    await queryRunner.query(\`${escapedLine}\`);`);
+      continue;
     }
+
+    // Check for multi-line comment start
+    if (trimmedLine.includes('/*')) {
+      inComment = true;
+
+      // If we have a current query, add it first
+      if (currentQuery.trim()) {
+        const escapedQuery = currentQuery.trim().replace(/`/g, '\\`');
+        result.push(`    await queryRunner.query(\`${escapedQuery}\`);`);
+        currentQuery = '';
+      }
+
+      // Find comment end on same line or continue to next lines
+      const commentEndIndex = trimmedLine.indexOf('*/');
+      if (commentEndIndex !== -1) {
+        inComment = false;
+        // Extract text after comment end
+        const afterComment = trimmedLine.substring(commentEndIndex + 2).trim();
+        if (afterComment) {
+          currentQuery += afterComment + ' ';
+        }
+      }
+      continue;
+    }
+
+    // Check for multi-line comment end
+    if (inComment) {
+      const commentEndIndex = trimmedLine.indexOf('*/');
+      if (commentEndIndex !== -1) {
+        inComment = false;
+        // Extract text after comment end
+        const afterComment = trimmedLine.substring(commentEndIndex + 2).trim();
+        if (afterComment) {
+          currentQuery += afterComment + ' ';
+        }
+      }
+      continue;
+    }
+
+    // Regular SQL line - add to current query
+    currentQuery += line + ' ';
+
+    // Check if this line ends with semicolon (end of SQL command)
+    if (trimmedLine.endsWith(';')) {
+      const escapedQuery = currentQuery.trim().replace(/`/g, '\\`');
+      result.push(`    await queryRunner.query(\`${escapedQuery}\`);`);
+      currentQuery = '';
+    }
+  }
+
+  // Handle any remaining query without semicolon
+  if (currentQuery.trim()) {
+    const escapedQuery = currentQuery.trim().replace(/`/g, '\\`');
+    result.push(`    await queryRunner.query(\`${escapedQuery}\`);`);
   }
 
   return result;

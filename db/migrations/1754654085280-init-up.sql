@@ -1,5 +1,30 @@
 -- Create tables
-CREATE TABLE "core"."users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "first_name" text, "last_name" text, "date_of_birth" date, "pending_email" text, "email" text, "pending_phone_number" text, "phone_number" text, "deleted_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "registration_status" text NOT NULL DEFAULT 'notRegistered', "onboard_status" text, "address_line1" text, "address_line2" text, "city" text, "state" text, "zip_code" text, "verification_type" text, "secret" text, "secret_expires_at" TIMESTAMP WITH TIME ZONE, "verification_status" text NOT NULL DEFAULT 'notVerified', "verification_attempts" integer NOT NULL DEFAULT '0', "verification_locked_until" TIMESTAMP WITH TIME ZONE, CONSTRAINT "users_email_key" UNIQUE ("email") WHERE "email" IS NOT NULL, CONSTRAINT "users_phone_number_key" UNIQUE ("phone_number") WHERE "phone_number" IS NOT NULL, CONSTRAINT "core.users_id_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "core"."users"
+    (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "first_name" text, "last_name" text,
+        "date_of_birth" date, "pending_email" text,
+        "email" text, "pending_phone_number" text,
+        "phone_number" text,
+        "deleted_at" TIMESTAMP WITH TIME ZONE,
+        "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        "registration_status" text NOT NULL DEFAULT 'notRegistered',
+        "onboard_status" text,
+        "address_line1" text,
+        "address_line2" text,
+        "city" text,
+        "state" text,
+        "zip_code" text,
+        "verification_type" text,
+        "secret" text,
+        "secret_expires_at" TIMESTAMP WITH TIME ZONE,
+        "verification_status" text NOT NULL DEFAULT 'notVerified',
+        "verification_attempts" integer NOT NULL DEFAULT '0',
+        "verification_locked_until" TIMESTAMP WITH TIME ZONE,
+        CONSTRAINT "users_email_key" UNIQUE ("email"),
+        CONSTRAINT "users_phone_number_key" UNIQUE ("phone_number"),
+        CONSTRAINT "core.users_id_pkey" PRIMARY KEY ("id")
+    );
 CREATE TABLE "core"."biller_addresses" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "biller_id" uuid NOT NULL, "external_key" text NOT NULL, "live_date" date NOT NULL, "address_line1" text NOT NULL, "address_line2" text, "city" text NOT NULL, "state_province_code" text NOT NULL, "country_code" text NOT NULL, "postal_code" text NOT NULL, CONSTRAINT "core.biller_addresses_id_pkey" PRIMARY KEY ("id"));
 CREATE TABLE "core"."biller_masks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "biller_id" uuid NOT NULL, "mask" text NOT NULL, "mask_length" integer NOT NULL, "external_key" text NOT NULL, "live_date" date NOT NULL, CONSTRAINT "core.biller_masks_id_pkey" PRIMARY KEY ("id"));
 CREATE TABLE "core"."biller_names" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "biller_id" uuid NOT NULL, "name" text NOT NULL, "external_key" text NOT NULL, "live_date" date NOT NULL, CONSTRAINT "core.biller_names_id_pkey" PRIMARY KEY ("id"));
