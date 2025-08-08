@@ -32,4 +32,6 @@ do
   echo ""
 done
 
+npm run build:migrations
+
 echo "Build all completed"

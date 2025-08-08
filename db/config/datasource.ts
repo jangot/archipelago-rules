@@ -13,7 +13,7 @@ export default new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   entities: AllEntities,
-  migrations: ['db/migrations/*.up.sql'],
+  migrations: ['dist/migrations/*.js'],
   namingStrategy: new ZngNamingStrategy(),
   logging: process.env.TYPE_ORM_LOGGING === 'true' ? ['query', 'error'] : false,
 });

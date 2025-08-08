@@ -4,7 +4,7 @@ const path = require('path');
 /**
  * Converts SQL migrations to JavaScript files for TypeORM
  */
-function convertMigrationsToTypeORM() {
+function buildMigrationsToTypeORM() {
   const migrationsDir = path.join(__dirname, '../db/migrations');
   const outputDir = path.join(__dirname, '../dist/migrations');
 
@@ -193,11 +193,9 @@ function processSQLWithComments(sqlContent) {
 // Run conversion
 if (require.main === module) {
   try {
-    convertMigrationsToTypeORM();
+    buildMigrationsToTypeORM();
   } catch (error) {
     console.error('Error converting migrations:', error);
     process.exit(1);
   }
 }
-
-module.exports = { convertMigrationsToTypeORM };

@@ -11,6 +11,7 @@
     "build": "nest build",
     "build:all": "./scripts/build-all.sh",
     "build:all-win": "powershell -ExecutionPolicy Bypass -File ./scripts/build-all.ps1",
+    "build:migrations": "node scripts/build-migrations.js",
     "clean": "node -e \"require('fs').rmSync('./dist', { recursive: true, force: true });\"",
     "clean:modules": "rimraf node_modules package-lock.json",
     "generate:queries": "pgtyped --config ./pgtyped.config.json",
@@ -35,8 +36,7 @@
     "find:unused": "npx ts-prune",
     "migration:generate": "npx ts-node -P ./tsconfig.json -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d db/config/datasource.ts db/migrations/migration",
     "migration:run": "npx ts-node -P ./tsconfig.json -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d db/config/datasource.ts",
-    "migration:revert": "npx ts-node -P ./tsconfig.json -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d db/config/datasource.ts",
-    "migration:convert": "node scripts/convert-migrations.js"
+    "migration:revert": "npx ts-node -P ./tsconfig.json -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d db/config/datasource.ts"
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.857.0",
