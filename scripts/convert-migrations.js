@@ -16,7 +16,7 @@ function convertMigrationsToTypeORM() {
   // Get list of all files in migrations folder
   const files = fs.readdirSync(migrationsDir);
 
-  // Group files by migration name (without extension)
+    // Group files by migration name (without extension)
   const migrationGroups = {};
 
   files.forEach(file => {
@@ -26,6 +26,7 @@ function convertMigrationsToTypeORM() {
       const isDown = file.includes('-down.sql');
 
       if (isUp || isDown) {
+        // Handle explicit up/down files
         const migrationName = baseName.replace(/-up$/, '').replace(/-down$/, '');
 
         if (!migrationGroups[migrationName]) {
@@ -37,16 +38,28 @@ function convertMigrationsToTypeORM() {
         } else if (isDown) {
           migrationGroups[migrationName].down = file;
         }
+      } else {
+        // Handle single file without up/down suffix (treat as up)
+        const migrationName = baseName;
+
+        if (!migrationGroups[migrationName]) {
+          migrationGroups[migrationName] = {};
+        }
+
+        // If no up file exists yet, use this file as up
+        if (!migrationGroups[migrationName].up) {
+          migrationGroups[migrationName].up = file;
+        }
       }
     }
   });
 
-    // Convert each migration group
+  // Convert each migration group
   Object.entries(migrationGroups).forEach(([migrationName, files]) => {
-    if (files.up && files.down) {
+    if (files.up) {
       convertMigrationToTypeORM(migrationName, files.up, files.down, migrationsDir, outputDir);
     } else {
-      console.warn(`Skipping ${migrationName}: missing up or down file`);
+      console.warn(`Skipping ${migrationName}: no up file found`);
     }
   });
 
@@ -59,9 +72,14 @@ function convertMigrationsToTypeORM() {
 function convertMigrationToTypeORM(migrationName, upFile, downFile, sourceDir, outputDir) {
   console.log(`Converting migration: ${migrationName}`);
 
-  // Read file contents
+  // Read up file content
   const upContent = fs.readFileSync(path.join(sourceDir, upFile), 'utf8');
-  const downContent = fs.readFileSync(path.join(sourceDir, downFile), 'utf8');
+
+  // Read down file content if it exists, otherwise use empty string
+  let downContent = '';
+  if (downFile) {
+    downContent = fs.readFileSync(path.join(sourceDir, downFile), 'utf8');
+  }
 
   // Extract timestamp from filename
   const timestamp = migrationName.split('-')[0];
