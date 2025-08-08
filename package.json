@@ -35,7 +35,8 @@
     "find:unused": "npx ts-prune",
     "migration:generate": "npx ts-node -P ./tsconfig.json -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d db/config/datasource.ts db/migrations/migration",
     "migration:run": "npx ts-node -P ./tsconfig.json -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d db/config/datasource.ts",
-    "migration:revert": "npx ts-node -P ./tsconfig.json -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d db/config/datasource.ts"
+    "migration:revert": "npx ts-node -P ./tsconfig.json -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d db/config/datasource.ts",
+    "migration:convert": "node scripts/convert-migrations.js"
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.857.0",
