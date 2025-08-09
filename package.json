@@ -1,38 +1,28 @@
 {
   "name": "archipelago-rules",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Правила игры Архипелаг с автоматической синхронизацией",
+  "main": "scripts/sync-rules.js",
   "scripts": {
-    "test": "tsc && node ./dist/test.js",
-    "build": "tsc",
-    "upload-db": "tsc && node ./dist/upload-db.js",
-    "reload-db": "tsc && node ./dist/reload-db.js",
-    "upload-db:force": "FORCE_RELOAD=true tsc && node ./dist/upload-db.js",
-    "check-qdrant": "tsc && node ./dist/check-qdrant.js",
-    "migrate-users": "tsc && node ./dist/migrate-users.js",
-    "manage-users": "tsc && node ./dist/manage-users.js",
-    "start:search": "tsc && node ./dist/search.js",
-    "start:bot": "tsc && node ./dist/telegram-bot.js",
-    "test:bot": "tsc && node ./dist/test-bot.js"
+    "sync": "node scripts/sync-rules.js",
+    "sync:google": "node scripts/google-docs-sync.js",
+    "sync:public": "node scripts/public-docs-sync.js",
+    "test:sync": "node scripts/test-sync.js",
+    "sync:html": "node scripts/sync-rules.js \"$(pbpaste)\"",
+    "sync:file": "node scripts/sync-rules.js \"$(cat temp-doc.html)\"",
+    "sync:backup": "cp -r files/parts files/parts-backup-$(date +%Y%m%d-%H%M%S)",
+    "sync:restore": "cp -r files/parts-backup-$(ls -t files/parts-backup-* | head -1 | cut -d'-' -f3- | cut -d'/' -f1) files/parts",
+    "sync:clean": "rm -rf files/parts-backup-*",
+    "sync:status": "echo \"Последние изменения:\" && git log --oneline -10 -- files/parts/",
+    "sync:diff": "git diff files/parts/",
+    "sync:all": "npm run sync:backup && npm run sync:public && npm run sync:status",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@qdrant/js-client-rest": "^1.14.1",
-    "dotenv": "^16.6.0",
-    "node-telegram-bot-api": "^0.64.0",
-    "openai": "^5.8.1",
-    "pdf-parse": "^1.1.1",
-    "qdrant-client": "^0.0.1",
-    "uuid": "^11.1.0"
+    "jsdom": "^22.1.0",
+    "googleapis": "^128.0.0"
   },
-  "devDependencies": {
-    "@types/node": "^24.0.4",
-    "@types/node-telegram-bot-api": "^0.64.0",
-    "@types/pdf-parse": "^1.1.5",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
-  }
+  "keywords": ["rpg", "rules", "archipelago", "markdown"],
+  "author": "",
+  "license": "MIT"
 }
