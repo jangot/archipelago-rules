@@ -123,7 +123,7 @@ console.log(report.recommendations); // Рекомендации по оптим
 ./start-upload-2gb.sh --path file.txt
 
 # Или вручную с ограничениями
-npx ts-node --max-old-space-size=1536 src/upload-file.ts \
+NODE_OPTIONS="--max-old-space-size=1536" npx ts-node src/upload-file.ts \
   --path file.txt \
   --chunkSize 1000 \
   --batchSize 15 \
@@ -166,10 +166,10 @@ npx ts-node src/upload-file.ts \
 ### Ошибка "JavaScript heap out of memory"
 ```bash
 # Для 2GB серверов
-npx ts-node --max-old-space-size=1536 src/upload-file.ts --path file.txt
+NODE_OPTIONS="--max-old-space-size=1536" npx ts-node src/upload-file.ts --path file.txt
 
 # Уменьшите параметры
-npx ts-node --max-old-space-size=1536 src/upload-file.ts \
+NODE_OPTIONS="--max-old-space-size=1536" npx ts-node src/upload-file.ts \
   --path file.txt \
   --chunkSize 800 \
   --batchSize 10 \

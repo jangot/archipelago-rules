@@ -45,7 +45,7 @@ if [ $# -eq 0 ]; then
     echo ""
     echo "Использование:"
     echo "  ./start-upload-2gb.sh --path /path/to/file.txt"
-    echo "  ./start-upload-2gb.sh --drive <GOOGLE_DRIVE_FILE_ID>"
+    echo "  ./start-upload-2gb.sh --drive 1ulanNBqKru7RYQ-_dLAhQuT8U7SDCWsxQtAx39wv6lM"
     echo ""
     echo "Дополнительные параметры:"
     echo "  --chunkSize <размер>     Размер чанка (по умолчанию: ${CHUNK_SIZE})"
@@ -56,7 +56,7 @@ if [ $# -eq 0 ]; then
 fi
 
 # Собираем команду
-CMD="npx ts-node --max-old-space-size=${HEAP_SIZE} src/upload-file.ts"
+CMD="NODE_OPTIONS=\"--max-old-space-size=${HEAP_SIZE}\" npx ts-node src/upload-file.ts"
 
 # Добавляем базовые параметры, если они не указаны
 HAS_CHUNK_SIZE=false
