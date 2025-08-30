@@ -117,6 +117,19 @@ console.log(report.recommendations); // Рекомендации по оптим
 
 ## Рекомендации по использованию
 
+### Для серверов с 2GB памяти
+```bash
+# Используйте специальный скрипт
+./start-upload-2gb.sh --path file.txt
+
+# Или вручную с ограничениями
+npx ts-node --max-old-space-size=1536 src/upload-file.ts \
+  --path file.txt \
+  --chunkSize 1000 \
+  --batchSize 15 \
+  --maxConcurrent 2
+```
+
 ### Для больших файлов (>50MB)
 ```bash
 npx ts-node src/upload-file.ts \
@@ -150,9 +163,23 @@ npx ts-node src/upload-file.ts \
 
 ## Устранение неполадок
 
+### Ошибка "JavaScript heap out of memory"
+```bash
+# Для 2GB серверов
+npx ts-node --max-old-space-size=1536 src/upload-file.ts --path file.txt
+
+# Уменьшите параметры
+npx ts-node --max-old-space-size=1536 src/upload-file.ts \
+  --path file.txt \
+  --chunkSize 800 \
+  --batchSize 10 \
+  --maxConcurrent 1
+```
+
 ### Высокое потребление памяти
-- Уменьшите `--batchSize`
-- Уменьшите `--maxConcurrent`
+- Уменьшите `--batchSize` до 10-15
+- Уменьшите `--maxConcurrent` до 1-2
+- Уменьшите `--chunkSize` до 800-1000
 - Разбейте большой файл на части
 
 ### Медленная обработка
@@ -163,6 +190,11 @@ npx ts-node src/upload-file.ts \
 ### Ошибки кэша
 - Удалите файл `./cache/vector-cache.json`
 - Перезапустите скрипт
+
+### Для 2GB серверов
+- Используйте скрипт `./start-upload-2gb.sh`
+- Максимальный размер файла: 50MB
+- Рекомендуемые параметры: `--batchSize 15`, `--maxConcurrent 2`
 
 ## Будущие улучшения
 
