@@ -12,7 +12,7 @@ interface Response {
     index: number;
 }
 
-export async function searchRelevantChunks(question: string, topK = 25): Promise<Response[]> {
+export async function searchRelevantChunks(question: string, topK = 12): Promise<Response[]> {
     const vector = await getEmbedding(question);
 
     const response = await qdrant.search(configuration.vectorDBName, {
