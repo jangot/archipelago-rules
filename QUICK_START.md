@@ -1,9 +1,9 @@
 # Быстрый старт: Перезагрузка данных
 
-## 🚀 Перезагрузить данные одним командой
+## 🚀 Перезагрузить данные
 
 ```bash
-npm run reload-db
+npx ts-node src/reload-db.ts
 ```
 
 ## 📋 Что это делает
@@ -23,13 +23,28 @@ npm run reload-db
 
 ```bash
 # Принудительная загрузка
-npm run upload-db:force
+FORCE_RELOAD=true npx ts-node src/upload-db.ts
 
 # Обычная загрузка (без перезаписи)
-npm run upload-db
+npx ts-node src/upload-db.ts
 
 # Проверка Qdrant
-npm run check-qdrant
+npx ts-node src/check-qdrant.ts
+
+# Загрузка отдельного файла
+npx ts-node src/upload-file.ts
+
+# Запуск Telegram бота
+npm start
+
+# Запуск через PM2
+npm run start:pm2
+
+# Остановка PM2
+npm run stop:pm2
+
+# Перезапуск PM2
+npm run restart:pm2
 ```
 
 ## 📊 Результат

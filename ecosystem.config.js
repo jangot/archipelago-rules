@@ -1,8 +1,9 @@
 module.exports = {
   apps: [{
     name: 'archipelago-rules-bot',
-    script: 'dist/telegram-bot.js',
-    interpreter: 'node',
+    script: 'src/telegram-bot.ts',
+    interpreter: 'npx',
+    interpreter_args: 'ts-node',
 
     // Настройки перезапуска
     max_memory_restart: '512M',
