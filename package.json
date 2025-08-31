@@ -25,6 +25,7 @@
     "reload-db": "npx ts-node src/reload-db.ts",
     "upload-db": "npx ts-node src/upload-db.ts",
     "check-qdrant": "npx ts-node src/check-qdrant.ts",
+    "reload": "./scripts/download-google-doc.sh 1ulanNBqKru7RYQ-_dLAhQuT8U7SDCWsxQtAx39wv6lM && ./start-upload-local.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
